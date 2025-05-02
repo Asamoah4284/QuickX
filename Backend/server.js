@@ -1,0 +1,75 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const s3Config = require('./config/s3Config');
+const cors = require('cors');
+const fs = require('fs');
+const path = require('path');
+require('dotenv').config();
+
+const app = express();
+
+
+
+// Middleware
+app.use(cors());
+app.use(express.json());
+
+// Database connection
+console.log('Attempting to connect to MongoDB...');
+
+mongoose.connect(process.env.MONGODB_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+    authSource: 'admin',
+    connectTimeoutMS: 30000,
+    socketTimeoutMS: 30000,
+    serverSelectionTimeoutMS: 30000,
+    retryWrites: true
+})
+.then(() => {
+    console.log('MongoDB connection successful');
+})
+.catch(err => {
+    console.error('MongoDB connection error:', err.message);
+});
+
+const db = mongoose.connection;
+db.on('error', (err) => {
+    console.error('MongoDB connection error:', err);
+});
+db.once('open', () => console.log('Connected to MongoDB'));
+
+// Routes
+app.use('/api/users', require('./routes/userRoutes'));
+app.use('/api/courses', require('./routes/courseRoutes'));
+app.use('/api/books', require('./routes/bookRoutes'));
+app.use('/api/affiliate', require('./routes/affiliateRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/payments', require('./routes/paymentRoutes'));
+app.use('/api', require('./routes/couponRoutes'));
+
+
+app.get('/s3Url', async (req, res) => {
+    const uploadURL = await s3Config.generateImageUrl();
+    res.json({ url: uploadURL });
+});
+
+app.get('/s3VideoUrl', async (req, res) => {
+    const uploadURL = await s3Config.generateVideoUrl();
+    res.json({ url: uploadURL });
+});
+
+
+
+
+// Error handler middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ 
+        message: 'Server error',
+        error: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
+    });
+});
+
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
