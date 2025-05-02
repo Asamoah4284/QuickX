@@ -1,8 +1,8 @@
 import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Navbar from '../components/Navbar';
-import Hero from '../components/Hero';
 import Footer from '../components/Footer';
+
 
 function RootLayout() {
   const { pathname } = useLocation();
@@ -13,14 +13,23 @@ function RootLayout() {
   }, [pathname]);
   
   return (
+    <>
+     <Helmet>
+        <title>QuickXLearn - Learn Forex, Crypto, and Web Development</title>
+        <meta name="description" content="Join QuickXLearn for free forex, crypto, and web dev courses. Real analysis. Real results." />
+        <meta property="og:title" content="QuickXLearn" />
+        <meta property="og:description" content="Upgrade your skills with real-world education." />
+        <meta property="og:url" content="https://quickxlearn.com" />
+        <meta property="og:type" content="website" />
+      </Helmet>
     <div className="root-layout overflow-x-hidden w-full">
       <Navbar />
-      {/* <Hero/> */}
       <main>
         <Outlet />
       </main>
       <Footer/>
     </div>
+    </>
   );
 }
 

@@ -27,7 +27,7 @@ import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AddCourse from './pages/Admin/AddCourse';
 import EditCourse from './pages/Admin/EditCourse';
-
+import { HelmetProvider } from 'react-helmet-async';
 // Define router with scrolling behavior
 const router = createBrowserRouter([
   {
@@ -163,7 +163,12 @@ const router = createBrowserRouter([
 });
 
 function App() {
-  return <RouterProvider router={router} />;
+  return (
+    <HelmetProvider>
+      <RouterProvider router={router} />
+    </HelmetProvider>
+  )
+  
 }
 
 export default App;
