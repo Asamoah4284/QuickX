@@ -4,12 +4,10 @@ const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
-const multer = require('multer');
 const multerS3 = require('multer-s3');
 const path = require('path');
 const { check, validationResult } = require('express-validator');
 const { videoUpload, thumbnailUpload } = require('../config/s3Config');
-const upload = multer({ dest: 'uploads/' });
 
 const axios = require('axios');
 
