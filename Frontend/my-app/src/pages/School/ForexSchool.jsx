@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { FiPlay, FiBook } from 'react-icons/fi';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const ForexSchool = () => {
   // Course categories
@@ -28,15 +29,20 @@ const ForexSchool = () => {
     const fetchCourses = async () => {
       try {
         setLoading(true);
-        const response = await axios.get(`${API_URL}/courses`);
+        console.log('Fetching courses from:', `${API_URL}/api/courses`);
+        const response = await axios.get(`${API_URL}/api/courses`);
         
         // Log the raw API response
-        console.log('Raw API response:', response.data);
+        console.log('Raw API response:', response);
+        
+        if (!response.data || !Array.isArray(response.data)) {
+          throw new Error('Invalid response format from server');
+        }
         
         // Transform backend data to match our frontend structure
         const formattedCourses = response.data.map(course => {
           const thumbnailUrl = course.thumbnail ? 
-            (course.thumbnail.startsWith('http') ? course.thumbnail : `http://localhost:5000${course.thumbnail}`) 
+            (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`) 
             : '/images/1.jpeg';
           
           console.log('Processing course:', {

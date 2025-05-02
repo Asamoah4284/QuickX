@@ -22,6 +22,7 @@ import {
     FiXCircle
 } from 'react-icons/fi';
 
+const API_URL = import.meta.env.VITE_API_URL;
 // Mock data for testing
 const mockCourses = [
     {
@@ -74,7 +75,7 @@ const CourseManagement = () => {
     const handleDeleteCourse = async (courseId) => {
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.delete(`http://localhost:5000/api/admin/courses/${courseId}`, {
+            await axios.delete(`${API_URL}/api/admin/courses/${courseId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Refresh the courses list after deletion
@@ -93,13 +94,13 @@ const CourseManagement = () => {
     const fetchCourses = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:5000/api/admin/courses', {
+            const response = await axios.get(`${API_URL}/api/admin/courses`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             // Transform the courses to include full thumbnail URLs
             const coursesWithFullUrls = response.data.map(course => ({
                 ...course,
-                thumbnail: course.thumbnail ? `http://localhost:5000${course.thumbnail}` : null
+                thumbnail: course.thumbnail ? `${API_URL}${course.thumbnail}` : null
             }));
             setCourses(Array.isArray(coursesWithFullUrls) ? coursesWithFullUrls : []);
             setError('');
@@ -114,10 +115,10 @@ const CourseManagement = () => {
 
     const handleCourseSelect = async (courseId) => {
         try {
-            const response = await axios.get(`/api/admin/courses/${courseId}`);
+            const response = await axios.get(`${API_URL}/api/admin/courses/${courseId}`);
             setSelectedCourse(response.data);
             
-            const studentsResponse = await axios.get(`/api/admin/courses/${courseId}/students`);
+            const studentsResponse = await axios.get(`${API_URL}/api/admin/courses/${courseId}/students`);
             setStudents(studentsResponse.data);
         } catch (err) {
             setError('Failed to fetch course details');
@@ -131,7 +132,7 @@ const CourseManagement = () => {
             formData.append('moduleId', moduleId);
             formData.append('type', type);
             
-            await axios.post(`/api/admin/courses/${courseId}/content`, formData, {
+            await axios.post(`${API_URL}/api/admin/courses/${courseId}/content`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
@@ -146,7 +147,7 @@ const CourseManagement = () => {
 
     const handleDeleteContent = async (courseId, contentId) => {
         try {
-            await axios.delete(`/api/admin/courses/${courseId}/content/${contentId}`);
+            await axios.delete(`${API_URL}/api/admin/courses/${courseId}/content/${contentId}`);
             handleCourseSelect(courseId);
         } catch (err) {
             setError('Failed to delete content');
@@ -155,7 +156,7 @@ const CourseManagement = () => {
 
     const handleUpdateProgress = async (courseId, studentId, progress) => {
         try {
-            await axios.put(`/api/admin/courses/${courseId}/students/${studentId}/progress`, {
+            await axios.put(`${API_URL}/api/admin/courses/${courseId}/students/${studentId}/progress`, {
                 progress
             });
             handleCourseSelect(courseId);

@@ -3,7 +3,7 @@ import { FiUser, FiMail, FiLock, FiArrowRight, FiEye, FiEyeOff } from 'react-ico
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Register() {
   const navigate = useNavigate();
@@ -31,7 +31,7 @@ function Register() {
     setError('');
     
     try {
-      const response = await axios.post(`${API_URL}/users/register`, {
+      const response = await axios.post(`${API_URL}/api/users/register`, {
         fullName: formData.fullName,
         email: formData.email,
         password: formData.password

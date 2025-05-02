@@ -3,6 +3,9 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget } from 'react-icons/fi';
 import axios from 'axios';
 
+
+const API_URL = import.meta.env.VITE_API_URL;
+
 function Membership() {
   const location = useLocation();
   const [user, setUser] = useState(null);
@@ -73,7 +76,7 @@ function Membership() {
             console.log('Fetching user courses from API...');
             
             // First try to get user's purchased courses directly
-            const coursesResponse = await axios.get('http://localhost:5000/api/courses/user/purchased', {
+            const coursesResponse = await axios.get(`${API_URL}/api/courses/user/purchased`, {
               headers: { 'Authorization': `Bearer ${authToken}` }
             });
             
@@ -84,7 +87,7 @@ function Membership() {
               const formattedCourses = coursesResponse.data.map(course => {
                 // Construct the full image URL
                 const imagePath = course.thumbnail ? 
-                  (course.thumbnail.startsWith('http') ? course.thumbnail : `http://localhost:5000${course.thumbnail}`)
+                  (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`)
                   : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
                 
                 return {

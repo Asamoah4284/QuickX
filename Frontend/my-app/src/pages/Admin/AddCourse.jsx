@@ -3,6 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { FiUpload, FiPlus, FiX, FiSave, FiEye } from 'react-icons/fi';
 import axios from 'axios';
 
+
+const API_URL = import.meta.env.VITE_API_URL;
+
 const AddCourse = () => {
     const navigate = useNavigate();
     const { courseId } = useParams();
@@ -61,7 +64,7 @@ const AddCourse = () => {
             }
 
             const response = await axios.get(
-                `http://localhost:5000/api/admin/courses/${courseId}`,
+                `${API_URL}/api/admin/courses/${courseId}`,
                 {
                     headers: { Authorization: `Bearer ${adminToken}` }
                 }
@@ -224,7 +227,7 @@ const AddCourse = () => {
                     
                     // Upload video to S3
                     const response = await axios.post(
-                        'http://localhost:5000/api/videos/upload',
+                        `${API_URL}/api/videos/upload`,
                         videoFormData,
                         {
                             headers: {
@@ -319,7 +322,7 @@ const AddCourse = () => {
                 }
 
                 await axios.delete(
-                    `http://localhost:5000/api/videos/${lesson.videoKey}`,
+                    `${API_URL}/api/videos/${lesson.videoKey}`,
                     {
                         headers: { Authorization: `Bearer ${adminToken}` }
                     }

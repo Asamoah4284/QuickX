@@ -4,7 +4,7 @@ import { FiCheck, FiLock, FiPlay, FiClock, FiDownload, FiStar, FiShoppingCart, F
 import { PaystackButton } from 'react-paystack';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Pricing() {
   const [selectedModule, setSelectedModule] = useState(null);
@@ -40,8 +40,8 @@ function Pricing() {
         // If we have a courseId, attempt to fetch from API
         if (courseId) {
           try {
-            console.log(`Making API request to: ${API_URL}/courses/${courseId}/preview`);
-            const response = await axios.get(`${API_URL}/courses/${courseId}/preview`);
+            console.log(`Making API request to: ${API_URL}/api/courses/${courseId}/preview`);
+            const response = await axios.get(`${API_URL}/api/courses/${courseId}/preview`);
             
             if (response.data) {
               const course = response.data;
@@ -686,7 +686,7 @@ function Pricing() {
     if (token || authToken) {
       const fetchUserData = async () => {
         try {
-          const response = await axios.get('/api/users/me', {
+          const response = await axios.get(`${API_URL}/api/users/me`, {
             headers: { 'Authorization': `Bearer ${token || authToken}` }
           });
           

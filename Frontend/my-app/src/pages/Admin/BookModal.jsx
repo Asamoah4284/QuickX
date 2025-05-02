@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar } from 'react-icons/fi';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const BookModal = ({ book, onClose, onSave }) => {
     const [formData, setFormData] = useState({
         title: '',
@@ -69,7 +71,7 @@ const BookModal = ({ book, onClose, onSave }) => {
             formData.append('thumbnail', file);
 
             const token = localStorage.getItem('adminToken');
-            const response = await axios.post('http://localhost:5000/api/admin/upload', formData, {
+            const response = await axios.post(`${API_URL}/api/admin/upload`, formData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'multipart/form-data'
@@ -117,7 +119,7 @@ const BookModal = ({ book, onClose, onSave }) => {
 
             if (book) {
                 // Update existing book
-                response = await axios.put(`http://localhost:5000/api/admin/books/${book._id}`, formDataToSend, {
+                response = await axios.put(`${API_URL}/api/admin/books/${book._id}`, formDataToSend, {
                     headers: { 
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'
@@ -125,7 +127,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 });
             } else {
                 // Create new book
-                response = await axios.post('http://localhost:5000/api/admin/books', formDataToSend, {
+                response = await axios.post(`${API_URL}/api/admin/books`, formDataToSend, {
                     headers: { 
                         Authorization: `Bearer ${token}`,
                         'Content-Type': 'multipart/form-data'

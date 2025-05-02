@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 
+const API_URL = import.meta.env.VITE_API_URL;
 const CourseDetail = () => {
   const { courseId } = useParams();
   const [activeModule, setActiveModule] = useState(0);
@@ -21,7 +22,7 @@ const CourseDetail = () => {
           setError('Please log in to access this course');
           return;
         }
-        const response = await axios.get(`http://localhost:5000/api/courses/${courseId}/full`, {
+        const response = await axios.get(`${API_URL}/api/courses/${courseId}/full`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -98,7 +99,7 @@ const CourseDetail = () => {
     
     // If it's a relative path, prepend the base URL
     if (url.startsWith('/')) {
-      const baseUrl = 'http://localhost:5000'; // Replace with your actual backend URL
+      const baseUrl = `${API_URL}`; // Replace with your actual backend URL
       const formattedUrl = `${baseUrl}${url}`;
       console.log('Formatted relative URL:', formattedUrl);
       return formattedUrl;

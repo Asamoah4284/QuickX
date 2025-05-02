@@ -37,6 +37,7 @@ ChartJS.register(
     ArcElement
 );
 
+const API_URL = import.meta.env.VITE_API_URL;
 // Mock data for testing
 const mockCourses = [
     {
@@ -246,7 +247,7 @@ const AdminDashboard = () => {
     const fetchCourses = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:5000/api/admin/courses', {
+            const response = await axios.get(`${API_URL}/api/admin/courses`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCourses(Array.isArray(response.data) ? response.data : []);
@@ -263,7 +264,7 @@ const AdminDashboard = () => {
     const fetchBooks = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:5000/api/admin/books', {
+            const response = await axios.get(`${API_URL}/api/admin/books`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBooks(Array.isArray(response.data) ? response.data : []);
@@ -305,7 +306,7 @@ const AdminDashboard = () => {
     const fetchCoupons = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get('http://localhost:5000/api/admin/coupons', {
+            const response = await axios.get(`${API_URL}/api/admin/coupons`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCoupons(response.data);
@@ -335,7 +336,7 @@ const AdminDashboard = () => {
         if (window.confirm('Are you sure you want to delete this course?')) {
             try {
                 const token = localStorage.getItem('adminToken');
-                await axios.delete(`http://localhost:5000/api/admin/courses/${courseId}`, {
+                await axios.delete(`${API_URL}/api/admin/courses/${courseId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setCourses(courses.filter(course => course._id !== courseId));
@@ -520,7 +521,7 @@ const AdminDashboard = () => {
             // Log the complete course data before sending
             console.log('Sending course data:', JSON.stringify(courseData, null, 2));
 
-            const response = await axios.post('http://localhost:5000/api/admin/courses', courseData, {
+            const response = await axios.post(`${API_URL}/api/admin/courses`, courseData, {
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': 'application/json'
@@ -572,7 +573,7 @@ const AdminDashboard = () => {
             }
             
             // First, get the secure URL from our server
-            const { data: { url } } = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/s3Url`, {
+            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             console.log(url);
@@ -616,7 +617,7 @@ const AdminDashboard = () => {
             const token = localStorage.getItem('adminToken');
             
             // First, get the secure URL from our server
-            const { data: { url } } = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/s3VideoUrl`, {
+            const { data: { url } } = await axios.get(`${API_URL}/s3VideoUrl`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
 
@@ -675,7 +676,7 @@ const AdminDashboard = () => {
         if (window.confirm('Are you sure you want to delete this book?')) {
             try {
                 const token = localStorage.getItem('adminToken');
-                await axios.delete(`http://localhost:5000/api/admin/books/${bookId}`, {
+                await axios.delete(`${API_URL}/api/admin/books/${bookId}`, {
                     headers: { Authorization: `Bearer ${token}` }
                 });
                 setBooks(books.filter(book => book._id !== bookId));
@@ -726,7 +727,7 @@ const AdminDashboard = () => {
                 return;
             }
 
-            const response = await axios.post('http://localhost:5000/api/admin/coupons', formattedCoupon, {
+            const response = await axios.post(`${API_URL}/api/admin/coupons`, formattedCoupon, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
@@ -748,7 +749,7 @@ const AdminDashboard = () => {
     const handleDeleteCoupon = async (couponId) => {
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.delete(`http://localhost:5000/api/admin/coupons/${couponId}`, {
+            await axios.delete(`${API_URL}/api/admin/coupons/${couponId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCoupons(coupons.filter(coupon => coupon._id !== couponId));

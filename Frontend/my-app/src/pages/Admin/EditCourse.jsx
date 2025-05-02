@@ -12,6 +12,8 @@ import {
     FiTrash2
 } from 'react-icons/fi';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const EditCourse = () => {
     const { courseId } = useParams();
     const navigate = useNavigate();
@@ -35,7 +37,7 @@ const EditCourse = () => {
     const fetchCourse = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            const response = await axios.get(`http://localhost:5000/api/admin/courses/${courseId}`, {
+            const response = await axios.get(`${API_URL}/api/admin/courses/${courseId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setCourse(response.data);
@@ -52,7 +54,7 @@ const EditCourse = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.put(`http://localhost:5000/api/admin/courses/${courseId}`, course, {
+            await axios.put(`${API_URL}/api/admin/courses/${courseId}`, course, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             navigate('/admin/courses');

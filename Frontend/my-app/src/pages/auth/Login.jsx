@@ -3,7 +3,7 @@ import { FiUser, FiMail, FiLock, FiLogIn, FiArrowRight, FiEye, FiEyeOff } from '
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 function Login() {
   const navigate = useNavigate();
@@ -24,7 +24,7 @@ function Login() {
     setError('');
     
     try {
-      const response = await axios.post(`${API_URL}/users/login`, {
+      const response = await axios.post(`${API_URL}/api/users/login`, {
         email: formData.email,
         password: formData.password
       });

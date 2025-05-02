@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { FiX } from 'react-icons/fi';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const CourseModal = ({ course, onClose, onSave }) => {
     const [formData, setFormData] = useState({
         title: '',
@@ -41,8 +43,8 @@ const CourseModal = ({ course, onClose, onSave }) => {
         try {
             const token = localStorage.getItem('adminToken');
             const url = course 
-                ? `/api/admin/courses/${course._id}`
-                : '/api/admin/courses';
+                ? `${API_URL}/api/admin/courses/${course._id}`
+                : `${API_URL}/api/admin/courses`;
             
             const method = course ? 'put' : 'post';
             

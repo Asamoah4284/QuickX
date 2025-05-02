@@ -29,6 +29,8 @@ function Checkout() {
   const [couponId, setCouponId] = useState(null);
   const [discount, setDiscount] = useState(0);
 
+  const API_URL = import.meta.env.VITE_API_URL;
+
   // Paystack public key
   const paystackPublicKey = "pk_test_00217b2a0545ad1be4b2f07e05bc1e73eba765b7";
 
@@ -253,7 +255,7 @@ function Checkout() {
 
       console.log('Sending payment data:', paymentData);
 
-      axios.post('http://localhost:5000/api/payments/initialize', paymentData, {
+      axios.post(`${API_URL}/api/payments/initialize`, paymentData, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       })
       .then(paymentResponse => {
@@ -284,7 +286,7 @@ function Checkout() {
             localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
             
             // Save course purchase to database
-            return axios.post(`http://localhost:5000/api/courses/${checkoutItem.id}/purchase`, {
+            return axios.post(`${API_URL}/api/courses/${checkoutItem.id}/purchase`, {
               reference: referenceString,
               amount: finalPrice,
               status: 'completed'
@@ -424,14 +426,14 @@ function Checkout() {
         }
 
         // First validate the coupon
-        const validateResponse = await axios.post('http://localhost:5000/api/validate-coupon', {
+        const validateResponse = await axios.post(`${API_URL}/api/validate-coupon`, {
             code: couponCode,
             price: checkoutItem?.price || 0
         });
 
         if (validateResponse.data.valid) {
             // If valid, apply the coupon to increment usage count
-            const applyResponse = await axios.post('http://localhost:5000/api/apply-coupon', 
+            const applyResponse = await axios.post(`${API_URL}/api/apply-coupon`, 
                 { couponId: validateResponse.data.couponId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
@@ -844,7 +846,7 @@ function Checkout() {
                         <>
                           Complete Purchase
                           <FiCheck className="ml-2" />
-                        </>
+                        </> 
                       )}
                     </button>
                   )}

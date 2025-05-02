@@ -3,7 +3,7 @@ import { FiSearch, FiFilter, FiStar, FiShoppingCart, FiBook, FiTrendingUp, FiArr
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL;
 
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/default-book-cover.jpg';
@@ -47,7 +47,7 @@ const Store = () => {
         if (searchQuery) params.append('search', searchQuery);
         if (selectedCategory !== 'all') params.append('type', selectedCategory);
         
-        const response = await axios.get(`${API_URL}/books?${params.toString()}`);
+        const response = await axios.get(`${API_URL}/api/books?${params.toString()}`);
         setBooks(response.data);
       } catch (err) {
         console.error('Error fetching books:', err);

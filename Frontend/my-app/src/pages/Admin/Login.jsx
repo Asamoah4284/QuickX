@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiLock, FiMail } from 'react-icons/fi';
 
+const API_URL = import.meta.env.VITE_API_URL;
+
 const AdminLogin = () => {
     const [formData, setFormData] = useState({
         email: '',
@@ -22,7 +24,7 @@ const AdminLogin = () => {
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost:5000/api/admin/login', formData);
+            const res = await axios.post(`${API_URL}/api/admin/login`, formData);
             localStorage.setItem('adminToken', res.data.token);
             localStorage.setItem('admin', JSON.stringify(res.data.admin));
             navigate('/admin/dashboard');
