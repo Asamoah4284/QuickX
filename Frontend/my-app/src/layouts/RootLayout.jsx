@@ -2,6 +2,8 @@ import { Outlet, useLocation } from 'react-router-dom';
 import { useEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { Helmet } from 'react-helmet-async';
+import { Analytics } from '@vercel/analytics/react';
 
 
 function RootLayout() {
@@ -29,6 +31,7 @@ function RootLayout() {
       </main>
       <Footer/>
     </div>
+    <Analytics />
     </>
   );
 }
