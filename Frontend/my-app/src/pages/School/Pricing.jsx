@@ -725,6 +725,36 @@ function Pricing() {
     }
   }, [courseData]);
 
+  // Handle payment modal close
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false);
+    setCustomerEmail('');
+    setIsProcessingPayment(false);
+  };
+
+  // Handle bundle payment modal close
+  const handleBundlePaymentClose = () => {
+    setShowBundlePaymentModal(false);
+    setCustomerEmail('');
+    setIsProcessingPayment(false);
+  };
+
+  // Handle payment success
+  const handlePaymentSuccess = () => {
+    setIsProcessingPayment(false);
+    setShowPaymentModal(false);
+    setCustomerEmail('');
+    // Add any additional success handling here
+  };
+
+  // Handle bundle payment success
+  const handleBundlePaymentSuccess = () => {
+    setIsProcessingPayment(false);
+    setShowBundlePaymentModal(false);
+    setCustomerEmail('');
+    // Add any additional success handling here
+  };
+
   // Handle module purchase
   const handlePurchaseModule = (moduleId) => {
     // Find selected module data
@@ -1344,171 +1374,4 @@ function Pricing() {
                               </div>
                             </div>
                             <Link
-                              to={`/school/course/${selectedModule.id}?lesson=${section.lessons.find(lesson => lesson.type === 'ebook' && lesson.free).id}`}
-                              className="bg-white text-blue-600 hover:bg-blue-600 hover:text-white text-sm px-3 py-1 rounded border border-blue-200 hover:border-blue-600 flex items-center transition-all duration-300 transform hover:scale-105"
-                            >
-                              <FiDownload className="mr-1.5" /> Download
-                            </Link>
-                          </div>
-                        ))
-                      }
-                    </div>
-                  </div>
-                )}
-
-                <div className="mt-8 space-y-6">
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">What You'll Learn</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {courseData.requirements.map((req, index) => (
-                        <div key={index} className="flex items-start">
-                          <FiCheck className="text-green-500 mt-1 mr-2 flex-shrink-0" />
-                          <span className="text-gray-700 text-sm">{req}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-xl font-semibold mb-4">Description</h3>
-                    <p className="text-gray-700 text-sm leading-relaxed mb-4">{courseData.description}</p>
-                    <button className="text-blue-600 font-medium text-sm flex items-center">
-                      Show more <FiInfo className="ml-1" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            {/* Right Section - Module Selection */}
-            <div className="lg:w-5/12">
-              <div className="p-6 sm:p-8">
-                <div className="mb-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-3">Course Modules</h2>
-                  <p className="text-gray-600 text-sm">Select modules to learn at your own pace</p>
-                </div>
-                
-                <div className="space-y-4">
-                  {courseData.modules.map((module) => (
-                    <div 
-                      key={module.id} 
-                      className={`border rounded-xl overflow-hidden cursor-pointer transition-all duration-300 transform hover:-translate-y-1 hover:shadow-lg ${
-                        selectedModule.id === module.id 
-                          ? 'border-blue-500 bg-blue-50 shadow-md'
-                          : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50'
-                      }`}
-                      onClick={() => setSelectedModule(module)}
-                    >
-                      <div className="p-4 sm:p-5 relative overflow-hidden group">
-                        <div className="absolute inset-0 bg-gradient-to-r from-blue-500/0 to-indigo-500/0 opacity-0 group-hover:opacity-10 transition-opacity duration-300"></div>
-                        <div className="flex justify-between items-start gap-4">
-                          <div>
-                            <h3 className="text-base font-medium text-gray-900 flex items-center group-hover:text-blue-700 transition-colors duration-300">
-                              {module.title}
-                              {module.unlocked && (
-                                <span className="ml-2 text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full">
-                                  Purchased
-                                </span>
-                              )}
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1 group-hover:text-gray-800 transition-colors duration-300">{module.description}</p>
-                            
-                            <div className="flex items-center gap-3 mt-2 text-xs text-gray-500">
-                              <div className="flex items-center group-hover:text-gray-700 transition-colors duration-300">
-                                <FiClock className="mr-1 group-hover:scale-110 transition-transform duration-300" />
-                                {getModuleDuration(module)}
-                              </div>
-                              <div className="flex items-center group-hover:text-gray-700 transition-colors duration-300">
-                                <FiPlay className="mr-1 group-hover:scale-110 transition-transform duration-300" />
-                                {module.sections.reduce((total, section) => total + section.lessons.length, 0)} lessons
-                              </div>
-                              {getFreeBooksCount(module) > 0 && (
-                                <div className="flex items-center text-blue-600 group-hover:text-blue-700 transition-colors duration-300">
-                                  <FiBook className="mr-1 group-hover:scale-110 transition-transform duration-300" />
-                                  {getFreeBooksCount(module)} free {getFreeBooksCount(module) === 1 ? 'book' : 'books'}
-                                </div>
-                              )}
-                              <Link
-                                to={`/school/course/${module.id}`}
-                                className="text-blue-600 hover:text-blue-800 font-medium opacity-80 group-hover:opacity-100 transition-opacity duration-300 relative"
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <span className="relative z-10">Details</span>
-                                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300"></span>
-                              </Link>
-                            </div>
-                          </div>
-                          
-                          <div className="flex-shrink-0 text-lg font-bold transition-transform duration-300 group-hover:scale-110 group-hover:text-blue-700">
-                            GHC{module.price}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {/* Bundle Option */}
-                <div className="mt-8">
-                  <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl overflow-hidden transform transition-all duration-300 hover:shadow-lg hover:shadow-blue-500/20 hover:scale-[1.02]">
-                    <div className="p-6 text-white relative overflow-hidden">
-                      <div className="absolute top-0 left-0 w-full h-full bg-white opacity-0 hover:opacity-5 transition-opacity duration-500"></div>
-                      <div className="absolute -right-16 -top-16 w-40 h-40 bg-white/10 rounded-full blur-2xl transform transition-transform duration-700 hover:scale-150 hover:rotate-45"></div>
-                      <h3 className="text-lg font-bold mb-2 relative">Complete Bundle Deal</h3>
-                      <p className="text-blue-100 text-sm mb-4 relative">
-                        Get access to all modules at a discounted price
-                      </p>
-                      <div className="flex items-center justify-between relative">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl font-bold">GH₵1000</span>
-                          <span className="text-blue-200 line-through text-sm">${courseData.modules.reduce((sum, module) => sum + module.price, 0)}</span>
-                        </div>
-                        <div>
-                          <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-1 rounded">
-                            25% OFF
-                          </span>
-                        </div>
-                      </div>
-                      <button 
-                        onClick={() => {
-                          if (!isAuthenticated) {
-                            navigate('/login', { state: { from: location.pathname + location.search } });
-                            return;
-                          }
-                          handleBundlePurchase();
-                        }}
-                        className="block w-full bg-white text-blue-700 hover:bg-blue-50 hover:text-blue-800 hover:shadow-inner font-medium py-2 rounded-lg transition-all duration-300 mt-4 text-sm text-center relative"
-                      >
-                        Purchase Full Course
-                      </button>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="mt-8">
-                  <div className="bg-gray-50 rounded-xl p-6 border border-gray-200">
-                    <h4 className="text-base font-medium text-gray-900 mb-3 flex items-center">
-                      <FiAward className="mr-2 text-blue-600" />
-                      Instructor
-                    </h4>
-                    <div className="flex items-start">
-                      <div className="w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center mr-3 text-lg font-bold">
-                        {courseData.instructor.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <div>
-                        <h5 className="font-medium">{courseData.instructor}</h5>
-                        <p className="text-sm text-gray-600">{courseData.instructorTitle}</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default Pricing; 
+                              to={`/school/course/${selectedModule.id}?lesson=${section.lessons.find(lesson => lesson.type === 'ebook' && lesson.free).id}`
