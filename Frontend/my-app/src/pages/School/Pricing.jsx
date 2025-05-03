@@ -726,11 +726,6 @@ function Pricing() {
   }, [courseData]);
 
   // Handle payment modal close
-  const handlePaymentClose = () => {
-    setShowPaymentModal(false);
-    setCustomerEmail('');
-    setIsProcessingPayment(false);
-  };
 
   // Handle bundle payment modal close
   const handleBundlePaymentClose = () => {
@@ -1078,7 +1073,6 @@ function Pricing() {
                         handlePaymentSuccess();
                       }
                     }}
-                    onClose={handlePaymentClose}
                   />
                 ) : (
                   <button 
