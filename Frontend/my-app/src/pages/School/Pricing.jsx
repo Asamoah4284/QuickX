@@ -726,6 +726,11 @@ function Pricing() {
   }, [courseData]);
 
   // Handle payment modal close
+  const handlePaymentClose = () => {
+    setShowPaymentModal(false);
+    setCustomerEmail('');
+    setIsProcessingPayment(false);
+  };
 
   // Handle bundle payment modal close
   const handleBundlePaymentClose = () => {
@@ -1073,6 +1078,7 @@ function Pricing() {
                         handlePaymentSuccess();
                       }
                     }}
+                    onClose={handlePaymentClose}
                   />
                 ) : (
                   <button 
@@ -1084,7 +1090,7 @@ function Pricing() {
                 )}
                 <button 
                   className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
-                  onClick={() => setShowPaymentModal(false)}
+                  onClick={handlePaymentClose}
                   disabled={isProcessingPayment}
                 >
                   Cancel
