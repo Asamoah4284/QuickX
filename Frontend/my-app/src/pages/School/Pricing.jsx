@@ -727,15 +727,6 @@ function Pricing() {
 
   // Handle module purchase
   const handlePurchaseModule = (moduleId) => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      // Redirect to login page
-      navigate('/login', { state: { from: location.pathname + location.search } });
-      return;
-    }
-    
-    console.log(`Preparing payment for module: ${moduleId}`);
-    
     // Find selected module data
     const moduleToPurchase = courseData.modules.find(module => module.id === moduleId);
     
@@ -743,54 +734,16 @@ function Pricing() {
       console.error(`Module not found: ${moduleId}`);
       return;
     }
-    
-    // Prepare item data for checkout
-    const checkoutItem = {
-      id: moduleToPurchase.id,
-      title: moduleToPurchase.title,
-      price: moduleToPurchase.price,
-      type: 'course',
-      image: courseData.image || 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80'
-    };
-    
-    // Navigate to checkout page with item data
-    navigate('/checkout', {
-      state: {
-        item: checkoutItem,
-        returnPath: '/membership',
-        returnTabState: { activeTab: 'myCourses' }
-      }
-    });
+
+    // Show payment modal first
+    setSelectedModule(moduleToPurchase);
+    setShowPaymentModal(true);
   };
 
   // Handle bundle purchase
   const handleBundlePurchase = () => {
-    // Check if user is authenticated
-    if (!isAuthenticated) {
-      // Redirect to login page
-      navigate('/login', { state: { from: location.pathname + location.search } });
-      return;
-    }
-    
-    console.log('Preparing bundle purchase');
-    
-    // Prepare bundle item data for checkout
-    const bundleItem = {
-      id: 'forex-bundle',
-      title: 'Complete Forex Trading Bundle',
-      price: bundlePrice,
-      type: 'course',
-      image: courseData.image || 'https://images.unsplash.com/photo-1535320903710-d993d3d77d29?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80'
-    };
-    
-    // Navigate to checkout page with bundle item data
-    navigate('/checkout', {
-      state: {
-        item: bundleItem,
-        returnPath: '/membership',
-        returnTabState: { activeTab: 'myCourses' }
-      }
-    });
+    // Show bundle payment modal first
+    setShowBundlePaymentModal(true);
   };
 
   // Get total course duration
@@ -1087,7 +1040,14 @@ function Pricing() {
                     amount={selectedModule?.price * 100} // Paystack amount is in kobo (100 kobo = 1 GHC)
                     currency="GHS"
                     reference={`module_${selectedModule?.id}_${new Date().getTime()}`}
-                    onSuccess={handlePaymentSuccess}
+                    onSuccess={() => {
+                      if (!isAuthenticated) {
+                        // Redirect to login page after successful payment
+                        navigate('/login', { state: { from: location.pathname + location.search } });
+                      } else {
+                        handlePaymentSuccess();
+                      }
+                    }}
                     onClose={handlePaymentClose}
                   />
                 ) : (
@@ -1155,7 +1115,14 @@ function Pricing() {
                     amount={bundlePrice * 100} // Paystack amount is in kobo (100 kobo = 1 GHC)
                     currency="GHS"
                     reference={`bundle_${new Date().getTime()}`}
-                    onSuccess={handleBundlePaymentSuccess}
+                    onSuccess={() => {
+                      if (!isAuthenticated) {
+                        // Redirect to login page after successful payment
+                        navigate('/login', { state: { from: location.pathname + location.search } });
+                      } else {
+                        handleBundlePaymentSuccess();
+                      }
+                    }}
                     onClose={handleBundlePaymentClose}
                   />
                 ) : (
