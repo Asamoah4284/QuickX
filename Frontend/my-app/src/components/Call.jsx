@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 const Call = () => {
   return (
@@ -10,14 +11,14 @@ const Call = () => {
           </h1>
           
           <p className="text-xl text-[#333] mb-8">
-            Join thousands of successful traders who have mastered the market with our expert-led courses, 
+            Join thousands of Students who have gain masterery with our expert-led courses, 
             proven strategies, and personalized mentorship.
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-gradient-to-r from-blue-500 to-blue-500 hover:from-blue-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition duration-300">
+           <Link to='/school'><button className="bg-gradient-to-r from-blue-500 to-blue-500 hover:from-blue-600 hover:to-blue-600 text-white font-semibold py-3 px-8 rounded-lg transition duration-300">
               Browse courses now
-            </button>
+            </button></Link> 
             <button className="bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-500/10 font-semibold py-3 px-8 rounded-lg transition duration-300">
               Join for free
             </button>

@@ -19,7 +19,9 @@ const Hero = () => {
     'https://pixner.net/html/tradexy/tradexy/assets/images/hero/banner5-slide2.png',
     './images/7.jpg',
     'https://i.pinimg.com/736x/47/d3/6e/47d36eab2ad7496068569c27e70823d8.jpg',
-    'https://i.pinimg.com/736x/b0/3f/81/b03f815fb319ce720eea730cf59ff111.jpg',
+    'https://i.pinimg.com/736x/3c/a8/fd/3ca8fd1755e8349df5dffe1cb375d211.jpg',
+    
+    
   ];
 
   const contentSlides = [
@@ -132,12 +134,12 @@ const Hero = () => {
     : contentSlides[nextContentIndex === 0 ? contentSlides.length - 1 : nextContentIndex - 1];
 
   return (
-    <div className="relative bg-gradient-to-r from-blue-900 to-blue-950 text-white flex items-center overflow-hidden">
+    <div className="relative  text-white flex items-center overflow-hidden">
       {/* Background gradient overlay */}
       <div className="absolute inset-0 bg-opacity-30 z-0"></div>
       
       {/* Background graphics - 5 with multiple images */}
-      <div className="absolute opacity-40 inset-0  z-0">
+      <div className="absolute inset-0  z-0">
         {backgroundImages.map((image, index) => (
           <div 
             key={index}

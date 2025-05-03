@@ -147,16 +147,16 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-2">
-            <Link to="/school" className={`${scrolled ? 'text-white hover:text-white' : 'text-white-900 hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/school" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               School
             </Link>
-            <Link to="/analysis" className={`${scrolled ? 'text-white hover:text-white' : 'text-white-900 hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/analysis" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Mentorship
             </Link>
-            <Link to="/store" className={`${scrolled ? 'text-white hover:text-white' : 'text-white-white-900 hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/store" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Store
             </Link>
-            <Link to="/about" className={`${scrolled ? 'text-white hover:text-white' : 'text-white-900 hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/about" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               About
             </Link>
          
@@ -164,7 +164,7 @@ const Navbar = () => {
             <div className="flex items-center space-x-4 ml-4">
               {isLoggedIn ? (
                 <div className="flex items-center space-x-4">
-                  <Link to="/membership" className={`flex items-center ${scrolled ? 'text-white-200 hover:text-white' : 'text-white-600 hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+                  <Link to="/membership" className={`flex items-center ${scrolled ? 'text-white-200 hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
                     <FiBook className="mr-1.5" /> My Courses
                   </Link>
                   <div className="relative group">

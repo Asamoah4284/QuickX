@@ -48,12 +48,12 @@ const Testimonials = () => {
               
               <div className="flex items-start gap-3">
                 <FaChartLine className="text-blue-400 text-xl mt-1" />
-                <p className="font-medium">Trading system strategy</p>
+                <p className="font-medium">Trading Triple X Strategy</p>
               </div>
               
               <div className="flex items-start gap-3">
                 <FaLightbulb className="text-blue-400 text-xl mt-1" />
-                <p className="font-medium">Explanation and application</p>
+                <p className="font-medium">Psychology of Trading</p>
               </div>
             </div>
             

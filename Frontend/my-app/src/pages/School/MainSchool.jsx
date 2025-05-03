@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import Features from '../../components/Features';
 
 const courseData = {
   forex: {
@@ -81,41 +82,118 @@ const MainSchool = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero Section */}
-      <div className="bg-gradient-to-r from-blue-900 via-indigo-800 to-purple-900 relative overflow-hidden">
+      <div className="bg-blue-900 relative overflow-hidden">
         {/* Soft overlay for depth */}
         <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
         <div className="max-w-6xl mx-auto px-6 py-32 relative z-10">
-          <div className="flex flex-col lg:flex-row items-center justify-between gap-20">
-            {/* Left: Hero Text */}
-            <div className="flex-1 text-center lg:text-left max-w-2xl">
+          <div className="grid grid-cols-12 gap-8 items-center">
+            {/* Left: Hero Text - 60% */}
+            <div className="col-span-12 lg:col-span-7 text-center lg:text-left">
               <h1 className="text-6xl font-extrabold tracking-tight text-white mb-6 drop-shadow-lg"
                   style={{ lineHeight: '1.1', letterSpacing: '-0.02em' }}>
-                Find the Next Crypto Gem on{' '}
-                <span className="text-blue-400">Crito</span><span className="text-yellow-400">X</span>
+             
+                <span className="text-blue-400">Quick</span><span className="text-yellow-400">XLearn</span>
               </h1>
               <p className="text-2xl text-blue-100 mb-12 font-light leading-relaxed">
-                Coin CritoX is the easiest, safest, and fastest way to buy & sell crypto asset exchange.
+              Welcome to QuicKxLearning Center, Lighting up minds through learning to build the skillset and mindset for financial freedom
               </p>
               <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                <button
-                  className="px-10 py-3 rounded-full bg-blue-500 text-white font-semibold shadow-lg hover:bg-blue-600 transition-all duration-200 border-2 border-blue-500"
+                <a href='#schools' className="px-10 py-3 rounded-full bg-blue-500 text-white font-semibold shadow-lg hover:bg-blue-600 transition-all duration-200 border-2 border-blue-500"
                 >
-                  Connect Wallet
-                </button>
+                 View Schools
+                </a>
                 <button className="px-10 py-3 rounded-full border-2 border-white text-white font-semibold bg-white/10 hover:bg-white/20 shadow-lg transition-all duration-200">
                   Explore Now
                 </button>
               </div>
             </div>
-            {/* Right: Crypto Card/Coin Illustration */}
-          
-
-
-
-
+            {/* Right: Crypto Card/Coin Illustration - 40% */}
+            <div className="col-span-12 lg:col-span-5">
+              <figure className="w-full h-full flex items-center justify-center">
+                <img 
+                  src="./images/school-pic.png" 
+                  alt="a school picture" 
+                  className="w-full h-auto object-contain"
+                />
+              </figure>
+            </div>
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
+      </div>
+
+      {/* Advertisement Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
+        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiA4YzAgMi0yIDQtNCA0cy00LTItNC00IDItNCA0LTQgNCAyIDQgNHoiIGZpbGw9IiNlZWUiLz48L2c+PC9zdmc+')] opacity-10"></div>
+        <div className="max-w-6xl mx-auto px-4 py-8 relative">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Main Ad Container */}
+            <div className="lg:col-span-2">
+              <div className="bg-white rounded-xl p-4 shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
+                <div className="relative">
+                  <div className="absolute top-0 right-0">
+                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">Featured</span>
+                  </div>
+                  <div className="aspect-[16/9] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden relative group">
+                    <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-300"></div>
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-center p-4">
+                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white shadow-lg flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
+                          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                        </div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-1">Premium Partner</h3>
+                        <p className="text-sm text-gray-600 mb-3">Your advertisement content here</p>
+                        <button className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl">
+                          Learn More
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-3 flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">Premium Placement</span>
+                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                      <span className="text-xs font-medium text-blue-600">Sponsored</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-400">Ad Space</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Side Ad Container */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-xl p-4 shadow-xl h-full">
+                <div className="flex flex-col h-full">
+                  <div className="flex-1">
+                    <div className="aspect-[4/3] bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg overflow-hidden relative group">
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-center p-3">
+                          <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white shadow-md flex items-center justify-center">
+                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                          </div>
+                          <h4 className="text-base font-semibold text-gray-800">Quick Ad</h4>
+                          <p className="text-xs text-gray-600">Your quick message here</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex items-center justify-between">
+                    <span className="text-xs text-gray-500">Sponsored Content</span>
+                    <button className="text-xs text-blue-600 hover:text-blue-700">View Details</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Schools Section */}
@@ -166,45 +244,7 @@ const MainSchool = () => {
       </div>
 
       {/* Features Section */}
-      <div className="bg-white py-20">
-        <div className="container mx-auto px-4">
-          <h2 className="text-4xl font-bold text-center mb-16">Why Choose Our Schools</h2>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="p-6 rounded-xl text-center">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Expert-Led Instruction</h3>
-              <p className="text-gray-600">Learn from industry professionals with years of real-world experience in their fields.</p>
-            </div>
-            
-            <div className="p-6 rounded-xl text-center">
-              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Practical Projects</h3>
-              <p className="text-gray-600">Apply your knowledge through hands-on projects that simulate real-world scenarios.</p>
-            </div>
-            
-            <div className="p-6 rounded-xl text-center">
-              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                </svg>
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Flexible Learning</h3>
-              <p className="text-gray-600">Study at your own pace with our flexible scheduling and on-demand video content.</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      
+      <Features/>
 
     </div>
   );

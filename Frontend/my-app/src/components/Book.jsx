@@ -250,11 +250,11 @@ const Book = () => {
             {/* Right side with text content */}
             <div className="w-full lg:w-1/2" data-aos="fade-left" data-aos-delay="300">
               <h3 className="text-3xl font-bold text-gray-800 mb-4">
-                The Platform of Choice for 66K+ Global Traders
+                The Platform of Choice for Global Students
               </h3>
               <p className="text-gray-700 mb-8">
-                We're committed to providing a secure and transparent trading environment,
-                empowering traders to connect, learn, and succeed.
+                We're committed to providing a secure and transparent learning environment,
+                empowering people to connect, learn, and succeed.
               </p>
 
               <div ref={sectionRef} className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8" data-aos="fade-up" data-aos-delay="400">
@@ -280,7 +280,7 @@ const Book = () => {
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
                       {inView ? (
-                        <CountUp end={85} duration={1.5} reset={!inView} />
+                        <CountUp end={100} duration={1.5} reset={!inView} />
                       ) : (
                         "0%"
                       )}
@@ -311,13 +311,13 @@ const Book = () => {
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
                       {inView ? (
-                        <CountUp end={77} duration={1.5} reset={!inView} />
+                        <CountUp end={85} duration={1.5} reset={!inView} />
                       ) : (
                         "0%"
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-800 font-semibold">Trade Reviews Comparison</p>
+                  <p className="text-gray-800 font-semibold">Student Reviews</p>
                 </div>
               </div>
 
@@ -336,7 +336,7 @@ const Book = () => {
                 </div>
                 <div className="flex items-center">
                   <div className="text-orange-500 mr-2">✓</div>
-                  <span className="text-gray-800">Innovative & Studious</span>
+                  <span className="text-gray-800">Good Customer Care</span>
                 </div>
               </div>
             </div>

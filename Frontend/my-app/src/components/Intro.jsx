@@ -23,32 +23,13 @@ const Intro = () => {
           <div className="md:w-1/2">
             <div className="mb-6" data-aos="fade-right" data-aos-delay="100">
               {/* <span className="text-[#00b8ff] font-semibold">ABOUT US</span> */}
-              <h2 className="text-4xl font-bold mt-2 mb-4">The Leading Crypto Trading Platform In The World</h2>
+              <h2 className="text-4xl font-bold mt-2 mb-4">Master the Future of Finance - Learn Crypto Trading Now!</h2>
               <p className="text-gray-300 mb-6">
-                We are a dedicated crypto trading platform providing innovative solutions for digital asset traders. Our platform offers secure, fast, and reliable trading services to users worldwide.
+               Unlock the Secret of Digital Wealth With Our Expertly Designed Crypto Courses. Whether you're a Beginner or Looking to Sharpen Your Edge, Quickxlearn Gives you Everything you Need to Trade, Invest Smart and Win Big in the Crypto World
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-6 mb-8" data-aos="fade-up" data-aos-delay="200">
-              <div className="flex items-center gap-3">
-                <div className="text-[#00b8ff] text-4xl">
-                  <CountUp end={25} duration={2.5} suffix="K+" />
-                </div>
-                <div>
-                  <h5 className="font-semibold">Active Users</h5>
-                  <p className="text-gray-300 text-sm">Worldwide Users</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="text-[#00b8ff] text-4xl">
-                  <CountUp end={11} duration={2.5} suffix="M+" />
-                </div>
-                <div>
-                  <h5 className="font-semibold">Total Transactions</h5>
-                  <p className="text-gray-300 text-sm">Processed Daily</p>
-                </div>
-              </div>
-            </div>
+          
 
             <div className="flex flex-wrap gap-6" data-aos="fade-up" data-aos-delay="300">
               <div className="bg-[#17325a] p-4 rounded-lg flex items-center gap-3">

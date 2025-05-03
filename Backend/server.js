@@ -59,6 +59,33 @@ app.get('/s3VideoUrl', async (req, res) => {
     res.json({ url: uploadURL });
 });
 
+// Add new endpoint to refresh video URL
+app.get('/api/courses/:courseId/video-url', async (req, res) => {
+    try {
+        const { videoUrl } = req.query;
+        if (!videoUrl) {
+            return res.status(400).json({ error: 'Video URL is required' });
+        }
+
+        // Extract the key from the S3 URL
+        const url = new URL(videoUrl);
+        const key = url.pathname.substring(1); // Remove leading slash
+
+        const params = {
+            Bucket: process.env.AWS_BUCKET_NAME || 'quickx',
+            Key: key,
+            Expires: 60 * 5, // 5 minutes
+            ContentType: 'video/mp4'
+        };
+
+        const freshUrl = await s3Config.s3.getSignedUrlPromise('getObject', params);
+        res.json({ url: freshUrl });
+    } catch (error) {
+        console.error('Error refreshing video URL:', error);
+        res.status(500).json({ error: 'Failed to refresh video URL' });
+    }
+});
+
 
 
 

@@ -13,6 +13,7 @@ const CourseDetail = () => {
   const [videoError, setVideoError] = useState(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [isVideoAccessible, setIsVideoAccessible] = useState(false);
+  const [videoUrl, setVideoUrl] = useState(null);
 
   useEffect(() => {
     const fetchCourseData = async () => {
@@ -149,19 +150,36 @@ const CourseDetail = () => {
     }
   };
 
-  // Log video URL for debugging
+  // Add this function after the existing useEffect
+  const refreshVideoUrl = async (url) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return null;
+      
+      // If it's an AWS S3 URL, we need to get a fresh signed URL
+      if (url && url.includes('amazonaws.com')) {
+        const response = await axios.get(`${API_URL}/api/courses/${courseId}/video-url`, {
+          headers: { Authorization: `Bearer ${token}` },
+          params: { videoUrl: url }
+        });
+        return response.data.url;
+      }
+      return url;
+    } catch (error) {
+      console.error('Error refreshing video URL:', error);
+      return url;
+    }
+  };
+
+  // Update the useEffect that handles video URL
   useEffect(() => {
     if (currentLesson?.videoUrl) {
-      console.log('Current video URL:', currentLesson.videoUrl);
-      const formattedUrl = getFormattedVideoUrl(currentLesson.videoUrl);
-      console.log('Formatted video URL:', formattedUrl);
-      console.log('Video public ID:', currentLesson.videoPublicId);
-      console.log('Video duration:', currentLesson.duration);
-      
-      // Check if the video is accessible
-      checkVideoAccessibility(currentLesson.videoUrl);
-    } else {
-      console.log('No video URL found for current lesson');
+      const loadVideoUrl = async () => {
+        const freshUrl = await refreshVideoUrl(currentLesson.videoUrl);
+        setVideoUrl(freshUrl);
+        checkVideoAccessibility(freshUrl);
+      };
+      loadVideoUrl();
     }
   }, [currentLesson]);
 
@@ -409,7 +427,7 @@ const CourseDetail = () => {
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               {/* Video Player */}
               <div className="aspect-video bg-gray-900 relative">
-                {currentLesson?.videoUrl && checkVideoUrl(currentLesson.videoUrl) ? (
+                {videoUrl && checkVideoUrl(videoUrl) ? (
                   <>
                     {videoError && (
                       <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 z-10">
@@ -417,7 +435,11 @@ const CourseDetail = () => {
                           <div className="text-red-500 text-xl mb-2">Video Playback Error</div>
                           <div className="text-white mb-4">{videoError}</div>
                           <button 
-                            onClick={() => setVideoError(null)}
+                            onClick={async () => {
+                              const freshUrl = await refreshVideoUrl(currentLesson.videoUrl);
+                              setVideoUrl(freshUrl);
+                              setVideoError(null);
+                            }}
                             className="bg-emerald-600 text-white px-4 py-2 rounded-lg hover:bg-emerald-700 transition"
                           >
                             Try Again
@@ -445,39 +467,25 @@ const CourseDetail = () => {
                       </div>
                     )}
                     <video
-                      key={currentLesson.videoUrl}
+                      key={videoUrl}
                       controls
                       className="w-full h-full"
                       autoPlay={false}
                       controlsList="nodownload"
-                      onError={(e) => {
+                      onError={async (e) => {
                         console.error('Video playback error:', {
                           error: e.target.error,
-                          videoUrl: currentLesson.videoUrl,
-                          formattedUrl: getFormattedVideoUrl(currentLesson.videoUrl)
+                          videoUrl: videoUrl
                         });
                         handleVideoError(e);
+                        // Try to refresh the URL on error
+                        const freshUrl = await refreshVideoUrl(currentLesson.videoUrl);
+                        setVideoUrl(freshUrl);
                       }}
-                      onLoadStart={() => {
-                        console.log('Video loading started:', {
-                          videoUrl: currentLesson.videoUrl,
-                          formattedUrl: getFormattedVideoUrl(currentLesson.videoUrl)
-                        });
-                        handleVideoLoadStart();
-                      }}
-                      onCanPlay={() => {
-                        console.log('Video can play:', {
-                          videoUrl: currentLesson.videoUrl,
-                          formattedUrl: getFormattedVideoUrl(currentLesson.videoUrl)
-                        });
-                        handleVideoCanPlay();
-                      }}
+                      onLoadStart={handleVideoLoadStart}
+                      onCanPlay={handleVideoCanPlay}
                       onEnded={() => {
-                        console.log('Video ended:', {
-                          videoUrl: currentLesson.videoUrl,
-                          formattedUrl: getFormattedVideoUrl(currentLesson.videoUrl)
-                        });
-                        // Mark lesson as completed when video ends
+                        console.log('Video ended');
                         const updatedModules = [...courseData.modules];
                         const currentModule = updatedModules[activeModule];
                         const currentSection = currentModule.sections[0];
@@ -486,9 +494,9 @@ const CourseDetail = () => {
                         setCourseData({ ...courseData, modules: updatedModules });
                       }}
                     >
-                      <source src={getFormattedVideoUrl(currentLesson.videoUrl)} type="video/mp4" />
-                      <source src={getFormattedVideoUrl(currentLesson.videoUrl)} type="video/webm" />
-                      <source src={getFormattedVideoUrl(currentLesson.videoUrl)} type="video/ogg" />
+                      <source src={videoUrl} type="video/mp4" />
+                      <source src={videoUrl} type="video/webm" />
+                      <source src={videoUrl} type="video/ogg" />
                       Your browser does not support the video tag.
                     </video>
                   </>

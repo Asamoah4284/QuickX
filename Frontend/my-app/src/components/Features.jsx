@@ -19,7 +19,7 @@ const Features = () => {
         <div className="flex flex-col md:flex-row items-center">
           <div className="md:w-1/2 mb-10 md:mb-0" data-aos="fade-right" data-aos-delay="100">
             <img 
-              src="https://pixner.net/html/tradexy/tradexy/assets/images/about/choose-thumb1.png" 
+              src="https://i.pinimg.com/736x/a7/2e/b6/a72eb6dad6d4c20201d3a70c4fb784cf.jpg" 
               alt="Trader with charts" 
               className="w-full max-w-lg mx-auto"
             />
@@ -48,7 +48,7 @@ const Features = () => {
             </div>
             
             <h2 className="text-3xl font-bold text-gray-800 mb-6" data-aos="fade-left" data-aos-delay="300">
-              Profit, Service, Technology, Stability—Traders' Top Choice.
+              Profit, Service, Technology, Stability—Students' Top Choice.
             </h2>
             
             <p className="text-gray-600 mb-8" data-aos="fade-left" data-aos-delay="400">
@@ -63,7 +63,7 @@ const Features = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-gray-700 font-medium">Excellent customer service</span>
+                <span className="text-gray-700 font-medium">Expert-Curated Content</span>
               </div>
               
               <div className="flex items-start">
@@ -72,7 +72,7 @@ const Features = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-gray-700 font-medium">Trading signal tracking</span>
+                <span className="text-gray-700 font-medium">Flexible Learning Experience</span>
               </div>
               
               <div className="flex items-start">
@@ -81,7 +81,7 @@ const Features = () => {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
-                <span className="text-gray-700 font-medium">Top technical analysis</span>
+                <span className="text-gray-700 font-medium">Community and Mentorship</span>
               </div>
               
               <div className="flex items-start">

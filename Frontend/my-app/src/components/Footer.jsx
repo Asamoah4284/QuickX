@@ -46,21 +46,21 @@ const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/services" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="/store" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  Services
+                  Store
                 </Link>
               </li>
               <li>
-                <Link to="/about" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="/school" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  About
+                  School
                 </Link>
               </li>
               <li>
-                <Link to="/contact" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="/analysis" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  Contact
+                  Mentorship
                 </Link>
               </li>
             </ul>
@@ -73,27 +73,27 @@ const Footer = () => {
             </h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/web-development" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  Web Development
+                 Online Courses
                 </Link>
               </li>
               <li>
-                <Link to="/app-development" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  App Development
+                  Mentorship
                 </Link>
               </li>
               <li>
-                <Link to="/ui-design" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  UI/UX Design
+                  Consultation
                 </Link>
               </li>
               <li>
-                <Link to="/consulting" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
+                <Link to="" className="text-gray-300 hover:text-blue-400 transition-all duration-300 flex items-center">
                   <span className="bg-blue-500 h-1.5 w-1.5 rounded-full mr-2"></span>
-                  Consulting
+                  Book Sales
                 </Link>
               </li>
             </ul>
@@ -107,15 +107,15 @@ const Footer = () => {
             <div className="space-y-3">
               <p className="flex items-center text-gray-300">
                 <FaEnvelope className="mr-3 text-blue-400" />
-                info@quickx.com
+               Quickx310@gmail.com
               </p>
               <p className="flex items-center text-gray-300">
                 <FaPhone className="mr-3 text-blue-400" />
-                (123) 456-7890
+                +233 555 756 303
               </p>
               <p className="flex items-center text-gray-300">
                 <FaMapMarkerAlt className="mr-3 text-blue-400" />
-                123 Innovation Street, Tech City
+                Central Region, Capecoast
               </p>
             </div>
           </div>

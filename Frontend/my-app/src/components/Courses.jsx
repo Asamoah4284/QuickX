@@ -5,33 +5,24 @@ import { Link } from 'react-router-dom';
 const courses = [
   {
     id: 1,
-    title: "Introduction to Color Theory & Basic UI/UX",
+    title: "Introduction to Forex Trading",
     category: "Forex Trading",
-    image: "https://i.pinimg.com/736x/77/95/28/7795281b8a563521031961aaf6c7ad0d.jpg",
-    price: 75,
-    lessons: 2,
-    duration: "4h 30m",
-    rating: 4.5
+    image: "https://i.pinimg.com/736x/90/a3/bc/90a3bc59e3f92890f4c251c9d79559ae.jpg",
+ 
   },
   {
     id: 2,
     title: "Financial Security Thinking and Principles Theory",
     category: "Crypto",
     image: "https://i.pinimg.com/736x/22/ff/c3/22ffc3a863846e2d265dc4f6ac994abd.jpg",
-    price: 36.20,
-    lessons: 2,
-    duration: "4h 30m",
-    rating: 4.5
+ 
   },
   {
     id: 3,
     title: "Free Logo Design: From Concept to Presentation",
     category: "Web Development",
     image: "https://i.pinimg.com/736x/06/98/6a/06986a1609bd2fcbd8cb047c789738d0.jpg",
-    price: 38,
-    lessons: 2,
-    duration: "4h 30m",
-    rating: 4.5
+ 
   }
 ];
 
@@ -68,32 +59,7 @@ function Courses() {
                 </div>
               </div>
 
-              <div className="p-6">
-                <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                  {course.title}
-                </h3>
-
-                <div className="flex items-center justify-between mb-4">
-                  <span className="text-2xl font-bold text-teal-600">
-                    ${course.price}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between text-sm text-gray-600">
-                  <div className="flex items-center">
-                    <FiBook className="mr-2" />
-                    {course.lessons} Lessons
-                  </div>
-                  <div className="flex items-center">
-                    <FiClock className="mr-2" />
-                    {course.duration}
-                  </div>
-                  <div className="flex items-center">
-                    <FiStar className="mr-2 text-yellow-400" />
-                    {course.rating}
-                  </div>
-                </div>
-              </div>
+           
             </Link>
           ))}
         </div>

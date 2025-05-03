@@ -139,7 +139,13 @@ function Mentorship({ premium = false }) {
         </div>
       )}
       
-      <div className="bg-blue-50 border-l-4 border-blue-400 p-6 mb-8 rounded-r-lg">
+
+
+      <div className="text-center mt-20 mb-8">
+        <h1 className="text-4xl font-bold mb-2 text-gray-800">{premium ? 'Premium Mentorship' : 'Trading Mentorship'}</h1>
+        <p className="text-xl text-gray-500 mb-8">Accelerate your trading journey with expert guidance</p>
+
+        <div className="bg-blue-50 border-l-4 border-blue-400 p-6 mb-8 rounded-r-lg mt-8">
         <div className="flex items-start">
           <FaExclamationTriangle className="text-blue-400 text-xl mt-1 mr-3" />
           <div>
@@ -152,10 +158,6 @@ function Mentorship({ premium = false }) {
           </div>
         </div>
       </div>
-
-      <div className="text-center mt-12 mb-8">
-        <h1 className="text-4xl font-bold mb-2 text-gray-800">{premium ? 'Premium Mentorship' : 'Trading Mentorship'}</h1>
-        <p className="text-xl text-gray-500 mb-8">Accelerate your trading journey with expert guidance</p>
         
         <div className="flex justify-center gap-4 mt-8 md:flex-row flex-col">
           <button 
@@ -187,7 +189,7 @@ function Mentorship({ premium = false }) {
 
       <div className="flex flex-col gap-12">
         <section>
-          <div className="flex justify-between items-center mb-6">
+          <div className="flex justify-between items-center mt-6 ">
             <h2 className="text-2xl font-bold text-gray-800">Upcoming Mentorship Sessions</h2>
             <button className="text-blue-500 font-medium">View Calendar</button>
           </div>
