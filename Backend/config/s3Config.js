@@ -1,19 +1,14 @@
-import aws from 'aws-sdk';
-
-import dotenv from 'dotenv';
-
-dotenv.config();
-
+const aws = require('aws-sdk');
+require('dotenv').config();
 
 const s3 = new aws.S3({
     accessKeyId: process.env.AWS_ACCESS_KEY_ID,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION,
+    region: process.env.AWS_REGION || 'eu-north-1',
     signatureVersion: 'v4'
 });
 
-
-export async function generateImageUrl() {
+async function generateImageUrl() {
     const ImageName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
     const params = {
         Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
@@ -27,7 +22,7 @@ export async function generateImageUrl() {
     return uploadURL;
 }
 
-export async function generateVideoUrl() {
+async function generateVideoUrl() {
     const VideoName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.mp4`;
     const params = {
         Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
@@ -40,5 +35,11 @@ export async function generateVideoUrl() {
     
     return uploadURL;
 }
+
+module.exports = {
+    generateImageUrl,
+    generateVideoUrl,
+    s3
+};
 
 
