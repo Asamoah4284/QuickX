@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiCheck, FiLock, FiPlay, FiClock, FiDownload, FiStar, FiShoppingCart, FiInfo, FiUsers, FiCalendar, FiAward, FiBarChart2, FiBook, FiFileText } from 'react-icons/fi';
 import { PaystackButton } from 'react-paystack';
@@ -725,35 +725,30 @@ function Pricing() {
     }
   }, [courseData]);
 
-  // Handle payment modal close
-  const handlePaymentClose = () => {
+  // Payment handling functions
+  const handlePaymentClose = useCallback(() => {
     setShowPaymentModal(false);
     setCustomerEmail('');
     setIsProcessingPayment(false);
-  };
+  }, []);
 
-  // Handle bundle payment modal close
-  const handleBundlePaymentClose = () => {
+  const handleBundlePaymentClose = useCallback(() => {
     setShowBundlePaymentModal(false);
     setCustomerEmail('');
     setIsProcessingPayment(false);
-  };
+  }, []);
 
-  // Handle payment success
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = useCallback(() => {
     setIsProcessingPayment(false);
     setShowPaymentModal(false);
     setCustomerEmail('');
-    // Add any additional success handling here
-  };
+  }, []);
 
-  // Handle bundle payment success
-  const handleBundlePaymentSuccess = () => {
+  const handleBundlePaymentSuccess = useCallback(() => {
     setIsProcessingPayment(false);
     setShowBundlePaymentModal(false);
     setCustomerEmail('');
-    // Add any additional success handling here
-  };
+  }, []);
 
   // Handle module purchase
   const handlePurchaseModule = (moduleId) => {
@@ -764,16 +759,40 @@ function Pricing() {
       console.error(`Module not found: ${moduleId}`);
       return;
     }
-
-    // Show payment modal first
-    setSelectedModule(moduleToPurchase);
-    setShowPaymentModal(true);
+    
+    // Navigate to checkout with module data
+    navigate('/checkout', {
+      state: {
+        item: {
+          id: moduleToPurchase.id,
+          title: moduleToPurchase.title,
+          price: moduleToPurchase.price,
+          type: 'course',
+          image: courseData.image
+        },
+        returnPath: `/school/course/${moduleId}`,
+        returnTabState: { tab: 'content' }
+      }
+    });
   };
 
   // Handle bundle purchase
   const handleBundlePurchase = () => {
-    // Show bundle payment modal first
-    setShowBundlePaymentModal(true);
+    // Navigate to checkout with bundle data
+    navigate('/checkout', {
+      state: {
+        item: {
+          id: 'bundle',
+          title: 'Complete Forex Trading Bundle',
+          price: bundlePrice,
+          type: 'course',
+          image: courseData.image,
+          description: 'Get access to all three levels of forex trading education'
+        },
+        returnPath: '/school',
+        returnTabState: null
+      }
+    });
   };
 
   // Get total course duration
@@ -951,16 +970,13 @@ function Pricing() {
                     className="block w-full bg-white text-blue-700 hover:bg-blue-50 font-medium py-2 rounded-lg transition-colors mt-4 text-sm text-center"
                     onClick={() => {
                       if (!isAuthenticated) {
-                        // Redirect to login page if not authenticated
                         navigate('/login', { state: { from: location.pathname + location.search } });
                         return;
                       }
                       
                       if (level) {
-                        // If a specific level is selected, purchase that module
                         handlePurchaseModule(courseData?.modules[0]?.id);
                       } else {
-                        // Otherwise, purchase the bundle
                         handleBundlePurchase();
                       }
                     }}
@@ -1017,156 +1033,6 @@ function Pricing() {
                 <button 
                   className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
                   onClick={() => setShowBundle(false)}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Paystack Payment Modal */}
-        {showPaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-              <h2 className="text-2xl font-bold mb-4">Complete Your Purchase</h2>
-              <p className="text-gray-600 mb-6">
-                Purchase {selectedModule?.title} for GHC{selectedModule?.price}
-              </p>
-              
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Enter your email address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  disabled={isProcessingPayment}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                {isProcessingPayment ? (
-                  <button 
-                    className="flex-1 bg-blue-400 text-white font-medium py-2 rounded-lg flex items-center justify-center cursor-wait"
-                    disabled
-                  >
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing Payment...
-                  </button>
-                ) : customerEmail ? (
-                  <PaystackButton
-                    text="Pay Now"
-                    className="flex-1 bg-blue-600 text-white hover:bg-blue-700 font-medium py-2 rounded-lg transition-colors flex items-center justify-center"
-                    publicKey={paystackPublicKey}
-                    email={customerEmail}
-                    amount={selectedModule?.price * 100} // Paystack amount is in kobo (100 kobo = 1 GHC)
-                    currency="GHS"
-                    reference={`module_${selectedModule?.id}_${new Date().getTime()}`}
-                    onSuccess={() => {
-                      if (!isAuthenticated) {
-                        // Redirect to login page after successful payment
-                        navigate('/login', { state: { from: location.pathname + location.search } });
-                      } else {
-                        handlePaymentSuccess();
-                      }
-                    }}
-                    onClose={handlePaymentClose}
-                  />
-                ) : (
-                  <button 
-                    className="flex-1 bg-blue-300 text-white font-medium py-2 rounded-lg cursor-not-allowed"
-                    disabled
-                  >
-                    Enter Email to Continue
-                  </button>
-                )}
-                <button 
-                  className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
-                  onClick={handlePaymentClose}
-                  disabled={isProcessingPayment}
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Paystack Bundle Payment Modal */}
-        {showBundlePaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-8 max-w-md w-full mx-4">
-              <h2 className="text-2xl font-bold mb-4">Complete Your Bundle Purchase</h2>
-              <p className="text-gray-600 mb-6">
-                Purchase the complete bundle for GH₵{bundlePrice}
-              </p>
-              
-              <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  placeholder="Enter your email address"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  value={customerEmail}
-                  onChange={(e) => setCustomerEmail(e.target.value)}
-                  disabled={isProcessingPayment}
-                />
-              </div>
-
-              <div className="flex gap-4">
-                {isProcessingPayment ? (
-                  <button 
-                    className="flex-1 bg-blue-400 text-white font-medium py-2 rounded-lg flex items-center justify-center cursor-wait"
-                    disabled
-                  >
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing Payment...
-                  </button>
-                ) : customerEmail ? (
-                  <PaystackButton
-                    text="Pay Now"
-                    className="flex-1 bg-blue-600 text-white hover:bg-blue-700 font-medium py-2 rounded-lg transition-colors flex items-center justify-center"
-                    publicKey={paystackPublicKey}
-                    email={customerEmail}
-                    amount={bundlePrice * 100} // Paystack amount is in kobo (100 kobo = 1 GHC)
-                    currency="GHS"
-                    reference={`bundle_${new Date().getTime()}`}
-                    onSuccess={() => {
-                      if (!isAuthenticated) {
-                        // Redirect to login page after successful payment
-                        navigate('/login', { state: { from: location.pathname + location.search } });
-                      } else {
-                        handleBundlePaymentSuccess();
-                      }
-                    }}
-                    onClose={handleBundlePaymentClose}
-                  />
-                ) : (
-                  <button 
-                    className="flex-1 bg-blue-300 text-white font-medium py-2 rounded-lg cursor-not-allowed"
-                    disabled
-                  >
-                    Enter Email to Continue
-                  </button>
-                )}
-                <button 
-                  className="flex-1 border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 rounded-lg transition-colors"
-                  onClick={() => setShowBundlePaymentModal(false)}
-                  disabled={isProcessingPayment}
                 >
                   Cancel
                 </button>
@@ -1271,60 +1137,56 @@ function Pricing() {
                         </div>
                       </div>
 
-                  <ul className="divide-y divide-gray-200">
+                      <ul className="divide-y divide-gray-200">
                         {section.lessons.map((lesson) => (
-                      <li key={lesson.id} className="px-5 py-3 flex justify-between items-center group hover:bg-gray-50 transition-colors duration-200">
-                        <div className="flex items-center">
-                          {lesson.free || selectedModule.unlocked ? (
-                            lesson.type === 'ebook' ? (
-                              <FiBook className="text-blue-600 mr-3 group-hover:scale-110 transition-transform duration-200" />
-                            ) : (
-                              <FiPlay className="text-blue-600 mr-3 group-hover:scale-110 transition-transform duration-200" />
-                            )
-                          ) : (
-                            <FiLock className="text-gray-400 mr-3 group-hover:text-gray-500 group-hover:scale-110 transition-all duration-200" />
-                          )}
-                          <div>
-                            <h4 className={`text-sm font-medium flex items-center ${lesson.type === 'ebook' ? 'text-blue-700' : 'text-gray-900'} group-hover:translate-x-0.5 transition-transform duration-200`}>
-                              {lesson.title}
-                              {lesson.free && !selectedModule.unlocked && (
-                                <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                                  lesson.type === 'ebook' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                } group-hover:bg-opacity-80 transition-colors duration-200`}>
-                                  Free Preview
-                                </span>
+                          <li key={lesson.id} className="px-5 py-3 flex justify-between items-center group hover:bg-gray-50 transition-colors duration-200">
+                            <div className="flex items-center">
+                              {lesson.free || selectedModule.unlocked ? (
+                                lesson.type === 'ebook' ? (
+                                  <FiBook className="text-blue-600 mr-3 group-hover:scale-110 transition-transform duration-200" />
+                                ) : (
+                                  <FiPlay className="text-blue-600 mr-3 group-hover:scale-110 transition-transform duration-200" />
+                                )
+                              ) : (
+                                <FiLock className="text-gray-400 mr-3 group-hover:text-gray-500 group-hover:scale-110 transition-all duration-200" />
                               )}
-                            </h4>
-                            <div className="flex items-center text-xs text-gray-500 mt-1">
-                              <FiClock className="mr-1" />
-                              <span>{lesson.duration}</span>
-                              <span className="mx-2">•</span>
-                              <span className="capitalize">{lesson.type}</span>
+                              <div>
+                                <h4 className={`text-sm font-medium flex items-center ${lesson.type === 'ebook' ? 'text-blue-700' : 'text-gray-900'} group-hover:translate-x-0.5 transition-transform duration-200`}>
+                                  {lesson.title}
+                                  {lesson.free && !selectedModule.unlocked && (
+                                    <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
+                                      lesson.type === 'ebook' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
+                                    } group-hover:bg-opacity-80 transition-colors duration-200`}>
+                                      Free Preview
+                                    </span>
+                                  )}
+                                </h4>
+                                <div className="flex items-center text-xs text-gray-500 mt-1">
+                                  <FiClock className="mr-1" />
+                                  <span>{lesson.duration}</span>
+                                  <span className="mx-2">•</span>
+                                  <span className="capitalize">{lesson.type}</span>
+                                </div>
+                              </div>
                             </div>
-                          </div>
-                        </div>
-                        
-                        {(lesson.free || selectedModule.unlocked) ? (
-                          <Link
-                            to={`/school/course/${selectedModule.id}?lesson=${lesson.id}`}
-                            className={`text-sm font-medium ${lesson.type === 'ebook' ? 'text-blue-600 hover:text-blue-800 flex items-center' : 'text-blue-600 hover:text-blue-800'}`}
-                          >
-                            {lesson.type === 'ebook' ? (
-                              <>
-                                <FiDownload className="mr-1.5" /> Download
-                              </>
+                            
+                            {(lesson.free || selectedModule.unlocked) ? (
+                              <div>
+                                <Link
+                                  to={`/school/course/${selectedModule.id}?lesson=${section.lessons.find(lesson => lesson.type === 'ebook' && lesson.free)?.id}`}
+                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                >
+                                  <FiDownload className="mr-1.5" /> Download
+                                </Link>
+                              </div>
                             ) : (
-                              'Watch'
+                              <div className="text-xs text-gray-500">
+                                Locked
+                              </div>
                             )}
-                          </Link>
-                        ) : (
-                          <div className="text-xs text-gray-500">
-                            Locked
-                          </div>
-                        )}
-                      </li>
-                    ))}
-                  </ul>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   ))}
 
@@ -1374,4 +1236,23 @@ function Pricing() {
                               </div>
                             </div>
                             <Link
-                              to={`/school/course/${selectedModule.id}?lesson=${section.lessons.find(lesson => lesson.type === 'ebook' && lesson.free).id}`
+                              to={`/school/course/${selectedModule.id}?lesson=${section.lessons.find(lesson => lesson.type === 'ebook' && lesson.free)?.id}`}
+                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                            >
+                              <FiDownload className="mr-1.5" /> Download
+                            </Link>
+                          </div>
+                        ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default Pricing;
