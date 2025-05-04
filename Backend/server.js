@@ -72,7 +72,7 @@ app.get('/api/courses/:courseId/video-url', async (req, res) => {
         const key = url.pathname.substring(1); // Remove leading slash
 
         const params = {
-            Bucket: process.env.AWS_BUCKET_NAME || 'quickx',
+            Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
             Key: key,
             Expires: 60 * 5, // 5 minutes
             ContentType: 'video/mp4'

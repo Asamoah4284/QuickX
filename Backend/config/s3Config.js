@@ -16,7 +16,7 @@ const s3 = new aws.S3({
 export async function generateImageUrl() {
     const ImageName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
     const params = {
-        Bucket: process.env.AWS_BUCKET_NAME || 'quickx',
+        Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
         Key: ImageName,
         Expires: 60 * 5,
         ContentType: 'image/jpeg'
@@ -30,7 +30,7 @@ export async function generateImageUrl() {
 export async function generateVideoUrl() {
     const VideoName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.mp4`;
     const params = {
-        Bucket: process.env.AWS_BUCKET_NAME || 'quickx',
+        Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
         Key: VideoName,
         Expires: 60 * 5,
         ContentType: 'video/mp4'
