@@ -32,7 +32,7 @@ async function generateImageUrl() {
 async function generateVideoUrl() {
     const VideoName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.mp4`;
     const params = {
-        Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
+        Bucket:  'quickxlearn',
         Key: VideoName,
         Expires: 60 * 5,
         ContentType: 'video/mp4'
