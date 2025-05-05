@@ -12,11 +12,7 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(cors({
-    origin: 'https://www.quickxlearn.com', // allow requests from your frontend
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-  }));
+
 app.use(express.json());
 
 
