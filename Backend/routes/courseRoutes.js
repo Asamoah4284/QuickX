@@ -463,7 +463,7 @@ router.delete('/admin/courses/:courseId/modules/:moduleId/sections/:sectionId/le
             // If it's a video lesson, delete from S3
             if (lesson.type === 'video' && lesson.videoKey) {
                 await s3.deleteObject({
-                    Bucket: 'quickx',
+                    Bucket: 'quickxlearn',
                     Key: lesson.videoKey
                 }).promise();
             }

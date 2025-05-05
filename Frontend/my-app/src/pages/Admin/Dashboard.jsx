@@ -588,6 +588,7 @@ const AdminDashboard = () => {
                     'Content-Type': file.type
                 }
             });
+         
 
             // Extract the file URL from the S3 URL
             const fileUrl = url.split('?')[0];
