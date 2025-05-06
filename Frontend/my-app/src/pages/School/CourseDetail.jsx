@@ -158,7 +158,7 @@ const CourseDetail = () => {
       
       // If it's an AWS S3 URL, we need to get a fresh signed URL
       if (url && url.includes('amazonaws.com')) {
-        const response = await axios.get(`${API_URL}/api/courses/${courseId}/video-url`, {
+        const response = await axios.get(`${API_URL}/api/courses/${courseId}/s3VideoUrl`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { videoUrl: url }
         });
