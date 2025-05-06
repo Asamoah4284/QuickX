@@ -50,7 +50,7 @@ const About = () => {
         <div className="max-w-6xl mx-auto px-6 py-24 relative z-10">
           <div className="text-center">
             <h1 className="text-5xl font-extrabold tracking-tight text-white mb-6 drop-shadow-lg">
-              About <span className="text-blue-400">Crito</span><span className="text-yellow-400">X</span>
+              About <span className="text-blue-400">Quick</span><span className="text-yellow-400">X</span>
             </h1>
             <p className="text-xl text-blue-100 max-w-3xl mx-auto">
               Empowering individuals with knowledge and tools to navigate the complex world of finance and technology.
@@ -66,22 +66,19 @@ const About = () => {
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
             <p className="text-gray-600 mb-4">
-              CritoX was founded in 2020 with a simple mission: to make quality financial education accessible to everyone. 
-              What started as a small community of crypto enthusiasts has grown into a comprehensive platform offering 
-              courses in forex trading, cryptocurrency, and web development.
+            At Quick X, we are passionate about lighting up minds through innovative digital learning. Our mission is to equip individuals with the essential skills and the right mindset to achieve financial freedom and personal growth. We believe that knowledge is the key to unlocking limitless opportunities, and we are committed to providing accessible, practical education that empowers our learners to excel in their chosen fields.
             </p>
             <p className="text-gray-600 mb-4">
-              Our founders recognized that traditional financial education was often inaccessible, expensive, or outdated. 
-              They set out to create a platform that would bridge this gap, offering up-to-date, practical knowledge 
-              taught by industry experts.
+            One of the core principles at Quick X is recognizing the gaps left by traditional education systems in preparing individuals for financial success. Formal education often neglects to provide the critical knowledge, mindset, and skillset needed to excel in real-world financial scenarios. At Quick X, we aim to fill this gap by offering cutting-edge courses and mentorship that teach the financial wisdom and skills that are rarely addressed in school.
             </p>
             <p className="text-gray-600">
-              Today, CritoX serves thousands of students worldwide, providing them with the skills and confidence 
-              to navigate financial markets and technology. Our commitment to quality education and community support 
-              remains at the heart of everything we do.
+            Our platform provides a variety of online courses in areas such as crypto trading, forex trading, web development, data analysis, and market research. These courses are carefully designed to bridge the gap between conventional learning and practical financial expertise. Through our expert-led training, we focus not only on imparting knowledge but also on fostering the mindset required to create wealth and thrive financially.
+In addition to our online courses, we also offer books that delve deeper into financial literacy, self-development, and entrepreneurship. Our books serve as valuable resources for those looking to enhance their knowledge and accelerate their journey to financial independence.
+At Quick X, we provide more than just learning material — we offer personalized mentorship and coaching, guiding individuals on how to apply their knowledge, cultivate self-reliance, and build a pathway to sustainable financial success. Our goal is to instill the mindset and skills that formal education systems often overlook, ensuring our learners are equipped to excel in finance and entrepreneurship.
+We are dedicated to transforming lives by empowering individuals to take charge of their financial futures. Whether you’re looking to start a career in trading, develop technical skills, or grow your financial mindset, Quick X provides the knowledge, resources, and support to unlock your potential and pave the way to financial freedom.
             </p>
           </div>
-          <div className="bg-white p-8 rounded-xl shadow-lg">
+          <div className="md:bg-white md:p-8 p-0 md:rounded-xl md:shadow-lg">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Our Values</h3>
             <div className="space-y-6">
               <div className="flex items-start">

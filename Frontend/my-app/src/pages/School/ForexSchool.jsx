@@ -126,10 +126,10 @@ const ForexSchool = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero Section */}
-      <div className="relative min-h-[500px] flex items-center justify-start bg-no-repeat bg-cover bg-center" style={{ backgroundImage: "url('/images/7.jpg')" }}>
+      <div className="relative min-h-[500px] flex items-center justify-start bg-no-repeat bg-cover bg-center" style={{ backgroundImage: "url('/images/bg.jpeg')" }}>
         {/* Overlay for premium effect */}
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/80 via-indigo-900/60 to-transparent z-0"></div>
-        <div className="relative z-10 max-w-6xl mx-auto w-full pl-8 py-24 sm:py-32 text-left">
+        <div className=""></div>
+        <div className="relative z-10 max-w-6xl mx-auto w-full px-4 py-24 sm:py-32 text-left">
           <h1 className="text-4xl sm:text-6xl font-extrabold text-white mb-6 drop-shadow-lg">
             Master Forex Trading<br />
             <span className="text-blue-400">with Quick X</span>
@@ -438,8 +438,8 @@ const ForexSchool = () => {
                   Premium 8-week masterclass with live trading sessions.
                 </p>
                 <div className="flex items-center mb-4">
-                  <div className="text-xl font-bold">$499</div>
-                  <div className="ml-2 text-sm line-through opacity-75">$799</div>
+                  {/* <div className="text-xl font-bold">$499</div>
+                  <div className="ml-2 text-sm line-through opacity-75">$799</div> */}
                 </div>
                 <button className="w-full bg-white text-blue-600 font-medium py-2 rounded-lg hover:bg-blue-50 transition text-sm">
                   Learn More
