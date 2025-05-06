@@ -103,7 +103,7 @@ const router = createBrowserRouter([
       },
       {
         path: "membership",
-        element: <ProtectedRoute><Membership /></ProtectedRoute>
+        element: <Membership />
       },
       {
         path: "analysis",
