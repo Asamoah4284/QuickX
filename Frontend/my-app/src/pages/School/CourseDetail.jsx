@@ -138,7 +138,7 @@ const CourseDetail = () => {
     
     try {
       // Use HEAD request to check if the video is accessible
-      const response = await fetch(formattedUrl, { method: 'HEAD' });
+      const response = await fetch(formattedUrl);
       const isAccessible = response.ok;
       console.log(`Video accessibility check for ${formattedUrl}: ${isAccessible}`);
       setIsVideoAccessible(isAccessible);
