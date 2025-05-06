@@ -18,7 +18,11 @@ const CourseDetail = () => {
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
-      
+        const token = localStorage.getItem('authToken');
+        if (!token) {
+          setError('Please log in to access this course');
+          return;
+        }
         const response = await axios.get(`${API_URL}/api/courses/${courseId}/full`, {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -149,7 +153,8 @@ const CourseDetail = () => {
   // Add this function after the existing useEffect
   const refreshVideoUrl = async (url) => {
     try {
-    
+      const token = localStorage.getItem('authToken');
+      if (!token) return null;
       
       // If it's an AWS S3 URL, we need to get a fresh signed URL
       if (url && url.includes('amazonaws.com')) {
