@@ -20,7 +20,7 @@ const Hero = () => {
     './images/7.jpg',
     'https://i.pinimg.com/736x/47/d3/6e/47d36eab2ad7496068569c27e70823d8.jpg',
     'https://i.pinimg.com/736x/3c/a8/fd/3ca8fd1755e8349df5dffe1cb375d211.jpg',
-    
+
     
   ];
 
@@ -136,19 +136,22 @@ const Hero = () => {
   return (
     <div className="relative  text-white flex items-center overflow-hidden">
       {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-opacity-30 z-0"></div>
+      <div className="bsolute inset-0 bg-opacity-30 z-0"></div>
       
       {/* Background graphics - 5 with multiple images */}
-      <div className="absolute inset-0  z-0">
-        {backgroundImages.map((image, index) => (
-          <div 
-            key={index}
-            className={`absolute right-0 top-0 w-full h-full bg-no-repeat bg-cover transition-opacity duration-1000 ${
-              currentBackgroundIndex === index ? 'opacity-100' : 'opacity-0'
-            }`}
-            style={{ backgroundImage: `url('${image}')` }}
-          ></div>
-        ))}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline // Important for iOS autoplay
+          className="absolute top-1/2 left-1/2 w-auto h-auto min-w-full min-h-full transform -translate-x-1/2 -translate-y-1/2 object-cover"
+          // The className above is a common CSS trick to make the video cover the area
+          // while maintaining its aspect ratio, similar to `background-size: cover;`
+        >
+          <source src='./images/stock.mp4' type="video/mp4" />
+      
+        </video>
       </div>
       
       <div className="max-w-5xl mx-auto px-4 py-16 z-10 relative">

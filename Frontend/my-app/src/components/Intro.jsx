@@ -37,8 +37,8 @@ const Intro = () => {
                   <FaUserPlus />
                 </div>
                 <div>
-                  <h5 className="font-semibold">Easy Sign Up</h5>
-                  <p className="text-gray-300 text-sm">Start trading in minutes</p>
+                  <h5 className="font-semibold">Easy To Learn</h5>
+                  <p className="text-gray-300 text-sm">Start Learning in minutes</p>
                 </div>
               </div>
               <div className="bg-[#17325a] p-4 rounded-lg flex items-center gap-3">
@@ -46,8 +46,8 @@ const Intro = () => {
                   <FaChartLine />
                 </div>
                 <div>
-                  <h5 className="font-semibold">Advanced Trading</h5>
-                  <p className="text-gray-300 text-sm">Powerful analytics tools</p>
+                  <h5 className="font-semibold">Advanced Learning</h5>
+                  <p className="text-gray-300 text-sm">Advance Learning tools</p>
                 </div>
               </div>
             </div>
