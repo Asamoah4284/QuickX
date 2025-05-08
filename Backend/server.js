@@ -48,6 +48,15 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api', require('./routes/couponRoutes'));
 
+// Serve static files from 'public' folder
+app.use(express.static(path.join(__dirname, 'public')));
+app.get('/ads.txt', (req, res) => {
+    res.sendFile(path.join(__dirname, 'ads.txt'));
+  });
+  
+  app.get('/sitemap.xml', (req, res) => {
+    res.sendFile(path.join(__dirname, 'sitemap.xml'));
+  });
 
 app.get('/s3Url', async (req, res) => {
     const uploadURL = await s3Config.generateImageUrl();

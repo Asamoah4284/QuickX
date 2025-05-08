@@ -10,7 +10,15 @@ const userSchema = new mongoose.Schema({
     },
     password: {
         type: String,
-        required: true
+        required: true,
+        minlength: 8,
+        match: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).+$/, // at least 1 lowercase, 1 uppercase, 1 number, 1 special character
+        validate: {
+          validator: function (value) {
+            return value.length >= 8;
+          },
+          message: 'Password must be at least 8 characters long.'
+      
     },
     fullName: {
         type: String,
@@ -44,8 +52,7 @@ const userSchema = new mongoose.Schema({
         type: Number,
         default: 0
     }
-}, {
-    timestamps: true
+}
 });
 
 // Hash password before saving

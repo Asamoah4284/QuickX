@@ -59,6 +59,19 @@ function Register() {
     }
   };
 
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+      console.log("User Info:", user);
+      // You can redirect or store user info here
+    } catch (error) {
+      console.error("Google Sign-In Error:", error);
+    }
+  };
+  
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
       <div className="w-full max-w-5xl overflow-hidden rounded-2xl shadow-xl bg-white">
@@ -274,6 +287,7 @@ function Register() {
               
               <div className="mt-3 grid grid-cols-2 gap-3">
                 <button
+                onClick={handleGoogleSignIn}
                   type="button"
                   className="flex justify-center items-center py-2 px-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors text-sm"
                 >

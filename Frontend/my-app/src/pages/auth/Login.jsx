@@ -1,11 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiUser, FiMail, FiLock, FiLogIn, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+// import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
+// import { auth } from "../../components/firebase"; // <-- this is critical
+// import { onAuthStateChanged } from "firebase/auth";
+
+
+ 
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 function Login() {
+  
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from?.pathname || '/';
@@ -51,6 +58,23 @@ function Login() {
     }
   };
 
+  // const handleGoogleSignIn = async () => {
+  //   const provider = new GoogleAuthProvider();
+  //   try {
+  //     const result = await signInWithPopup(auth, provider);
+  //     const user = result.user;
+  //     console.log("User Info:", user);
+  //     // You can redirect or store user info here
+  //     localStorage.setItem("user", JSON.stringify(user));
+
+ 
+    
+
+  //   } catch (error) {
+  //     console.error("Google Sign-In Error:", error);
+  //   }
+  // };
+  
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
       <div className="w-full max-w-5xl overflow-hidden rounded-2xl shadow-xl bg-white">
@@ -222,6 +246,7 @@ function Login() {
               
               <div className="mt-4 grid grid-cols-2 gap-3">
                 <button
+                onClick={handleGoogleSignIn}
                   type="button"
                   className="flex justify-center items-center py-2 px-4 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 transition-colors text-sm"
                 >

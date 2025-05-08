@@ -713,7 +713,7 @@ function Membership() {
                       <h3 className="font-medium text-gray-900 mb-1">Discover More Books</h3>
                       <p className="text-sm text-gray-500 text-center mb-3">Expand your trading knowledge with our premium books</p>
                       <Link
-                        to="/books"
+                        to="/store"
                         className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                       >
                         Browse Books
@@ -730,7 +730,7 @@ function Membership() {
                       You haven't purchased any books yet. Expand your trading knowledge with our premium books.
                     </p>
                     <Link
-                      to="/books"
+                      to="/store"
                       className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block"
                     >
                       Browse Books

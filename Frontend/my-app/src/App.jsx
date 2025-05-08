@@ -1,4 +1,5 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+
 import RootLayout from "./layouts/RootLayout";
 import Home from "./pages/Home";
 import About from "./pages/About";
@@ -28,6 +29,8 @@ import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AddCourse from './pages/Admin/AddCourse';
 import EditCourse from './pages/Admin/EditCourse';
 import { HelmetProvider } from 'react-helmet-async';
+
+
 // Define router with scrolling behavior
 const router = createBrowserRouter([
   {
@@ -162,9 +165,17 @@ const router = createBrowserRouter([
   scrollBehavior: "auto"
 });
 
+
+
+
 function App() {
+
+  
+  
+
   return (
     <HelmetProvider>
+      
       <RouterProvider router={router} />
     </HelmetProvider>
   )
