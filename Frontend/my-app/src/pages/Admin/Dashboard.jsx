@@ -791,7 +791,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-gray-500">Total Users</p>
-                                        <p className="text-xl font-bold">{analytics.totalUsers || '1,234'}</p>
+                                        <p className="text-xl font-bold">{analytics.totalUsers || ''}</p>
                                     </div>
                                     <div className="bg-blue-100 p-2 rounded-full">
                                         <FiUsers className="text-blue-600 text-lg" />
@@ -821,7 +821,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-gray-500">Total Revenue</p>
-                                        <p className="text-xl font-bold">${analytics.totalRevenue || '58,234'}</p>
+                                        <p className="text-xl font-bold">${analytics.totalRevenue || '0'}</p>
                                     </div>
                                     <div className="bg-purple-100 p-2 rounded-full">
                                         <FiDollarSign className="text-purple-600 text-lg" />
@@ -836,7 +836,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-gray-500">Active Users</p>
-                                        <p className="text-xl font-bold">{analytics.activeUsers || '856'}</p>
+                                        <p className="text-xl font-bold">{analytics.totalUsers || '4'}</p>
                                     </div>
                                     <div className="bg-yellow-100 p-2 rounded-full">
                                         <FiBarChart2 className="text-yellow-600 text-lg" />

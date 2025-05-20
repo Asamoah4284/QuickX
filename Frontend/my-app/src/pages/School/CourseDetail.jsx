@@ -16,6 +16,37 @@ const CourseDetail = () => {
   const [isVideoAccessible, setIsVideoAccessible] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
 
+  // Add new function to update course progress
+  const updateCourseProgress = async (moduleIndex, sectionIndex, lessonIndex) => {
+    try {
+      const token = localStorage.getItem('authToken');
+      if (!token) return;
+
+      const response = await axios.post(
+        `${API_URL}/api/courses/${courseId}/progress`,
+        {
+          moduleIndex,
+          sectionIndex,
+          lessonIndex,
+          completed: true
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      // Update local state with the response data
+      if (response.data) {
+        setCourseData(response.data);
+        
+        // Dispatch event to notify other components about progress update
+        window.dispatchEvent(new Event('course-progress-updated'));
+      }
+    } catch (error) {
+      console.error('Error updating course progress:', error);
+    }
+  };
+
   useEffect(() => {
     const fetchCourseData = async () => {
       try {
@@ -527,6 +558,9 @@ const CourseDetail = () => {
                         const lesson = currentSection.lessons[activeLesson];
                         lesson.isCompleted = true;
                         setCourseData({ ...courseData, modules: updatedModules });
+                        
+                        // Call the new function to update progress in backend
+                        updateCourseProgress(activeModule, activeSection, activeLesson);
                       }}
                     >
                       <source src={videoUrl} type="video/mp4" />

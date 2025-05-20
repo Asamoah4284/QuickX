@@ -60,9 +60,9 @@ function Pricing() {
                 subtitle: course.shortDescription || 'Master the basics of forex trading and build a solid foundation',
                 instructor: course.instructor?.fullName || course.instructorName || 'Quick X Instructor',
                 instructorTitle: course.instructor?.title || 'Professional Forex Trader & Analyst',
-                rating: course.rating || 4.8,
-                reviewCount: course.reviewCount || 427,
-                studentCount: course.totalStudents || 3842,
+                rating: course.rating || '',
+                reviewCount: course.reviewCount || '',
+                studentCount: course.totalStudents || '',
                 lastUpdated: course.updatedAt ? new Date(course.updatedAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'June 2023',
                 description: course.description || course.longDescription || `This comprehensive course will take you from beginner to intermediate level in forex trading.`,
                 image: course.thumbnail ? 
@@ -995,7 +995,7 @@ function Pricing() {
                   </div>
                   <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
                     <span className="text-3xl font-bold">
-                      ${level ? courseData?.modules[0]?.price : bundlePrice}
+                      GHS{level ? courseData?.modules[0]?.price : bundlePrice}
                     </span>
                     {!level && (
                       <>
@@ -1111,10 +1111,10 @@ function Pricing() {
                       Course Content
                     </button>
                     <button className="pb-3 px-1 text-gray-500 hover:text-gray-700 whitespace-nowrap">
-                      Instructor
+                      {/* Instructor */}
                     </button>
                     <button className="pb-3 px-1 text-gray-500 hover:text-gray-700 whitespace-nowrap">
-                      Reviews
+                      {/* Reviews */}
                     </button>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiStar, FiShoppingCart, FiBook, FiTrendingUp, FiArrowRight, FiBookmark, FiX } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiStar, FiShoppingCart, FiBook, FiTrendingUp, FiArrowRight, FiBookmark, FiX, FiPackage } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -13,7 +13,12 @@ const Store = () => {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
+  const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [hardcopyRequest, setHardcopyRequest] = useState({
+    name: '',
+    location: ''
+  });
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -117,6 +122,22 @@ const Store = () => {
         returnTabState: { activeTab: 'myBooks' }
       } 
     });
+  };
+
+  // Handle hardcopy request
+  const handleHardcopyRequest = (book) => {
+    setSelectedBook(book);
+    setShowHardcopyModal(true);
+  };
+
+  // Handle hardcopy form submission
+  const handleHardcopySubmit = (e) => {
+    e.preventDefault();
+    const message = `New Hardcopy Request:\n\nBook: ${selectedBook.title}\nPrice: GHS${selectedBook.price}\nName: ${hardcopyRequest.name}\nLocation: ${hardcopyRequest.location}`;
+    const whatsappUrl = `https://wa.me/233542343069?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+    setShowHardcopyModal(false);
+    setHardcopyRequest({ name: '', location: '' });
   };
 
   // Handle search
@@ -250,7 +271,7 @@ const Store = () => {
                     <div className="p-5">
                       <h3 className="text-xl font-semibold text-gray-800 mb-2">{book.title}</h3>
                       <p className="text-gray-600 mb-3">{book.author}</p>
-                      <div className="flex items-center text-amber-400 mb-3">
+                      {/* <div className="flex items-center text-amber-400 mb-3">
                         <FiStar className="fill-current" />
                         <FiStar className="fill-current" />
                         <FiStar className="fill-current" />
@@ -259,18 +280,27 @@ const Store = () => {
                         <span className="text-gray-500 text-sm ml-2">
                           ({book.reviews?.length || 0} reviews)
                         </span>
-                      </div>
+                      </div> */}
                       <div className="flex justify-between items-center">
                         <span className="text-indigo-600 font-bold text-lg">
                           GHS{book.price}
                         </span>
-                        <button 
-                          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
-                          onClick={() => handleAddBook(book)}
-                        >
-                          <FiShoppingCart size={16} />
-                          <span>Add</span>
-                        </button>
+                        <div className="flex gap-2">
+                          <button 
+                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+                            onClick={() => handleAddBook(book)}
+                          >
+                            <FiShoppingCart size={16} />
+                            <span>Add</span>
+                          </button>
+                          <button 
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                            onClick={() => handleHardcopyRequest(book)}
+                          >
+                            <FiPackage size={16} />
+                            <span>Hardcopy</span>
+                          </button>
+                        </div>
                       </div>
                       {book.type === 'hardcopy' && book.stock < 1 && (
                         <div className="mt-2 text-red-600 text-sm">
@@ -348,6 +378,83 @@ const Store = () => {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Hardcopy Request Modal */}
+      {showHardcopyModal && selectedBook && (
+        <div className="fixed inset-0 bg-gray-900/70 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden animate-fadeIn">
+            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Request Hardcopy</h3>
+              <button 
+                className="text-gray-400 hover:text-gray-600" 
+                onClick={() => setShowHardcopyModal(false)}
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            
+            <form onSubmit={handleHardcopySubmit} className="p-6">
+              <div className="flex items-start mb-4">
+                <img 
+                  src={selectedBook.thumbnail || DEFAULT_BOOK_COVER}
+                  alt={selectedBook.title} 
+                  className="h-24 w-20 object-cover rounded-md shadow-sm mr-4"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.src = DEFAULT_BOOK_COVER;
+                  }}
+                />
+                <div>
+                  <h4 className="font-medium text-gray-900">{selectedBook.title}</h4>
+                  <p className="text-sm text-gray-600">{selectedBook.author}</p>
+                  <p className="mt-1 text-indigo-600 font-bold">GHS{selectedBook.price}</p>
+                </div>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Your Name</label>
+                  <input
+                    type="text"
+                    id="name"
+                    required
+                    value={hardcopyRequest.name}
+                    onChange={(e) => setHardcopyRequest({ ...hardcopyRequest, name: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">Your Location</label>
+                  <input
+                    type="text"
+                    id="location"
+                    required
+                    value={hardcopyRequest.location}
+                    onChange={(e) => setHardcopyRequest({ ...hardcopyRequest, location: e.target.value })}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3 mt-6">
+                <button 
+                  type="button"
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  onClick={() => setShowHardcopyModal(false)}
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  Submit Request
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

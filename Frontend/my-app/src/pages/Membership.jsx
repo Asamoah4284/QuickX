@@ -30,6 +30,52 @@ function Membership() {
     }
   `;
 
+  // Add refresh function for courses
+  const refreshCourses = async () => {
+    try {
+      const authToken = localStorage.getItem('authToken');
+      if (!authToken) return;
+
+      const coursesResponse = await axios.get(`${API_URL}/api/courses/user/purchased`, {
+        headers: { 'Authorization': `Bearer ${authToken}` }
+      });
+
+      if (coursesResponse.data && coursesResponse.data.length > 0) {
+        const formattedCourses = coursesResponse.data.map(course => {
+          const imagePath = course.thumbnail ? 
+            (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`)
+            : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
+          
+          return {
+            id: course._id || course.id,
+            title: course.title,
+            progress: course.progress || 0,
+            lastAccessed: course.lastAccessed || 'Recently',
+            image: imagePath
+          };
+        });
+        
+        setPurchasedCourses(formattedCourses);
+        setCourseLoadError(null);
+      }
+    } catch (error) {
+      console.error('Error refreshing courses:', error);
+      setCourseLoadError('Failed to refresh courses. Please try again later.');
+    }
+  };
+
+  // Add event listener for course progress updates
+  useEffect(() => {
+    const handleCourseProgressUpdate = () => {
+      refreshCourses();
+    };
+
+    window.addEventListener('course-progress-updated', handleCourseProgressUpdate);
+    return () => {
+      window.removeEventListener('course-progress-updated', handleCourseProgressUpdate);
+    };
+  }, []);
+
   useEffect(() => {
     // Set active tab from location state if provided
     if (location.state && location.state.activeTab) {
@@ -72,50 +118,12 @@ function Membership() {
           setUser(userData);
           
           // Fetch purchased courses from backend
-          try {
-            console.log('Fetching user courses from API...');
+          await refreshCourses();
             
-            // First try to get user's purchased courses directly
-            const coursesResponse = await axios.get(`${API_URL}/api/courses/user/purchased`, {
-              headers: { 'Authorization': `Bearer ${authToken}` }
-            });
-            
-            console.log('Courses API response:', coursesResponse.data);
-            
-            if (coursesResponse.data && coursesResponse.data.length > 0) {
-              // Process and format the course data
-              const formattedCourses = coursesResponse.data.map(course => {
-                // Construct the full image URL
-                const imagePath = course.thumbnail ? 
-                  (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`)
-                  : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
-                
-                return {
-                  id: course._id || course.id,
-                  title: course.title,
-                  progress: course.progress || 0,
-                  lastAccessed: course.lastAccessed || 'Recently',
-                  image: imagePath
-                };
-              });
-              
-              setPurchasedCourses(formattedCourses);
-              setCourseLoadError(null);
-            } else {
-              setCourseLoadError('No purchased courses found.');
-              setPurchasedCourses([]);
-            }
-            
-            // Check localStorage for books
-            const localBooks = localStorage.getItem('purchasedBooks');
-            if (localBooks) {
-              setPurchasedBooks(JSON.parse(localBooks));
-            }
-            
-          } catch (error) {
-            console.error('Error fetching courses:', error);
-            setCourseLoadError('Failed to load your courses. Please try again later.');
-            setPurchasedCourses([]);
+          // Check localStorage for books
+          const localBooks = localStorage.getItem('purchasedBooks');
+          if (localBooks) {
+            setPurchasedBooks(JSON.parse(localBooks));
           }
           
           // Dispatch auth-change event

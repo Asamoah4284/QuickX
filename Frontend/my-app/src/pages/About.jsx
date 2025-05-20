@@ -2,45 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const About = () => {
-  // Team members data
-  const teamMembers = [
-    {
-      id: 1,
-      name: 'John Smith',
-      role: 'CEO & Founder',
-      bio: 'With over 15 years of experience in financial markets, John founded CritoX to democratize access to quality financial education.',
-      image: '/images/team/john-smith.jpg',
-      linkedin: 'https://linkedin.com/in/john-smith',
-      twitter: 'https://twitter.com/johnsmith'
-    },
-    {
-      id: 2,
-      name: 'Sarah Johnson',
-      role: 'Head of Education',
-      bio: 'Sarah brings her expertise in curriculum development and financial education to lead our educational initiatives.',
-      image: '/images/team/sarah-johnson.jpg',
-      linkedin: 'https://linkedin.com/in/sarah-johnson',
-      twitter: 'https://twitter.com/sarahjohnson'
-    },
-    {
-      id: 3,
-      name: 'Michael Chen',
-      role: 'Technical Director',
-      bio: 'Michael oversees our technical infrastructure and ensures our platform delivers the best learning experience.',
-      image: '/images/team/michael-chen.jpg',
-      linkedin: 'https://linkedin.com/in/michael-chen',
-      twitter: 'https://twitter.com/michaelchen'
-    },
-    {
-      id: 4,
-      name: 'Emily Rodriguez',
-      role: 'Community Manager',
-      bio: 'Emily fosters our vibrant community of learners and ensures everyone feels supported on their journey.',
-      image: '/images/team/emily-rodriguez.jpg',
-      linkedin: 'https://linkedin.com/in/emily-rodriguez',
-      twitter: 'https://twitter.com/emilyrodriguez'
-    }
-  ];
+
 
   return (
     <div className="bg-gray-50 min-h-screen pt-20">
@@ -62,7 +24,7 @@ const About = () => {
 
       {/* Company Story Section */}
       <div className="max-w-6xl mx-auto px-6 py-20">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
             <p className="text-gray-600 mb-4">
@@ -71,13 +33,16 @@ const About = () => {
             <p className="text-gray-600 mb-4">
             One of the core principles at Quick X is recognizing the gaps left by traditional education systems in preparing individuals for financial success. Formal education often neglects to provide the critical knowledge, mindset, and skillset needed to excel in real-world financial scenarios. At Quick X, we aim to fill this gap by offering cutting-edge courses and mentorship that teach the financial wisdom and skills that are rarely addressed in school.
             </p>
-            <p className="text-gray-600">
+            <p className="text-gray-600 mb-20">
             Our platform provides a variety of online courses in areas such as crypto trading, forex trading, web development, data analysis, and market research. These courses are carefully designed to bridge the gap between conventional learning and practical financial expertise. Through our expert-led training, we focus not only on imparting knowledge but also on fostering the mindset required to create wealth and thrive financially.
 In addition to our online courses, we also offer books that delve deeper into financial literacy, self-development, and entrepreneurship. Our books serve as valuable resources for those looking to enhance their knowledge and accelerate their journey to financial independence.
 At Quick X, we provide more than just learning material — we offer personalized mentorship and coaching, guiding individuals on how to apply their knowledge, cultivate self-reliance, and build a pathway to sustainable financial success. Our goal is to instill the mindset and skills that formal education systems often overlook, ensuring our learners are equipped to excel in finance and entrepreneurship.
 We are dedicated to transforming lives by empowering individuals to take charge of their financial futures. Whether you’re looking to start a career in trading, develop technical skills, or grow your financial mindset, Quick X provides the knowledge, resources, and support to unlock your potential and pave the way to financial freedom.
             </p>
           </div>
+
+
+          
           <div className="md:bg-white md:p-8 p-0 md:rounded-xl md:shadow-lg">
             <h3 className="text-2xl font-bold text-gray-900 mb-6">Our Values</h3>
             <div className="space-y-6">
@@ -116,52 +81,17 @@ We are dedicated to transforming lives by empowering individuals to take charge 
               </div>
             </div>
           </div>
+
+
         </div>
       </div>
 
       {/* Team Section */}
-      <div className="bg-white py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold text-gray-900 mb-4">Meet Our Team</h2>
-            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-              Our diverse team brings together expertise in finance, technology, and education to create the best learning experience for you.
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {teamMembers.map((member) => (
-              <div key={member.id} className="bg-gray-50 rounded-xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300">
-                <div className="h-64 bg-gray-200 relative">
-                  {/* Placeholder for team member image */}
-                  <div className="absolute inset-0 flex items-center justify-center text-gray-400">
-                    <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
-                  <p className="text-blue-600 font-medium mb-3">{member.role}</p>
-                  <p className="text-gray-600 mb-4">{member.bio}</p>
-                  <div className="flex space-x-4">
-                    <a href={member.linkedin} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-600">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
-                      </svg>
-                    </a>
-                    <a href={member.twitter} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-blue-400">
-                      <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                        <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
-                      </svg>
-                    </a>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+   
+
+
+
+      
 
       {/* CTA Section */}
       <div className="bg-gradient-to-r from-blue-900 via-indigo-800 to-purple-900 py-20">
