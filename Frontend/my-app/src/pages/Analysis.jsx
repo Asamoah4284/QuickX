@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaUserGraduate, FaNewspaper, FaStar, FaLock, FaExclamationTriangle, FaChalkboardTeacher, FaArrowUp, FaWhatsapp } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+
+// Configure axios with base URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+axios.defaults.baseURL = API_URL;
 
 function Mentorship({ premium = false }) {
   const [activeTab, setActiveTab] = useState('upcoming');
@@ -15,6 +20,9 @@ function Mentorship({ premium = false }) {
     number: '',
     location: ''
   });
+  const [upcomingSessions, setUpcomingSessions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   // Add scroll event listener to show/hide scroll-to-top button
@@ -29,6 +37,44 @@ function Mentorship({ premium = false }) {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Fetch mentorship sessions from backend
+  useEffect(() => {
+    const fetchMentorships = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('Fetching mentorships from:', `${API_URL}/api/mentorships`);
+        const response = await axios.get('/api/mentorships');
+        console.log('Mentorship response:', response.data);
+        
+        if (!response.data || !Array.isArray(response.data)) {
+          throw new Error('Invalid response format from server');
+        }
+        
+        // Transform the data to match the expected format
+        const transformedSessions = response.data.map(session => ({
+          id: session._id,
+          date: session.date,
+          time: session.time,
+          mentor: session.mentor,
+          title: session.title,
+          summary: session.summary,
+          isPremium: session.isPremium
+        }));
+        
+        console.log('Transformed sessions:', transformedSessions);
+        setUpcomingSessions(transformedSessions);
+      } catch (err) {
+        console.error('Error fetching mentorship sessions:', err);
+        setError('Failed to load mentorship sessions. Please try again later.');
+        setUpcomingSessions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchMentorships();
   }, []);
 
   // Function to scroll to top
@@ -63,40 +109,6 @@ function Mentorship({ premium = false }) {
       [e.target.name]: e.target.value
     });
   };
-
-  // Mock data - in a real app, this would come from an API
-  const upcomingSessions = [
-    {
-      id: 1,
-      title: 'Advanced Trading Strategies',
-      summary: 'Deep dive into complex trading patterns and risk management techniques...',
-      date: 'June 15, 2023',
-      time: '10:00 AM EST',
-      isPremium: false,
-      mentor: 'Jane Smith',
-      icon: 'trading'
-    },
-    {
-      id: 2,
-      title: 'Market Psychology Masterclass',
-      summary: 'Learn to control emotions and develop a winning trader\'s mindset...',
-      date: 'June 16, 2023',
-      time: '2:00 PM EST',
-      isPremium: true,
-      mentor: 'John Doe',
-      icon: 'psychology'
-    },
-    {
-      id: 3,
-      title: 'Technical Analysis Workshop',
-      summary: 'Advanced chart patterns and indicator combinations for better entry/exit points...',
-      date: 'June 17, 2023',
-      time: '11:00 AM EST',
-      isPremium: false,
-      mentor: 'Michael Brown',
-      icon: 'technical'
-    }
-  ];
 
   const mentorshipPlans = [
     { 
@@ -160,6 +172,27 @@ function Mentorship({ premium = false }) {
       )}
     </motion.div>
   );
+
+  const mockSessions = [
+    {
+      id: 1,
+      date: '2024-06-25',
+      time: '10:00 AM',
+      mentor: 'John Doe',
+      title: 'Introduction to Forex Trading',
+      summary: 'Kickstart your trading journey with the basics of forex.',
+      isPremium: false,
+    },
+    {
+      id: 2,
+      date: '2024-06-27',
+      time: '2:00 PM',
+      mentor: 'Jane Smith',
+      title: 'Advanced Chart Patterns',
+      summary: 'Learn to identify and trade advanced chart patterns.',
+      isPremium: true,
+    },
+  ];
 
   return (
     <div className="max-w-7xl mx-auto p-8 font-sans relative">
@@ -341,7 +374,6 @@ function Mentorship({ premium = false }) {
           </motion.div>
         </div>
       )}
-
       <div className="text-center mt-20 mb-8">
         <h1 className="text-4xl font-bold mb-2 text-gray-800">{premium ? 'Premium Mentorship' : 'Trading Mentorship'}</h1>
         <p className="text-xl text-gray-500 mb-8">Accelerate your trading journey with expert guidance</p>
@@ -394,11 +426,37 @@ function Mentorship({ premium = false }) {
             <h2 className="text-2xl font-bold text-gray-800">Upcoming Mentorship Sessions</h2>
             <button className="text-blue-500 font-medium">View Calendar</button>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {upcomingSessions.map(item => (
-              <SessionCard key={item.id} item={item} />
-            ))}
-          </div>
+          {loading ? (
+            <div className="flex justify-center items-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border-l-4 border-red-400 p-6 rounded-r-lg mt-4">
+              <div className="flex items-start">
+                <FaExclamationTriangle className="text-red-400 text-xl mt-1 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">Error Loading Sessions</h3>
+                  <p className="text-gray-700">{error}</p>
+                </div>
+              </div>
+            </div>
+          ) : upcomingSessions.length === 0 ? (
+            <div className="bg-yellow-50 border-l-4 border-yellow-400 p-6 rounded-r-lg mt-4">
+              <div className="flex items-start">
+                <FaExclamationTriangle className="text-yellow-400 text-xl mt-1 mr-3" />
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">No Sessions Available</h3>
+                  <p className="text-gray-700">There are no upcoming mentorship sessions at the moment. Please check back later.</p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {upcomingSessions.map(item => (
+                <SessionCard key={item.id} item={item} />
+              ))}
+            </div>
+          )}
         </section>
       </div>
 

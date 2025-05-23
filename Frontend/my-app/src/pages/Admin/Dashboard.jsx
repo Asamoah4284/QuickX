@@ -5,7 +5,7 @@ import {
     FiHome, FiUsers, FiBook, FiVideo, FiSettings, 
     FiLogOut, FiBarChart2, FiUpload, FiEdit2, 
     FiTrash2, FiPlus, FiTrendingUp, FiDollarSign,
-    FiX, FiBookOpen, FiTag
+    FiX, FiBookOpen, FiTag, FiStar
 } from 'react-icons/fi';
 import CourseModal from './CourseModal';
 import BookModal from './BookModal';
@@ -128,6 +128,17 @@ const AdminDashboard = () => {
         maxUses: '',
         isActive: true
     });
+    const [mentorships, setMentorships] = useState([]);
+    const [showMentorshipForm, setShowMentorshipForm] = useState(false);
+    const [mentorshipForm, setMentorshipForm] = useState({
+        title: '',
+        summary: '',
+        date: '',
+        time: '',
+        isPremium: false,
+        mentor: '',
+        icon: 'trading'
+    });
     const navigate = useNavigate();
 
     // Chart data
@@ -243,6 +254,7 @@ const AdminDashboard = () => {
         fetchCourses();
         fetchBooks();
         fetchCoupons();
+        fetchMentorships();
     }, []);
 
     const fetchCourses = async () => {
@@ -314,6 +326,15 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error('Error fetching coupons:', error);
             setError('Failed to fetch coupons');
+        }
+    };
+
+    const fetchMentorships = async () => {
+        try {
+            const response = await axios.get(`${API_URL}/api/mentorships`);
+            setMentorships(response.data);
+        } catch (err) {
+            setMentorships([]);
         }
     };
 
@@ -777,6 +798,30 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error('Error deleting coupon:', error);
             setError('Failed to delete coupon');
+        }
+    };
+
+    const handleMentorshipInput = (e) => {
+        const { name, value, type, checked } = e.target;
+        setMentorshipForm((prev) => ({
+            ...prev,
+            [name]: type === 'checkbox' ? checked : value
+        }));
+    };
+
+    const handleMentorshipSubmit = async (e) => {
+        e.preventDefault();
+        try {
+            const token = localStorage.getItem('adminToken');
+            await axios.post(`${API_URL}/api/mentorships`, mentorshipForm, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setMentorshipForm({ title: '', summary: '', date: '', time: '', isPremium: false, mentor: '', icon: 'trading' });
+            setShowMentorshipForm(false);
+            fetchMentorships();
+            setError('');
+        } catch (err) {
+            setError('Failed to add mentorship session');
         }
     };
 
@@ -1460,6 +1505,47 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 );
+            case 'mentorship':
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold mb-4">Add Mentorship Session</h2>
+                        <form onSubmit={handleMentorshipSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4 max-w-lg">
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                <input type="text" name="title" value={mentorshipForm.title} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Summary</label>
+                                <textarea name="summary" value={mentorshipForm.summary} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                    <input type="text" name="date" value={mentorshipForm.date} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. June 15, 2023" required />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                    <input type="text" name="time" value={mentorshipForm.time} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. 10:00 AM EST" required />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Mentor</label>
+                                <input type="text" name="mentor" value={mentorshipForm.mentor} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
+                            </div>
+                            <div className="flex items-center gap-4">
+                                <label className="flex items-center">
+                                    <input type="checkbox" name="isPremium" checked={mentorshipForm.isPremium} onChange={handleMentorshipInput} className="rounded border-gray-300 text-blue-600" />
+                                    <span className="ml-2 text-sm text-gray-700">Premium Session</span>
+                                </label>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+                                    <input type="text" name="icon" value={mentorshipForm.icon} onChange={handleMentorshipInput} className="w-32 px-3 py-2 border rounded-lg" />
+                                </div>
+                            </div>
+                            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Add Session</button>
+                        </form>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -1590,6 +1676,20 @@ const AdminDashboard = () => {
                         >
                             <FiTag className="mr-2 lg:mr-3" />
                             Coupons
+                        </button>
+                        <button
+                            onClick={() => {
+                                setActiveTab('mentorship');
+                                setIsSidebarOpen(false);
+                            }}
+                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
+                                activeTab === 'mentorship'
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                        >
+                            <FiStar className="mr-2 lg:mr-3" />
+                            Mentorship
                         </button>
                     </div>
                 </nav>

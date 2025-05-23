@@ -22,6 +22,14 @@ const CourseDetail = () => {
       const token = localStorage.getItem('authToken');
       if (!token) return;
 
+      // Save last watched lesson for this course
+      localStorage.setItem(
+        `lastWatched_${courseId}`,
+        JSON.stringify({ moduleIndex, sectionIndex, lessonIndex })
+      );
+      // Save last accessed courseId for Membership optimistic update
+      localStorage.setItem('lastAccessedCourseId', courseId);
+
       const response = await axios.post(
         `${API_URL}/api/courses/${courseId}/progress`,
         {
@@ -85,6 +93,23 @@ const CourseDetail = () => {
 
     fetchCourseData();
   }, [courseId]);
+
+  // After fetching courseData, set initial lesson from localStorage if available
+  useEffect(() => {
+    if (courseData) {
+      const lastWatched = localStorage.getItem(`lastWatched_${courseId}`);
+      if (lastWatched) {
+        const { moduleIndex, sectionIndex, lessonIndex } = JSON.parse(lastWatched);
+        setActiveModule(moduleIndex);
+        setActiveSection(sectionIndex);
+        setActiveLesson(lessonIndex);
+      } else {
+        setActiveModule(0);
+        setActiveSection(0);
+        setActiveLesson(0);
+      }
+    }
+  }, [courseData, courseId]);
 
   // Get current lesson
   const currentLesson = courseData?.modules[activeModule]?.sections[activeSection]?.lessons[activeLesson];

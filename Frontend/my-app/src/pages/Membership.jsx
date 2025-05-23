@@ -67,6 +67,16 @@ function Membership() {
   // Add event listener for course progress updates
   useEffect(() => {
     const handleCourseProgressUpdate = () => {
+      // Optimistically update progress for the last accessed course
+      setPurchasedCourses(prevCourses => {
+        const lastCourseId = localStorage.getItem('lastAccessedCourseId');
+        if (!lastCourseId) return prevCourses;
+        return prevCourses.map(course =>
+          course.id === lastCourseId
+            ? { ...course, progress: Math.min(course.progress + 1, 100) }
+            : course
+        );
+      });
       refreshCourses();
     };
 
