@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { FiExternalLink } from 'react-icons/fi';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -191,6 +192,38 @@ const CryptoSchool = () => {
       summary: 'An innovative decentralized finance protocol has reached $1 billion in total value locked just one month after launch.',
       date: 'July 3, 2023',
       source: 'DeFi Pulse'
+    }
+  ];
+
+  // Add this inside the component before the return statement
+  const cryptoNewsSources = [
+    {
+      id: 1,
+      name: 'CoinDesk',
+      url: 'https://www.coindesk.com/',
+      description: 'Leading digital media and information platform for crypto assets and blockchain',
+      category: 'Markets & News'
+    },
+    {
+      id: 2,
+      name: 'Cointelegraph',
+      url: 'https://cointelegraph.com/',
+      description: 'Comprehensive coverage of blockchain and crypto developments',
+      category: 'News & Analysis'
+    },
+    {
+      id: 3,
+      name: 'The Block',
+      url: 'https://www.theblock.co/',
+      description: 'Independent voice covering digital assets and crypto trends',
+      category: 'Research & Data'
+    },
+    {
+      id: 4,
+      name: 'Crypto.news',
+      url: 'https://crypto.news/',
+      description: 'Real-time updates on cryptocurrency markets and blockchain',
+      category: 'Breaking News'
     }
   ];
 
@@ -391,73 +424,38 @@ const CryptoSchool = () => {
           
           {/* Sidebar */}
           <div className="lg:w-1/3 space-y-6">
-            {/* Quick Links */}
-            <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 p-5">
-                <h2 className="text-lg font-bold text-gray-800">Resources</h2>
-              </div>
-              <div className="p-5">
-                <ul className="space-y-3">
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-purple-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Beginner's Guide to Crypto
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-purple-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Blockchain Technology Explained
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-purple-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      DeFi Protocols Directory
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-purple-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      NFT Marketplace Guide
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
+   
+       
             {/* News Section */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="border-b border-gray-100 p-5 flex justify-between items-center">
-                <h2 className="text-lg font-bold text-gray-800">Crypto News</h2>
-                <a href="#" className="text-purple-600 text-sm font-medium">View All</a>
+                <h2 className="text-lg font-bold text-gray-800">Live Crypto News</h2>
               </div>
               
               <div>
-                {newsData.map((item, index) => (
-                  <div 
-                    key={item.id} 
-                    className={`p-5 hover:bg-gray-50 transition-colors ${
-                      index !== newsData.length - 1 ? 'border-b border-gray-100' : ''
-                    }`}
+                {cryptoNewsSources.map((source) => (
+                  <a 
+                    key={source.id}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="block p-5 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-medium text-gray-800 text-sm">{item.title}</h3>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-gray-800 text-sm flex items-center">
+                          {source.name}
+                          <FiExternalLink className="ml-2 text-purple-500" />
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {source.description}
+                        </p>
+                      </div>
+                      <div className="bg-purple-50 text-purple-600 text-xs px-2 py-1 rounded">
+                        {source.category}
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">{item.summary}</p>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500">{item.date}</span>
-                      <span className="text-gray-500">{item.source}</span>
-                    </div>
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>

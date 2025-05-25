@@ -9,7 +9,7 @@ router.get('/api/advertisements', async (req, res) => {
     try {
         const advertisements = await Advertisement.find({ isActive: true })
             .sort({ createdAt: -1 })
-            .limit(3);
+            .limit(10);
         res.json(advertisements);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -30,11 +30,11 @@ router.get('/api/admin/advertisements', adminAuth, async (req, res) => {
 // Create new advertisement (admin only)
 router.post('/api/admin/advertisements', adminAuth, async (req, res) => {
     try {
-        // Check if there are already 3 active advertisements
+        // Check if there are already 10 active advertisements
         if (req.body.isActive) {
             const activeAds = await Advertisement.countDocuments({ isActive: true });
-            if (activeAds >= 3) {
-                return res.status(400).json({ message: 'Maximum number of active advertisements reached (3)' });
+            if (activeAds >= 10) {
+                return res.status(400).json({ message: 'Maximum number of active advertisements reached (10)' });
             }
         }
 
@@ -62,7 +62,7 @@ router.patch('/api/admin/advertisements/:id', adminAuth, async (req, res) => {
                 isActive: true,
                 _id: { $ne: req.params.id }
             });
-            if (activeAds >= 3) {
+            if (activeAds >= 10) {
                 return res.status(400).json({ message: 'Maximum number of active advertisements reached (3)' });
             }
         }

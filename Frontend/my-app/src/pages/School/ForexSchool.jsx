@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { FiPlay, FiBook } from 'react-icons/fi';
+import { FiPlay, FiBook, FiExternalLink } from 'react-icons/fi';
 import axios from 'axios';
 
 
@@ -120,6 +120,34 @@ const ForexSchool = () => {
       summary: 'Crude oil futures fell 3% as OPEC+ members hint at production increases in the coming months.',
       date: 'June 9, 2023',
       source: 'CNBC'
+    }
+  ];
+
+  // News sources data
+  const newsSources = [
+    {
+      id: 1,
+      name: 'Reuters Forex',
+      url: 'https://www.reuters.com/markets/currencies',
+      description: 'Get real-time forex news and market updates'
+    },
+    {
+      id: 2, 
+      name: 'Bloomberg Markets',
+      url: 'https://www.bloomberg.com/markets/currencies',
+      description: 'Latest currency market news and analysis'
+    },
+    {
+      id: 3,
+      name: 'ForexLive',
+      url: 'https://www.forexlive.com/',
+      description: 'Live forex trading news and analysis'
+    },
+    {
+      id: 4,
+      name: 'FXStreet',
+      url: 'https://www.fxstreet.com/',
+      description: 'Technical analysis and forex market news'
     }
   ];
 
@@ -325,74 +353,39 @@ const ForexSchool = () => {
           {/* News Sidebar - Simplified */}
           <div className="lg:w-1/3 space-y-6">
 
- {/* Quick Links - Simplified */}
- <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-              <div className="border-b border-gray-100 p-5">
-                <h2 className="text-lg font-bold text-gray-800">Resources</h2>
-              </div>
-              <div className="p-5">
-                <ul className="space-y-3">
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-blue-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Beginner's Guide to Forex
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-blue-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Trading Tools & Calculators
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-blue-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Trading Strategies Library
-                    </a>
-                  </li>
-                  <li>
-                    <a href="#" className="flex items-center text-gray-700 hover:text-blue-600 transition text-sm">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                      Community Forum
-                    </a>
-                  </li>
-                </ul>
-              </div>
-            </div>
 
 
-            {/* News Section - Simplified */}
+
+            {/* News Section - Updated with External Links */}
             <div className="bg-white rounded-xl shadow-sm overflow-hidden">
               <div className="border-b border-gray-100 p-5 flex justify-between items-center">
-                <h2 className="text-lg font-bold text-gray-800">Market News</h2>
-                <a href="#" className="text-blue-600 text-sm font-medium">View All</a>
+                <h2 className="text-lg font-bold text-gray-800">Live Forex News</h2>
               </div>
               
               <div>
-                {newsData.map((item, index) => (
-                  <div 
-                    key={item.id} 
-                    className={`p-5 hover:bg-gray-50 transition-colors ${
-                      index !== newsData.length - 1 ? 'border-b border-gray-100' : ''
-                    }`}
+                {newsSources.map((source) => (
+                  <a 
+                    key={source.id}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer" 
+                    className="block p-5 hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-b-0"
                   >
-                    <div className="flex justify-between items-start mb-1">
-                      <h3 className="font-medium text-gray-800 text-sm">{item.title}</h3>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium text-gray-800 text-sm flex items-center">
+                          {source.name}
+                          <FiExternalLink className="ml-2 text-blue-500" />
+                        </h3>
+                        <p className="text-xs text-gray-600 mt-1">
+                          {source.description}
+                        </p>
+                      </div>
+                      <div className="bg-blue-50 text-blue-600 text-xs px-2 py-1 rounded">
+                        Live
+                      </div>
                     </div>
-                    <p className="text-xs text-gray-600 mb-2 line-clamp-2">{item.summary}</p>
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="text-gray-500">{item.date}</span>
-                      <span className="text-gray-500">{item.source}</span>
-                    </div>
-                  </div>
+                  </a>
                 ))}
               </div>
             </div>

@@ -170,18 +170,6 @@ const MainSchool = () => {
                         className="w-full h-full object-cover"
                       />
                       <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                        <div className="text-center p-4">
-                          <h3 className="text-xl font-bold text-white mb-1">{advertisements[currentAdIndex].title}</h3>
-                          <p className="text-sm text-white mb-3">{advertisements[currentAdIndex].content}</p>
-                          <a
-                            href={advertisements[currentAdIndex].link}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl inline-block"
-                          >
-                            Learn More
-                          </a>
-                        </div>
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between">
