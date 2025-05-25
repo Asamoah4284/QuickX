@@ -62,7 +62,7 @@ function Register() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-2  py-16 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
       <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-xl bg-white mt-12">
         <div className="md:flex">
           {/* Left Side - Promotional Content */}
