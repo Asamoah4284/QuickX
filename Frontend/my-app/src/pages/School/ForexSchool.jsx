@@ -330,7 +330,7 @@ const ForexSchool = () => {
             )}
 
             {/* Become an Instructor - Simplified */}
-            <div className="mt-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 text-white">
+            {/* <div className="mt-8 bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl p-6 text-white">
               <div className="flex flex-col md:flex-row items-center justify-between">
                 <div className="md:w-2/3 mb-6 md:mb-0">
                   <h2 className="text-xl font-bold mb-2">Become an Instructor</h2>
@@ -340,7 +340,7 @@ const ForexSchool = () => {
                   Apply Now
                 </button>
               </div>
-            </div>
+            </div> */}
           </div>
           
           {/* News Sidebar - Simplified */}
@@ -418,23 +418,7 @@ const ForexSchool = () => {
               </div>
             </div>
             
-            {/* Featured Course Banner - Simplified */}
-            <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl overflow-hidden shadow-sm">
-              <div className="p-5 text-white">
-                <div className="text-sm mb-1 font-medium text-blue-100">Featured</div>
-                <h3 className="text-lg font-bold mb-2">VIP Trading Masterclass</h3>
-                <p className="opacity-90 mb-4 text-sm">
-                  Premium 8-week masterclass with live trading sessions.
-                </p>
-                <div className="flex items-center mb-4">
-                  {/* <div className="text-xl font-bold">$499</div>
-                  <div className="ml-2 text-sm line-through opacity-75">$799</div> */}
-                </div>
-                <button className="w-full bg-white text-blue-600 font-medium py-2 rounded-lg hover:bg-blue-50 transition text-sm">
-                  Learn More
-                </button>
-              </div>
-            </div>
+      
             
            
 

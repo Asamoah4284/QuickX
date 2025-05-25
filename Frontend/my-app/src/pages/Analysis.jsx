@@ -420,6 +420,68 @@ function Mentorship({ premium = false }) {
         </div>
       </div>
 
+      {/* Premium Upgrade Section */}
+      {!premium && (
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-8 mb-12 relative overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-purple-400 to-blue-400 opacity-10 rounded-full transform translate-x-32 -translate-y-32"></div>
+          <div className="relative z-10">
+            <div className="flex items-center gap-3 mb-4">
+              <FaStar className="text-yellow-400 text-2xl" />
+              <h2 className="text-2xl font-bold text-gray-800">Upgrade to Premium</h2>
+            </div>
+            <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div>
+                <p className="text-gray-700 mb-6">
+                  Get access to exclusive premium sessions, one-on-one mentoring, and advanced trading strategies.
+                  Unlock your full trading potential with our premium membership.
+                </p>
+                <ul className="space-y-3 mb-6">
+                  {[
+                    'Access to Premium Sessions',
+                    'One-on-One Mentoring',
+                    'Advanced Trading Strategies',
+                    'Priority Support',
+                    'Exclusive Trading Signals'
+                  ].map((feature, index) => (
+                    <li key={index} className="flex items-center text-gray-700">
+                      <svg className="w-5 h-5 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                      </svg>
+                      {feature}
+                    </li>
+                  ))}
+                </ul>
+                <button
+                  onClick={handleUpgradeClick}
+                  className="bg-gradient-to-r from-purple-500 to-blue-500 text-white font-medium py-3 px-8 rounded-xl transition-all duration-200 transform hover:scale-105 shadow-lg hover:shadow-xl flex items-center gap-2"
+                >
+                  Upgrade Now
+                </button>
+              </div>
+              <div className="hidden md:block">
+                <div className="bg-white p-6 rounded-xl shadow-lg transform rotate-3">
+                  <div className="flex items-center gap-3 mb-4">
+                    <FaChalkboardTeacher className="text-blue-500 text-xl" />
+                    <h3 className="font-semibold text-gray-800">Premium Session Example</h3>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-sm text-gray-600">Advanced Price Action Mastery</p>
+                    <p className="text-xs text-gray-500">with Expert Mentor</p>
+                    <div className="flex items-center gap-2 text-yellow-400">
+                      <FaStar />
+                      <FaStar />
+                      <FaStar />
+                      <FaStar />
+                      <FaStar />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col gap-12">
         <section>
           <div className="flex justify-between items-center mt-6 ">
