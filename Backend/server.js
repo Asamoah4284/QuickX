@@ -66,6 +66,7 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api', require('./routes/couponRoutes'));
 app.use('/api/mentorships', require('./routes/mentorshipRoutes'));
+app.use('/', require('./routes/advertisementRoutes'));
 
 // Serve static files from 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));

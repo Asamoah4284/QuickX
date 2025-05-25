@@ -386,18 +386,7 @@ const CryptoSchool = () => {
               </div>
             )}
 
-            {/* Become an Instructor */}
-            <div className="mt-8 bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl p-6 text-white">
-              <div className="flex flex-col md:flex-row items-center justify-between">
-                <div className="md:w-2/3 mb-6 md:mb-0">
-                  <h2 className="text-xl font-bold mb-2">Become an Instructor</h2>
-                  <p className="opacity-90 text-sm">Share your crypto knowledge and help others navigate the blockchain ecosystem.</p>
-                </div>
-                <button className="bg-white text-purple-600 hover:bg-purple-50 font-medium px-5 py-2 rounded-lg transition text-sm">
-                  Apply Now
-                </button>
-              </div>
-            </div>
+           
           </div>
           
           {/* Sidebar */}
@@ -474,22 +463,7 @@ const CryptoSchool = () => {
             </div>
             
             {/* Featured Course Banner */}
-            <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl overflow-hidden shadow-sm">
-              <div className="p-5 text-white">
-                <div className="text-sm mb-1 font-medium text-purple-100">Featured</div>
-                <h3 className="text-lg font-bold mb-2">Web3 Developer Bootcamp</h3>
-                <p className="opacity-90 mb-4 text-sm">
-                  Comprehensive 12-week program to become a blockchain developer.
-                </p>
-                <div className="flex items-center mb-4">
-                  <div className="text-xl font-bold">$799</div>
-                  <div className="ml-2 text-sm line-through opacity-75">$1299</div>
-                </div>
-                <button className="w-full bg-white text-purple-600 font-medium py-2 rounded-lg hover:bg-purple-50 transition text-sm">
-                  Learn More
-                </button>
-              </div>
-            </div>
+          
           </div>
         </div>
       </div>

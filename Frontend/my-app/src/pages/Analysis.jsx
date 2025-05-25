@@ -393,30 +393,9 @@ function Mentorship({ premium = false }) {
       </div>
         
         <div className="flex justify-center gap-4 mt-8 md:flex-row flex-col">
-          <button 
-            className={`py-3 px-6 rounded-md font-medium transition-colors duration-200 ${activeTab === 'upcoming' 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            onClick={() => setActiveTab('upcoming')}
-          >
-            Upcoming Sessions
-          </button>
-          <button 
-            className={`py-3 px-6 rounded-md font-medium transition-colors duration-200 ${activeTab === 'past' 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            onClick={() => setActiveTab('past')}
-          >
-            Past Sessions
-          </button>
-          <button 
-            className={`py-3 px-6 rounded-md font-medium transition-colors duration-200 ${activeTab === 'resources' 
-              ? 'bg-blue-500 text-white' 
-              : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-            onClick={() => setActiveTab('resources')}
-          >
-            Learning Resources
-          </button>
+      
+         
+      
         </div>
       </div>
 

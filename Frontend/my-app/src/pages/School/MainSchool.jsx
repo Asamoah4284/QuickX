@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import Features from '../../components/Features';
+import axios from 'axios';
+
+const API_URL = import.meta.env.VITE_API_URL;
 
 const courseData = {
   forex: {
@@ -65,6 +68,8 @@ const levelStyles = {
 const MainSchool = () => {
   const [activeSchool, setActiveSchool] = useState(null);
   const navigate = useNavigate();
+  const [advertisements, setAdvertisements] = useState([]);
+  const [currentAdIndex, setCurrentAdIndex] = useState(0);
 
   const handleSchoolClick = (schoolKey) => {
     // Navigate to the school-specific page based on path
@@ -77,7 +82,29 @@ const MainSchool = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
+    fetchAdvertisements();
   }, []);
+
+  useEffect(() => {
+    if (advertisements.length > 1) {
+      const timer = setInterval(() => {
+        setCurrentAdIndex((prevIndex) => 
+          prevIndex === advertisements.length - 1 ? 0 : prevIndex + 1
+        );
+      }, 5000);
+
+      return () => clearInterval(timer);
+    }
+  }, [advertisements]);
+
+  const fetchAdvertisements = async () => {
+    try {
+      const response = await axios.get(`${API_URL}/api/advertisements`);
+      setAdvertisements(response.data.filter(ad => ad.isActive));
+    } catch (error) {
+      console.error('Error fetching advertisements:', error);
+    }
+  };
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -129,41 +156,55 @@ const MainSchool = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Main Ad Container */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-xl p-4 shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
-                <div className="relative">
-                  <div className="absolute top-0 right-0">
-                    <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">Featured</span>
-                  </div>
-                  <div className="aspect-[16/9] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden relative group">
-                    <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-300"></div>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-center p-4">
-                        <div className="w-16 h-16 mx-auto mb-3 rounded-full bg-white shadow-lg flex items-center justify-center transform group-hover:scale-110 transition-transform duration-300">
-                          <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                          </svg>
+              {advertisements.length > 0 && (
+                <div className="bg-white rounded-xl p-4 shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
+                  <div className="relative">
+                    <div className="absolute top-0 right-0">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">Featured</span>
+                    </div>
+                    <div className="aspect-[16/9] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden relative group">
+                      <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-300"></div>
+                      <img
+                        src={advertisements[currentAdIndex].imageUrl}
+                        alt={advertisements[currentAdIndex].title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                        <div className="text-center p-4">
+                          <h3 className="text-xl font-bold text-white mb-1">{advertisements[currentAdIndex].title}</h3>
+                          <p className="text-sm text-white mb-3">{advertisements[currentAdIndex].content}</p>
+                          <a
+                            href={advertisements[currentAdIndex].link}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl inline-block"
+                          >
+                            Learn More
+                          </a>
                         </div>
-                        <h3 className="text-xl font-bold text-gray-800 mb-1">Premium Partner</h3>
-                        <p className="text-sm text-gray-600 mb-3">Your advertisement content here</p>
-                        <button className="px-4 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors shadow-lg hover:shadow-xl">
-                          Learn More
-                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">Premium Placement</span>
+                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
+                        <span className="text-xs font-medium text-blue-600">Sponsored</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        {advertisements.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setCurrentAdIndex(index)}
+                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                              currentAdIndex === index ? 'bg-blue-600 w-4' : 'bg-gray-300'
+                            }`}
+                          />
+                        ))}
                       </div>
                     </div>
                   </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">Premium Placement</span>
-                      <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                      <span className="text-xs font-medium text-blue-600">Sponsored</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-400">Ad Space</span>
-                    </div>
-                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* Side Ad Container */}

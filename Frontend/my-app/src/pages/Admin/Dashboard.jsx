@@ -5,7 +5,7 @@ import {
     FiHome, FiUsers, FiBook, FiVideo, FiSettings, 
     FiLogOut, FiBarChart2, FiUpload, FiEdit2, 
     FiTrash2, FiPlus, FiTrendingUp, FiDollarSign,
-    FiX, FiBookOpen, FiTag, FiStar
+    FiX, FiBookOpen, FiTag, FiStar, FiImage
 } from 'react-icons/fi';
 import CourseModal from './CourseModal';
 import BookModal from './BookModal';
@@ -37,7 +37,7 @@ ChartJS.register(
     ArcElement
 );
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // Mock data for testing
 const mockCourses = [
     {
@@ -138,6 +138,14 @@ const AdminDashboard = () => {
         isPremium: false,
         mentor: '',
         icon: 'trading'
+    });
+    const [advertisements, setAdvertisements] = useState([]);
+    const [newAdvertisement, setNewAdvertisement] = useState({
+        title: '',
+        content: '',
+        imageUrl: '',
+        link: '',
+        isActive: true
     });
     const navigate = useNavigate();
 
@@ -255,6 +263,7 @@ const AdminDashboard = () => {
         fetchBooks();
         fetchCoupons();
         fetchMentorships();
+        fetchAdvertisements();
     }, []);
 
     const fetchCourses = async () => {
@@ -335,6 +344,27 @@ const AdminDashboard = () => {
             setMentorships(response.data);
         } catch (err) {
             setMentorships([]);
+        }
+    };
+
+    const fetchAdvertisements = async () => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setError('Please login first');
+                return;
+            }
+
+            const response = await axios.get(`${API_URL}/api/admin/advertisements`, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+            setAdvertisements(response.data);
+            setError('');
+        } catch (error) {
+            console.error('Error fetching advertisements:', error);
+            setError(error.response?.data?.message || 'Failed to fetch advertisements');
         }
     };
 
@@ -822,6 +852,95 @@ const AdminDashboard = () => {
             setError('');
         } catch (err) {
             setError('Failed to add mentorship session');
+        }
+    };
+
+    const handleAdvertisementImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setError('Please login first');
+                return;
+            }
+            
+            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!url) {
+                throw new Error('Failed to get upload URL');
+            }
+
+            await axios.put(url, file, {
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+
+            const imageUrl = url.split('?')[0];
+            setNewAdvertisement(prev => ({
+                ...prev,
+                imageUrl
+            }));
+            setError('');
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            setError(error.response?.data?.message || 'Failed to upload image');
+        }
+    };
+
+    const handleAddAdvertisement = async () => {
+        try {
+            if (!newAdvertisement.title || !newAdvertisement.content || !newAdvertisement.imageUrl || !newAdvertisement.link) {
+                setError('Please fill in all fields');
+                return;
+            }
+
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setError('Please login first');
+                return;
+            }
+
+            const response = await axios.post(`${API_URL}/api/admin/advertisements`, newAdvertisement, {
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (response.data) {
+                setAdvertisements([...advertisements, response.data]);
+                setNewAdvertisement({
+                    title: '',
+                    content: '',
+                    imageUrl: '',
+                    link: '',
+                    isActive: true
+                });
+                setError('');
+            }
+        } catch (error) {
+            console.error('Error adding advertisement:', error);
+            setError(error.response?.data?.message || 'Failed to add advertisement');
+        }
+    };
+
+    const handleDeleteAdvertisement = async (adId) => {
+        if (window.confirm('Are you sure you want to delete this advertisement?')) {
+            try {
+                const token = localStorage.getItem('adminToken');
+                await axios.delete(`${API_URL}/api/admin/advertisements/${adId}`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                setAdvertisements(advertisements.filter(ad => ad._id !== adId));
+            } catch (error) {
+                console.error('Error deleting advertisement:', error);
+                setError('Failed to delete advertisement');
+            }
         }
     };
 
@@ -1546,6 +1665,115 @@ const AdminDashboard = () => {
                         </form>
                     </div>
                 );
+            case 'advertisements':
+                return (
+                    <div className="space-y-6">
+                        <div className="flex justify-between items-center">
+                            <h2 className="text-xl font-bold">Advertisement Management</h2>
+                            <p className="text-sm text-gray-500">Maximum 3 active advertisements</p>
+                        </div>
+                        
+                        {/* Add New Advertisement Form */}
+                        <div className="bg-white rounded-xl shadow-sm p-6">
+                            <h3 className="text-lg font-semibold mb-4">Add New Advertisement</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                    <input
+                                        type="text"
+                                        value={newAdvertisement.title}
+                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, title: e.target.value }))}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter advertisement title"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                                    <textarea
+                                        value={newAdvertisement.content}
+                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, content: e.target.value }))}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        rows="4"
+                                        placeholder="Enter advertisement content"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={handleAdvertisementImageUpload}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                    {newAdvertisement.imageUrl && (
+                                        <img
+                                            src={newAdvertisement.imageUrl}
+                                            alt="Advertisement preview"
+                                            className="mt-2 h-32 object-cover rounded-lg"
+                                        />
+                                    )}
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Link URL</label>
+                                    <input
+                                        type="url"
+                                        value={newAdvertisement.link}
+                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, link: e.target.value }))}
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter advertisement link URL"
+                                    />
+                                </div>
+                                <div className="flex items-center">
+                                    <input
+                                        type="checkbox"
+                                        checked={newAdvertisement.isActive}
+                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, isActive: e.target.checked }))}
+                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                    />
+                                    <label className="ml-2 text-sm text-gray-700">Active</label>
+                                </div>
+                                <button
+                                    onClick={handleAddAdvertisement}
+                                    disabled={advertisements.length >= 3}
+                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                >
+                                    Add Advertisement
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Existing Advertisements */}
+                        <div className="bg-white rounded-xl shadow-sm p-6">
+                            <h3 className="text-lg font-semibold mb-4">Current Advertisements</h3>
+                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                                {advertisements.map((ad) => (
+                                    <div key={ad._id} className="border rounded-lg p-4">
+                                        <img
+                                            src={ad.imageUrl}
+                                            alt={ad.title}
+                                            className="w-full h-40 object-cover rounded-lg mb-4"
+                                        />
+                                        <h4 className="font-semibold mb-2">{ad.title}</h4>
+                                        <p className="text-sm text-gray-600 mb-4">{ad.content}</p>
+                                        <div className="flex justify-between items-center">
+                                            <span className={`px-2 py-1 rounded-full text-xs ${
+                                                ad.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                            }`}>
+                                                {ad.isActive ? 'Active' : 'Inactive'}
+                                            </span>
+                                            <button
+                                                onClick={() => handleDeleteAdvertisement(ad._id)}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                <FiTrash2 className="w-5 h-5" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -1690,6 +1918,20 @@ const AdminDashboard = () => {
                         >
                             <FiStar className="mr-2 lg:mr-3" />
                             Mentorship
+                        </button>
+                        <button
+                            onClick={() => {
+                                setActiveTab('advertisements');
+                                setIsSidebarOpen(false);
+                            }}
+                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
+                                activeTab === 'advertisements'
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                        >
+                            <FiImage className="mr-2 lg:mr-3" />
+                            Advertisements
                         </button>
                     </div>
                 </nav>

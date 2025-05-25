@@ -129,7 +129,7 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       scrolled 
-        ? 'bg-gradient-to-r from-blue-900 to-blue-950 text-white shadow-md' 
+        ? 'bg-gradient-to-r from-blue-800 to-blue-900 text-white shadow-md' 
         : 'bg-transparent'
     }`}>
       <div className="md:max-w-6xl mx-auto md:py-2 md:px-4 sm:px-6 lg:px-8">
@@ -138,9 +138,10 @@ const Navbar = () => {
           <div className="flex-shrink-0 flex items-center">
             <Link to="/" className=" flex ">
               <img 
-                src="/images/logo.jpg" 
+                src="/images/logo.svg" 
                 alt="Quick X Logo" 
-                className="md:h-21 h-10 w-auto object-contain rounded-md"
+                className="md:h-40 h-10 w-auto object-contain rounded-md "
+
               />
             </Link>
           </div>

@@ -199,28 +199,7 @@ const ForexSchool = () => {
             </div>
           </div>
         </div>
-        
-        <div className="mb-8 bg-gradient-to-r from-blue-600 to-indigo-700 rounded-xl p-6 text-white">
-          <div className="flex flex-col md:flex-row items-center justify-between">
-            <div className="md:w-2/3 mb-6 md:mb-0">
-              <h2 className="text-xl font-bold mb-2">Complete Forex Trading Mastery</h2>
-              <p className="opacity-90 text-sm">Get access to all three levels of forex trading education at a discounted price.</p>
-            </div>
-            <div className="flex flex-col items-center md:items-end">
-              <div className="flex items-center mb-2">
-                <span className="text-2xl font-bold">GH₵750</span>
-                <span className="ml-2 text-blue-200 line-through">GH₵1000</span>
-                <span className="ml-2 bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded">SAVE 45%</span>
-              </div>
-              <Link 
-                to="/school/pricing"
-                className="bg-white text-blue-600 hover:bg-blue-50 font-medium px-5 py-2 rounded-lg transition text-sm"
-              >
-                Purchase All Courses
-              </Link>
-            </div>
-          </div>
-        </div>
+      
         
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Courses Column */}
