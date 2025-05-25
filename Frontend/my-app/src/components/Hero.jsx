@@ -136,7 +136,7 @@ const Hero = () => {
   return (
     <div className="relative  text-white flex items-center overflow-hidden">
       {/* Background gradient overlay */}
-      <div className="bsolute inset-0 bg-opacity-30 z-0"></div>
+      <div className="absolute inset-0 bg-opacity-30 z-0"></div>
       
       {/* Background graphics - 5 with multiple images */}
       <div className="absolute inset-0 z-0 overflow-hidden">
@@ -154,7 +154,7 @@ const Hero = () => {
         </video>
       </div>
       
-      <div className="max-w-5xl mx-auto px-4 py-16 z-10 relative">
+      <div className="max-w-6xl mx-auto px-4 md:px-0 py-16 z-10 relative">
         <div className="grid grid-cols-1 py-12 lg:grid-cols-12 items-center">
           <div className="lg:col-span-7">
             <div className="hero-content relative overflow-hidden">

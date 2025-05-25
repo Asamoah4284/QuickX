@@ -135,12 +135,12 @@ const Navbar = () => {
       <div className="md:max-w-6xl mx-auto md:py-2 md:px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           {/* Logo */}
-          <div className="flex-shrink-0 flex items-center">
+          <div className="flex-shrink-0 flex items-center md:-ml-10">
             <Link to="/" className=" flex ">
               <img 
-                src="/images/logo.svg" 
+                src="/images/logo-1.jpg" 
                 alt="Quick X Logo" 
-                className="md:h-40 h-10 w-auto object-contain rounded-md "
+                className="md:h-15 h-10 w-auto object-contain rounded-md ml-4 "
 
               />
             </Link>
