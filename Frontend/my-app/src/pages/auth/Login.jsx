@@ -62,7 +62,7 @@ function Login() {
   
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
-      <div className="w-full max-w-5xl overflow-hidden rounded-2xl shadow-xl bg-white">
+      <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-xl bg-white mt-12">
         <div className="md:flex">
           {/* Left Side - Promotional Content */}
           <div className="md:w-2/5 bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white flex flex-col justify-center">

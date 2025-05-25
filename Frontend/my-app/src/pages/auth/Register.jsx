@@ -62,8 +62,8 @@ function Register() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
-      <div className="w-full max-w-5xl overflow-hidden rounded-2xl shadow-xl bg-white">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-2  py-16 sm:px-6 lg:px-8">
+      <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-xl bg-white mt-12">
         <div className="md:flex">
           {/* Left Side - Promotional Content */}
           <div className="md:w-2/5 bg-gradient-to-r from-indigo-600 to-blue-600 p-8 text-white flex flex-col justify-center">
@@ -105,7 +105,6 @@ function Register() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
               <div className="flex items-center text-sm">
-                <span className="text-gray-600 mr-2">Already have an account?</span>
                 <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 inline-flex items-center">
                   Sign in <FiArrowRight className="ml-1 h-4 w-4" />
                 </Link>
