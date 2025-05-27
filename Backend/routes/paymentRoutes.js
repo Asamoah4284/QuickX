@@ -161,7 +161,7 @@ router.post('/webhook', async (req, res) => {
 
         // If payment is completed, update user's purchases
         if (status === 'completed') {
-            const user = await user.findById(payment.user);
+            const user = await User.findById(payment.user);
             
             if (payment.itemType === 'course') {
                 user.purchasedCourses.push(payment.itemId);
