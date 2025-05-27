@@ -1,6 +1,50 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+const withdrawalRequestSchema = new mongoose.Schema({
+    amount: {
+        type: Number,
+        required: true
+    },
+    momoNumber: {
+        type: String,
+        required: true
+    },
+    network: {
+        type: String,
+        required: true,
+        enum: ['MTN', 'Vodafone', 'AirtelTigo']
+    },
+    status: {
+        type: String,
+        enum: ['pending', 'completed', 'failed'],
+        default: 'pending'
+    },
+    requestedAt: {
+        type: Date,
+        default: Date.now
+    },
+    processedAt: Date,
+    remarks: String
+});
+
+const momoDetailsSchema = new mongoose.Schema({
+    momoNumber: {
+        type: String,
+        required: true,
+        match: [/^0\d{9}$/, 'Please enter a valid 10-digit phone number starting with 0']
+    },
+    network: {
+        type: String,
+        required: true,
+        enum: ['MTN', 'Vodafone', 'AirtelTigo']
+    },
+    lastUpdated: {
+        type: Date,
+        default: Date.now
+    }
+});
+
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -65,12 +109,43 @@ const userSchema = new mongoose.Schema({
     // },
     referralCode: {
         type: String,
-        // unique: true
+        unique: true,
+        sparse: true
     },
     referralEarnings: {
         type: Number,
         default: 0
+    },
+    referralHistory: [{
+        referredUser: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        },
+        courseId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Course'
+        },
+        amount: {
+            type: Number,
+            required: true
+        },
+        date: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    momoDetails: momoDetailsSchema,
+    withdrawalRequests: [withdrawalRequestSchema]
+});
+
+// Generate referral code before saving
+userSchema.pre('save', function(next) {
+    if (!this.referralCode) {
+        // Generate a unique 6-character alphanumeric code
+        const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+        this.referralCode = code;
     }
+    next();
 });
 
 // Hash password before saving
@@ -82,14 +157,6 @@ userSchema.pre('save', async function(next) {
     } catch (error) {
         next(error);
     }
-});
-
-// Generate referral code
-userSchema.pre('save', function(next) {
-    if (!this.referralCode) {
-        this.referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
-    }
-    next();
 });
 
 const User = mongoose.model('User', userSchema);

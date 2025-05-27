@@ -15,6 +15,12 @@ function Membership() {
   const [purchasedBooks, setPurchasedBooks] = useState([]);
   const [showSuccessMessage, setShowSuccessMessage] = useState(false);
   const [courseLoadError, setCourseLoadError] = useState(null);
+  const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
+  const [momoNumber, setMomoNumber] = useState('');
+  const [network, setNetwork] = useState('MTN');
+  const [withdrawalError, setWithdrawalError] = useState('');
+  const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
+  const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
 
   // Define animation styles
   const animationStyles = `
@@ -119,13 +125,19 @@ function Membership() {
     const fetchUserData = async () => {
       try {
         setIsLoading(true);
-        const storedUser = localStorage.getItem('user');
         const authToken = localStorage.getItem('authToken');
         
-        if (storedUser && authToken) {
-          // Parse user data from localStorage
-          const userData = JSON.parse(storedUser);
-          setUser(userData);
+        if (authToken) {
+          // Fetch fresh user data from the server including referral info
+          const userResponse = await axios.get(`${API_URL}/api/users/me`, {
+            headers: { 'Authorization': `Bearer ${authToken}` }
+          });
+          
+          if (userResponse.data) {
+            // Update localStorage with fresh user data
+            localStorage.setItem('user', JSON.stringify(userResponse.data));
+            setUser(userResponse.data);
+          }
           
           // Fetch purchased courses from backend
           await refreshCourses();
@@ -263,6 +275,139 @@ function Membership() {
     );
   };
 
+  // Withdrawal Modal Component
+  const WithdrawalModal = ({ isOpen, onClose }) => {
+    if (!isOpen) return null;
+
+    const handleWithdrawal = async () => {
+      try {
+        setIsProcessingWithdrawal(true);
+        setWithdrawalError('');
+        
+        // First update MoMo details
+        const authToken = localStorage.getItem('authToken');
+        await axios.post(
+          `${API_URL}/api/withdrawals/momo-details`,
+          {
+            momoNumber,
+            network
+          },
+          { headers: { 'Authorization': `Bearer ${authToken}` } }
+        );
+
+        // Then process withdrawal
+        const response = await axios.post(
+          `${API_URL}/api/withdrawals/withdraw`,
+          {},
+          { headers: { 'Authorization': `Bearer ${authToken}` } }
+        );
+
+        setWithdrawalSuccess(response.data.message);
+        // Update user's referral earnings in state
+        setUser(prev => ({ ...prev, referralEarnings: 0 }));
+        
+        // Close modal after 2 seconds
+        setTimeout(() => {
+          onClose();
+          setWithdrawalSuccess('');
+        }, 2000);
+      } catch (error) {
+        setWithdrawalError(error.response?.data?.message || 'Failed to process withdrawal');
+      } finally {
+        setIsProcessingWithdrawal(false);
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
+          <h3 className="text-xl font-semibold mb-4">Withdraw Referral Earnings</h3>
+          
+          {withdrawalSuccess ? (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+              <p className="text-green-700">{withdrawalSuccess}</p>
+            </div>
+          ) : (
+            <>
+              <div className="mb-6">
+                <p className="text-gray-600">
+                  Current balance: <span className="font-semibold">GH₵{user?.referralEarnings?.toFixed(2)}</span>
+                </p>
+                <p className="text-gray-600">
+                  Minimum withdrawal amount: <span className="font-semibold">GH₵20</span>
+                </p>
+              </div>
+              
+              {withdrawalError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                  <p className="text-red-700">{withdrawalError}</p>
+                </div>
+              )}
+
+              <div className="space-y-4 mb-6">
+                <div>
+                  <label htmlFor="momoNumber" className="block text-sm font-medium text-gray-700 mb-1">
+                    Mobile Money Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="momoNumber"
+                    value={momoNumber}
+                    onChange={(e) => setMomoNumber(e.target.value)}
+                    placeholder="Enter your MoMo number"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    maxLength="10"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="network" className="block text-sm font-medium text-gray-700 mb-1">
+                    Network Provider
+                  </label>
+                  <select
+                    id="network"
+                    value={network}
+                    onChange={(e) => setNetwork(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="MTN">MTN Mobile Money</option>
+                    <option value="Vodafone">Vodafone Cash</option>
+                    <option value="AirtelTigo">AirtelTigo Money</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleWithdrawal}
+                  disabled={
+                    isProcessingWithdrawal || 
+                    user?.referralEarnings < 20 || 
+                    !momoNumber || 
+                    momoNumber.length !== 10
+                  }
+                  className={`px-4 py-2 text-white rounded-lg transition-colors ${
+                    isProcessingWithdrawal || user?.referralEarnings < 20 || !momoNumber || momoNumber.length !== 10
+                      ? 'bg-blue-300 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700'
+                  }`}
+                >
+                  {isProcessingWithdrawal ? 'Processing...' : 'Withdraw'}
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -342,10 +487,55 @@ function Membership() {
               <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center hover:bg-white/20 transition duration-200">
                 <div className="bg-purple-500/30 p-3 rounded-full mr-3">
                   <FiDollarSign className="text-white text-xl" />
+                </div>
+                <div className="flex-grow">
+                  <p className="text-white text-sm opacity-80">Referral Earnings</p>
+                  <p className="text-white font-semibold text-xl">
+                    GH₵{user?.referralEarnings ? user.referralEarnings.toFixed(2) : '0.00'}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setIsWithdrawalModalOpen(true)}
+                  disabled={!user?.referralEarnings || user?.referralEarnings < 20}
+                  className={`ml-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    !user?.referralEarnings || user?.referralEarnings < 20
+                      ? 'bg-white/30 text-white/50 cursor-not-allowed'
+                      : 'bg-white text-purple-700 hover:bg-white/90'
+                  }`}
+                >
+                  Withdraw
+                </button>
+              </div>
             </div>
-            <div>
-                  <p className="text-white text-sm opacity-80">Membership</p>
-                  <p className="text-white font-semibold text-xl">Premium</p>
+
+            {/* Add Referral Code Card */}
+            <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-semibold mb-1">Your Referral Code</h3>
+                  <p className="text-white/80 text-sm">Share this code with friends to earn 10% commission on their purchases</p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 px-4 py-2 rounded-lg">
+                    <span className="text-white font-mono font-medium text-lg">
+                      {user?.referralCode || 'Loading...'}
+                    </span>
+                  </div>
+                  {user?.referralCode && (
+                    <button
+                      onClick={() => {
+                        navigator.clipboard.writeText(user.referralCode);
+                        // You could add a toast notification here
+                        alert('Referral code copied to clipboard!');
+                      }}
+                      className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
+                        <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
@@ -849,6 +1039,12 @@ function Membership() {
           </div>
         </div>
       </div>
+
+      {/* Withdrawal Modal */}
+      <WithdrawalModal 
+        isOpen={isWithdrawalModalOpen} 
+        onClose={() => setIsWithdrawalModalOpen(false)} 
+      />
     </div>
   );
 }

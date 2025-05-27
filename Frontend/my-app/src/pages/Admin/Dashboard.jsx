@@ -147,6 +147,9 @@ const AdminDashboard = () => {
         link: '',
         isActive: true
     });
+    const [withdrawalRequests, setWithdrawalRequests] = useState([]);
+    const [withdrawalError, setWithdrawalError] = useState('');
+    const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
     const navigate = useNavigate();
 
     // Chart data
@@ -264,6 +267,7 @@ const AdminDashboard = () => {
         fetchCoupons();
         fetchMentorships();
         fetchAdvertisements();
+        fetchWithdrawalRequests();
     }, []);
 
     const fetchCourses = async () => {
@@ -365,6 +369,29 @@ const AdminDashboard = () => {
         } catch (error) {
             console.error('Error fetching advertisements:', error);
             setError(error.response?.data?.message || 'Failed to fetch advertisements');
+        }
+    };
+
+    const fetchWithdrawalRequests = async () => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setWithdrawalError('Authentication token not found');
+                return;
+            }
+
+            const response = await axios.get(`${API_URL}/api/admin/withdrawals`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (response.data) {
+                setWithdrawalRequests(response.data);
+                setWithdrawalError('');
+            }
+        } catch (error) {
+            console.error('Error fetching withdrawal requests:', error);
+            setWithdrawalError(error.response?.data?.message || 'Failed to fetch withdrawal requests');
+            setWithdrawalRequests([]);
         }
     };
 
@@ -941,6 +968,36 @@ const AdminDashboard = () => {
                 console.error('Error deleting advertisement:', error);
                 setError('Failed to delete advertisement');
             }
+        }
+    };
+
+    const handleApproveWithdrawal = async (requestId) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            await axios.post(`${API_URL}/api/admin/withdrawals/${requestId}/approve`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setWithdrawalSuccess('Withdrawal approved successfully');
+            fetchWithdrawalRequests(); // Refresh the list
+            setTimeout(() => setWithdrawalSuccess(''), 3000);
+        } catch (error) {
+            setWithdrawalError(error.response?.data?.message || 'Failed to approve withdrawal');
+            setTimeout(() => setWithdrawalError(''), 3000);
+        }
+    };
+
+    const handleRejectWithdrawal = async (requestId) => {
+        try {
+            const token = localStorage.getItem('adminToken');
+            await axios.post(`${API_URL}/api/admin/withdrawals/${requestId}/reject`, {}, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setWithdrawalSuccess('Withdrawal rejected successfully');
+            fetchWithdrawalRequests(); // Refresh the list
+            setTimeout(() => setWithdrawalSuccess(''), 3000);
+        } catch (error) {
+            setWithdrawalError(error.response?.data?.message || 'Failed to reject withdrawal');
+            setTimeout(() => setWithdrawalError(''), 3000);
         }
     };
 
@@ -1774,6 +1831,116 @@ const AdminDashboard = () => {
                         </div>
                     </div>
                 );
+            case 'withdrawals':
+                return (
+                    <div className="space-y-6">
+                        <h2 className="text-xl font-bold">Withdrawal Requests</h2>
+                        
+                        {withdrawalSuccess && (
+                            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                                {withdrawalSuccess}
+                            </div>
+                        )}
+                        
+                        {withdrawalError && (
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                                {withdrawalError}
+                            </div>
+                        )}
+
+                        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto">
+                                {withdrawalRequests.length > 0 ? (
+                                    <table className="min-w-full divide-y divide-gray-200">
+                                        <thead className="bg-gray-50">
+                                            <tr>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    User
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Amount
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    MoMo Number
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Network
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Status
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Date
+                                                </th>
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Actions
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="bg-white divide-y divide-gray-200">
+                                            {withdrawalRequests.map((request) => (
+                                                <tr key={request._id}>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">{request.user?.fullName || 'N/A'}</div>
+                                                        <div className="text-sm text-gray-500">{request.user?.email || 'N/A'}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">GH₵{request.amount}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">{request.momoNumber}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">{request.network}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                                                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                                            request.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                                            'bg-red-100 text-red-800'
+                                                        }`}>
+                                                            {request.status}
+                                                        </span>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm text-gray-900">
+                                                            {new Date(request.requestedAt).toLocaleDateString()}
+                                                        </div>
+                                                        <div className="text-sm text-gray-500">
+                                                            {new Date(request.requestedAt).toLocaleTimeString()}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                        {request.status === 'pending' && (
+                                                            <div className="flex space-x-2">
+                                                                <button
+                                                                    onClick={() => handleApproveWithdrawal(request._id)}
+                                                                    className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-md"
+                                                                >
+                                                                    Approve
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => handleRejectWithdrawal(request._id)}
+                                                                    className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md"
+                                                                >
+                                                                    Reject
+                                                                </button>
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                ) : (
+                                    <div className="text-center py-8">
+                                        <div className="text-gray-500">No withdrawal requests found</div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
             default:
                 return null;
         }
@@ -1932,6 +2099,20 @@ const AdminDashboard = () => {
                         >
                             <FiImage className="mr-2 lg:mr-3" />
                             Advertisements
+                        </button>
+                        <button
+                            onClick={() => {
+                                setActiveTab('withdrawals');
+                                setIsSidebarOpen(false);
+                            }}
+                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
+                                activeTab === 'withdrawals'
+                                    ? 'bg-blue-100 text-blue-600'
+                                    : 'text-gray-600 hover:bg-gray-100'
+                            }`}
+                        >
+                            <FiDollarSign className="mr-2 lg:mr-3" />
+                            Withdrawals
                         </button>
                     </div>
                 </nav>

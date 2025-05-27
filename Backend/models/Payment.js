@@ -1,37 +1,11 @@
 const mongoose = require('mongoose');
 
 const paymentSchema = new mongoose.Schema({
-    user: {
+    userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
         required: true
     },
-    amount: {
-        type: Number,
-        required: true
-    },
-    currency: {
-        type: String,
-        required: true,
-        enum: ['GHS', 'USD', 'BTC', 'USDT', 'ETH']
-    },
-    type: {
-        type: String,
-        required: true,
-        enum: ['momo', 'crypto']
-    },
-    status: {
-        type: String,
-        required: true,
-        enum: ['pending', 'completed', 'failed'],
-        default: 'pending'
-    },
-    paymentMethod: {
-        type: String,
-        required: true,
-        enum: ['MTN', 'Vodafone', 'AirtelTigo', 'BTC', 'USDT', 'ETH']
-    },
-    transactionId: String,
     itemType: {
         type: String,
         required: true,
@@ -42,17 +16,51 @@ const paymentSchema = new mongoose.Schema({
         required: true,
         refPath: 'itemType'
     },
+    originalAmount: {
+        type: Number,
+        required: true
+    },
+    finalAmount: {
+        type: Number,
+        required: true
+    },
+    commissionAmount: {
+        type: Number,
+        default: 0
+    },
+    referringUserId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    referralCode: {
+        type: String,
+        default: ''
+    },
+    transactionId: {
+        type: String,
+        required: true
+    },
+    paymentMethod: {
+        type: String,
+        required: true
+    },
     momoNumber: String,
-    cryptoAddress: String,
     shippingAddress: {
         fullName: String,
-        address: String,
-        city: String,
-        region: String,
-        phone: String
+        phone: String,
+        email: String
+    },
+    status: {
+        type: String,
+        required: true,
+        enum: ['pending', 'completed', 'failed'],
+        default: 'pending'
+    },
+    createdAt: {
+        type: Date,
+        default: Date.now
     }
-}, {
-    timestamps: true
 });
 
 const Payment = mongoose.model('Payment', paymentSchema);

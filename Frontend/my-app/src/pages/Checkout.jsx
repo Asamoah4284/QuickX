@@ -15,7 +15,8 @@ function Checkout() {
     zipCode: '',
     phoneNumber: '',
     provider: 'mtn',
-    email: ''
+    email: '',
+    referralCode: ''
   });
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
@@ -213,7 +214,7 @@ function Checkout() {
   };
 
   // Handle Paystack payment success
-  const handlePaymentSuccess = (reference) => {
+  const handlePaymentSuccess = async (reference) => {
     console.log('Payment success response:', reference);
     setIsProcessing(true);
     
@@ -249,33 +250,39 @@ function Checkout() {
         },
         transactionId: referenceString,
         status: 'completed',
-        amount: Number(finalPrice), // Ensure amount is a number
-        currency: 'GHS'
+        amount: Number(finalPrice),
+        currency: 'GHS',
+        referralCode: formData.referralCode || ''
       };
 
       console.log('Sending payment data:', paymentData);
 
-      axios.post(`${API_URL}/api/payments/initialize`, paymentData, {
+      // Initialize payment and get course access
+      const paymentResponse = await axios.post(`${API_URL}/api/payments/initialize`, paymentData, {
         headers: { 'Authorization': `Bearer ${authToken}` }
-      })
-      .then(paymentResponse => {
+      });
+
         console.log('Payment saved:', paymentResponse.data);
         
-        // Then process based on item type
-        if (checkoutItem?.type === 'book' && checkoutItem?.id) {
-          // Update book status from pending to purchased in localStorage
-          const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
-          const updatedBooks = purchasedBooks.map(book => {
-            if (book.id === checkoutItem.id) {
-              return { ...book, status: 'purchased' };
+      if (checkoutItem?.type === 'course' && checkoutItem?.id) {
+        try {
+          // Save course purchase to database with referral code
+          const purchaseResponse = await axios.post(
+            `${API_URL}/api/courses/${checkoutItem.id}/purchase`, 
+            {
+              reference: referenceString,
+              amount: finalPrice,
+              status: 'completed',
+              referralCode: formData.referralCode || ''
+            },
+            {
+              headers: { 'Authorization': `Bearer ${authToken}` }
             }
-            return book;
-          });
-          localStorage.setItem('purchasedBooks', JSON.stringify(updatedBooks));
-          localStorage.removeItem('pendingBookPurchase');
-        } 
-        else if (checkoutItem?.type === 'course' && checkoutItem?.id) {
-          // Handle course purchase
+          );
+
+          console.log('Course purchase saved:', purchaseResponse.data);
+
+          // Update local storage with purchased course
           const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
           if (!purchasedCourses.some(course => course.id === checkoutItem.id)) {
             purchasedCourses.push({
@@ -284,43 +291,36 @@ function Checkout() {
               status: 'purchased'
             });
             localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
-            
-            // Save course purchase to database
-            return axios.post(`${API_URL}/api/courses/${checkoutItem.id}/purchase`, {
-              reference: referenceString,
-              amount: finalPrice,
-              status: 'completed'
-            }, {
-              headers: { 'Authorization': `Bearer ${authToken}` }
-            });
           }
-        }
-      })
-      .then(response => {
-        if (response) {
-          console.log('Purchase saved to database:', response.data);
-        }
+
         // Display success message
         alert(`Payment successful! You now have access to ${checkoutItem.title}`);
-        // Redirect to return path (typically membership page)
+          
+          // Redirect to course page instead of membership
+          navigate(`/school/course/${checkoutItem.id}`, { 
+            state: { 
+              fromPurchase: true,
+              courseId: checkoutItem.id 
+            }
+          });
+        } catch (error) {
+          console.error('Error saving course purchase:', error);
+          throw error;
+        }
+      } else {
+        // Handle other item types (books, etc)
         navigate(returnInfo.path, { state: returnInfo.state });
-      })
-      .catch(error => {
-        console.error('Error saving purchase:', error);
+      }
+    } catch (error) {
+      console.error('Error in handlePaymentSuccess:', error);
         console.error('Error details:', {
           message: error.message,
           response: error.response?.data,
           status: error.response?.status,
           data: error.response?.data
         });
-        alert(`Error saving purchase: ${error.response?.data?.message || error.message}`);
-      })
-      .finally(() => {
-        setIsProcessing(false);
-      });
-    } catch (error) {
-      console.error('Error in handlePaymentSuccess:', error);
-      alert(`Error processing payment: ${error.message}`);
+      alert(`Error processing payment: ${error.response?.data?.message || error.message}`);
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -387,6 +387,11 @@ function Checkout() {
             display_name: "Item ID",
             variable_name: "item_id",
             value: checkoutItem?.id
+          },
+          {
+            display_name: "Referral Code",
+            variable_name: "referral_code",
+            value: formData.referralCode || ''
           },
           {
             display_name: "Coupon Applied",
@@ -647,6 +652,21 @@ function Checkout() {
                         placeholder="example@email.com"
                       />
                       {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-1">
+                        Referral Code (Optional)
+                      </label>
+                      <input
+                        type="text"
+                        id="referralCode"
+                        name="referralCode"
+                        value={formData.referralCode}
+                        onChange={handleChange}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Enter referral code"
+                      />
                     </div>
                     
                     <div>

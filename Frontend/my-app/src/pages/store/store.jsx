@@ -291,7 +291,7 @@ const Store = () => {
                             onClick={() => handleAddBook(book)}
                           >
                             <FiShoppingCart size={16} />
-                            <span>Enroll</span>
+                            <span>Ebook</span>
                           </button>
                           <button 
                             className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"

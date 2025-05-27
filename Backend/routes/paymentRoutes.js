@@ -5,75 +5,121 @@ const Course = require('../models/Course');
 const Book = require('../models/Book');
 const auth = require('../middleware/auth');
 const paymentController = require('../controllers/paymentController');
+const User = require('../models/User');
 
-// Initialize payment
+// Initialize payment and process referral
 router.post('/initialize', auth, async (req, res) => {
     try {
-        const {
-            itemType,
-            itemId,
+        const { 
+            itemType, 
+            itemId, 
+            amount, 
+            transactionId, 
+            referralCode,
             paymentMethod,
             momoNumber,
-            cryptoAddress,
-            shippingAddress,
-            amount: requestAmount,
-            currency: requestCurrency,
-            status,
-            transactionId
+            shippingAddress 
         } = req.body;
 
-        // Validate item exists
-        let item;
+        // Validate the purchase item exists
+        let purchaseItem;
+        let finalAmount = Number(amount); // Original amount
+        let commissionAmount = 0;
+        let referringUserId = null;
+
         if (itemType === 'course') {
-            item = await Course.findById(itemId);
-        } else if (itemType === 'book') {
-            item = await Book.findById(itemId);
+            purchaseItem = await Course.findById(itemId);
+            if (!purchaseItem) {
+                return res.status(404).json({ message: 'Course not found' });
+            }
         }
 
-        if (!item) {
-            return res.status(404).json({ message: 'Item not found' });
-        }
-
-        // Calculate amount if not provided in request
-        const amount = requestAmount || (itemType === 'course' ? item.price.full : item.price);
-
-        // Validate payment method
-        const type = ['MTN', 'Vodafone', 'AirtelTigo'].includes(paymentMethod) 
-            ? 'momo' 
-            : 'crypto';
+        // Process referral if code provided
+        if (referralCode) {
+            const referringUser = await User.findOne({ referralCode });
             
-        // Use currency from request or default
-        const currency = requestCurrency || (type === 'momo' ? 'GHS' : paymentMethod);
+            if (referringUser) {
+                // Prevent self-referral
+                if (referringUser._id.toString() === req.user._id.toString()) {
+                    return res.status(400).json({ message: 'Cannot use own referral code' });
+                }
 
-        // Create payment record
-        const payment = new Payment({
-            user: req.user._id,
-            amount,
-            currency,
-            type,
-            paymentMethod,
+                // Calculate commission (10% of original amount)
+                commissionAmount = Number((amount * 0.10).toFixed(2));
+                // Calculate final amount after commission
+                finalAmount = Number((amount - commissionAmount).toFixed(2));
+                referringUserId = referringUser._id;
+
+                // Update referring user's earnings and history
+                await User.findByIdAndUpdate(
+                    referringUser._id,
+                    {
+                        $inc: { referralEarnings: commissionAmount },
+                        $push: {
+                            referralHistory: {
+                                referredUser: req.user._id,
+                                courseId: itemId,
+                                amount: commissionAmount,
+                                date: new Date()
+                            }
+                        }
+                    },
+                    { new: true }
+                );
+
+                console.log(`Referral commission of ${commissionAmount} credited to user ${referringUser._id}`);
+            }
+        }
+
+        // Create payment record with commission details
+        const paymentRecord = {
+            userId: req.user._id,
             itemType,
             itemId,
+            originalAmount: amount,
+            finalAmount: finalAmount,
+            commissionAmount: commissionAmount,
+            referringUserId: referringUserId,
+            transactionId,
+            paymentMethod,
             momoNumber,
-            cryptoAddress,
             shippingAddress,
-            status: status || 'pending',
-            transactionId
-        });
+            referralCode,
+            status: 'completed',
+            createdAt: new Date()
+        };
 
+        // Save payment record to database
+        const payment = new Payment(paymentRecord);
         await payment.save();
 
-        // Here you would integrate with your payment provider
-        // For example, calling MTN MoMo API or generating crypto payment address
+        console.log('Payment record:', {
+            ...paymentRecord,
+            breakdown: {
+                original: amount,
+                commission: commissionAmount,
+                final: finalAmount
+            }
+        });
 
-        res.json({
-            paymentId: payment._id,
-            amount,
-            currency: payment.currency,
-            // Add additional payment details based on the provider's response
+        res.json({ 
+            success: true, 
+            message: 'Payment initialized successfully',
+            payment: {
+                ...paymentRecord,
+                breakdown: {
+                    originalAmount: amount,
+                    commissionAmount: commissionAmount,
+                    finalAmount: finalAmount
+                }
+            }
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Payment initialization error:', error);
+        res.status(500).json({ 
+            message: 'Failed to process payment', 
+            error: error.message 
+        });
     }
 });
 

@@ -167,7 +167,7 @@ const ForexSchool = () => {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-start">
             <Link 
-              to="/school/pricing"
+              to=""
               className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-semibold rounded-lg text-blue-900 bg-white hover:bg-blue-50 transition duration-300 shadow-xl hover:shadow-2xl"
             >
               <FiPlay className="mr-2" />

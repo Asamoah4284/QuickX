@@ -127,4 +127,49 @@ router.get('/profile', auth, async (req, res) => {
     }
 });
 
+// Get current user data
+router.get('/me', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .select('-password') // Exclude password
+            .lean(); // Convert to plain JavaScript object
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Ensure referral fields are properly formatted
+        user.referralEarnings = user.referralEarnings || 0;
+        user.referralCode = user.referralCode || '';
+
+        res.json(user);
+    } catch (error) {
+        console.error('Error fetching user data:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Get user's referral history
+router.get('/referrals', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user._id)
+            .select('referralHistory referralEarnings referralCode')
+            .populate('referralHistory.referredUser', 'fullName email')
+            .populate('referralHistory.courseId', 'title');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            referralCode: user.referralCode,
+            referralEarnings: user.referralEarnings,
+            referralHistory: user.referralHistory
+        });
+    } catch (error) {
+        console.error('Error fetching referral history:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
 module.exports = router; 
