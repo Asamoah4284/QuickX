@@ -18,6 +18,11 @@ const bookSchema = new mongoose.Schema({
         enum: ['ebook', 'hardcopy'],
         required: true
     },
+    category: {
+        type: String,
+        enum: ['forex', 'crypto', 'general'],
+        default: 'general'
+    },
     price: {
         type: Number,
         required: true

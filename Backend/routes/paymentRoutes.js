@@ -164,7 +164,25 @@ router.post('/webhook', async (req, res) => {
             const user = await User.findById(payment.user);
             
             if (payment.itemType === 'course') {
+                const course = await Course.findById(payment.itemId);
+                
+                // Add course to user's purchased courses
                 user.purchasedCourses.push(payment.itemId);
+                
+                // If this is a forex course, add all forex ebooks
+                if (course && course.courseType === 'forex') {
+                    const forexBooks = await Book.find({ 
+                        category: 'forex',
+                        type: 'ebook'
+                    });
+                    
+                    // Add forex books if not already purchased
+                    for (const book of forexBooks) {
+                        if (!user.purchasedBooks.includes(book._id)) {
+                            user.purchasedBooks.push(book._id);
+                        }
+                    }
+                }
             } else if (payment.itemType === 'book') {
                 user.purchasedBooks.push(payment.itemId);
             }

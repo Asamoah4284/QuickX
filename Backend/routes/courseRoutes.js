@@ -170,6 +170,29 @@ router.post('/:id/purchase', auth, async (req, res) => {
         // Update course student count
         course.totalStudents += 1;
         await course.save();
+
+        // If this is a forex course, add all forex ebooks to user's purchased books
+        if (course.courseType === 'forex') {
+            const Book = require('../models/Book');
+            const forexBooks = await Book.find({ 
+                category: 'forex',
+                type: 'ebook'
+            });
+
+            // Add forex books to user's purchased books if not already purchased
+            if (forexBooks.length > 0) {
+                const User = require('../models/User');
+                const userDoc = await User.findById(user._id);
+                
+                for (const book of forexBooks) {
+                    if (!userDoc.purchasedBooks.includes(book._id)) {
+                        userDoc.purchasedBooks.push(book._id);
+                    }
+                }
+                
+                await userDoc.save();
+            }
+        }
         
         res.json({ 
             message: 'Course purchased successfully',
