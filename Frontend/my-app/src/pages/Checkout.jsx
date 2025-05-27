@@ -33,7 +33,7 @@ function Checkout() {
   const API_URL = import.meta.env.VITE_API_URL;
 
   // Paystack public key
-  const paystackPublicKey = "pk_test_00217b2a0545ad1be4b2f07e05bc1e73eba765b7";
+  const paystackPublicKey = "pk_live_d764bef87200f03cedc44a9908048e829201305a";
 
   // Load checkout item from location state
   useEffect(() => {
