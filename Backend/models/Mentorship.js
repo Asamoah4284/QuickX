@@ -28,6 +28,10 @@ const mentorshipSchema = new mongoose.Schema({
   icon: {
     type: String,
     default: 'trading'
+  },
+  imageUrl: {
+    type: String,
+    required: true
   }
 }, { timestamps: true });
 

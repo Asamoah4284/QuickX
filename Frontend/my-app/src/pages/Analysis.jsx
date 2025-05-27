@@ -61,7 +61,8 @@ function Mentorship({ premium = false }) {
           mentor: session.mentor,
           title: session.title,
           summary: session.summary,
-          isPremium: session.isPremium
+          isPremium: session.isPremium,
+          imageUrl: session.imageUrl
         }));
         
         console.log('Transformed sessions:', transformedSessions);
@@ -137,27 +138,38 @@ function Mentorship({ premium = false }) {
 
   const SessionCard = ({ item }) => (
     <motion.div 
-      className={`bg-white rounded-lg shadow-md overflow-hidden p-6 relative ${item.isPremium ? 'border-yellow-400 border' : ''}`}
+      className={`bg-white rounded-lg shadow-md overflow-hidden relative ${item.isPremium ? 'border-yellow-400 border' : ''}`}
       whileHover={{ scale: 1.02 }}
       transition={{ duration: 0.2 }}
     >
-      <div className="flex items-center mb-4">
-        <div className="bg-blue-500 w-10 h-10 rounded-full flex items-center justify-center text-white mr-4">
-          <FaChalkboardTeacher />
+      {item.imageUrl && (
+        <div className="w-full h-48 overflow-hidden">
+          <img 
+            src={item.imageUrl} 
+            alt={item.title}
+            className="w-full h-full object-cover"
+          />
         </div>
-        <div className="flex flex-col text-sm text-gray-500">
-          <span>{item.date}</span>
-          <span>{item.time}</span>
-          <span>with {item.mentor}</span>
-        </div>
-        {item.isPremium && (
-          <div className="ml-auto bg-yellow-300 text-gray-800 text-xs py-1 px-2 rounded flex items-center gap-1">
-            <FaStar /> Premium
+      )}
+      <div className="p-6">
+        <div className="flex items-center mb-4">
+          <div className="bg-blue-500 w-10 h-10 rounded-full flex items-center justify-center text-white mr-4">
+            <FaChalkboardTeacher />
           </div>
-        )}
+          <div className="flex flex-col text-sm text-gray-500">
+            <span>{item.date}</span>
+            <span>{item.time}</span>
+            <span>with {item.mentor}</span>
+          </div>
+          {item.isPremium && (
+            <div className="ml-auto bg-yellow-300 text-gray-800 text-xs py-1 px-2 rounded flex items-center gap-1">
+              <FaStar /> Premium
+            </div>
+          )}
+        </div>
+        <h3 className="text-xl font-semibold mb-2 text-gray-800">{item.title}</h3>
+        <p className="text-gray-700 leading-relaxed">{item.summary}</p>
       </div>
-      <h3 className="text-xl font-semibold mb-2 text-gray-800">{item.title}</h3>
-      <p className="text-gray-700 leading-relaxed">{item.summary}</p>
       {item.isPremium && !premium && (
         <div className="absolute inset-0 bg-gray-800 bg-opacity-80 flex flex-col items-center justify-center text-white gap-4 p-8 text-center">
           <FaLock className="text-3xl" />

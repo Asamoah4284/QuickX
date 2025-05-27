@@ -137,7 +137,8 @@ const AdminDashboard = () => {
         time: '',
         isPremium: false,
         mentor: '',
-        icon: 'trading'
+        icon: 'trading',
+        imageUrl: ''
     });
     const [advertisements, setAdvertisements] = useState([]);
     const [newAdvertisement, setNewAdvertisement] = useState({
@@ -858,6 +859,47 @@ const AdminDashboard = () => {
         }
     };
 
+    const handleMentorshipImageUpload = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setError('Please login first');
+                return;
+            }
+            
+            // Get the secure URL from our server
+            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (!url) {
+                throw new Error('Failed to get upload URL');
+            }
+
+            // Upload the file directly to S3
+            await axios.put(url, file, {
+                headers: {
+                    'Content-Type': file.type
+                }
+            });
+
+            // Extract the file URL from the S3 URL
+            const imageUrl = url.split('?')[0];
+            
+            setMentorshipForm(prev => ({
+                ...prev,
+                imageUrl
+            }));
+            setError('');
+        } catch (error) {
+            console.error('Error uploading image:', error);
+            setError(error.response?.data?.message || 'Failed to upload image');
+        }
+    };
+
     const handleMentorshipInput = (e) => {
         const { name, value, type, checked } = e.target;
         setMentorshipForm((prev) => ({
@@ -870,10 +912,28 @@ const AdminDashboard = () => {
         e.preventDefault();
         try {
             const token = localStorage.getItem('adminToken');
+            
+            // Validate that we have an image
+            if (!mentorshipForm.imageUrl) {
+                setError('Please upload a session image');
+                return;
+            }
+
             await axios.post(`${API_URL}/api/mentorships`, mentorshipForm, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            setMentorshipForm({ title: '', summary: '', date: '', time: '', isPremium: false, mentor: '', icon: 'trading' });
+            
+            // Reset form with all fields including imageUrl
+            setMentorshipForm({
+                title: '',
+                summary: '',
+                date: '',
+                time: '',
+                isPremium: false,
+                mentor: '',
+                icon: 'trading',
+                imageUrl: ''
+            });
             setShowMentorshipForm(false);
             fetchMentorships();
             setError('');
@@ -1693,6 +1753,24 @@ const AdminDashboard = () => {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Summary</label>
                                 <textarea name="summary" value={mentorshipForm.summary} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-1">Session Image</label>
+                                <input
+                                    type="file"
+                                    accept="image/*"
+                                    onChange={handleMentorshipImageUpload}
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                                {mentorshipForm.imageUrl && (
+                                    <div className="mt-2">
+                                        <img
+                                            src={mentorshipForm.imageUrl}
+                                            alt="Session preview"
+                                            className="h-32 object-cover rounded-lg"
+                                        />
+                                    </div>
+                                )}
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
