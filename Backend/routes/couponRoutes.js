@@ -78,23 +78,9 @@ router.post('/validate-coupon', async (req, res) => {
             return res.status(400).json({ message: 'Coupon has reached maximum uses' });
         }
 
-        // Calculate discount based on price
-        let discount = 0;
-        if (price < 250) {
-            discount = 30;
-        } else if (price >= 700) {
-            discount = 25;
-        } else {
-            // For prices between 350 and 699, calculate proportional discount
-            const range = 700 - 350;
-            const position = price - 350;
-            const ratio = position / range;
-            discount = Math.round(5 + (ratio * 21)); // Linear interpolation between 5% and 26%
-        }
-
         res.json({
             valid: true,
-            discount: discount,
+            discount: coupon.discount,
             couponId: coupon._id
         });
     } catch (error) {
