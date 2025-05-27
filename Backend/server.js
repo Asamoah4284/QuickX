@@ -14,7 +14,9 @@ app.use(express.json());
 // CORS configuration
 const allowedOrigins = [
     'http://localhost:5173',
-    'https://www.quickxlearn.com'
+    'http://localhost:3000',
+    'https://www.quickxlearn.com',
+    'https://quickxlearn.com'
 ];
 
 const corsOptions = {
@@ -25,12 +27,18 @@ const corsOptions = {
             callback(new Error('Not allowed by CORS'));
         }
     },
-    credentials: true
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
 };
 
 // Use CORS middleware
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));  // Handle preflight OPTIONS requests
+
+// Handle preflight requests
+app.options('*', cors(corsOptions));
 
 // Database connection
 console.log('Attempting to connect to MongoDB...');
