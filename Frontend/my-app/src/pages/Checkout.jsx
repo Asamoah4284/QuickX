@@ -172,49 +172,30 @@ function Checkout() {
   };
 
   // Handle submission of payment form for card payments
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (validateForm() && paymentMethod === 'card') {
-      setIsProcessing(true);
-      
-      // Simulate payment processing
-      setTimeout(() => {
-        // Process based on item type (book or course)
-        if (checkoutItem?.type === 'book' && checkoutItem?.id) {
-          // Update book status from pending to purchased in localStorage
-          const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
-          const updatedBooks = purchasedBooks.map(book => {
-            if (book.id === checkoutItem.id) {
-              return { ...book, status: 'purchased' };
-            }
-            return book;
-          });
-          localStorage.setItem('purchasedBooks', JSON.stringify(updatedBooks));
-          localStorage.removeItem('pendingBookPurchase'); // Clear pending flag
-        } 
-        else if (checkoutItem?.type === 'course' && checkoutItem?.id) {
-          // Handle course purchase
-          const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
-          // Add the course to purchased courses if not already there
-          if (!purchasedCourses.some(course => course.id === checkoutItem.id)) {
-            purchasedCourses.push({
-              ...checkoutItem,
-              purchaseDate: new Date().toISOString(),
-              status: 'purchased'
-            });
-            localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
-          }
-        }
-        
-        // Redirect to return path (typically membership page)
-        navigate(returnInfo.path, { state: returnInfo.state });
-      }, 2000);
+    // Block all credit card submissions
+    if (paymentMethod === 'card') {
+      alert('Credit card payments are not available at this time. Please use Mobile Money (MoMo) to complete your purchase.');
+      togglePaymentMethod('momo');
+      return;
     }
+
+    // Do nothing else - all purchases should go through Paystack/MoMo
+    return;
   };
 
   // Handle Paystack payment success
   const handlePaymentSuccess = async (reference) => {
+    // Block all non-MoMo payments
+    if (paymentMethod !== 'momo') {
+      alert('Only Mobile Money (MoMo) payments are accepted. Please use MoMo to complete your purchase.');
+      togglePaymentMethod('momo');
+      setIsProcessing(false);
+      return;
+    }
+
     console.log('Payment success response:', reference);
     setIsProcessing(true);
     
@@ -255,19 +236,15 @@ function Checkout() {
         referralCode: formData.referralCode || ''
       };
 
-      console.log('Sending payment data:', paymentData);
-
       // Initialize payment and get course access
       const paymentResponse = await axios.post(`${API_URL}/api/payments/initialize`, paymentData, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
-        console.log('Payment saved:', paymentResponse.data);
-        
-      if (checkoutItem?.type === 'course' && checkoutItem?.id) {
-        try {
-          // Save course purchase to database with referral code
-          const purchaseResponse = await axios.post(
+      if (paymentResponse.data.success) {
+        if (checkoutItem?.type === 'course' && checkoutItem?.id) {
+          // Save course purchase to database
+          await axios.post(
             `${API_URL}/api/courses/${checkoutItem.id}/purchase`, 
             {
               reference: referenceString,
@@ -280,9 +257,7 @@ function Checkout() {
             }
           );
 
-          console.log('Course purchase saved:', purchaseResponse.data);
-
-          // Update local storage with purchased course
+          // Update localStorage for course
           const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
           if (!purchasedCourses.some(course => course.id === checkoutItem.id)) {
             purchasedCourses.push({
@@ -293,34 +268,33 @@ function Checkout() {
             localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
           }
 
-        // Display success message
-        alert(`Payment successful! You now have access to ${checkoutItem.title}`);
-          
-          // Redirect to course page instead of membership
+          alert(`Payment successful! You now have access to ${checkoutItem.title}`);
           navigate(`/school/course/${checkoutItem.id}`, { 
-            state: { 
-              fromPurchase: true,
-              courseId: checkoutItem.id 
-            }
+            state: { fromPurchase: true, courseId: checkoutItem.id }
           });
-        } catch (error) {
-          console.error('Error saving course purchase:', error);
-          throw error;
+        } 
+        else if (checkoutItem?.type === 'book' && checkoutItem?.id) {
+          // Update localStorage for book
+          const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
+          if (!purchasedBooks.some(book => book.id === checkoutItem.id)) {
+            purchasedBooks.push({
+              ...checkoutItem,
+              purchaseDate: new Date().toISOString(),
+              status: 'purchased'
+            });
+            localStorage.setItem('purchasedBooks', JSON.stringify(purchasedBooks));
+          }
+          localStorage.removeItem('pendingBookPurchase');
+          navigate('/library');
+        } else {
+          navigate(returnInfo.path, { state: returnInfo.state });
         }
       } else {
-        // Handle other item types (books, etc)
-        navigate(returnInfo.path, { state: returnInfo.state });
+        throw new Error('Payment initialization failed');
       }
     } catch (error) {
       console.error('Error in handlePaymentSuccess:', error);
-        console.error('Error details:', {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-          data: error.response?.data
-        });
       alert(`Error processing payment: ${error.response?.data?.message || error.message}`);
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -353,13 +327,17 @@ function Checkout() {
 
   // Get Paystack config
   const getPaystackConfig = () => {
-    // Calculate the final price with discount
+    // Only allow MoMo payments
+    if (paymentMethod !== 'momo') {
+      return null;
+    }
+
     const finalPrice = calculateFinalPrice();
     
     return {
       reference: `${checkoutItem?.type}_${checkoutItem?.id}_${new Date().getTime()}`,
       email: formData.email,
-      amount: finalPrice * 100, // Use the discounted price
+      amount: finalPrice * 100,
       publicKey: paystackPublicKey,
       text: "Pay with Mobile Money",
       onSuccess: handlePaymentSuccess,

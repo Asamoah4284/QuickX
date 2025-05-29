@@ -223,23 +223,41 @@ const CourseDetail = () => {
     }
   };
 
-  // Add this function after the existing useEffect
-  const refreshVideoUrl = async (url) => {
+  // Optimize video URL handling
+  const getOptimizedVideoUrl = async (url) => {
+    if (!url) return null;
+    
     try {
-      const token = localStorage.getItem('authToken');
-      if (!token) return null;
+      // If it's already a valid URL with protocol, return it
+      if (url.startsWith('http://') || url.startsWith('https://')) {
+        return url;
+      }
       
-      // If it's an AWS S3 URL, we need to get a fresh signed URL
-      if (url && url.includes('amazonaws.com')) {
+      // If it's an S3 URL, get a fresh signed URL
+      if (url.includes('amazonaws.com')) {
+        const token = localStorage.getItem('authToken');
+        if (!token) return null;
+        
         const response = await axios.get(`${API_URL}/api/courses/${courseId}/s3VideoUrl`, {
           headers: { Authorization: `Bearer ${token}` },
           params: { videoUrl: url }
         });
         return response.data.url;
       }
+      
+      // If it's a relative path, prepend API URL
+      if (url.startsWith('/')) {
+        return `${API_URL}${url}`;
+      }
+      
+      // If it's a Cloudinary URL without protocol
+      if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
+        return `https://${url}`;
+      }
+      
       return url;
     } catch (error) {
-      console.error('Error refreshing video URL:', error);
+      console.error('Error optimizing video URL:', error);
       return url;
     }
   };
@@ -248,9 +266,22 @@ const CourseDetail = () => {
   useEffect(() => {
     if (currentLesson?.videoUrl) {
       const loadVideoUrl = async () => {
-        const freshUrl = await refreshVideoUrl(currentLesson.videoUrl);
-        setVideoUrl(freshUrl);
-        checkVideoAccessibility(freshUrl);
+        setIsVideoLoading(true);
+        try {
+          const optimizedUrl = await getOptimizedVideoUrl(currentLesson.videoUrl);
+          setVideoUrl(optimizedUrl);
+          // Only check accessibility for non-S3 URLs
+          if (!optimizedUrl?.includes('amazonaws.com')) {
+            await checkVideoAccessibility(optimizedUrl);
+          } else {
+            setIsVideoAccessible(true);
+          }
+        } catch (error) {
+          console.error('Error loading video:', error);
+          setVideoError('Failed to load video. Please try again.');
+        } finally {
+          setIsVideoLoading(false);
+        }
       };
       loadVideoUrl();
     }
@@ -527,7 +558,7 @@ const CourseDetail = () => {
                           <div className="text-white mb-4">{videoError}</div>
                           <button 
                             onClick={async () => {
-                              const freshUrl = await refreshVideoUrl(currentLesson.videoUrl);
+                              const freshUrl = await getOptimizedVideoUrl(currentLesson.videoUrl);
                               setVideoUrl(freshUrl);
                               setVideoError(null);
                             }}
@@ -562,6 +593,7 @@ const CourseDetail = () => {
                       controls
                       className="w-full h-full"
                       autoPlay={false}
+                      preload="metadata"
                       controlsList="nodownload"
                       onError={async (e) => {
                         console.error('Video playback error:', {
@@ -570,7 +602,7 @@ const CourseDetail = () => {
                         });
                         handleVideoError(e);
                         // Try to refresh the URL on error
-                        const freshUrl = await refreshVideoUrl(currentLesson.videoUrl);
+                        const freshUrl = await getOptimizedVideoUrl(currentLesson.videoUrl);
                         setVideoUrl(freshUrl);
                       }}
                       onLoadStart={handleVideoLoadStart}
@@ -589,8 +621,6 @@ const CourseDetail = () => {
                       }}
                     >
                       <source src={videoUrl} type="video/mp4" />
-                      <source src={videoUrl} type="video/webm" />
-                      <source src={videoUrl} type="video/ogg" />
                       Your browser does not support the video tag.
                     </video>
                   </>
