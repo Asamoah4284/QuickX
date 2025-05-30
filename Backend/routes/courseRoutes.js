@@ -64,14 +64,28 @@ router.get('/', async (req, res) => {
         let query = {};
             
         if (category) {
+            // Sanitize category input
+            if (typeof category !== 'string' || category.length > 50) {
+                return res.status(400).json({ message: 'Invalid category parameter' });
+            }
             query.category = category;
         }
         
         if (search) {
-            query.title = { $regex: search, $options: 'i' };
+            // Sanitize search input
+            if (typeof search !== 'string' || search.length > 100) {
+                return res.status(400).json({ message: 'Invalid search parameter' });
+            }
+            // Escape special regex characters
+            const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query.title = { $regex: escapedSearch, $options: 'i' };
         }
 
         if (courseType) {
+            // Validate courseType
+            if (!['forex', 'crypto'].includes(courseType)) {
+                return res.status(400).json({ message: 'Invalid course type. Must be forex or crypto' });
+            }
             query.courseType = courseType;
             console.log(`Filtering courses by courseType: ${courseType}`);
         }

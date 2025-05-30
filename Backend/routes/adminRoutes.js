@@ -47,9 +47,9 @@ router.put('/courses/:id',
     adminController.updateCourse
 );
 
-router.delete('/courses/:id', adminController.deleteCourse);
-router.get('/courses', adminController.getAllCourses);
-router.get('/courses/:id', adminController.getCourseById);
+router.delete('/courses/:id', adminAuth, adminController.deleteCourse);
+router.get('/courses', adminAuth, adminController.getAllCourses);
+router.get('/courses/:id', adminAuth, adminController.getCourseById);
 
 // Book management routes
 router.post('/books', 
@@ -62,9 +62,9 @@ router.put('/books/:id',
     adminController.updateBook
 );
 
-router.delete('/books/:id', adminController.deleteBook);
-router.get('/books', adminController.getAllBooks);
-router.get('/books/:id', adminController.getBookById);
+router.delete('/books/:id', adminAuth, adminController.deleteBook);
+router.get('/books', adminAuth, adminController.getAllBooks);
+router.get('/books/:id', adminAuth, adminController.getBookById);
 
 // Content upload route
 router.post('/upload-content', (req, res) => {

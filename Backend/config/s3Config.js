@@ -1,6 +1,6 @@
 const aws = require('aws-sdk');
 require('dotenv').config();
-const AWS_ACCESS_KEY_ID = 'AKIAUGIL3O2BTE6IF7OL'
+const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
 
 const s3 = new aws.S3({
     accessKeyId:AWS_ACCESS_KEY_ID,

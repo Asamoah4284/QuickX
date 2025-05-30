@@ -2,25 +2,37 @@ const express = require('express');
 const router = express.Router();
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { body, validationResult } = require('express-validator');
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter for withdrawal requests
+const withdrawalLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 3, // Limit to 3 withdrawal requests per hour
+    message: 'Too many withdrawal requests. Please try again later.',
+    skipSuccessfulRequests: false
+});
+
+// Validation middleware
+const validateMomoDetails = [
+    body('momoNumber')
+        .matches(/^0\d{9}$/)
+        .withMessage('Invalid phone number format. Must be 10 digits starting with 0'),
+    body('network')
+        .isIn(['MTN', 'Vodafone', 'AirtelTigo'])
+        .withMessage('Invalid network. Must be MTN, Vodafone, or AirtelTigo')
+];
 
 // Update MoMo details
-router.post('/momo-details', auth, async (req, res) => {
+router.post('/momo-details', auth, validateMomoDetails, async (req, res) => {
     try {
+        // Check for validation errors
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
         const { momoNumber, network } = req.body;
-
-        // Validate phone number format
-        if (!momoNumber.match(/^0\d{9}$/)) {
-            return res.status(400).json({
-                message: 'Invalid phone number format. Must be 10 digits starting with 0'
-            });
-        }
-
-        // Validate network
-        if (!['MTN', 'Vodafone', 'AirtelTigo'].includes(network)) {
-            return res.status(400).json({
-                message: 'Invalid network. Must be MTN, Vodafone, or AirtelTigo'
-            });
-        }
 
         // Update user's MoMo details
         const user = await User.findByIdAndUpdate(
@@ -49,10 +61,21 @@ router.post('/momo-details', auth, async (req, res) => {
 });
 
 // Request withdrawal
-router.post('/withdraw', auth, async (req, res) => {
+router.post('/withdraw', auth, withdrawalLimiter, async (req, res) => {
     try {
         const user = await User.findById(req.user._id);
         
+        // Check if user has pending withdrawal
+        const hasPendingWithdrawal = user.withdrawalRequests.some(
+            request => request.status === 'pending'
+        );
+        
+        if (hasPendingWithdrawal) {
+            return res.status(400).json({
+                message: 'You already have a pending withdrawal request. Please wait for it to be processed.'
+            });
+        }
+
         // Check minimum withdrawal amount
         if (user.referralEarnings < 20) {
             return res.status(400).json({

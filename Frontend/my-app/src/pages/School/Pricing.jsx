@@ -26,9 +26,9 @@ function Pricing() {
   const courseId = searchParams.get('id');
 
   const LESSONS_PER_PAGE = 5;
-  
+  ``
   // Paystack public key - replace with your actual public key
-  const paystackPublicKey = "pk_live_d764bef87200f03cedc44a9908048e829201305a";
+  const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
   const [currentModulePage, setCurrentModulePage] = useState(0);
   const MODULES_PER_PAGE = 1;

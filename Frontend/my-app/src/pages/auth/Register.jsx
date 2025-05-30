@@ -52,7 +52,7 @@ function Register() {
     } catch (err) {
       setError(
         err.response?.data?.message || 
-        'Registration failed. Please try again later.'
+        'Enter a password (8+ chars, upper, lower, number, special).'
       );
     } finally {
       setIsLoading(false);

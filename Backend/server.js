@@ -5,16 +5,69 @@ const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
+const rateLimit = require('express-rate-limit');
+const mongoSanitize = require('express-mongo-sanitize');
+const helmet = require('helmet');
+const auth = require('./middleware/auth');
+const flexibleAuth = require('./middleware/flexibleAuth');
+const { securityHeaders, requestSizeLimiter, preventParamPollution } = require('./middleware/security');
 
 const app = express();
 
+// Security middleware
+app.use(helmet({
+    contentSecurityPolicy: false, // We use our custom CSP
+    crossOriginEmbedderPolicy: false
+}));
+
+// Apply custom security headers
+app.use(securityHeaders);
+
+// Request size limiting
+app.use(requestSizeLimiter);
+
+// Prevent parameter pollution
+app.use(preventParamPollution);
+
+// Rate limiting - general API limit
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // Limit each IP to 100 requests per windowMs
+    message: 'Too many requests from this IP, please try again later.',
+    standardHeaders: true,
+    legacyHeaders: false,
+});
+
+// Stricter rate limit for auth endpoints
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 5, // Limit each IP to 5 requests per windowMs
+    message: 'Too many authentication attempts, please try again later.',
+    skipSuccessfulRequests: true,
+});
+
+// S3 URL generation rate limiter
+const s3UrlLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // limit each user to 10 requests per windowMs
+    message: 'Too many upload requests, please try again later'
+});
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Prevent NoSQL injection attacks
+app.use(mongoSanitize());
 
 // CORS configuration
 const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:3000',
+    
     'https://www.quickxlearn.com',
     'https://quickxlearn.com'
 ];
@@ -88,14 +141,29 @@ app.get('/sitemap.xml', (req, res) => {
     res.sendFile(path.join(__dirname, 'sitemap.xml'));
 });
 
-app.get('/s3Url', async (req, res) => {
-    const uploadURL = await s3Config.generateImageUrl();
-    res.json({ url: uploadURL });
+app.get('/s3Url', flexibleAuth, s3UrlLimiter, async (req, res) => {
+    try {
+        // Log the request for audit purposes
+        console.log(`S3 URL generated for ${req.userType}: ${req.user._id} at ${new Date().toISOString()}`);
+        
+        const uploadURL = await s3Config.generateImageUrl();
+        res.json({ url: uploadURL });
+    } catch (error) {
+        console.error('S3 URL generation error:', error);
+        res.status(500).json({ message: 'Failed to generate upload URL' });
+    }
 });
 
-app.get('/s3VideoUrl', async (req, res) => {
-    const uploadURL = await s3Config.generateVideoUrl();
-    res.json({ url: uploadURL });
+app.get('/s3VideoUrl', flexibleAuth, s3UrlLimiter, async (req, res) => {
+    try {
+        console.log(`S3 Video URL generated for ${req.userType}: ${req.user._id} at ${new Date().toISOString()}`);
+        
+        const uploadURL = await s3Config.generateVideoUrl();
+        res.json({ url: uploadURL });
+    } catch (error) {
+        console.error('S3 Video URL generation error:', error);
+        res.status(500).json({ message: 'Failed to generate upload URL' });
+    }
 });
 
 app.get('/', async (req, res) => {
@@ -132,9 +200,13 @@ app.get('/api/courses/:courseId/video-url', async (req, res) => {
 // Error handler middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).json({ 
-        message: 'Server error',
-        error: process.env.NODE_ENV === 'development' ? err.message : 'An unexpected error occurred'
+    
+    // Don't leak error details in production
+    const isDevelopment = process.env.NODE_ENV === 'development';
+    
+    res.status(err.status || 500).json({ 
+        message: err.message || 'Server error',
+        ...(isDevelopment && { stack: err.stack })
     });
 });
 

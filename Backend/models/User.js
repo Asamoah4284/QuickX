@@ -56,32 +56,32 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true,
         minlength: 8,
-        // validate: {
-        //     validator: function(value) {
-        //         // Check for minimum length
-        //         if (value.length < 8) {
-        //             return false;
-        //         }
-        //         // Check for at least one uppercase letter
-        //         if (!/[A-Z]/.test(value)) {
-        //             return false;
-        //         }
-        //         // Check for at least one lowercase letter
-        //         if (!/[a-z]/.test(value)) {
-        //             return false;
-        //         }
-        //         // Check for at least one number
-        //         if (!/\d/.test(value)) {
-        //             return false;
-        //         }
-        //         // Check for at least one special character
-        //         if (!/[\W_]/.test(value)) {
-        //             return false;
-        //         }
-        //         return true;
-        //     },
-        //     message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
-        // }
+        validate: {
+            validator: function(value) {
+                // Check for minimum length
+                if (value.length < 8) {
+                    return false;
+                }
+                // Check for at least one uppercase letter
+                if (!/[A-Z]/.test(value)) {
+                    return false;
+                }
+                // Check for at least one lowercase letter
+                if (!/[a-z]/.test(value)) {
+                    return false;
+                }
+                // Check for at least one number
+                if (!/\d/.test(value)) {
+                    return false;
+                }
+                // Check for at least one special character
+                if (!/[\W_]/.test(value)) {
+                    return false;
+                }
+                return true;
+            },
+            message: 'Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.'
+        }
     },
     fullName: {
         type: String,

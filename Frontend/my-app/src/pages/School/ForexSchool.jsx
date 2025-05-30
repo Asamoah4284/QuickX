@@ -308,7 +308,7 @@ const ForexSchool = () => {
                         </div>
                         <Link 
                           to={`/school/pricing?level=${course.level}&id=${course.id}`}
-                          className="text-blue-600 hover:text-blue-700 font-medium text-xs px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"
+                          className="text-blue-600 hover:text-blue-900 font-large text-xs px-3 py-1.5 rounded-lg bg-blue-50 hover:bg-blue-100 transition"
                         >
                           Enroll Now - GH₵{course.price}
                         </Link>

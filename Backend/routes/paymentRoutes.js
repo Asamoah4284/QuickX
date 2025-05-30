@@ -6,9 +6,58 @@ const Book = require('../models/Book');
 const auth = require('../middleware/auth');
 const paymentController = require('../controllers/paymentController');
 const User = require('../models/User');
+const { body, validationResult } = require('express-validator');
+
+// Validation middleware for payment initialization
+const validatePayment = [
+    body('amount')
+        .isFloat({ min: 0.01 })
+        .withMessage('Amount must be greater than 0')
+        .toFloat(),
+    body('itemType')
+        .isIn(['course', 'book'])
+        .withMessage('Invalid item type'),
+    body('itemId')
+        .isMongoId()
+        .withMessage('Invalid item ID'),
+    body('transactionId')
+        .notEmpty()
+        .trim()
+        .escape()
+        .withMessage('Transaction ID is required'),
+    body('paymentMethod')
+        .optional()
+        .isIn(['momo', 'paystack', 'card', 'direct'])
+        .withMessage('Invalid payment method'),
+    body('momoNumber')
+        .optional()
+        .matches(/^0\d{9}$/)
+        .withMessage('Invalid mobile money number format'),
+    body('referralCode')
+        .optional()
+        .isAlphanumeric()
+        .isLength({ min: 6, max: 6 })
+        .withMessage('Invalid referral code format'),
+    body('shippingAddress')
+        .optional()
+        .trim()
+        .escape()
+];
+
+// Middleware to handle validation errors
+const handleValidationErrors = (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ 
+            message: 'Validation failed',
+            errors: errors.array() 
+        });
+    }
+    next();
+};
 
 // Initialize payment and process referral
-router.post('/initialize', auth, async (req, res) => {
+router.post('/initialize', auth, validatePayment, handleValidationErrors, async (req, res) => {
     try {
         const { 
             itemType, 
@@ -21,7 +70,7 @@ router.post('/initialize', auth, async (req, res) => {
             shippingAddress 
         } = req.body;
 
-        // Validate the purchase item exists
+        // Validate the purchase item exists and verify price
         let purchaseItem;
         let finalAmount = Number(amount); // Original amount
         let commissionAmount = 0;
@@ -31,6 +80,29 @@ router.post('/initialize', auth, async (req, res) => {
             purchaseItem = await Course.findById(itemId);
             if (!purchaseItem) {
                 return res.status(404).json({ message: 'Course not found' });
+            }
+            
+            // Verify the amount matches the course price
+            if (purchaseItem.price !== finalAmount) {
+                return res.status(400).json({ 
+                    message: 'Invalid amount. Price mismatch detected.',
+                    expected: purchaseItem.price,
+                    received: finalAmount
+                });
+            }
+        } else if (itemType === 'book') {
+            purchaseItem = await Book.findById(itemId);
+            if (!purchaseItem) {
+                return res.status(404).json({ message: 'Book not found' });
+            }
+            
+            // Verify the amount matches the book price
+            if (purchaseItem.price !== finalAmount) {
+                return res.status(400).json({ 
+                    message: 'Invalid amount. Price mismatch detected.',
+                    expected: purchaseItem.price,
+                    received: finalAmount
+                });
             }
         }
 
