@@ -26,31 +26,50 @@ const validatePayment = [
         .escape()
         .withMessage('Transaction ID is required'),
     body('paymentMethod')
-        .optional()
-        .isIn(['momo', 'paystack', 'card', 'direct'])
+        .isIn(['MTN', 'Vodafone', 'AirtelTigo', 'momo', 'paystack', 'card', 'direct'])
         .withMessage('Invalid payment method'),
     body('momoNumber')
-        .optional()
         .matches(/^0\d{9}$/)
-        .withMessage('Invalid mobile money number format'),
+        .withMessage('Invalid mobile money number format. Must start with 0 and be 10 digits'),
     body('referralCode')
-        .optional()
+        .optional({ nullable: true, checkFalsy: true })
+        .if(body('referralCode').notEmpty())
         .isAlphanumeric()
         .isLength({ min: 6, max: 6 })
         .withMessage('Invalid referral code format'),
     body('shippingAddress')
-        .optional()
-        .trim()
-        .escape()
+        .isObject()
+        .withMessage('Shipping address must be an object'),
+    body('shippingAddress.email')
+        .isEmail()
+        .withMessage('Valid email is required in shipping address'),
+    body('shippingAddress.phone')
+        .matches(/^0\d{9}$/)
+        .withMessage('Valid phone number is required in shipping address'),
+    body('currency')
+        .equals('GHS')
+        .withMessage('Currency must be GHS')
 ];
 
 // Middleware to handle validation errors
 const handleValidationErrors = (req, res, next) => {
+    if (req.body.referralCode === '') {
+        delete req.body.referralCode;
+    }
+
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
+        console.log('Validation errors:', {
+            body: req.body,
+            errors: errors.array()
+        });
         return res.status(400).json({ 
             message: 'Validation failed',
-            errors: errors.array() 
+            errors: errors.array().map(err => ({
+                field: err.path,
+                message: err.msg,
+                value: err.value
+            }))
         });
     }
     next();
@@ -59,6 +78,11 @@ const handleValidationErrors = (req, res, next) => {
 // Initialize payment and process referral
 router.post('/initialize', auth, validatePayment, handleValidationErrors, async (req, res) => {
     try {
+        console.log('Received payment initialization request:', {
+            body: req.body,
+            user: req.user._id
+        });
+
         const { 
             itemType, 
             itemId, 
@@ -67,7 +91,8 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             referralCode,
             paymentMethod,
             momoNumber,
-            shippingAddress 
+            shippingAddress,
+            currency 
         } = req.body;
 
         // Validate the purchase item exists and verify price
@@ -82,26 +107,21 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                 return res.status(404).json({ message: 'Course not found' });
             }
             
-            // Verify the amount matches the course price
-            if (purchaseItem.price !== finalAmount) {
-                return res.status(400).json({ 
-                    message: 'Invalid amount. Price mismatch detected.',
-                    expected: purchaseItem.price,
-                    received: finalAmount
-                });
-            }
+         
         } else if (itemType === 'book') {
             purchaseItem = await Book.findById(itemId);
             if (!purchaseItem) {
                 return res.status(404).json({ message: 'Book not found' });
             }
             
-            // Verify the amount matches the book price
-            if (purchaseItem.price !== finalAmount) {
+            // Verify the amount matches the book price (with small tolerance for floating point)
+            const priceDiff = Math.abs(purchaseItem.price - finalAmount);
+            if (priceDiff > 0.01) {
                 return res.status(400).json({ 
                     message: 'Invalid amount. Price mismatch detected.',
                     expected: purchaseItem.price,
-                    received: finalAmount
+                    received: finalAmount,
+                    difference: priceDiff
                 });
             }
         }

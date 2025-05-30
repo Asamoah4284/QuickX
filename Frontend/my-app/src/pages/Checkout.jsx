@@ -213,8 +213,13 @@ function Checkout() {
         throw new Error('Invalid payment reference');
       }
       
-      // Calculate the final price with discount
+      // Calculate the final price with proper decimal handling
       const finalPrice = calculateFinalPrice();
+      console.log('Calculated final price:', {
+        original: checkoutItem?.price,
+        discount: discount,
+        final: finalPrice
+      });
       
       // First save the payment data
       const paymentData = {
@@ -225,76 +230,109 @@ function Checkout() {
                       formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
         momoNumber: formData.phoneNumber,
         shippingAddress: {
-          fullName: formData.cardName || '',
+          fullName: formData.email.split('@')[0] || 'Customer',
           phone: formData.phoneNumber || '',
           email: formData.email || ''
         },
         transactionId: referenceString,
         status: 'completed',
-        amount: Number(finalPrice),
+        amount: finalPrice,
         currency: 'GHS',
         referralCode: formData.referralCode || ''
       };
 
+      // Log the payment data being sent
+      console.log('Sending payment data:', JSON.stringify(paymentData, null, 2));
+
+      // Validate required fields before sending
+      if (!paymentData.itemType || !paymentData.itemId || !paymentData.momoNumber || !paymentData.amount) {
+        throw new Error('Missing required payment data fields');
+      }
+
+      // Ensure we're using the correct API URL
+      const apiUrl = API_URL;
+      console.log('Using API URL:', apiUrl);
+
       // Initialize payment and get course access
-      const paymentResponse = await axios.post(`${API_URL}/api/payments/initialize`, paymentData, {
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      });
+      try {
+        const paymentResponse = await axios.post(`${apiUrl}/api/payments/initialize`, paymentData, {
+          headers: { 
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
 
-      if (paymentResponse.data.success) {
-        if (checkoutItem?.type === 'course' && checkoutItem?.id) {
-          // Save course purchase to database
-          await axios.post(
-            `${API_URL}/api/courses/${checkoutItem.id}/purchase`, 
-            {
-              reference: referenceString,
-              amount: finalPrice,
-              status: 'completed',
-              referralCode: formData.referralCode || ''
-            },
-            {
-              headers: { 'Authorization': `Bearer ${authToken}` }
+        console.log('Payment initialization response:', paymentResponse.data);
+
+        if (paymentResponse.data.success) {
+          if (checkoutItem?.type === 'course' && checkoutItem?.id) {
+            // Save course purchase to database
+            await axios.post(
+              `${API_URL}/api/courses/${checkoutItem.id}/purchase`, 
+              {
+                reference: referenceString,
+                amount: finalPrice,
+                status: 'completed',
+                referralCode: formData.referralCode || ''
+              },
+              {
+                headers: { 'Authorization': `Bearer ${authToken}` }
+              }
+            );
+
+            // Update localStorage for course
+            const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
+            if (!purchasedCourses.some(course => course.id === checkoutItem.id)) {
+              purchasedCourses.push({
+                ...checkoutItem,
+                purchaseDate: new Date().toISOString(),
+                status: 'purchased'
+              });
+              localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
             }
-          );
 
-          // Update localStorage for course
-          const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
-          if (!purchasedCourses.some(course => course.id === checkoutItem.id)) {
-            purchasedCourses.push({
-              ...checkoutItem,
-              purchaseDate: new Date().toISOString(),
-              status: 'purchased'
+            alert(`Payment successful! You now have access to ${checkoutItem.title}`);
+            navigate(`/school/course/${checkoutItem.id}`, { 
+              state: { fromPurchase: true, courseId: checkoutItem.id }
             });
-            localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
+          } 
+          else if (checkoutItem?.type === 'book' && checkoutItem?.id) {
+            // Update localStorage for book
+            const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
+            if (!purchasedBooks.some(book => book.id === checkoutItem.id)) {
+              purchasedBooks.push({
+                ...checkoutItem,
+                purchaseDate: new Date().toISOString(),
+                status: 'purchased'
+              });
+              localStorage.setItem('purchasedBooks', JSON.stringify(purchasedBooks));
+            }
+            localStorage.removeItem('pendingBookPurchase');
+            navigate('/library');
+          } else {
+            navigate(returnInfo.path, { state: returnInfo.state });
           }
-
-          alert(`Payment successful! You now have access to ${checkoutItem.title}`);
-          navigate(`/school/course/${checkoutItem.id}`, { 
-            state: { fromPurchase: true, courseId: checkoutItem.id }
-          });
-        } 
-        else if (checkoutItem?.type === 'book' && checkoutItem?.id) {
-          // Update localStorage for book
-          const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
-          if (!purchasedBooks.some(book => book.id === checkoutItem.id)) {
-            purchasedBooks.push({
-              ...checkoutItem,
-              purchaseDate: new Date().toISOString(),
-              status: 'purchased'
-            });
-            localStorage.setItem('purchasedBooks', JSON.stringify(purchasedBooks));
-          }
-          localStorage.removeItem('pendingBookPurchase');
-          navigate('/library');
         } else {
-          navigate(returnInfo.path, { state: returnInfo.state });
+          throw new Error('Payment initialization failed');
         }
-      } else {
-        throw new Error('Payment initialization failed');
+      } catch (error) {
+        console.error('Payment initialization error details:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers,
+          config: {
+            url: error.config?.url,
+            method: error.config?.method,
+            headers: error.config?.headers,
+            data: error.config?.data
+          }
+        });
+        throw error;
       }
     } catch (error) {
       console.error('Error in handlePaymentSuccess:', error);
-      alert(`Error processing payment: ${error.response?.data?.message || error.message}`);
+      const errorMessage = error.response?.data?.message || error.message;
+      alert(`Error processing payment: ${errorMessage}`);
       setIsProcessing(false);
     }
   };
@@ -446,12 +484,12 @@ function Checkout() {
 
   // Calculate final price with discount
   const calculateFinalPrice = () => {
-    const subtotal = checkoutItem?.price || 0;
+    const subtotal = Number(checkoutItem?.price || 0);
     if (couponApplied && discount > 0) {
-        const discountAmount = (subtotal * discount) / 100;
-        return Number(subtotal - discountAmount);
+        const discountAmount = Number((subtotal * discount / 100).toFixed(2));
+        return Number((subtotal - discountAmount).toFixed(2));
     }
-    return Number(subtotal);
+    return Number(subtotal.toFixed(2));
   };
 
   if (!checkoutItem) {

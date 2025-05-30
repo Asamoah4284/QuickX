@@ -152,6 +152,12 @@ router.get('/:id/full', auth, async (req, res) => {
 // Purchase course (authenticated)
 router.post('/:id/purchase', auth, async (req, res) => {
     try {
+        console.log('Processing course purchase:', {
+            courseId: req.params.id,
+            userId: req.user._id,
+            body: req.body
+        });
+
         const user = req.user;
         const course = await Course.findById(req.params.id);
         
@@ -162,58 +168,93 @@ router.post('/:id/purchase', auth, async (req, res) => {
         // Check if user already purchased this course
         const existingPurchase = await Purchase.findOne({ 
             userId: user._id, 
-            courseId: course._id 
+            courseId: course._id,
+            status: 'completed'
         });
         
         if (existingPurchase) {
-            return res.status(400).json({ message: 'You have already purchased this course' });
+            return res.status(400).json({ 
+                message: 'You have already purchased this course',
+                purchaseId: existingPurchase._id
+            });
         }
 
         // Create a new purchase record
         const purchase = new Purchase({
             userId: user._id,
             courseId: course._id,
-            amount: course.price,
+            amount: req.body.amount || course.price,
             status: 'completed',
-            paymentMethod: 'direct', // This would be replaced with actual payment method
-            transactionId: Date.now().toString() // This would be replaced with actual transaction ID
+            paymentMethod: req.body.paymentMethod || 'momo',
+            transactionId: req.body.reference || req.body.transactionId,
+            referralCode: req.body.referralCode || null
         });
 
-        await purchase.save();
+        try {
+            await purchase.save();
+            console.log('Purchase record saved:', purchase);
+        } catch (saveError) {
+            console.error('Error saving purchase record:', saveError);
+            throw new Error('Failed to save purchase record: ' + saveError.message);
+        }
         
         // Update course student count
-        course.totalStudents += 1;
-        await course.save();
+        try {
+            course.totalStudents += 1;
+            await course.save();
+            console.log('Course student count updated');
+        } catch (courseError) {
+            console.error('Error updating course:', courseError);
+            // Don't throw here, as the purchase is already saved
+        }
 
         // If this is a forex course, add all forex ebooks to user's purchased books
         if (course.courseType === 'forex') {
-            const Book = require('../models/Book');
-            const forexBooks = await Book.find({ 
-                category: 'forex',
-                type: 'ebook'
-            });
+            try {
+                const Book = require('../models/Book');
+                const forexBooks = await Book.find({ 
+                    category: 'forex',
+                    type: 'ebook'
+                });
 
-            // Add forex books to user's purchased books if not already purchased
-            if (forexBooks.length > 0) {
-                const User = require('../models/User');
-                const userDoc = await User.findById(user._id);
-                
-                for (const book of forexBooks) {
-                    if (!userDoc.purchasedBooks.includes(book._id)) {
-                        userDoc.purchasedBooks.push(book._id);
+                // Add forex books to user's purchased books if not already purchased
+                if (forexBooks.length > 0) {
+                    const User = require('../models/User');
+                    const userDoc = await User.findById(user._id);
+                    
+                    for (const book of forexBooks) {
+                        if (!userDoc.purchasedBooks.includes(book._id)) {
+                            userDoc.purchasedBooks.push(book._id);
+                        }
                     }
+                    
+                    await userDoc.save();
+                    console.log('Forex books added to user purchases');
                 }
-                
-                await userDoc.save();
+            } catch (forexError) {
+                console.error('Error adding forex books:', forexError);
+                // Don't throw here, as the main purchase is complete
             }
         }
         
-        res.json({ 
+        res.json({
+            success: true,
             message: 'Course purchased successfully',
-            purchase: purchase
+            purchase: {
+                id: purchase._id,
+                courseId: course._id,
+                amount: purchase.amount,
+                status: purchase.status,
+                purchaseDate: purchase.createdAt
+            }
         });
     } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
+        console.error('Error in course purchase:', error);
+        res.status(500).json({ 
+            success: false,
+            message: 'Failed to process course purchase',
+            error: error.message
+        });
     }
 });
 
