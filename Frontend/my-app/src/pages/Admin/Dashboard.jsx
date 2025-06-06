@@ -5,7 +5,7 @@ import {
     FiHome, FiUsers, FiBook, FiVideo, FiSettings, 
     FiLogOut, FiBarChart2, FiUpload, FiEdit2, 
     FiTrash2, FiPlus, FiTrendingUp, FiDollarSign,
-    FiX, FiBookOpen, FiTag, FiStar, FiImage
+    FiX, FiBookOpen, FiTag, FiStar, FiImage, FiAlertTriangle
 } from 'react-icons/fi';
 import CourseModal from './CourseModal';
 import BookModal from './BookModal';
@@ -151,6 +151,10 @@ const AdminDashboard = () => {
     const [withdrawalRequests, setWithdrawalRequests] = useState([]);
     const [withdrawalError, setWithdrawalError] = useState('');
     const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
+    const [showDeleteModal, setShowDeleteModal] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState(null);
+    const [showDeleteBookModal, setShowDeleteBookModal] = useState(false);
+    const [bookToDelete, setBookToDelete] = useState(null);
     const navigate = useNavigate();
 
     // Chart data
@@ -412,18 +416,30 @@ const AdminDashboard = () => {
         setShowModal(true);
     };
 
-    const handleDeleteCourse = async (courseId) => {
-        if (window.confirm('Are you sure you want to delete this course?')) {
-            try {
-                const token = localStorage.getItem('adminToken');
-                await axios.delete(`${API_URL}/api/admin/courses/${courseId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setCourses(courses.filter(course => course._id !== courseId));
-            } catch (err) {
-                console.error('Error deleting course:', err);
-                setCourses(courses.filter(course => course._id !== courseId));
+    const handleDeleteCourse = (courseId) => {
+        setCourseToDelete(courseId);
+        setShowDeleteModal(true);
+    };
+
+    const confirmDeleteCourse = async () => {
+        if (!courseToDelete) return;
+
+        try {
+            const response = await axios.delete(`${API_URL}/api/courses/admin/${courseToDelete}`, {
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
+            });
+
+            if (response.data.success) {
+                // Remove the course from the local state
+                setCourses(courses.filter(course => course._id !== courseToDelete));
+                alert('Course deleted successfully');
             }
+        } catch (error) {
+            console.error('Error deleting course:', error);
+            alert(error.response?.data?.message || 'Failed to delete course');
+        } finally {
+            setShowDeleteModal(false);
+            setCourseToDelete(null);
         }
     };
 
@@ -772,18 +788,25 @@ const AdminDashboard = () => {
         setShowBookModal(true);
     };
 
-    const handleDeleteBook = async (bookId) => {
-        if (window.confirm('Are you sure you want to delete this book?')) {
-            try {
-                const token = localStorage.getItem('adminToken');
-                await axios.delete(`${API_URL}/api/admin/books/${bookId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setBooks(books.filter(book => book._id !== bookId));
-            } catch (err) {
-                console.error('Error deleting book:', err);
-                setError('Failed to delete book. Please try again.');
-            }
+    const handleDeleteBookRequest = (bookId) => {
+        setBookToDelete(bookId);
+        setShowDeleteBookModal(true);
+    };
+
+    const confirmDeleteBook = async () => {
+        if (!bookToDelete) return;
+        try {
+            const token = localStorage.getItem('adminToken');
+            await axios.delete(`${API_URL}/api/admin/books/${bookToDelete}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            setBooks(books.filter(book => book._id !== bookToDelete));
+        } catch (err) {
+            console.error('Error deleting book:', err);
+            setError('Failed to delete book. Please try again.');
+        } finally {
+            setShowDeleteBookModal(false);
+            setBookToDelete(null);
         }
     };
 
@@ -1523,7 +1546,7 @@ const AdminDashboard = () => {
                                 Add New Course
                             </button>
                         </div>
-                        <CourseManagement />
+                        <CourseManagement onRequestDelete={handleDeleteCourse} />
                     </div>
                 );
             case 'books':
@@ -1590,7 +1613,7 @@ const AdminDashboard = () => {
                                                         Edit
                                                     </button>
                                                     <button
-                                                        onClick={() => handleDeleteBook(book._id)}
+                                                        onClick={() => handleDeleteBookRequest(book._id)}
                                                         className="text-red-600 hover:text-red-900"
                                                     >
                                                         <FiTrash2 className="inline mr-1" />
@@ -2024,6 +2047,79 @@ const AdminDashboard = () => {
         }
     };
 
+    const DeleteConfirmationModal = () => {
+        if (!showDeleteModal) return null;
+
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <div className="flex items-center justify-center mb-4">
+                        <FiAlertTriangle className="text-red-500 text-4xl" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                        Delete Course
+                    </h3>
+                    <p className="text-gray-600 text-center mb-6">
+                        Are you sure you want to delete this course? This action cannot be undone and all course content will be permanently removed.
+                    </p>
+                    <div className="flex justify-end space-x-4">
+                        <button
+                            onClick={() => {
+                                setShowDeleteModal(false);
+                                setCourseToDelete(null);
+                            }}
+                            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDeleteCourse}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        >
+                            Delete Course
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
+    const DeleteBookConfirmationModal = () => {
+        if (!showDeleteBookModal) return null;
+        return (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                    <div className="flex items-center justify-center mb-4">
+                        <FiAlertTriangle className="text-red-500 text-4xl" />
+                    </div>
+                    <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                        Delete Book
+                    </h3>
+                    <p className="text-gray-600 text-center mb-6">
+                        Are you sure you want to delete this book? This action cannot be undone and all book data will be permanently removed.
+                    </p>
+                    <div className="flex justify-end space-x-4">
+                        <button
+                            onClick={() => {
+                                setShowDeleteBookModal(false);
+                                setBookToDelete(null);
+                            }}
+                            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={confirmDeleteBook}
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                        >
+                            Delete Book
+                        </button>
+                    </div>
+                </div>
+            </div>
+        );
+    };
+
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-screen">
@@ -2241,6 +2337,9 @@ const AdminDashboard = () => {
                     onSave={handleBookModalSave}
                 />
             )}
+
+            <DeleteConfirmationModal />
+            <DeleteBookConfirmationModal />
         </div>
     );
 };

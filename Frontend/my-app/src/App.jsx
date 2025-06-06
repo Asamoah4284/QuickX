@@ -14,6 +14,8 @@ import BookDetails from "./pages/BookDetails";
 import Checkout from "./pages/Checkout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MainSchool from "./pages/School/MainSchool";
 import ForexSchool from "./pages/School/ForexSchool";
@@ -136,6 +138,14 @@ const router = createBrowserRouter([
       {
         path: "register",
         element: <Register />
+      },
+      {
+        path: "forgot-password",
+        element: <ForgotPassword />
+      },
+      {
+        path: "reset-password/:token",
+        element: <ResetPassword />
       }
     ]
   },

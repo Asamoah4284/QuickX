@@ -61,7 +61,7 @@ const mockCourses = [
     }
 ];
 
-const CourseManagement = () => {
+const CourseManagement = ({ onRequestDelete }) => {
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [students, setStudents] = useState([]);
@@ -71,21 +71,6 @@ const CourseManagement = () => {
     const [showUploadModal, setShowUploadModal] = useState(false);
     const [selectedModule, setSelectedModule] = useState(null);
     const [uploadType, setUploadType] = useState('video');
-
-    const handleDeleteCourse = async (courseId) => {
-        try {
-            const token = localStorage.getItem('adminToken');
-            await axios.delete(`${API_URL}/api/admin/courses/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            // Refresh the courses list after deletion
-            fetchCourses();
-            setError('');
-        } catch (err) {
-            console.error('Error deleting course:', err);
-            setError('Failed to delete course. Please try again later.');
-        }
-    };
 
     useEffect(() => {
         fetchCourses();
@@ -351,7 +336,7 @@ const CourseManagement = () => {
                                                         Edit
                                                     </Link>
                                                     <button
-                                                        onClick={() => handleDeleteCourse(course._id)}
+                                                        onClick={() => onRequestDelete(course._id)}
                                                         className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-red-700"
                                                     >
                                                         <FiTrash2 />
