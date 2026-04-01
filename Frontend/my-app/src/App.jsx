@@ -25,6 +25,10 @@ import CourseDetail from "./pages/School/CourseDetail";
 import Store from "./pages/store/store";
 import Pricing from "./pages/School/Pricing";
 import Membership from "./pages/Membership";
+import Courses from "./pages/Courses";
+import Programs from "./pages/Programs";
+import InstructorStudio from "./pages/InstructorStudio";
+import CoursePublicDetail from "./pages/CoursePublicDetail";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
@@ -109,6 +113,22 @@ const router = createBrowserRouter([
       {
         path: "membership",
         element: <Membership />
+      },
+      {
+        path: "courses",
+        element: <Courses />
+      },
+      {
+        path: "courses/:courseId",
+        element: <CoursePublicDetail />
+      },
+      {
+        path: "programs",
+        element: <Programs />
+      },
+      {
+        path: "instructor",
+        element: <ProtectedRoute><InstructorStudio /></ProtectedRoute>
       },
       {
         path: "analysis",

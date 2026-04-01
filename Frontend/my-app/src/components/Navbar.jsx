@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiUser, FiLogOut, FiBook } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 
@@ -10,6 +10,11 @@ const Navbar = () => {
   const [user, setUser] = useState(null);
   const [isWhatsappHovered, setIsWhatsappHovered] = useState(false);
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  /** Solid blue bar everywhere except the home hero, where transparent + white text sits on the dark banner */
+  const isHomePage = pathname === '/';
+  const navSolid = scrolled || !isHomePage;
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +25,7 @@ const Navbar = () => {
       }
     };
 
+    handleScroll();
     window.addEventListener('scroll', handleScroll);
     
     // Clean up the event listener
@@ -128,7 +134,7 @@ const Navbar = () => {
 
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      scrolled 
+      navSolid 
         ? 'bg-gradient-to-r from-blue-800 to-blue-900 text-white shadow-md' 
         : 'bg-transparent'
     }`}>
@@ -148,16 +154,19 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-2">
-            <Link to="/school" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/school" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               School
             </Link>
-            <Link to="/analysis" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/store" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+              Books
+            </Link>
+            <Link to="/analysis" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Mentorship
             </Link>
-            <Link to="/store" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
-              Store
+            <Link to="/programs" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+              Creator programs
             </Link>
-            <Link to="/about" className={`${scrolled ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/about" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               About
             </Link>
          
@@ -165,7 +174,7 @@ const Navbar = () => {
             <div className="flex items-center space-x-4 ml-4">
               {isLoggedIn ? (
                 <div className="flex items-center space-x-4">
-                  <Link to="/membership" className={`flex items-center ${scrolled ? 'text-white-200 hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+                  <Link to="/membership" className={`flex items-center ${navSolid ? 'text-white-200 hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
                     <FiBook className="mr-1.5" /> My Courses
                   </Link>
                   <div className="relative group">
@@ -178,6 +187,9 @@ const Navbar = () => {
                     <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-10 hidden group-hover:block">
                       <Link to="/membership" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Dashboard
+                      </Link>
+                      <Link to="/instructor" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        Instructor studio
                       </Link>
                       <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Profile
@@ -196,7 +208,7 @@ const Navbar = () => {
                   <Link to="/login" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">
                     Log In
                   </Link>
-                  <Link to="/register" className={`${scrolled ? 'bg-transparent text-white hover:bg-white hover:text-blue-900' : 'bg-white text-blue-600 hover:bg-blue-50'} border ${scrolled ? 'border-white' : 'border-blue-600'} px-4 py-2 rounded-md text-sm font-medium transition-colors`}>
+                  <Link to="/register" className={`${navSolid ? 'bg-transparent text-white hover:bg-white hover:text-blue-900' : 'bg-white text-blue-600 hover:bg-blue-50'} border ${navSolid ? 'border-white' : 'border-blue-600'} px-4 py-2 rounded-md text-sm font-medium transition-colors`}>
                     Sign Up
                   </Link>
                 </>
@@ -243,34 +255,11 @@ const Navbar = () => {
         </div>
         
         <div className="px-4 pt-4 pb-3 space-y-3">
-          <Link 
-            to="/school" 
-            className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            School
-          </Link>
-          <Link 
-            to="/analysis" 
-            className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            Mentorship
-          </Link>
-          <Link 
-            to="/store" 
-            className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            Store
-          </Link>
-          <Link 
-            to="/about" 
-            className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
-            onClick={() => setIsOpen(false)}
-          >
-            About
-          </Link>
+          <Link to="/school" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>School</Link>
+          <Link to="/store" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Books</Link>
+          <Link to="/analysis" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Mentorship</Link>
+          <Link to="/programs" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Creator programs</Link>
+          <Link to="/about" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>About</Link>
         </div>
         
         <div className="pt-4 pb-3 border-t border-gray-200 px-4">
@@ -294,6 +283,13 @@ const Navbar = () => {
                   onClick={() => setIsOpen(false)}
                 >
                   Dashboard
+                </Link>
+                <Link
+                  to="/instructor"
+                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
+                  onClick={() => setIsOpen(false)}
+                >
+                  Instructor studio
                 </Link>
                 <Link
                   to="/profile"

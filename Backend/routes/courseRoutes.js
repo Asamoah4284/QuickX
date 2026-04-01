@@ -57,42 +57,68 @@ router.get('/user/purchased', auth, async (req, res) => {
     }
 });
 
-// Get all courses (public)
+// Public catalog: only published marketplace listings
 router.get('/', async (req, res) => {
     try {
-        const { category, search, courseType } = req.query;
-        let query = {};
+        const { category, search, courseType, level, sort } = req.query;
+        let query = {
+            $and: [
+                {
+                    $or: [
+                        { source: { $ne: 'user' } },
+                        { listingStatus: 'published' }
+                    ]
+                }
+            ]
+        };
             
         if (category) {
-            // Sanitize category input
             if (typeof category !== 'string' || category.length > 50) {
                 return res.status(400).json({ message: 'Invalid category parameter' });
             }
-            query.category = category;
+            query.$and.push({
+                $or: [
+                    { category: new RegExp('^' + category.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') },
+                    { tags: category }
+                ]
+            });
         }
         
         if (search) {
-            // Sanitize search input
             if (typeof search !== 'string' || search.length > 100) {
                 return res.status(400).json({ message: 'Invalid search parameter' });
             }
-            // Escape special regex characters
             const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            query.title = { $regex: escapedSearch, $options: 'i' };
+            query.$and.push({
+                $or: [
+                    { title: { $regex: escapedSearch, $options: 'i' } },
+                    { shortDescription: { $regex: escapedSearch, $options: 'i' } }
+                ]
+            });
         }
 
         if (courseType) {
-            // Validate courseType
-            if (!['forex', 'crypto'].includes(courseType)) {
-                return res.status(400).json({ message: 'Invalid course type. Must be forex or crypto' });
+            if (!['forex', 'crypto', 'webdev'].includes(courseType)) {
+                return res.status(400).json({ message: 'Invalid course type' });
             }
-            query.courseType = courseType;
-            console.log(`Filtering courses by courseType: ${courseType}`);
+            query.$and.push({ courseType });
         }
 
-        console.log('Course query:', query);
+        if (level) {
+            if (!['beginner', 'intermediate', 'advanced'].includes(level)) {
+                return res.status(400).json({ message: 'Invalid level' });
+            }
+            query.$and.push({ level });
+        }
+
+        let sortSpec = { createdAt: -1 };
+        if (sort === 'price_asc') sortSpec = { price: 1 };
+        if (sort === 'price_desc') sortSpec = { price: -1 };
+        if (sort === 'oldest') sortSpec = { createdAt: 1 };
+
         const courses = await Course.find(query)
             .select('-topics.videoUrl')
+            .sort(sortSpec)
             .populate('instructor', 'fullName');
         
         console.log(`Found ${courses.length} courses matching query`);
@@ -114,6 +140,9 @@ router.get('/:id/preview', async (req, res) => {
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
+        if (course.source === 'user' && course.listingStatus !== 'published') {
+            return res.status(404).json({ message: 'Course not found' });
+        }
         
         res.json(course);
     } catch (error) {
@@ -130,6 +159,14 @@ router.get('/:id/full', auth, async (req, res) => {
             
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
+        }
+
+        const isOwner =
+            course.source === 'user' &&
+            course.createdBy &&
+            course.createdBy.toString() === user._id.toString();
+        if (isOwner) {
+            return res.json(course);
         }
 
         // Check if user has purchased the course using the Purchase model
@@ -426,11 +463,11 @@ router.post('/admin/courses', adminAuth, async (req, res) => {
         }
 
         // Validate courseType is valid
-        if (courseType !== 'forex' && courseType !== 'crypto') {
+        if (!['forex', 'crypto', 'webdev'].includes(courseType)) {
             return res.status(400).json({
                 message: 'Invalid course type',
                 details: {
-                    courseType: `'${courseType}' is not a valid course type. Must be 'forex' or 'crypto'`
+                    courseType: `'${courseType}' is not a valid course type. Must be forex, crypto, or webdev`
                 }
             });
         }
@@ -447,7 +484,10 @@ router.post('/admin/courses', adminAuth, async (req, res) => {
             instructorModel,
             modules,
             thumbnail,
-            courseType // Use the validated courseType
+            courseType,
+            source: 'admin',
+            listingStatus: 'published',
+            isPublished: true
         });
 
         console.log('Course object before saving:', course);

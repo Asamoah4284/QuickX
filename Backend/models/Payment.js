@@ -9,12 +9,11 @@ const paymentSchema = new mongoose.Schema({
     itemType: {
         type: String,
         required: true,
-        enum: ['course', 'book']
+        enum: ['course', 'book', 'program']
     },
     itemId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true,
-        refPath: 'itemType'
+        required: true
     },
     originalAmount: {
         type: Number,

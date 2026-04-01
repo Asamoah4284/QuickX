@@ -97,8 +97,6 @@ app.options('*', cors(corsOptions));
 console.log('Attempting to connect to MongoDB...');
 
 mongoose.connect(process.env.MONGODB_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
     authSource: 'admin',
     connectTimeoutMS: 30000,
     socketTimeoutMS: 30000,
@@ -116,7 +114,15 @@ const db = mongoose.connection;
 db.on('error', (err) => {
     console.error('MongoDB connection error:', err);
 });
-db.once('open', () => console.log('Connected to MongoDB'));
+const { seedPrograms } = require('./scripts/seedPrograms');
+db.once('open', async () => {
+    console.log('Connected to MongoDB');
+    try {
+        await seedPrograms();
+    } catch (e) {
+        console.error('seedPrograms:', e.message);
+    }
+});
 
 // Routes
 app.use('/api/users', require('./routes/userRoutes'));
@@ -127,6 +133,8 @@ app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api', require('./routes/couponRoutes'));
 app.use('/api/mentorships', require('./routes/mentorshipRoutes'));
+app.use('/api/programs', require('./routes/programRoutes'));
+app.use('/api/instructor/courses', require('./routes/instructorCourseRoutes'));
 app.use('/api', require('./routes/referralRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
 app.use('/', require('./routes/advertisementRoutes'));

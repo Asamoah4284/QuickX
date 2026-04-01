@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const ProgramEnrollment = require('../models/ProgramEnrollment');
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
@@ -179,6 +180,24 @@ router.get('/profile', auth, async (req, res) => {
         
         res.json(user);
     } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+/** Active program (creator) enrollments — same data as GET /api/programs/user/me */
+router.get('/me/programs', auth, async (req, res) => {
+    try {
+        const now = new Date();
+        const enrollments = await ProgramEnrollment.find({
+            userId: req.user._id,
+            status: 'active',
+            $or: [{ endsAt: null }, { endsAt: { $gt: now } }]
+        })
+            .populate('programId')
+            .sort({ createdAt: -1 });
+        res.json(enrollments);
+    } catch (error) {
+        console.error('me/programs:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

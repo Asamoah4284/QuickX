@@ -21,7 +21,7 @@ function ProtectedRoute({ children }) {
         }
         
         // Validate token with the backend
-        const response = await axios.get(`${API_URL}/users/validate-token`, {
+        const response = await axios.get(`${API_URL}/api/users/validate-token`, {
           headers: {
             Authorization: `Bearer ${token}`
           }

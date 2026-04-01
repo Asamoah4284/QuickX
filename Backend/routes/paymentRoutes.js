@@ -6,7 +6,9 @@ const Book = require('../models/Book');
 const auth = require('../middleware/auth');
 const paymentController = require('../controllers/paymentController');
 const User = require('../models/User');
+const Program = require('../models/Program');
 const { body, validationResult } = require('express-validator');
+const { createEnrollmentFromPayment } = require('../services/programEnrollmentService');
 
 // Validation middleware for payment initialization
 const validatePayment = [
@@ -74,6 +76,104 @@ const handleValidationErrors = (req, res, next) => {
     }
     next();
 };
+
+const validateProgramPayment = [
+    body('programId').isMongoId().withMessage('Invalid program ID'),
+    body('amount')
+        .isFloat({ min: 0.01 })
+        .withMessage('Amount must be greater than 0')
+        .toFloat(),
+    body('transactionId')
+        .notEmpty()
+        .trim()
+        .withMessage('Transaction ID is required'),
+    body('paymentMethod')
+        .isIn(['MTN', 'Vodafone', 'AirtelTigo', 'momo', 'paystack', 'card', 'direct'])
+        .withMessage('Invalid payment method'),
+    body('momoNumber')
+        .matches(/^0\d{9}$/)
+        .withMessage('Invalid mobile money number format'),
+    body('shippingAddress')
+        .isObject()
+        .withMessage('Shipping address must be an object'),
+    body('shippingAddress.email')
+        .isEmail()
+        .withMessage('Valid email is required'),
+    body('shippingAddress.phone')
+        .matches(/^0\d{9}$/)
+        .withMessage('Valid phone number is required in shipping address'),
+    body('currency')
+        .equals('GHS')
+        .withMessage('Currency must be GHS')
+];
+
+/** Program enrollment payment (creator program SKU) — completes enrollment after Paystack success */
+router.post('/initialize-program', auth, validateProgramPayment, handleValidationErrors, async (req, res) => {
+    try {
+        const { programId, amount, transactionId, paymentMethod, momoNumber, shippingAddress } = req.body;
+
+        const program = await Program.findById(programId);
+        if (!program || !program.isActive) {
+            return res.status(404).json({ message: 'Program not found or inactive' });
+        }
+
+        const finalAmount = Number(amount);
+        if (Math.abs(program.price - finalAmount) > 0.02) {
+            return res.status(400).json({
+                message: 'Invalid amount. Price mismatch.',
+                expected: program.price,
+                received: finalAmount
+            });
+        }
+
+        const paymentRecord = {
+            userId: req.user._id,
+            itemType: 'program',
+            itemId: program._id,
+            originalAmount: finalAmount,
+            finalAmount: finalAmount,
+            commissionAmount: 0,
+            referringUserId: null,
+            transactionId,
+            paymentMethod,
+            momoNumber,
+            shippingAddress,
+            referralCode: '',
+            status: 'completed',
+            createdAt: new Date()
+        };
+
+        const payment = new Payment(paymentRecord);
+        await payment.save();
+
+        await createEnrollmentFromPayment({
+            userId: req.user._id,
+            programId: program._id,
+            transactionId,
+            paymentId: payment._id
+        });
+
+        res.json({
+            success: true,
+            message: 'Program enrollment completed',
+            payment: {
+                ...paymentRecord,
+                program: {
+                    id: program._id,
+                    name: program.name,
+                    slug: program.slug,
+                    courseType: program.courseType
+                }
+            }
+        });
+    } catch (error) {
+        console.error('initialize-program error:', error);
+        res.status(500).json({
+            message: 'Failed to process program payment',
+            error: error.message
+        });
+    }
+});
 
 // Initialize payment and process referral
 router.post('/initialize', auth, validatePayment, handleValidationErrors, async (req, res) => {
@@ -251,35 +351,43 @@ router.post('/webhook', async (req, res) => {
         payment.transactionId = transactionId;
         await payment.save();
 
-        // If payment is completed, update user's purchases
+        // If payment is completed, update user's purchases or program enrollment
         if (status === 'completed') {
-            const user = await User.findById(payment.user);
-            
-            if (payment.itemType === 'course') {
-                const course = await Course.findById(payment.itemId);
-                
-                // Add course to user's purchased courses
-                user.purchasedCourses.push(payment.itemId);
-                
-                // If this is a forex course, add all forex ebooks
-                if (course && course.courseType === 'forex') {
-                    const forexBooks = await Book.find({ 
-                        category: 'forex',
-                        type: 'ebook'
-                    });
-                    
-                    // Add forex books if not already purchased
-                    for (const book of forexBooks) {
-                        if (!user.purchasedBooks.includes(book._id)) {
-                            user.purchasedBooks.push(book._id);
+            if (payment.itemType === 'program') {
+                await createEnrollmentFromPayment({
+                    userId: payment.userId,
+                    programId: payment.itemId,
+                    transactionId: transactionId || payment.transactionId,
+                    paymentId: payment._id
+                });
+            } else {
+                const user = await User.findById(payment.userId);
+                if (!user) {
+                    return res.status(404).json({ message: 'User not found' });
+                }
+
+                if (payment.itemType === 'course') {
+                    const course = await Course.findById(payment.itemId);
+                    if (user.purchasedCourses && Array.isArray(user.purchasedCourses)) {
+                        user.purchasedCourses.push(payment.itemId);
+                    }
+                    if (course && course.courseType === 'forex' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
+                        const forexBooks = await Book.find({
+                            category: 'forex',
+                            type: 'ebook'
+                        });
+                        for (const book of forexBooks) {
+                            if (!user.purchasedBooks.includes(book._id)) {
+                                user.purchasedBooks.push(book._id);
+                            }
                         }
                     }
+                } else if (payment.itemType === 'book' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
+                    user.purchasedBooks.push(payment.itemId);
                 }
-            } else if (payment.itemType === 'book') {
-                user.purchasedBooks.push(payment.itemId);
+
+                await user.save();
             }
-            
-            await user.save();
         }
 
         res.json({ message: 'Webhook processed successfully' });

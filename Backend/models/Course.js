@@ -103,14 +103,41 @@ const courseSchema = new mongoose.Schema({
     thumbnail: String,
     courseType: {
         type: String,
-        enum: ['forex', 'crypto'],
-        required: true,
-        validate: {
-            validator: function(v) {
-                return v === 'forex' || v === 'crypto';
-            },
-            message: props => `${props.value} is not a valid course type. Must be 'forex' or 'crypto'`
-        }
+        enum: ['forex', 'crypto', 'webdev'],
+        required: true
+    },
+    /** Marketplace category label (optional; filters) */
+    category: {
+        type: String,
+        trim: true,
+        default: ''
+    },
+    /** User who authored the course (user-generated); admin-created may omit */
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    /** Origin of the listing */
+    source: {
+        type: String,
+        enum: ['admin', 'user'],
+        default: 'admin'
+    },
+    /** Review workflow for user-authored courses */
+    listingStatus: {
+        type: String,
+        enum: ['draft', 'pending_review', 'published', 'rejected'],
+        default: 'published'
+    },
+    rejectionReason: {
+        type: String,
+        default: ''
+    },
+    totalStudents: {
+        type: Number,
+        default: 0,
+        min: 0
     },
     price: {
         type: Number,

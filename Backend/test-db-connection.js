@@ -6,8 +6,6 @@ console.log('MongoDB URI (first few characters):', process.env.MONGODB_URI?.subs
 
 // Connection options
 const options = {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
   connectTimeoutMS: 30000,
   serverSelectionTimeoutMS: 30000,
   socketTimeoutMS: 30000,

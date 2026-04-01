@@ -221,6 +221,40 @@ function Checkout() {
         final: finalPrice
       });
       
+      // Program enrollment uses dedicated endpoint (idempotent enrollment on transactionId)
+      if (checkoutItem?.type === 'program' && checkoutItem?.id) {
+        const programPayload = {
+          programId: checkoutItem.id,
+          paymentMethod: formData.provider === 'mtn' ? 'MTN' : 
+                        formData.provider === 'vodafone' ? 'Vodafone' : 
+                        formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
+          momoNumber: formData.phoneNumber,
+          shippingAddress: {
+            fullName: formData.email.split('@')[0] || 'Customer',
+            phone: formData.phoneNumber || '',
+            email: formData.email || ''
+          },
+          transactionId: referenceString,
+          amount: finalPrice,
+          currency: 'GHS'
+        };
+
+        const paymentResponse = await axios.post(`${API_URL}/api/payments/initialize-program`, programPayload, {
+          headers: { 
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (paymentResponse.data.success) {
+          alert(`Payment successful! You are enrolled in ${checkoutItem.title}. You can now create courses in this track.`);
+          navigate('/instructor');
+          setIsProcessing(false);
+          return;
+        }
+        throw new Error('Program payment initialization failed');
+      }
+
       // First save the payment data
       const paymentData = {
         itemType: checkoutItem.type,
@@ -353,6 +387,8 @@ function Checkout() {
       backPath = '/library';
     } else if (checkoutItem?.type === 'course') {
       backPath = '/courses';
+    } else if (checkoutItem?.type === 'program') {
+      backPath = '/programs';
     }
     
     // If we have specific return path from state, use that instead
@@ -373,7 +409,7 @@ function Checkout() {
     const finalPrice = calculateFinalPrice();
     
     return {
-      reference: `${checkoutItem?.type}_${checkoutItem?.id}_${new Date().getTime()}`,
+      reference: `${checkoutItem?.type}_${checkoutItem?.id}_${Date.now()}`,
       email: formData.email,
       amount: finalPrice * 100,
       publicKey: paystackPublicKey,
@@ -512,7 +548,7 @@ function Checkout() {
             className="flex mt-4 items-center text-blue-600 hover:text-blue-800 transition-colors"
           >
             <FiArrowLeft className="mr-2" />
-            Back to {checkoutItem.type === 'book' ? 'Library' : 'Courses'}
+            Back to {checkoutItem.type === 'book' ? 'Library' : checkoutItem.type === 'program' ? 'Programs' : 'Courses'}
           </button>
           
          

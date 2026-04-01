@@ -85,10 +85,10 @@ exports.createCourse = async (req, res) => {
         }
 
         // Validate courseType value
-        if (courseType !== 'forex' && courseType !== 'crypto') {
+        if (!['forex', 'crypto', 'webdev'].includes(courseType)) {
             return res.status(400).json({ 
                 message: 'Invalid course type', 
-                details: { courseType: 'Course type must be either "forex" or "crypto"' }
+                details: { courseType: 'Course type must be forex, crypto, or webdev' }
             });
         }
 
@@ -104,7 +104,10 @@ exports.createCourse = async (req, res) => {
             instructorModel,
             modules: modules || [],
             thumbnail: thumbnail || null,
-            courseType
+            courseType,
+            source: 'admin',
+            listingStatus: 'published',
+            isPublished: true
         });
 
         await course.save();
@@ -362,4 +365,43 @@ exports.getBookById = async (req, res) => {
         console.error('Get book by ID error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
-}; 
+};
+
+/** Approve or reject user-authored course listing */
+exports.reviewUserCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, rejectionReason } = req.body;
+
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ message: 'action must be approve or reject' });
+        }
+
+        const course = await Course.findById(id);
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+        if (course.source !== 'user') {
+            return res.status(400).json({ message: 'Only user-authored courses require this review' });
+        }
+        if (course.listingStatus !== 'pending_review') {
+            return res.status(400).json({ message: 'Course is not pending review' });
+        }
+
+        if (action === 'approve') {
+            course.listingStatus = 'published';
+            course.isPublished = true;
+            course.rejectionReason = '';
+        } else {
+            course.listingStatus = 'rejected';
+            course.isPublished = false;
+            course.rejectionReason = (rejectionReason || 'Does not meet guidelines').slice(0, 2000);
+        }
+
+        await course.save();
+        res.json(course);
+    } catch (error) {
+        console.error('reviewUserCourse:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};

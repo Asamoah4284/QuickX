@@ -51,6 +51,8 @@ router.delete('/courses/:id', adminAuth, adminController.deleteCourse);
 router.get('/courses', adminAuth, adminController.getAllCourses);
 router.get('/courses/:id', adminAuth, adminController.getCourseById);
 
+router.patch('/courses/:id/listing-review', adminAuth, adminController.reviewUserCourse);
+
 // Book management routes
 router.post('/books', 
     adminAuth,
