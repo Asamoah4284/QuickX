@@ -15,6 +15,14 @@ const Navbar = () => {
   /** Solid blue bar everywhere except the home hero, where transparent + white text sits on the dark banner */
   const isHomePage = pathname === '/';
   const navSolid = scrolled || !isHomePage;
+  const creatorDestination =
+    user?.role === 'tutor' && user?.creatorStatus === 'approved'
+      ? '/creator/dashboard'
+      : '/creator/onboarding';
+  const creatorLabel =
+    user?.role === 'tutor' && user?.creatorStatus === 'approved'
+      ? 'Creator studio'
+      : 'Become a creator';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -154,20 +162,14 @@ const Navbar = () => {
 
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-2">
-            <Link to="/school" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
-              School
+            <Link to="/courses" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+              Courses
             </Link>
             <Link to="/store" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Books
             </Link>
-            <Link to="/analysis" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
-              Mentorship
-            </Link>
-            <Link to="/programs" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+            <Link to="/creator/onboarding" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Creator programs
-            </Link>
-            <Link to="/about" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
-              About
             </Link>
          
             {/* Auth Buttons */}
@@ -188,8 +190,8 @@ const Navbar = () => {
                       <Link to="/membership" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Dashboard
                       </Link>
-                      <Link to="/instructor" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                        Instructor studio
+                      <Link to={creatorDestination} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                        {creatorLabel}
                       </Link>
                       <Link to="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                         Profile
@@ -255,11 +257,9 @@ const Navbar = () => {
         </div>
         
         <div className="px-4 pt-4 pb-3 space-y-3">
-          <Link to="/school" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>School</Link>
+          <Link to="/courses" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Courses</Link>
           <Link to="/store" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Books</Link>
-          <Link to="/analysis" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Mentorship</Link>
-          <Link to="/programs" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Creator programs</Link>
-          <Link to="/about" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>About</Link>
+          <Link to="/creator/onboarding" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Creator programs</Link>
         </div>
         
         <div className="pt-4 pb-3 border-t border-gray-200 px-4">
@@ -285,11 +285,11 @@ const Navbar = () => {
                   Dashboard
                 </Link>
                 <Link
-                  to="/instructor"
+                  to={creatorDestination}
                   className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
                   onClick={() => setIsOpen(false)}
                 >
-                  Instructor studio
+                  {creatorLabel}
                 </Link>
                 <Link
                   to="/profile"

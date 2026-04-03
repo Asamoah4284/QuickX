@@ -45,6 +45,11 @@ const momoDetailsSchema = new mongoose.Schema({
     }
 });
 
+const socialLinksSchema = new mongoose.Schema({
+    website: String,
+    youtube: String
+}, { _id: false });
+
 const userSchema = new mongoose.Schema({
     email: {
         type: String,
@@ -89,26 +94,77 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    // profilePicture: {
-    //     type: String,
-    //     default: ''
-    // },
-    // purchasedCourses: [{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Course'
-    // }],
-    // purchasedBooks: [{
-    //     type: mongoose.Schema.Types.ObjectId,
-    //     ref: 'Book'
-    // }],
-    // subscriptionStatus: {
-    //     type: String,
-    //     enum: ['active', 'expired', 'none'],
-    //     default: 'none'
-    // },
-    // subscriptionExpiry: {
-    //     type: Date
-    // },
+    role: {
+        type: String,
+        enum: ['student', 'tutor', 'admin'],
+        default: 'student'
+    },
+    creatorStatus: {
+        type: String,
+        enum: ['not_applied', 'pending', 'approved', 'rejected', 'suspended'],
+        default: 'not_applied'
+    },
+    phone: {
+        type: String,
+        default: ''
+    },
+    country: {
+        type: String,
+        default: ''
+    },
+    avatar: {
+        type: String,
+        default: ''
+    },
+    profilePicture: {
+        type: String,
+        default: ''
+    },
+    creatorHeadline: {
+        type: String,
+        default: ''
+    },
+    creatorBio: {
+        type: String,
+        default: ''
+    },
+    expertise: [{
+        type: String
+    }],
+    languagesSpoken: [{
+        type: String
+    }],
+    socialLinks: {
+        type: socialLinksSchema,
+        default: () => ({})
+    },
+    creatorApplicationSubmittedAt: Date,
+    creatorReviewedAt: Date,
+    creatorReviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Admin',
+        default: null
+    },
+    creatorReviewNotes: {
+        type: String,
+        default: ''
+    },
+    purchasedCourses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Course'
+    }],
+    purchasedBooks: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Book'
+    }],
+    subscriptionStatus: {
+        type: String,
+        enum: ['active', 'expired', 'none'],
+        default: 'none'
+    },
+    subscriptionExpiry: {
+        type: Date
+    },
     referralCode: {
         type: String,
         unique: true,
@@ -138,6 +194,8 @@ const userSchema = new mongoose.Schema({
     }],
     momoDetails: momoDetailsSchema,
     withdrawalRequests: [withdrawalRequestSchema]
+}, {
+    timestamps: true
 });
 
 // Generate referral code before saving

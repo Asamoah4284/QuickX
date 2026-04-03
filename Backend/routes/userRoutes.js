@@ -3,12 +3,15 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const ProgramEnrollment = require('../models/ProgramEnrollment');
+const TutorProfile = require('../models/TutorProfile');
+const PlatformSetting = require('../models/PlatformSetting');
 const auth = require('../middleware/auth');
 const bcrypt = require('bcryptjs');
 const { body, validationResult } = require('express-validator');
 const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const sgMail = require('@sendgrid/mail');
+const { serializeUser } = require('../utils/serializeUser');
 
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -50,6 +53,89 @@ const validateLogin = [
         .withMessage('Password is required'),
 ];
 
+const creatorProfileValidation = [
+    body('headline').optional().isLength({ max: 120 }).withMessage('Headline must be 120 characters or fewer'),
+    body('bio').optional().isLength({ max: 2000 }).withMessage('Bio must be 2000 characters or fewer'),
+    // JSON bodies send numbers; express-validator's isInt() only accepts strings
+    body('experienceYears')
+        .optional()
+        .custom((value) => {
+            if (value === undefined || value === null || value === '') return true;
+            const n = Number(value);
+            return Number.isFinite(n) && Number.isInteger(n) && n >= 0 && n <= 80;
+        })
+        .withMessage('Experience years must be a whole number between 0 and 80'),
+];
+
+function signUserToken(user) {
+    return jwt.sign(
+        {
+            userId: user._id,
+            role: user.role || 'student',
+            creatorStatus: user.creatorStatus || 'not_applied'
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: '24h' }
+    );
+}
+
+function normalizeStringArray(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value
+            .map((item) => String(item || '').trim())
+            .filter(Boolean);
+    }
+    return String(value)
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+function clampExperienceYears(value) {
+    const n = Number(value);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(80, Math.floor(n)));
+}
+
+function sanitizeCreatorDraft(body = {}) {
+    const socialLinks = body.socialLinks || {};
+
+    return {
+        headline: String(body.headline || '').trim(),
+        bio: String(body.bio || '').trim(),
+        expertise: normalizeStringArray(body.expertise),
+        experienceYears: clampExperienceYears(body.experienceYears),
+        languages: normalizeStringArray(body.languages || body.languagesSpoken),
+        socialLinks: {
+            website: String(socialLinks.website || body.website || '').trim(),
+            youtube: String(socialLinks.youtube || '').trim()
+        },
+        certificates: Array.isArray(body.certificates)
+            ? body.certificates
+                .map((item) => ({
+                    title: String(item?.title || '').trim(),
+                    issuer: String(item?.issuer || '').trim(),
+                    year: String(item?.year || '').trim(),
+                    fileUrl: String(item?.fileUrl || '').trim()
+                }))
+                .filter((item) => item.title)
+            : [],
+        teachingCategories: normalizeStringArray(body.teachingCategories),
+        preferredCourseLanguage: String(body.preferredCourseLanguage || 'English').trim(),
+        teachesFreeCourses: Boolean(body.teachesFreeCourses),
+        teachesPaidCourses: body.teachesPaidCourses === undefined ? true : Boolean(body.teachesPaidCourses),
+        offersMentorship: Boolean(body.offersMentorship),
+        idDocumentUrl: String(body.idDocumentUrl || '').trim(),
+        payoutDetails: {
+            accountName: String(body.payoutDetails?.accountName || '').trim(),
+            provider: String(body.payoutDetails?.provider || '').trim(),
+            accountNumber: String(body.payoutDetails?.accountNumber || '').trim(),
+            currency: String(body.payoutDetails?.currency || 'GHS').trim()
+        }
+    };
+}
+
 // Register user
 router.post('/register', authLimiter, validateRegistration, async (req, res) => {
     try {
@@ -59,7 +145,7 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { email, password, fullName } = req.body;
+        const { email, password, fullName, phone = '', country = '', avatar = '' } = req.body;
         
         // Log the request data (excluding password)
         console.log('Registration attempt:', { email, fullName });
@@ -72,7 +158,11 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         const user = new User({
             email: email.toLowerCase(),
             password,
-            fullName: fullName.trim()
+            fullName: fullName.trim(),
+            phone: String(phone || '').trim(),
+            country: String(country || '').trim(),
+            avatar: String(avatar || '').trim(),
+            profilePicture: String(avatar || '').trim()
         });
 
         await user.save();
@@ -82,19 +172,11 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             throw new Error('JWT_SECRET is not configured');
         }
 
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
+        const token = signUserToken(user);
 
         res.status(201).json({
             token,
-            user: {
-                id: user._id,
-                email: user.email,
-                fullName: user.fullName
-            }
+            user: serializeUser(user)
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -127,21 +209,11 @@ router.post('/login', authLimiter, validateLogin, async (req, res) => {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
-        const token = jwt.sign(
-            { userId: user._id },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
+        const token = signUserToken(user);
 
         res.json({
             token,
-            user: {
-                id: user._id,
-                email: user.email,
-                fullName: user.fullName,
-                profilePicture: user.profilePicture,
-                subscriptionStatus: user.subscriptionStatus
-            }
+            user: serializeUser(user)
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -153,13 +225,7 @@ router.get('/validate-token', auth, async (req, res) => {
     try {
         res.json({
             isAuthenticated: true,
-            user: {
-                id: req.user._id,
-                email: req.user.email,
-                fullName: req.user.fullName,
-                profilePicture: req.user.profilePicture,
-                subscriptionStatus: req.user.subscriptionStatus
-            }
+            user: serializeUser(req.user)
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -216,10 +282,176 @@ router.get('/me', auth, async (req, res) => {
         // Ensure referral fields are properly formatted
         user.referralEarnings = user.referralEarnings || 0;
         user.referralCode = user.referralCode || '';
+        user.avatar = user.avatar || user.profilePicture || '';
+        user.profilePicture = user.profilePicture || user.avatar || '';
 
         res.json(user);
     } catch (error) {
         console.error('Error fetching user data:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+router.patch('/me/account', auth, async (req, res) => {
+    try {
+        const allowed = ['fullName', 'phone', 'country', 'avatar', 'profilePicture'];
+        const updates = {};
+
+        for (const key of allowed) {
+            if (req.body[key] !== undefined) {
+                const val = String(req.body[key] ?? '').trim();
+                // fullName is required on User — never persist empty (would fail validators)
+                if (key === 'fullName' && !val) {
+                    continue;
+                }
+                updates[key] = val;
+            }
+        }
+
+        if (updates.avatar && !updates.profilePicture) {
+            updates.profilePicture = updates.avatar;
+        }
+        if (updates.profilePicture && !updates.avatar) {
+            updates.avatar = updates.profilePicture;
+        }
+
+        if (Object.keys(updates).length === 0) {
+            const user = await User.findById(req.user._id);
+            if (!user) {
+                return res.status(404).json({ message: 'User not found' });
+            }
+            return res.json({ user: serializeUser(user) });
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { $set: updates },
+            { new: true, runValidators: true }
+        );
+
+        res.json({ user: serializeUser(user) });
+    } catch (error) {
+        console.error('update /me/account:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+router.get('/creator/profile', auth, async (req, res) => {
+    try {
+        const [user, tutorProfile, settings] = await Promise.all([
+            User.findById(req.user._id).select('-password'),
+            TutorProfile.findOne({ userId: req.user._id }),
+            PlatformSetting.findOne().sort({ createdAt: -1 }).lean()
+        ]);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({
+            user: serializeUser(user),
+            tutorProfile,
+            settings: settings || {
+                commissionRate: 15,
+                courseAutoApproval: false,
+                creatorAutoApproval: false
+            }
+        });
+    } catch (error) {
+        console.error('GET /creator/profile:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const payload = sanitizeCreatorDraft(req.body);
+        const [user, tutorProfile] = await Promise.all([
+            User.findById(req.user._id),
+            TutorProfile.findOneAndUpdate(
+                { userId: req.user._id },
+                {
+                    $set: {
+                        userId: req.user._id,
+                        ...payload,
+                        applicationStatus: 'draft'
+                    }
+                },
+                { new: true, upsert: true, setDefaultsOnInsert: true }
+            )
+        ]);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        user.creatorHeadline = payload.headline;
+        user.creatorBio = payload.bio;
+        user.expertise = payload.expertise;
+        user.languagesSpoken = payload.languages;
+        user.socialLinks = payload.socialLinks;
+        await user.save();
+
+        res.json({
+            user: serializeUser(user),
+            tutorProfile
+        });
+    } catch (error) {
+        console.error('PUT /creator/profile:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+router.post('/creator/profile/submit', auth, async (req, res) => {
+    try {
+        const [user, tutorProfile, settings] = await Promise.all([
+            User.findById(req.user._id),
+            TutorProfile.findOne({ userId: req.user._id }),
+            PlatformSetting.findOne().sort({ createdAt: -1 })
+        ]);
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (!tutorProfile) {
+            return res.status(400).json({ message: 'Complete your tutor profile before submitting' });
+        }
+
+        if (!tutorProfile.headline || !tutorProfile.bio || tutorProfile.teachingCategories.length === 0) {
+            return res.status(400).json({
+                message: 'Tutor profile is incomplete',
+                details: {
+                    headline: !tutorProfile.headline,
+                    bio: !tutorProfile.bio,
+                    teachingCategories: tutorProfile.teachingCategories.length === 0
+                }
+            });
+        }
+
+        const autoApprove = Boolean(settings?.creatorAutoApproval);
+        tutorProfile.applicationStatus = autoApprove ? 'approved' : 'pending';
+        tutorProfile.reviewNotes = autoApprove ? 'Auto-approved by platform settings' : '';
+        await tutorProfile.save();
+
+        user.creatorStatus = autoApprove ? 'approved' : 'pending';
+        user.role = autoApprove ? 'tutor' : user.role;
+        user.creatorApplicationSubmittedAt = new Date();
+        user.creatorReviewNotes = tutorProfile.reviewNotes || '';
+        await user.save();
+
+        res.json({
+            message: autoApprove ? 'Creator application approved automatically' : 'Creator application submitted',
+            user: serializeUser(user),
+            tutorProfile
+        });
+    } catch (error) {
+        console.error('POST /creator/profile/submit:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });

@@ -388,7 +388,7 @@ function Checkout() {
     } else if (checkoutItem?.type === 'course') {
       backPath = '/courses';
     } else if (checkoutItem?.type === 'program') {
-      backPath = '/programs';
+      backPath = '/creator/onboarding';
     }
     
     // If we have specific return path from state, use that instead
@@ -548,7 +548,7 @@ function Checkout() {
             className="flex mt-4 items-center text-blue-600 hover:text-blue-800 transition-colors"
           >
             <FiArrowLeft className="mr-2" />
-            Back to {checkoutItem.type === 'book' ? 'Library' : checkoutItem.type === 'program' ? 'Programs' : 'Courses'}
+            Back to {checkoutItem.type === 'book' ? 'Library' : checkoutItem.type === 'program' ? 'Creator onboarding' : 'Courses'}
           </button>
           
          

@@ -49,9 +49,20 @@ router.put('/courses/:id',
 
 router.delete('/courses/:id', adminAuth, adminController.deleteCourse);
 router.get('/courses', adminAuth, adminController.getAllCourses);
+router.get('/courses/review-queue/list', adminAuth, adminController.getCourseReviewQueue);
 router.get('/courses/:id', adminAuth, adminController.getCourseById);
 
 router.patch('/courses/:id/listing-review', adminAuth, adminController.reviewUserCourse);
+
+router.get('/tutors/applications', adminAuth, adminController.getTutorApplications);
+router.patch('/tutors/applications/:id/review', adminAuth, adminController.reviewTutorApplication);
+router.get('/platform/settings', adminAuth, adminController.getPlatformSettings);
+router.put('/platform/settings', adminAuth, adminController.updatePlatformSettings);
+router.get('/platform/categories', adminAuth, adminController.getCourseCategories);
+router.post('/platform/categories', adminAuth, adminController.upsertCourseCategory);
+router.put('/platform/categories/:id', adminAuth, adminController.upsertCourseCategory);
+router.delete('/platform/categories/:id', adminAuth, adminController.deleteCourseCategory);
+router.get('/analytics/creator', adminAuth, adminController.getCreatorAnalytics);
 
 // Book management routes
 router.post('/books', 

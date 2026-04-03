@@ -6,9 +6,23 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+/** Same rule as Navbar: treat as signed-in only when both token and cached user exist. */
+function readCachedUser() {
+  try {
+    const token = localStorage.getItem('authToken');
+    const raw = localStorage.getItem('user');
+    if (token && raw) {
+      return JSON.parse(raw);
+    }
+  } catch {
+    // ignore invalid JSON
+  }
+  return null;
+}
+
 function Membership() {
   const location = useLocation();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(readCachedUser);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('dashboard');
   const [purchasedCourses, setPurchasedCourses] = useState([]);
@@ -153,6 +167,14 @@ function Membership() {
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
+        const status = error.response?.status;
+        if (status === 401) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          setUser(null);
+          window.dispatchEvent(new Event('auth-change'));
+          return;
+        }
         setCourseLoadError('Failed to load your data. Please try again later.');
       } finally {
         setIsLoading(false);

@@ -3,6 +3,29 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+const buildLessonId = (moduleIndex, sectionIndex, lessonIndex) =>
+  `${moduleIndex}-${sectionIndex}-${lessonIndex}`;
+
+const applyEnrollmentToCourse = (course) => {
+  const completedLessonIds = new Set(course?.enrollment?.completedLessonIds || []);
+  const modules = (course.modules || []).map((module, moduleIndex) => ({
+    ...module,
+    sections: (module.sections || []).map((section, sectionIndex) => ({
+      ...section,
+      lessons: (section.lessons || []).map((lesson, lessonIndex) => ({
+        ...lesson,
+        isCompleted: completedLessonIds.has(buildLessonId(moduleIndex, sectionIndex, lessonIndex)),
+      })),
+    })),
+  }));
+
+  return {
+    ...course,
+    modules,
+  };
+};
+
 const CourseDetail = () => {
   const { courseId } = useParams();
   const [activeModule, setActiveModule] = useState(0);
@@ -15,6 +38,7 @@ const CourseDetail = () => {
   const [isVideoLoading, setIsVideoLoading] = useState(false);
   const [isVideoAccessible, setIsVideoAccessible] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
+  const [progressPercentage, setProgressPercentage] = useState(0);
 
   // Add new function to update course progress
   const updateCourseProgress = async (moduleIndex, sectionIndex, lessonIndex) => {
@@ -33,23 +57,20 @@ const CourseDetail = () => {
       const response = await axios.post(
         `${API_URL}/api/courses/${courseId}/progress`,
         {
-          moduleIndex,
-          sectionIndex,
-          lessonIndex,
-          completed: true
+          progressPercent: totalLessons > 0 ? Math.round((((completedLessons + 1) / totalLessons) * 100)) : 0,
+          completedLessonId: buildLessonId(moduleIndex, sectionIndex, lessonIndex)
         },
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
 
-      // Update local state with the response data
-      if (response.data) {
-        setCourseData(response.data);
-        
-        // Dispatch event to notify other components about progress update
-        window.dispatchEvent(new Event('course-progress-updated'));
+      if (response.data?.enrollment) {
+        setProgressPercentage(response.data.enrollment.progressPercent || 0);
       }
+
+      // Dispatch event to notify other components about progress update
+      window.dispatchEvent(new Event('course-progress-updated'));
     } catch (error) {
       console.error('Error updating course progress:', error);
     }
@@ -75,7 +96,9 @@ const CourseDetail = () => {
           data.instructor = 'Unknown Instructor';
         }
         
-        setCourseData(data);
+        const hydratedCourse = applyEnrollmentToCourse(data);
+        setCourseData(hydratedCourse);
+        setProgressPercentage(data.enrollment?.progressPercent || 0);
         setError(null);
       } catch (err) {
         console.error('Error fetching course:', err);
@@ -278,8 +301,6 @@ const CourseDetail = () => {
   const completedLessons = courseData?.modules.reduce((acc, module) => 
     acc + module.sections.reduce((sectionAcc, section) => 
       sectionAcc + section.lessons.filter(lesson => lesson.isCompleted).length, 0), 0) || 0;
-  const progressPercentage =
-    totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0;
 
   // Handle lesson selection
   const handleLessonClick = (moduleIndex, sectionIndex, lessonIndex) => {

@@ -7,18 +7,45 @@ const lessonSchema = new mongoose.Schema({
     },
     type: {
         type: String,
-        enum: ['video', 'ebook', 'quiz', 'workshop'],
+        enum: ['video', 'text', 'pdf', 'resource', 'quiz', 'assignment', 'ebook', 'workshop'],
         required: true
     },
-    duration: String,
+    lessonType: {
+        type: String,
+        enum: ['video', 'text', 'pdf', 'resource', 'quiz', 'assignment', 'ebook', 'workshop'],
+        default: function() {
+            return this.type;
+        }
+    },
+    duration: {
+        type: String,
+        default: ''
+    },
     videoUrl: String,
     videoKey: String,
     videoPublicId: String,
     filePath: String,
+    pdfUrl: String,
+    textContent: String,
+    resourceUrl: String,
+    resources: [{
+        title: { type: String, default: '' },
+        url: { type: String, default: '' },
+        type: { type: String, default: 'link' },
+        thumbnail: { type: String, default: '' }
+    }],
     description: String,
     free: {
         type: Boolean,
         default: false
+    },
+    isPreview: {
+        type: Boolean,
+        default: false
+    },
+    isLocked: {
+        type: Boolean,
+        default: true
     },
     order: {
         type: Number,
@@ -66,6 +93,40 @@ const moduleSchema = new mongoose.Schema({
     }
 });
 
+const additionalMaterialSchema = new mongoose.Schema({
+    title: {
+        type: String,
+        required: true
+    },
+    type: {
+        type: String,
+        enum: ['file', 'worksheet', 'link', 'reference'],
+        default: 'file'
+    },
+    url: {
+        type: String,
+        default: ''
+    },
+    thumbnail: {
+        type: String,
+        default: ''
+    }
+}, { _id: true });
+
+const reviewMetadataSchema = new mongoose.Schema({
+    submittedAt: Date,
+    reviewedAt: Date,
+    reviewedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Admin',
+        default: null
+    },
+    notes: {
+        type: String,
+        default: ''
+    }
+}, { _id: false });
+
 const enrolledStudentSchema = new mongoose.Schema({
     student: {
         type: mongoose.Schema.Types.ObjectId,
@@ -100,7 +161,23 @@ const courseSchema = new mongoose.Schema({
         required: true
     },
     shortDescription: String,
+    subtitle: {
+        type: String,
+        default: ''
+    },
+    subcategory: {
+        type: String,
+        default: ''
+    },
+    language: {
+        type: String,
+        default: 'English'
+    },
     thumbnail: String,
+    promoVideo: {
+        type: String,
+        default: ''
+    },
     courseType: {
         type: String,
         enum: ['forex', 'crypto', 'webdev'],
@@ -127,12 +204,29 @@ const courseSchema = new mongoose.Schema({
     /** Review workflow for user-authored courses */
     listingStatus: {
         type: String,
-        enum: ['draft', 'pending_review', 'published', 'rejected'],
+        enum: ['draft', 'pending_review', 'under_review', 'published', 'rejected', 'archived'],
         default: 'published'
     },
     rejectionReason: {
         type: String,
         default: ''
+    },
+    learningOutcomes: [{
+        type: String
+    }],
+    requirements: [{
+        type: String
+    }],
+    targetAudience: [{
+        type: String
+    }],
+    skillsGained: [{
+        type: String
+    }],
+    pricingType: {
+        type: String,
+        enum: ['free', 'paid'],
+        default: 'paid'
     },
     totalStudents: {
         type: Number,
@@ -143,6 +237,18 @@ const courseSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 0
+    },
+    currency: {
+        type: String,
+        default: 'GHS'
+    },
+    discountPrice: {
+        type: Number,
+        default: null
+    },
+    certificateEnabled: {
+        type: Boolean,
+        default: false
     },
     level: {
         type: String,
@@ -161,13 +267,43 @@ const courseSchema = new mongoose.Schema({
         required: true
     },
     modules: [moduleSchema],
+    additionalMaterials: {
+        type: [additionalMaterialSchema],
+        default: []
+    },
     enrolledStudents: [enrolledStudentSchema],
     isPublished: {
         type: Boolean,
         default: false
     },
+    totalLessons: {
+        type: Number,
+        default: 0
+    },
+    totalDuration: {
+        type: Number,
+        default: 0
+    },
+    totalEnrollments: {
+        type: Number,
+        default: 0
+    },
+    averageRating: {
+        type: Number,
+        default: 0
+    },
+    totalRevenue: {
+        type: Number,
+        default: 0
+    },
+    reviewMetadata: {
+        type: reviewMetadataSchema,
+        default: () => ({})
+    },
     startDate: Date,
     endDate: Date,
+    publishedAt: Date,
+    archivedAt: Date,
     createdAt: {
         type: Date,
         default: Date.now
@@ -180,6 +316,24 @@ const courseSchema = new mongoose.Schema({
 
 // Update the updatedAt field before saving
 courseSchema.pre('save', function(next) {
+    let totalLessons = 0;
+    let totalDuration = 0;
+
+    for (const module of this.modules || []) {
+        for (const section of module.sections || []) {
+            totalLessons += (section.lessons || []).length;
+            for (const lesson of section.lessons || []) {
+                const parsed = Number(lesson.duration);
+                if (!Number.isNaN(parsed) && parsed > 0) {
+                    totalDuration += parsed;
+                }
+            }
+        }
+    }
+
+    this.totalLessons = totalLessons;
+    this.totalDuration = totalDuration;
+    this.totalEnrollments = this.totalStudents;
     this.updatedAt = Date.now();
     next();
 });

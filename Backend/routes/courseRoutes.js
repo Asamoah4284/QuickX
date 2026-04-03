@@ -2,6 +2,12 @@ const express = require('express');
 const router = express.Router();
 const Course = require('../models/Course');
 const Purchase = require('../models/Purchase');
+const Enrollment = require('../models/Enrollment');
+const Review = require('../models/Review');
+const Transaction = require('../models/Transaction');
+const PlatformSetting = require('../models/PlatformSetting');
+const TutorProfile = require('../models/TutorProfile');
+const User = require('../models/User');
 const auth = require('../middleware/auth');
 const adminAuth = require('../middleware/adminAuth');
 const multerS3 = require('multer-s3');
@@ -11,6 +17,27 @@ const { videoUpload, thumbnailUpload } = require('../config/s3Config');
 
 const axios = require('axios');
 
+async function buildTransactionRecord({ course, userId, amount, paymentReference = '' }) {
+    const settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
+    const commissionRate = Number(settings?.commissionRate || 15);
+    const gross = Number(amount || 0);
+    const platformCommission = course.source === 'user'
+        ? Number(((gross * commissionRate) / 100).toFixed(2))
+        : 0;
+    const tutorEarning = Number((gross - platformCommission).toFixed(2));
+
+    return {
+        studentId: userId,
+        tutorId: course.source === 'user' ? (course.createdBy || course.instructor) : null,
+        courseId: course._id,
+        amount: gross,
+        platformCommission,
+        tutorEarning: course.source === 'user' ? tutorEarning : 0,
+        status: 'completed',
+        paymentReference
+    };
+}
+
 // Get user's purchased courses
 router.get('/user/purchased', auth, async (req, res) => {
     try {
@@ -19,35 +46,55 @@ router.get('/user/purchased', auth, async (req, res) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
-        // Find all completed purchases for the user
-        const purchases = await Purchase.find({ 
-            userId: req.user._id,
-            status: 'completed'
-        }).populate({
-            path: 'courseId',
-            select: 'title description thumbnail price instructor',
-            populate: {
-                path: 'instructor',
-                select: 'fullName'
-            }
-        });
+        const [purchases, enrollments] = await Promise.all([
+            Purchase.find({
+                userId: req.user._id,
+                status: 'completed'
+            }).populate({
+                path: 'courseId',
+                select: 'title description shortDescription thumbnail price instructor'
+            }),
+            Enrollment.find({ studentId: req.user._id }).populate({
+                path: 'courseId',
+                select: 'title description shortDescription thumbnail price instructor'
+            })
+        ]);
 
-        // Format the response
-        const purchasedCourses = purchases
-            .filter(purchase => purchase.courseId) // Filter out any null courseIds
-            .map(purchase => ({
-                id: purchase.courseId._id,
-                title: purchase.courseId.title,
-                description: purchase.courseId.description,
-                thumbnail: purchase.courseId.thumbnail,
-                price: purchase.courseId.price,
-                instructor: purchase.courseId.instructor?.fullName || 'Unknown Instructor',
-                purchaseDate: purchase.createdAt,
-                progress: 0, // You can add actual progress tracking later
-                lastAccessed: 'Recently' // You can add actual last accessed tracking later
-            }));
+        const courseMap = new Map();
 
-        res.json(purchasedCourses);
+        purchases
+            .filter((purchase) => purchase.courseId)
+            .forEach((purchase) => {
+                courseMap.set(String(purchase.courseId._id), {
+                    id: purchase.courseId._id,
+                    title: purchase.courseId.title,
+                    description: purchase.courseId.shortDescription || purchase.courseId.description,
+                    thumbnail: purchase.courseId.thumbnail,
+                    price: purchase.courseId.price,
+                    instructor: purchase.courseId.instructor?.fullName || 'Unknown Instructor',
+                    purchaseDate: purchase.createdAt,
+                    progress: 0,
+                    lastAccessed: 'Recently'
+                });
+            });
+
+        enrollments
+            .filter((enrollment) => enrollment.courseId)
+            .forEach((enrollment) => {
+                courseMap.set(String(enrollment.courseId._id), {
+                    id: enrollment.courseId._id,
+                    title: enrollment.courseId.title,
+                    description: enrollment.courseId.shortDescription || enrollment.courseId.description,
+                    thumbnail: enrollment.courseId.thumbnail,
+                    price: enrollment.courseId.price,
+                    instructor: enrollment.courseId.instructor?.fullName || 'Unknown Instructor',
+                    purchaseDate: enrollment.enrolledAt,
+                    progress: enrollment.progressPercent || 0,
+                    lastAccessed: enrollment.updatedAt ? new Date(enrollment.updatedAt).toLocaleDateString() : 'Recently'
+                });
+            });
+
+        res.json(Array.from(courseMap.values()));
     } catch (error) {
         console.error('Error fetching purchased courses:', error);
         res.status(500).json({ 
@@ -135,7 +182,7 @@ router.get('/:id/preview', async (req, res) => {
     try {
         const course = await Course.findById(req.params.id)
             .select('-topics.videoUrl')
-            .populate('instructor', 'fullName');
+            .populate('instructor', 'fullName avatar profilePicture');
             
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
@@ -144,7 +191,28 @@ router.get('/:id/preview', async (req, res) => {
             return res.status(404).json({ message: 'Course not found' });
         }
         
-        res.json(course);
+        const [reviews, relatedCourses, tutorProfile] = await Promise.all([
+            Review.find({ courseId: course._id })
+                .populate('studentId', 'fullName')
+                .sort({ createdAt: -1 })
+                .limit(5),
+            Course.find({
+                _id: { $ne: course._id },
+                courseType: course.courseType,
+                listingStatus: 'published'
+            })
+                .sort({ averageRating: -1, createdAt: -1 })
+                .limit(3)
+                .select('title thumbnail price averageRating totalLessons createdBy'),
+            course.createdBy ? TutorProfile.findOne({ userId: course.createdBy }) : null
+        ]);
+
+        res.json({
+            ...course.toObject(),
+            reviews,
+            relatedCourses,
+            tutorProfile
+        });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -169,19 +237,79 @@ router.get('/:id/full', auth, async (req, res) => {
             return res.json(course);
         }
 
-        // Check if user has purchased the course using the Purchase model
-        const purchase = await Purchase.findOne({ 
-            userId: user._id, 
-            courseId: course._id,
-            status: 'completed'
-        });
+        const [purchase, enrollment] = await Promise.all([
+            Purchase.findOne({ 
+                userId: user._id, 
+                courseId: course._id,
+                status: 'completed'
+            }),
+            Enrollment.findOne({
+                studentId: user._id,
+                courseId: course._id
+            })
+        ]);
         
-        if (!purchase) {
+        if (!purchase && !enrollment) {
             return res.status(403).json({ message: 'Access denied. Please purchase this course.' });
         }
         
-        res.json(course);
+        res.json({
+            ...course.toObject(),
+            enrollment
+        });
     } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+router.post('/:id/enroll', auth, async (req, res) => {
+    try {
+        const course = await Course.findById(req.params.id);
+        if (!course || (course.source === 'user' && course.listingStatus !== 'published')) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        if (Number(course.price || 0) > 0) {
+            return res.status(400).json({ message: 'This course requires payment before enrollment' });
+        }
+
+        const enrollment = await Enrollment.findOneAndUpdate(
+            { studentId: req.user._id, courseId: course._id },
+            {
+                $setOnInsert: {
+                    studentId: req.user._id,
+                    courseId: course._id,
+                    enrolledAt: new Date()
+                }
+            },
+            { new: true, upsert: true }
+        );
+
+        await User.findByIdAndUpdate(req.user._id, {
+            $addToSet: { purchasedCourses: course._id }
+        });
+
+        const transactionExists = await Transaction.findOne({
+            studentId: req.user._id,
+            courseId: course._id
+        });
+
+        if (!transactionExists) {
+            const transactionRecord = await buildTransactionRecord({
+                course,
+                userId: req.user._id,
+                amount: 0,
+                paymentReference: 'FREE_ENROLLMENT'
+            });
+            await Transaction.create(transactionRecord);
+        }
+
+        res.json({
+            message: 'Enrolled successfully',
+            enrollment
+        });
+    } catch (error) {
+        console.error('free enroll error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -273,6 +401,31 @@ router.post('/:id/purchase', auth, async (req, res) => {
                 // Don't throw here, as the main purchase is complete
             }
         }
+
+        await Promise.all([
+            Enrollment.findOneAndUpdate(
+                { studentId: user._id, courseId: course._id },
+                {
+                    $setOnInsert: {
+                        studentId: user._id,
+                        courseId: course._id,
+                        enrolledAt: new Date()
+                    }
+                },
+                { upsert: true, new: true }
+            ),
+            User.findByIdAndUpdate(user._id, {
+                $addToSet: { purchasedCourses: course._id }
+            })
+        ]);
+
+        const transactionRecord = await buildTransactionRecord({
+            course,
+            userId: user._id,
+            amount: req.body.amount || course.price,
+            paymentReference: purchase.transactionId || req.body.reference || ''
+        });
+        await Transaction.create(transactionRecord);
         
         res.json({
             success: true,
@@ -292,6 +445,37 @@ router.post('/:id/purchase', auth, async (req, res) => {
             message: 'Failed to process course purchase',
             error: error.message
         });
+    }
+});
+
+router.post('/:id/progress', auth, async (req, res) => {
+    try {
+        const { progressPercent = 0, completedLessonId } = req.body;
+        const enrollment = await Enrollment.findOne({ studentId: req.user._id, courseId: req.params.id });
+
+        if (!enrollment) {
+            return res.status(404).json({ message: 'Enrollment not found' });
+        }
+
+        enrollment.progressPercent = Math.max(0, Math.min(100, Number(progressPercent)));
+        if (completedLessonId) {
+            enrollment.completedLessonIds = Array.from(
+                new Set([...(enrollment.completedLessonIds || []), String(completedLessonId)])
+            );
+        }
+        if (enrollment.progressPercent >= 100 && !enrollment.completedAt) {
+            enrollment.completedAt = new Date();
+        }
+
+        await enrollment.save();
+
+        res.json({
+            enrollment,
+            certificateEligible: enrollment.progressPercent >= 100
+        });
+    } catch (error) {
+        console.error('progress update error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 

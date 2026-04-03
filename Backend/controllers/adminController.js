@@ -1,8 +1,16 @@
 const Admin = require('../models/Admin');
 const Course = require('../models/Course');
 const Book = require('../models/Book');
+const User = require('../models/User');
+const TutorProfile = require('../models/TutorProfile');
+const CourseCategory = require('../models/CourseCategory');
+const PlatformSetting = require('../models/PlatformSetting');
+const Enrollment = require('../models/Enrollment');
+const Transaction = require('../models/Transaction');
+const Review = require('../models/Review');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
+const { serializeUser } = require('../utils/serializeUser');
 
 // Admin Login
 exports.login = async (req, res) => {
@@ -384,7 +392,7 @@ exports.reviewUserCourse = async (req, res) => {
         if (course.source !== 'user') {
             return res.status(400).json({ message: 'Only user-authored courses require this review' });
         }
-        if (course.listingStatus !== 'pending_review') {
+        if (!['pending_review', 'under_review'].includes(course.listingStatus)) {
             return res.status(400).json({ message: 'Course is not pending review' });
         }
 
@@ -392,16 +400,233 @@ exports.reviewUserCourse = async (req, res) => {
             course.listingStatus = 'published';
             course.isPublished = true;
             course.rejectionReason = '';
+            course.reviewMetadata = {
+                ...course.reviewMetadata,
+                reviewedAt: new Date(),
+                reviewedBy: req.admin?._id || null,
+                notes: ''
+            };
         } else {
             course.listingStatus = 'rejected';
             course.isPublished = false;
             course.rejectionReason = (rejectionReason || 'Does not meet guidelines').slice(0, 2000);
+            course.reviewMetadata = {
+                ...course.reviewMetadata,
+                reviewedAt: new Date(),
+                reviewedBy: req.admin?._id || null,
+                notes: course.rejectionReason
+            };
         }
 
         await course.save();
         res.json(course);
     } catch (error) {
         console.error('reviewUserCourse:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.getTutorApplications = async (req, res) => {
+    try {
+        const raw = String(req.query.status || 'all').trim().toLowerCase();
+        const allowed = ['all', 'draft', 'pending', 'approved', 'rejected', 'suspended'];
+        const status = allowed.includes(raw) ? raw : 'all';
+        const query = status !== 'all' ? { applicationStatus: status } : {};
+
+        const profiles = await TutorProfile.find(query)
+            .populate({ path: 'userId', select: '-password' })
+            .populate({ path: 'reviewedBy', select: 'fullName email' })
+            .sort({ updatedAt: -1 })
+            .lean();
+
+        const payload = profiles.map((doc) => {
+            const populatedUser = doc.userId && typeof doc.userId === 'object' && doc.userId._id
+                ? doc.userId
+                : null;
+            const userIdRef = populatedUser ? populatedUser._id : doc.userId;
+
+            return {
+                ...doc,
+                userId: userIdRef,
+                user: serializeUser(populatedUser),
+            };
+        });
+
+        res.json(payload);
+    } catch (error) {
+        console.error('getTutorApplications:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.reviewTutorApplication = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, notes = '' } = req.body;
+
+        if (!['approve', 'reject', 'suspend'].includes(action)) {
+            return res.status(400).json({ message: 'Invalid action' });
+        }
+
+        const profile = await TutorProfile.findById(id).populate('userId');
+        if (!profile || !profile.userId) {
+            return res.status(404).json({ message: 'Tutor application not found' });
+        }
+
+        const user = await User.findById(profile.userId._id);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        const nextStatus = action === 'approve'
+            ? 'approved'
+            : action === 'reject'
+                ? 'rejected'
+                : 'suspended';
+
+        profile.applicationStatus = nextStatus;
+        profile.reviewNotes = String(notes || '').trim();
+        profile.reviewedAt = new Date();
+        profile.reviewedBy = req.admin?._id || null;
+
+        user.creatorStatus = nextStatus;
+        user.role = nextStatus === 'approved' ? 'tutor' : 'student';
+        user.creatorReviewedAt = new Date();
+        user.creatorReviewedBy = req.admin?._id || null;
+        user.creatorReviewNotes = profile.reviewNotes;
+
+        await Promise.all([profile.save(), user.save()]);
+
+        res.json({
+            tutorProfile: profile,
+            user: serializeUser(user)
+        });
+    } catch (error) {
+        console.error('reviewTutorApplication:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.getCourseReviewQueue = async (req, res) => {
+    try {
+        const courses = await Course.find({
+            source: 'user',
+            listingStatus: { $in: ['under_review', 'pending_review'] }
+        })
+            .populate('createdBy', 'fullName email avatar profilePicture')
+            .sort({ updatedAt: -1 });
+
+        res.json(courses);
+    } catch (error) {
+        console.error('getCourseReviewQueue:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.getPlatformSettings = async (req, res) => {
+    try {
+        let settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
+        if (!settings) {
+            settings = await PlatformSetting.create({});
+        }
+        res.json(settings);
+    } catch (error) {
+        console.error('getPlatformSettings:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.updatePlatformSettings = async (req, res) => {
+    try {
+        const payload = {
+            commissionRate: Number(req.body.commissionRate ?? 15),
+            courseAutoApproval: Boolean(req.body.courseAutoApproval),
+            creatorAutoApproval: Boolean(req.body.creatorAutoApproval)
+        };
+
+        const current = await PlatformSetting.findOne().sort({ createdAt: -1 });
+        const settings = current
+            ? await PlatformSetting.findByIdAndUpdate(current._id, payload, { new: true, runValidators: true })
+            : await PlatformSetting.create(payload);
+
+        res.json(settings);
+    } catch (error) {
+        console.error('updatePlatformSettings:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.getCourseCategories = async (req, res) => {
+    try {
+        const categories = await CourseCategory.find().sort({ createdAt: -1 });
+        res.json(categories);
+    } catch (error) {
+        console.error('getCourseCategories:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.upsertCourseCategory = async (req, res) => {
+    try {
+        const payload = {
+            name: String(req.body.name || '').trim(),
+            slug: String(req.body.slug || '').trim() || String(req.body.name || '').trim().toLowerCase().replace(/\s+/g, '-'),
+            description: String(req.body.description || '').trim(),
+            subcategories: Array.isArray(req.body.subcategories) ? req.body.subcategories : [],
+            isActive: req.body.isActive === undefined ? true : Boolean(req.body.isActive)
+        };
+
+        if (!payload.name) {
+            return res.status(400).json({ message: 'Category name is required' });
+        }
+
+        const category = req.params.id
+            ? await CourseCategory.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true })
+            : await CourseCategory.create(payload);
+
+        res.json(category);
+    } catch (error) {
+        console.error('upsertCourseCategory:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.deleteCourseCategory = async (req, res) => {
+    try {
+        await CourseCategory.findByIdAndDelete(req.params.id);
+        res.json({ message: 'Category deleted' });
+    } catch (error) {
+        console.error('deleteCourseCategory:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+exports.getCreatorAnalytics = async (req, res) => {
+    try {
+        const [tutorProfiles, courses, enrollments, transactions, reviews] = await Promise.all([
+            TutorProfile.countDocuments({ applicationStatus: 'approved' }),
+            Course.countDocuments({ source: 'user' }),
+            Enrollment.countDocuments(),
+            Transaction.find({ status: 'completed' }),
+            Review.find()
+        ]);
+
+        const totalTutorRevenue = transactions.reduce((sum, transaction) => sum + Number(transaction.tutorEarning || 0), 0);
+        const platformRevenue = transactions.reduce((sum, transaction) => sum + Number(transaction.platformCommission || 0), 0);
+        const averageRating = reviews.length > 0
+            ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / reviews.length
+            : 0;
+
+        res.json({
+            approvedTutors: tutorProfiles,
+            totalCreatorCourses: courses,
+            totalCreatorEnrollments: enrollments,
+            totalTutorRevenue,
+            platformRevenue,
+            averageRating: Number(averageRating.toFixed(1))
+        });
+    } catch (error) {
+        console.error('getCreatorAnalytics:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

@@ -14,6 +14,30 @@ const { securityHeaders, requestSizeLimiter, preventParamPollution } = require('
 
 const app = express();
 
+// CORS must run before rate limiting / routes so every response (incl. 429 & OPTIONS preflight) gets CORS headers
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://www.quickxlearn.com',
+    'https://quickxlearn.com'
+];
+const corsOptions = {
+    origin: function (origin, callback) {
+        if (!origin || allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    credentials: true,
+    preflightContinue: false,
+    optionsSuccessStatus: 204
+};
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
+
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: false, // We use our custom CSP
@@ -53,8 +77,11 @@ const s3UrlLimiter = rateLimit({
     message: 'Too many upload requests, please try again later'
 });
 
-// Apply rate limiting to all API routes
-app.use('/api/', apiLimiter);
+// Apply rate limiting to all API routes (OPTIONS preflight skipped so CORS stays reliable)
+app.use('/api/', (req, res, next) => {
+    if (req.method === 'OPTIONS') return next();
+    return apiLimiter(req, res, next);
+});
 
 // Middleware
 app.use(express.json({ limit: '10mb' }));
@@ -62,36 +89,6 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Prevent NoSQL injection attacks
 app.use(mongoSanitize());
-
-// CORS configuration
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    
-    'https://www.quickxlearn.com',
-    'https://quickxlearn.com'
-];
-
-const corsOptions = {
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-    credentials: true,
-    preflightContinue: false,
-    optionsSuccessStatus: 204
-};
-
-// Use CORS middleware
-app.use(cors(corsOptions));
-
-// Handle preflight requests
-app.options('*', cors(corsOptions));
 
 // Database connection
 console.log('Attempting to connect to MongoDB...');

@@ -2,9 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { FiPlay, FiBook, FiExternalLink } from 'react-icons/fi';
 import axios from 'axios';
+import { API_URL } from '@/config/api';
 
-
-const API_URL = import.meta.env.VITE_API_URL;
 
 const ForexSchool = () => {
   // Course categories

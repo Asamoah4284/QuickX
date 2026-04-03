@@ -2,8 +2,7 @@ import { useState } from 'react';
 import { FiMail, FiArrowRight } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL;
+import { API_URL } from '@/config/api';
 
 function ForgotPassword() {
   const [email, setEmail] = useState('');

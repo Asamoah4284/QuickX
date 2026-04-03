@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
-    FiHome, FiUsers, FiBook, FiVideo, FiSettings, 
-    FiLogOut, FiBarChart2, FiUpload, FiEdit2, 
+    FiUsers, FiBook, FiVideo, FiSettings, 
+    FiBarChart2, FiUpload, FiEdit2, 
     FiTrash2, FiPlus, FiTrendingUp, FiDollarSign,
     FiX, FiBookOpen, FiTag, FiStar, FiImage, FiAlertTriangle
 } from 'react-icons/fi';
@@ -69,8 +69,21 @@ const mockCourses = [
     }
 ];
 
+const TAB_BY_PATH = {
+    '/admin/dashboard': 'dashboard',
+    '/admin/courses': 'courses',
+    '/admin/books': 'books',
+    '/admin/upload': 'upload',
+    '/admin/settings': 'settings',
+    '/admin/coupons': 'coupons',
+    '/admin/mentorship': 'mentorship',
+    '/admin/advertisements': 'advertisements',
+    '/admin/withdrawals': 'withdrawals',
+};
+
 const AdminDashboard = () => {
-    const [activeTab, setActiveTab] = useState('dashboard');
+    const location = useLocation();
+    const activeTab = TAB_BY_PATH[location.pathname] || 'dashboard';
     const [courses, setCourses] = useState([]);
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -78,7 +91,6 @@ const AdminDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [showAddCourse, setShowAddCourse] = useState(false);
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [analytics, setAnalytics] = useState({
         totalUsers: 0,
         totalCourses: 0,
@@ -400,12 +412,6 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('adminToken');
-        localStorage.removeItem('admin');
-        navigate('/admin/login');
-    };
-
     const handleAddCourse = () => {
         setSelectedCourse(null);
         setShowModal(true);
@@ -662,8 +668,7 @@ const AdminDashboard = () => {
                 setShowAddCourse(false); // Close the add course screen
                 fetchCourses();
                 
-                // Set active tab to courses to show the courses list
-                setActiveTab('courses');
+                navigate('/admin/courses');
             }
         } catch (error) {
             console.error('Error saving course:', error);
@@ -1097,7 +1102,7 @@ const AdminDashboard = () => {
                                         <p className="text-sm text-gray-500">Total Users</p>
                                         <p className="text-xl font-bold">{analytics.totalUsers || ''}</p>
                                     </div>
-                                    <div className="bg-blue-100 p-2 rounded-full">
+                                    <div className="bg-slate-100 p-2 rounded-full">
                                         <FiUsers className="text-blue-600 text-lg" />
                                     </div>
                                 </div>
@@ -1183,7 +1188,7 @@ const AdminDashboard = () => {
                                     {[1, 2, 3, 4].map((item) => (
                                         <div key={item} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                                             <div className="flex items-center">
-                                                <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
+                                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mr-3">
                                                     <FiUsers className="text-blue-600" />
                                                 </div>
                                                 <div>
@@ -1309,12 +1314,12 @@ const AdminDashboard = () => {
                                             name="courseType"
                                             value={formData.courseType}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border-2 border-blue-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-blue-50"
+                                            className="w-full px-3 lg:px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 bg-white"
                                         >
                                             <option value="forex">Forex</option>
                                             <option value="crypto">Crypto</option>
                                         </select>
-                                        <p className="mt-1 text-xs text-blue-600">Select whether this is a Forex or Crypto course</p>
+                                        <p className="mt-1 text-xs text-slate-500">Select whether this is a Forex or Crypto course</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -2122,205 +2127,21 @@ const AdminDashboard = () => {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+            <div className="flex items-center justify-center min-h-[50vh]">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col lg:flex-row h-screen bg-gray-100">
-            {/* Mobile Header with Hamburger Menu */}
-            <div className="lg:hidden flex items-center justify-between p-4 bg-white shadow-sm">
-                <h1 className="text-xl font-bold text-gray-800">Admin Panel</h1>
-                <button
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-                    className="p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200 relative z-50"
-                >
-                    {isSidebarOpen ? (
-                        <FiX className="text-gray-600 text-2xl" />
-                    ) : (
-                        <svg
-                            className="w-6 h-6 text-gray-600"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path d="M4 6h16M4 12h16M4 18h16" />
-                        </svg>
-                    )}
-                </button>
-            </div>
-
-            {/* Sidebar */}
-            <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 fixed lg:relative inset-0 z-40 lg:z-auto w-64 bg-white shadow-lg transition-transform duration-300 ease-in-out`}>
-                <div className="p-4 lg:p-6">
-                    <h1 className="text-xl lg:text-2xl font-bold text-gray-800 hidden lg:block">Admin Panel</h1>
+        <>
+            {error && (
+                <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-600 px-4 py-3 rounded">
+                    {error}
                 </div>
-                <nav className="mt-4 lg:mt-6">
-                    <div className="px-2 lg:px-4 space-y-1 lg:space-y-2">
-                        <button
-                            onClick={() => {
-                                setActiveTab('dashboard');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'dashboard'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiHome className="mr-2 lg:mr-3" />
-                            Dashboard
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('courses');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'courses'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiBook className="mr-2 lg:mr-3" />
-                            Courses
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('books');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'books'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiBookOpen className="mr-2 lg:mr-3" />
-                            Books
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('upload');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'upload'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiVideo className="mr-2 lg:mr-3" />
-                            Upload Content
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('settings');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'settings'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiSettings className="mr-2 lg:mr-3" />
-                            Settings
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('coupons');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'coupons'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiTag className="mr-2 lg:mr-3" />
-                            Coupons
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('mentorship');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'mentorship'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiStar className="mr-2 lg:mr-3" />
-                            Mentorship
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('advertisements');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'advertisements'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiImage className="mr-2 lg:mr-3" />
-                            Advertisements
-                        </button>
-                        <button
-                            onClick={() => {
-                                setActiveTab('withdrawals');
-                                setIsSidebarOpen(false);
-                            }}
-                            className={`flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium rounded-lg ${
-                                activeTab === 'withdrawals'
-                                    ? 'bg-blue-100 text-blue-600'
-                                    : 'text-gray-600 hover:bg-gray-100'
-                            }`}
-                        >
-                            <FiDollarSign className="mr-2 lg:mr-3" />
-                            Withdrawals
-                        </button>
-                    </div>
-                </nav>
-                <div className="p-4">
-                    <button
-                        onClick={handleLogout}
-                        className="flex items-center w-full px-3 lg:px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg"
-                    >
-                        <FiLogOut className="mr-2 lg:mr-3" />
-                        Logout
-                    </button>
-                </div>
-            </div>
-
-            {/* Overlay for mobile */}
-            {isSidebarOpen && (
-                <div
-                    className="fixed inset-0 bg-black bg-opacity-30 z-30 lg:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
             )}
 
-            {/* Main Content */}
-            <div className="flex-1 overflow-auto">
-                <div className="p-4 lg:p-6">
-                    {error && (
-                        <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-600 px-4 py-3 rounded">
-                            {error}
-                        </div>
-                    )}
-
-                    {renderContent()}
-                </div>
-            </div>
+            {renderContent()}
 
             {showModal && (
                 <CourseModal
@@ -2340,7 +2161,7 @@ const AdminDashboard = () => {
 
             <DeleteConfirmationModal />
             <DeleteBookConfirmationModal />
-        </div>
+        </>
     );
 };
 

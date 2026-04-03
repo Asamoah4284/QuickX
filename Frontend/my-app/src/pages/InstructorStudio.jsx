@@ -101,7 +101,7 @@ export default function InstructorStudio() {
           {programs.length === 0 ? (
             <p className="text-sm text-slate-500 mt-2">
               None yet.{' '}
-              <Link to="/programs" className="text-blue-600 hover:underline">Enroll in a creator program</Link>.
+              <Link to="/creator/onboarding" className="text-blue-600 hover:underline">Apply as a creator</Link>.
             </p>
           ) : (
             <ul className="mt-2 text-sm text-slate-700 dark:text-slate-200 space-y-1">

@@ -15,3 +15,17 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Soft card elevation (marketplace / instructor dashboards) */
+@layer utilities {
+  .shadow-creator {
+    box-shadow:
+      0 1px 2px rgba(15, 23, 42, 0.04),
+      0 4px 14px rgba(15, 23, 42, 0.06);
+  }
+  .shadow-creator-lg {
+    box-shadow:
+      0 1px 3px rgba(15, 23, 42, 0.05),
+      0 8px 28px rgba(15, 23, 42, 0.08);
+  }
+}

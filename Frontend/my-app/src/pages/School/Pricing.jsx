@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
-import { FiCheck, FiLock, FiPlay, FiClock, FiDownload, FiStar, FiShoppingCart, FiInfo, FiUsers, FiCalendar, FiAward, FiBarChart2, FiBook, FiFileText } from 'react-icons/fi';
-import { PaystackButton } from 'react-paystack';
+import { FiCheck, FiLock, FiPlay, FiClock, FiDownload, FiStar, FiUsers, FiCalendar, FiBarChart2, FiBook } from 'react-icons/fi';
 import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -26,7 +25,6 @@ function Pricing() {
   const courseId = searchParams.get('id');
 
   const LESSONS_PER_PAGE = 5;
-  ``
   // Paystack public key - replace with your actual public key
   const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
@@ -955,81 +953,138 @@ function Pricing() {
     );
   }
 
-  // Log the course data that will be rendered
-  console.log('CourseData being rendered:', courseData);
-  console.log('Selected module:', selectedModule);
+  const displayHeroTitle =
+    courseData?.title ||
+    (level
+      ? `${level.charAt(0).toUpperCase() + level.slice(1)} Level Forex Trading`
+      : 'Complete Forex Trading Mastery');
+  const displayHeroSubtitle = level
+    ? courseData?.subtitle
+    : 'Get access to all three levels of forex trading education';
+  const studentDisplay =
+    courseData?.studentCount !== '' && courseData?.studentCount != null
+      ? Number(courseData.studentCount).toLocaleString()
+      : null;
+  const ratingDisplay =
+    courseData?.rating !== '' && courseData?.rating != null ? String(courseData.rating) : null;
+  const reviewDisplay =
+    courseData?.reviewCount !== '' && courseData?.reviewCount != null
+      ? String(courseData.reviewCount)
+      : null;
+  const displayPrice = level ? Number(courseData?.modules?.[0]?.price || 0) : Number(bundlePrice || 0);
+  const originalPrice = !level && totalPrice > bundlePrice ? totalPrice : null;
+  const moduleCount = courseData?.modules?.length || 0;
+  const totalSections = getTotalSections();
+  const previewLessonCount =
+    courseData?.modules?.reduce(
+      (count, module) =>
+        count +
+        (module.sections || []).reduce(
+          (sectionCount, section) =>
+            sectionCount + (section.lessons || []).filter((lesson) => lesson.free).length,
+          0
+        ),
+      0
+    ) || 0;
+  const downloadableResourceCount =
+    courseData?.modules?.reduce(
+      (count, module) =>
+        count +
+        (module.sections || []).reduce(
+          (sectionCount, section) =>
+            sectionCount +
+            (section.lessons || []).filter((lesson) => ['ebook', 'pdf'].includes(lesson.type)).length,
+          0
+        ),
+      0
+    ) || 0;
+  const firstPreviewLesson =
+    courseData?.modules
+      ?.flatMap((module) =>
+        (module.sections || []).flatMap((section) =>
+          (section.lessons || []).map((lesson) => ({
+            moduleId: module.id,
+            lessonId: lesson.id,
+            free: lesson.free,
+          }))
+        )
+      )
+      .find((lesson) => lesson.free) || null;
+  const includes = [
+    {
+      icon: FiPlay,
+      label: `${getTotalLessons()} on-demand ${getTotalLessons() === 1 ? 'lesson' : 'lessons'}`,
+    },
+    {
+      icon: FiClock,
+      label: `${getTotalDuration()} total length`,
+    },
+    {
+      icon: FiBarChart2,
+      label: `${courseData?.level || 'All levels'} level`,
+    },
+    {
+      icon: downloadableResourceCount > 0 ? FiDownload : FiBook,
+      label:
+        downloadableResourceCount > 0
+          ? `${downloadableResourceCount} downloadable ${downloadableResourceCount === 1 ? 'resource' : 'resources'}`
+          : `${moduleCount} structured ${moduleCount === 1 ? 'module' : 'modules'}`,
+    },
+  ];
+  const handlePrimaryPurchase = () => {
+    if (!isAuthenticated) {
+      navigate('/login', { state: { from: location.pathname + location.search } });
+      return;
+    }
+
+    if (level) {
+      handlePurchaseModule(courseData?.modules?.[0]?.id);
+    } else {
+      handleBundlePurchase();
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-28 px-4 sm:px-6 lg:px-8">
-      {/* Course Header */}
-      <div className="max-w-6xl mx-auto">
-        <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-t-2xl overflow-hidden">
-          <div className="p-8 sm:p-10 text-white">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
-              <div className="flex-1">
-                <h1 className="text-3xl sm:text-4xl font-bold mb-2">
-                  {level ? `${level.charAt(0).toUpperCase() + level.slice(1)} Level Forex Trading` : 'Complete Forex Trading Mastery'}
-                </h1>
-                <p className="text-blue-100 text-lg mb-4">
-                  {level ? courseData?.subtitle : 'Get access to all three levels of forex trading education'}
-                </p>
-                <div className="flex flex-wrap items-center gap-4 text-sm">
-                  <div className="flex items-center">
-                    <FiUsers className="mr-1.5" />
-                    <span>{courseData?.studentCount.toLocaleString()} students</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FiStar className="text-yellow-400 mr-1.5" />
-                    <span>{courseData?.rating} ({courseData?.reviewCount} reviews)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <FiCalendar className="mr-1.5" />
-                    <span>Last updated {courseData?.lastUpdated}</span>
-                  </div>
-                </div>
-              </div>
-              <div className="flex-shrink-0 bg-white/10 backdrop-blur-sm rounded-xl p-4 md:p-5">
-                <div className="text-center md:text-left">
-                  <div className="text-lg opacity-80 mb-1">
-                    {level ? `${level.charAt(0).toUpperCase() + level.slice(1)} Level` : 'Complete Bundle'}
-                  </div>
-                  <div className="flex items-center justify-center md:justify-start gap-2 mb-3">
-                    <span className="text-3xl font-bold">
-                      GHS{level ? courseData?.modules[0]?.price : bundlePrice}
-                    </span>
-                    {!level && (
-                      <>
-                        <span className="text-blue-200 line-through">
-                          GHS{totalPrice}
-                        </span>
-                        <span className="bg-yellow-400 text-yellow-900 text-xs font-bold px-2 py-0.5 rounded">
-                          SAVE 17%
-                        </span>
-                      </>
-                    )}
-                  </div>
-                  <button 
-                    className="block w-full bg-white text-blue-700 hover:bg-blue-50 font-medium py-2 rounded-lg transition-colors mt-4 text-sm text-center"
-                    onClick={() => {
-                      if (!isAuthenticated) {
-                        navigate('/login', { state: { from: location.pathname + location.search } });
-                        return;
-                      }
-                      
-                      if (level) {
-                        handlePurchaseModule(courseData?.modules[0]?.id);
-                      } else {
-                        handleBundlePurchase();
-                      }
-                    }}
-                  >
-                    {level ? 'Enroll Now' : 'Purchase Bundle'}
-                  </button>
-                </div>
+    <div className="min-h-screen bg-white pt-16 md:pt-20">
+      <section className="bg-[#1c1d1f] text-white">
+        <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:py-14">
+          <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_360px]">
+            <div className="max-w-3xl">
+              <p className="text-sm text-[#c0c4fc]">
+                {courseData?.level || 'Course'} {courseData?.category ? ` / ${courseData.category}` : ''}
+              </p>
+              <h1 className="mt-3 text-3xl font-bold leading-tight sm:text-4xl lg:text-[2.8rem]">
+                {displayHeroTitle}
+              </h1>
+              <p className="mt-4 text-lg leading-8 text-[#d1d7dc]">
+                {displayHeroSubtitle || courseData?.description}
+              </p>
+              <div className="mt-5 flex flex-wrap gap-3 text-sm text-[#d1d7dc]">
+                {ratingDisplay !== null ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FiStar className="h-4 w-4 text-[#f69c08]" aria-hidden />
+                    <span className="font-semibold text-[#f69c08]">{ratingDisplay}</span>
+                    {reviewDisplay !== null ? <span>({reviewDisplay} reviews)</span> : null}
+                  </span>
+                ) : null}
+                {studentDisplay !== null ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FiUsers className="h-4 w-4" aria-hidden />
+                    {studentDisplay} students
+                  </span>
+                ) : null}
+                {courseData?.lastUpdated ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <FiCalendar className="h-4 w-4" aria-hidden />
+                    Last updated {courseData.lastUpdated}
+                  </span>
+                ) : null}
               </div>
             </div>
+            <div className="hidden lg:block" />
           </div>
         </div>
+      </section>
 
         {/* Bundle Purchase Modal */}
         {showBundle && (
@@ -1056,8 +1111,8 @@ function Pricing() {
 
               <div className="flex items-center justify-between mb-6">
                 <div>
-                  <div className="text-2xl font-bold">${bundlePrice}</div>
-                  <div className="text-gray-500 line-through">${totalPrice}</div>
+                  <div className="text-2xl font-bold">GHS{bundlePrice}</div>
+                  <div className="text-gray-500 line-through">GHS{totalPrice}</div>
                 </div>
                 <div className="text-right">
                   <div className="text-green-600 font-medium">Save 17%</div>
@@ -1083,169 +1138,268 @@ function Pricing() {
           </div>
         )}
 
-        <div className="bg-white rounded-b-2xl shadow-lg overflow-hidden">
-          <div className="flex flex-col lg:flex-row">
-            {/* Left Section - Course Content & Overview */}
-            <div className="lg:w-7/12 border-r border-gray-200">
-              {/* Course Info Tabs */}
-              <div className="border-b border-gray-200">
-                <div className="px-6 pt-6 sm:px-8">
-                  <div className="flex items-center text-sm">
-                    <div className="bg-blue-100 text-blue-800 font-medium px-3 py-1 rounded-full mr-3">
-                      {courseData.level}
-                    </div>
-                    <div className="flex items-center text-gray-500 mr-4">
-                      <FiClock className="mr-1.5" />
-                      {getTotalDuration()}
-                    </div>
-                    <div className="flex items-center text-gray-500">
-                      <FiPlay className="mr-1.5" />
-                      {getTotalLessons()} lessons
-                    </div>
+        <div className="mx-auto grid max-w-7xl gap-10 px-4 py-8 sm:px-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:px-8 lg:py-10">
+          <main className="space-y-6">
+            <section className="rounded-2xl border border-[#d1d7dc] bg-white p-6">
+              <h2 className="text-2xl font-bold text-[#1c1d1f]">What you’ll get from this course</h2>
+              <div className="mt-5 grid gap-4 md:grid-cols-2">
+                {(courseData?.targetAudience || []).slice(0, 6).map((item) => (
+                  <div key={item} className="flex gap-3">
+                    <FiCheck className="mt-1 h-4 w-4 shrink-0 text-[#5624d0]" aria-hidden />
+                    <p className="text-sm leading-6 text-[#1c1d1f]">{item}</p>
                   </div>
+                ))}
+              </div>
+            </section>
+
+            <section className="rounded-2xl border border-[#d1d7dc] bg-white p-6">
+              <h2 className="text-2xl font-bold text-[#1c1d1f]">Course overview</h2>
+              <p className="mt-4 whitespace-pre-line text-[15px] leading-7 text-[#2d2f31]">
+                {courseData?.description}
+              </p>
+            </section>
+
+            {(courseData?.requirements || []).length > 0 ? (
+              <section className="rounded-2xl border border-[#d1d7dc] bg-white p-6">
+                <h2 className="text-2xl font-bold text-[#1c1d1f]">Requirements</h2>
+                <ul className="mt-4 space-y-3">
+                  {courseData.requirements.map((item) => (
+                    <li key={item} className="flex gap-3 text-sm leading-6 text-[#2d2f31]">
+                      <FiCheck className="mt-1 h-4 w-4 shrink-0 text-[#5624d0]" aria-hidden />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+            ) : null}
+
+            <section className="rounded-2xl border border-[#d1d7dc] bg-white p-6">
+              <div className="flex flex-col gap-4 border-b border-[#d1d7dc] pb-5 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-[#1c1d1f]">Course content</h2>
+                  <p className="mt-2 text-sm text-[#6a6f73]">
+                    {moduleCount} {moduleCount === 1 ? 'module' : 'modules'} • {totalSections}{' '}
+                    {totalSections === 1 ? 'section' : 'sections'} • {getTotalLessons()} lessons •{' '}
+                    {getTotalDuration()} total
+                  </p>
                 </div>
-                
-                <div className="px-6 sm:px-8 pt-4 pb-0">
-                  <div className="flex space-x-8 overflow-x-auto pb-4">
-                    <button className="pb-3 px-1 border-b-2 border-blue-600 text-blue-600 font-medium whitespace-nowrap">
-                      Course Content
-                    </button>
-                    <button className="pb-3 px-1 text-gray-500 hover:text-gray-700 whitespace-nowrap">
-                      {/* Instructor */}
-                    </button>
-                    <button className="pb-3 px-1 text-gray-500 hover:text-gray-700 whitespace-nowrap">
-                      {/* Reviews */}
-                    </button>
-                  </div>
+                {previewLessonCount > 0 ? (
+                  <span className="inline-flex items-center rounded-full bg-[#ecebff] px-3 py-1 text-xs font-semibold text-[#5624d0]">
+                    {previewLessonCount} free preview {previewLessonCount === 1 ? 'lesson' : 'lessons'}
+                  </span>
+                ) : null}
+              </div>
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs font-semibold uppercase tracking-wider text-[#6a6f73]">
+                  Curriculum
+                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentModulePage((prev) => Math.max(0, prev - 1))}
+                    disabled={currentModulePage === 0}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                      currentModulePage === 0
+                        ? 'cursor-not-allowed border-[#e5e7eb] bg-[#f7f9fa] text-[#9aa0a6]'
+                        : 'border-[#d1d7dc] bg-white text-[#1c1d1f] hover:bg-[#f7f9fa]'
+                    }`}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                    </svg>
+                    Previous
+                  </button>
+                  <span className="rounded-full bg-[#f7f9fa] px-3 py-1.5 text-xs font-medium text-[#6a6f73]">
+                    Module {currentModulePage + 1} of {getTotalModulePages()}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentModulePage((prev) => Math.min(getTotalModulePages() - 1, prev + 1))
+                    }
+                    disabled={currentModulePage === getTotalModulePages() - 1}
+                    className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition ${
+                      currentModulePage === getTotalModulePages() - 1
+                        ? 'cursor-not-allowed border-[#e5e7eb] bg-[#f7f9fa] text-[#9aa0a6]'
+                        : 'border-[#d1d7dc] bg-white text-[#1c1d1f] hover:bg-[#f7f9fa]'
+                    }`}
+                  >
+                    Next
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
               </div>
 
-              {/* Selected Module Content */}
-              <div className="p-6 sm:p-8">
-                {/* Module Navigation */}
-                <div className="mb-6 flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <button
-                      onClick={() => setCurrentModulePage(prev => Math.max(0, prev - 1))}
-                      disabled={currentModulePage === 0}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                        currentModulePage === 0
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                      }`}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                      </svg>
-                      Previous Module
-                    </button>
-                    <span className="text-sm text-gray-600">
-                      Module {currentModulePage + 1} of {getTotalModulePages()}
-                    </span>
-                    <button
-                      onClick={() => setCurrentModulePage(prev => Math.min(getTotalModulePages() - 1, prev + 1))}
-                      disabled={currentModulePage === getTotalModulePages() - 1}
-                      className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium ${
-                        currentModulePage === getTotalModulePages() - 1
-                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          : 'bg-blue-50 text-blue-600 hover:bg-blue-100'
-                      }`}
-                    >
-                      Next Module
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
+              <div className="mt-5 space-y-4">
+                {getPaginatedModules().map((module, moduleOffset) => {
+                  const absoluteModuleIndex = currentModulePage * MODULES_PER_PAGE + moduleOffset;
 
-                {/* Only show the currently paginated module */}
-                {getPaginatedModules().map((module) => (
-                  <React.Fragment key={module.id}>
-                    <div className="mb-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{module.title}</h3>
-                      <p className="text-gray-600">{module.description}</p>
-                    </div>
+                  return (
+                    <div key={module.id} className="overflow-hidden rounded-2xl border border-[#d1d7dc]">
+                      <div className="border-b border-[#d1d7dc] bg-[#f7f9fa] px-5 py-4">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-xs font-semibold uppercase tracking-wider text-[#6a6f73]">
+                              Module {absoluteModuleIndex + 1}
+                            </p>
+                            <h3 className="mt-1 text-lg font-bold text-[#1c1d1f]">{module.title}</h3>
+                            <p className="mt-2 text-sm leading-6 text-[#6a6f73]">{module.description}</p>
+                          </div>
+                          <div className="flex flex-wrap gap-2 text-xs font-medium text-[#6a6f73]">
+                            <span className="rounded-full bg-white px-3 py-1.5">
+                              {getModuleDuration(module)}
+                            </span>
+                            <span className="rounded-full bg-white px-3 py-1.5">
+                              {module.sections.length} {module.sections.length === 1 ? 'section' : 'sections'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
 
-                    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                      {module.sections.map((section, sectionIndex) => (
-                        <div key={section.id} className="border-b border-gray-200 last:border-b-0">
-                          <div className="px-5 py-4 bg-gray-50 border-l-4 border-blue-500">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center">
-                                <span className="text-sm font-medium text-gray-500 mr-2">
-                                  Section {getCurrentSectionNumber(module.id, sectionIndex)} of {getTotalSections()}
-                                </span>
-                                <h4 className="text-lg font-semibold text-gray-900">{section.title}</h4>
+                      <div className="divide-y divide-[#e5e7eb]">
+                        {module.sections.map((section, sectionIndex) => (
+                          <div key={section.id}>
+                            <div className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                              <div>
+                                <p className="text-xs font-medium uppercase tracking-wide text-[#6a6f73]">
+                                  Section {getCurrentSectionNumber(absoluteModuleIndex, sectionIndex)} of {totalSections}
+                                </p>
+                                <h4 className="mt-1 font-semibold text-[#1c1d1f]">{section.title}</h4>
                               </div>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-sm text-[#6a6f73]">
                                 {section.lessons.length} {section.lessons.length === 1 ? 'lesson' : 'lessons'}
                               </span>
                             </div>
-                          </div>
 
-                          <div className="divide-y divide-gray-100">
-                            {section.lessons.map((lesson) => (
-                              <div 
-                                key={lesson.id} 
-                                className="px-5 py-4 flex justify-between items-center group hover:bg-gray-50 transition-colors duration-200"
-                              >
-                                <div className="flex items-center">
-                                  {lesson.free || module.unlocked ? (
-                                    lesson.type === 'ebook' ? (
-                                      <FiBook className="text-blue-600 mr-3 group-hover:scale-110 transition-transform duration-200" />
-                                    ) : (
-                                      <FiPlay className="text-blue-600 mr-3 group-hover:scale-110 transition-transform duration-200" />
-                                    )
-                                  ) : (
-                                    <FiLock className="text-gray-400 mr-3 group-hover:text-gray-500 group-hover:scale-110 transition-all duration-200" />
-                                  )}
-                                  <div>
-                                    <h4 className={`text-sm font-medium flex items-center ${lesson.type === 'ebook' ? 'text-blue-700' : 'text-gray-900'} group-hover:translate-x-0.5 transition-transform duration-200`}>
-                                      {lesson.title}
-                                      {lesson.free && !module.unlocked && (
-                                        <span className={`ml-2 text-xs px-2 py-0.5 rounded-full ${
-                                          lesson.type === 'ebook' ? 'bg-blue-100 text-blue-800' : 'bg-green-100 text-green-800'
-                                        } group-hover:bg-opacity-80 transition-colors duration-200`}>
-                                          Free Preview
-                                        </span>
+                            <div className="border-t border-[#f1f2f4]">
+                              {(section.lessons || []).map((lesson) => (
+                                <div
+                                  key={lesson.id}
+                                  className="flex flex-col gap-3 px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                                >
+                                  <div className="flex min-w-0 gap-3">
+                                    <div className="mt-0.5 shrink-0 text-[#6a6f73]">
+                                      {lesson.free || module.unlocked ? (
+                                        lesson.type === 'ebook' ? (
+                                          <FiBook className="h-4 w-4 text-[#5624d0]" aria-hidden />
+                                        ) : (
+                                          <FiPlay className="h-4 w-4 text-[#5624d0]" aria-hidden />
+                                        )
+                                      ) : (
+                                        <FiLock className="h-4 w-4" aria-hidden />
                                       )}
-                                    </h4>
-                                    <div className="flex items-center text-xs text-gray-500 mt-1">
-                                      <FiClock className="mr-1" />
-                                      <span>{lesson.duration}</span>
-                                      <span className="mx-2">•</span>
-                                      <span className="capitalize">{lesson.type}</span>
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="flex flex-wrap items-center gap-2">
+                                        <p className="truncate text-sm font-medium text-[#1c1d1f]">
+                                          {lesson.title}
+                                        </p>
+                                        {lesson.free && !module.unlocked ? (
+                                          <span className="rounded-full bg-[#ecebff] px-2 py-0.5 text-[11px] font-semibold text-[#5624d0]">
+                                            Preview
+                                          </span>
+                                        ) : null}
+                                      </div>
+                                      <p className="mt-1 text-xs text-[#6a6f73]">
+                                        {lesson.duration} • <span className="capitalize">{lesson.type}</span>
+                                      </p>
                                     </div>
                                   </div>
-                                </div>
-                                
-                                {(lesson.free || module.unlocked) ? (
-                                  <div>
+                                  {lesson.free || module.unlocked ? (
                                     <Link
                                       to={`/school/course/${module.id}?lesson=${lesson.id}`}
-                                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                      className="inline-flex items-center gap-1.5 text-sm font-medium text-[#5624d0] hover:text-[#401b9c]"
                                     >
-                                      <FiDownload className="mr-1.5" /> Download
+                                      <FiDownload className="h-4 w-4" aria-hidden />
+                                      Open lesson
                                     </Link>
-                                  </div>
-                                ) : (
-                                  <div className="text-xs text-gray-500">
-                                    Locked
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                                  ) : (
+                                    <span className="text-sm text-[#6a6f73]">Locked</span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
                     </div>
-                  </React.Fragment>
-                ))}
+                  );
+                })}
+              </div>
+            </section>
+          </main>
+
+          <aside className="order-first lg:order-none lg:-mt-56">
+            <div className="lg:sticky lg:top-24">
+              <div className="overflow-hidden rounded-2xl border border-[#d1d7dc] bg-white shadow-[0_2px_12px_rgba(0,0,0,0.08)]">
+                {courseData?.image ? (
+                  <div className="aspect-video overflow-hidden border-b border-[#d1d7dc] bg-[#f7f9fa]">
+                    <img
+                      src={courseData.image}
+                      alt={displayHeroTitle}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                ) : null}
+
+                <div className="p-6">
+                  <div className="flex items-end gap-2">
+                    <p className="text-[2rem] font-bold leading-none text-[#1c1d1f]">
+                      GHS{displayPrice}
+                    </p>
+                    {originalPrice ? (
+                      <p className="pb-1 text-base text-[#6a6f73] line-through">GHS{originalPrice}</p>
+                    ) : null}
+                  </div>
+                  {originalPrice ? (
+                    <p className="mt-2 text-sm font-medium text-[#b32d0f]">
+                      Save GHS{originalPrice - displayPrice} with the full bundle
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-sm text-[#6a6f73]">
+                      One-time payment. Lifetime access to this course content.
+                    </p>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={handlePrimaryPurchase}
+                    className="mt-5 w-full rounded-lg bg-[#a435f0] px-4 py-3.5 text-sm font-semibold text-white transition hover:bg-[#8710d8]"
+                  >
+                    {level ? 'Buy now' : 'Buy bundle'}
+                  </button>
+
+                  {firstPreviewLesson ? (
+                    <Link
+                      to={`/school/course/${firstPreviewLesson.moduleId}?lesson=${firstPreviewLesson.lessonId}`}
+                      className="mt-3 flex w-full items-center justify-center rounded-lg border border-[#d1d7dc] px-4 py-3 text-sm font-semibold text-[#1c1d1f] transition hover:bg-[#f7f9fa]"
+                    >
+                      Preview this course
+                    </Link>
+                  ) : null}
+
+                  <p className="mt-4 text-center text-xs text-[#6a6f73]">
+                    30-Day Money-Back Guarantee
+                  </p>
+
+                  <div className="mt-6 border-t border-[#d1d7dc] pt-6">
+                    <h3 className="text-lg font-bold text-[#1c1d1f]">This course includes:</h3>
+                    <ul className="mt-4 space-y-3">
+                      {includes.map(({ icon: Icon, label }) => (
+                        <li key={label} className="flex items-start gap-3 text-sm text-[#2d2f31]">
+                          <Icon className="mt-0.5 h-4 w-4 shrink-0 text-[#1c1d1f]" aria-hidden />
+                          <span>{label}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
+          </aside>
       </div>
     </div>
   );
