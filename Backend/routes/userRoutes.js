@@ -12,6 +12,7 @@ const rateLimit = require('express-rate-limit');
 const crypto = require('crypto');
 const sgMail = require('@sendgrid/mail');
 const { serializeUser } = require('../utils/serializeUser');
+const { sendOTP } = require('../services/sms');
 
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
@@ -41,6 +42,12 @@ const validateRegistration = [
         .withMessage('Full name must be between 2 and 100 characters')
         .matches(/^[a-zA-Z\s]+$/)
         .withMessage('Full name can only contain letters and spaces'),
+    body('phone')
+        .trim()
+        .notEmpty()
+        .withMessage('Phone number is required')
+        .matches(/^\d{10,15}$/)
+        .withMessage('Please provide a valid phone number (10-15 digits)'),
 ];
 
 const validateLogin = [
@@ -127,6 +134,8 @@ function sanitizeCreatorDraft(body = {}) {
         teachesPaidCourses: body.teachesPaidCourses === undefined ? true : Boolean(body.teachesPaidCourses),
         offersMentorship: Boolean(body.offersMentorship),
         idDocumentUrl: String(body.idDocumentUrl || '').trim(),
+        avatar: String(body.avatar || '').trim(),
+        profilePicture: String(body.profilePicture || body.avatar || '').trim(),
         payoutDetails: {
             accountName: String(body.payoutDetails?.accountName || '').trim(),
             provider: String(body.payoutDetails?.provider || '').trim(),
@@ -145,15 +154,19 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { email, password, fullName, phone = '', country = '', avatar = '' } = req.body;
+        const { email, password, fullName, phone, country = '', avatar = '' } = req.body;
         
         // Log the request data (excluding password)
-        console.log('Registration attempt:', { email, fullName });
+        console.log('Registration attempt:', { email, fullName, phone });
         
         const userExists = await User.findOne({ email: email.toLowerCase() });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
         }
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otpExpiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
         const user = new User({
             email: email.toLowerCase(),
@@ -162,11 +175,24 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             phone: String(phone || '').trim(),
             country: String(country || '').trim(),
             avatar: String(avatar || '').trim(),
-            profilePicture: String(avatar || '').trim()
+            profilePicture: String(avatar || '').trim(),
+            isVerified: false,
+            verificationCode: otp,
+            verificationCodeExpires: otpExpiry
         });
 
         await user.save();
-        console.log('User saved successfully');
+        console.log('User saved successfully. Sending OTP...');
+
+        // Send OTP via SMS
+        try {
+            await sendOTP(user.phone, otp);
+        } catch (smsError) {
+            console.error('Failed to send registration OTP:', smsError);
+            // We don't fail registration if SMS fails conceptually, 
+            // but the user won't be able to verify without it.
+            // In a production app, you might want to handle this differently.
+        }
 
         if (!process.env.JWT_SECRET) {
             throw new Error('JWT_SECRET is not configured');
@@ -175,6 +201,7 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         const token = signUserToken(user);
 
         res.status(201).json({
+            message: 'Registration successful. Verification code sent.',
             token,
             user: serializeUser(user)
         });
@@ -185,6 +212,75 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             error: error.message,
             details: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
+    }
+});
+
+// Verify Account
+router.post('/verify-account', authLimiter, [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required'),
+    body('code').isLength({ min: 6, max: 6 }).withMessage('6-digit code is required')
+], async (req, res) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { email, code } = req.body;
+        const user = await User.findOne({ 
+            email: email.toLowerCase(),
+            verificationCode: code,
+            verificationCodeExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired verification code' });
+        }
+
+        user.isVerified = true;
+        user.verificationCode = undefined;
+        user.verificationCodeExpires = undefined;
+        await user.save();
+
+        const token = signUserToken(user);
+        res.json({
+            message: 'Account verified successfully',
+            token,
+            user: serializeUser(user)
+        });
+    } catch (error) {
+        console.error('Account verification error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Resend OTP
+router.post('/resend-otp', authLimiter, [
+    body('email').isEmail().normalizeEmail().withMessage('Valid email is required')
+], async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        if (user.isVerified) {
+            return res.status(400).json({ message: 'Account is already verified' });
+        }
+
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        user.verificationCode = otp;
+        user.verificationCodeExpires = new Date(Date.now() + 10 * 60 * 1000);
+        await user.save();
+
+        await sendOTP(user.phone, otp);
+
+        res.json({ message: 'Verification code resent successfully' });
+    } catch (error) {
+        console.error('Resend OTP error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
@@ -308,11 +404,14 @@ router.patch('/me/account', auth, async (req, res) => {
             }
         }
 
-        if (updates.avatar && !updates.profilePicture) {
-            updates.profilePicture = updates.avatar;
-        }
-        if (updates.profilePicture && !updates.avatar) {
-            updates.avatar = updates.profilePicture;
+        // Sync fields and handle empty strings correctly
+        if (updates.avatar !== undefined || updates.profilePicture !== undefined) {
+             const finalAvatar = updates.avatar || updates.profilePicture || '';
+             const finalProfilePicture = updates.profilePicture || updates.avatar || '';
+             
+             // Check if they were explicitly set to empty/invalid and reset them
+             updates.avatar = (finalAvatar && finalAvatar !== 'undefined' && finalAvatar !== 'null') ? finalAvatar : '';
+             updates.profilePicture = (finalProfilePicture && finalProfilePicture !== 'undefined' && finalProfilePicture !== 'null') ? finalProfilePicture : '';
         }
 
         if (Object.keys(updates).length === 0) {
@@ -395,7 +494,14 @@ router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) 
         user.expertise = payload.expertise;
         user.languagesSpoken = payload.languages;
         user.socialLinks = payload.socialLinks;
+        
+        if (payload.avatar) {
+            user.avatar = payload.avatar;
+            user.profilePicture = payload.avatar;
+        }
+        
         await user.save();
+        console.log(`[API] Tutor profile updated for user: ${req.user._id}`);
 
         res.json({
             user: serializeUser(user),
@@ -444,6 +550,7 @@ router.post('/creator/profile/submit', auth, async (req, res) => {
         user.creatorApplicationSubmittedAt = new Date();
         user.creatorReviewNotes = tutorProfile.reviewNotes || '';
         await user.save();
+        console.log(`[API] Creator application submitted/processed for user: ${req.user._id}. Status: ${user.creatorStatus}`);
 
         res.json({
             message: autoApprove ? 'Creator application approved automatically' : 'Creator application submitted',

@@ -108,6 +108,14 @@ const tutorProfileSchema = new mongoose.Schema({
     payoutDetails: {
         type: payoutDetailsSchema,
         default: () => ({})
+    },
+    avatar: {
+        type: String,
+        default: ''
+    },
+    profilePicture: {
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true

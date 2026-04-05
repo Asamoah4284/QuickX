@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget } from 'react-icons/fi';
+import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget, FiArrowRight } from 'react-icons/fi';
 import axios from 'axios';
 
 
@@ -663,43 +663,73 @@ function Membership() {
           {/* Content Area */}
           <div className="md:w-3/4">
             {activeTab === 'dashboard' && (
-              <div className="space-y-6">
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900">Your Learning Progress</h2>
-                  </div>
-                  
-                  <div className="p-6">
-                    <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-5 mb-5">
-                      <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-                        <div className="mb-4 md:mb-0">
-                          <div className="text-xl font-semibold text-gray-900 mb-1">Overall Progress</div>
-                          <p className="text-gray-600">{purchasedCourses.length > 0 ? 'Keep going, you\'re doing great!' : 'Start your learning journey today!'}</p>
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* Modernized Progress Card */}
+                <div className="relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-indigo-600/5 rounded-3xl -z-10 group-hover:scale-105 transition-transform duration-700"></div>
+                  <div className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-3xl shadow-xl shadow-blue-900/5 p-8 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
+                    <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                    
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                      <div className="flex-1">
+                        <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase mb-3">
+                          <FiTrendingUp className="w-3 h-3" />
+                          <span>Learning Statistics</span>
                         </div>
-                        <div className="flex items-center">
+                        <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Overall Progress</h2>
+                        <p className="text-gray-500 max-w-sm leading-relaxed">
+                          {purchasedCourses.length > 0 
+                            ? "You're consistently making progress. Keep up the momentum to reach your goals!" 
+                            : "Your journey starts here. Browse our courses and take the first step towards mastery."}
+                        </p>
+                      </div>
+                      
+                      <div className="flex items-center space-x-8">
+                        <div className="relative group/circle">
+                          <div className="absolute inset-0 bg-blue-600/10 rounded-full blur-2xl group-hover/circle:scale-110 transition-transform duration-500"></div>
                           <CircularProgress 
                             progress={
                               purchasedCourses.length > 0 
                                 ? Math.floor(purchasedCourses.reduce((sum, course) => sum + course.progress, 0) / purchasedCourses.length) 
                                 : 0
                             } 
-                            size={100} 
+                            size={120} 
+                            strokeWidth={8}
                           />
-                          <div className="ml-4 hidden md:block">
-                            <div className="text-sm text-gray-500 mb-1">Courses Completed</div>
-                            <div className="text-2xl font-bold text-blue-600">
+                        </div>
+                        <div className="h-16 w-px bg-gray-100 hidden md:block"></div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-1">Status</span>
+                          <div className="flex flex-col">
+                            <span className="text-4xl font-extrabold text-gray-900 tracking-tighter">
                               {purchasedCourses.filter(course => course.progress === 100).length}
-                              <span className="text-sm text-gray-400">/{purchasedCourses.length}</span>
-                            </div>
+                            </span>
+                            <span className="text-sm font-semibold text-blue-600">
+                              of {purchasedCourses.length} Courses Done
+                            </span>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
-                    <h3 className="font-medium text-gray-900 mb-4 flex items-center">
-                      <FiClock className="mr-2 text-blue-600" />
-                      Recently Accessed Courses
-                    </h3>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 px-2">
+                  <h3 className="text-xl font-bold text-gray-900 flex items-center tracking-tight">
+                    <FiClock className="mr-3 text-blue-600" />
+                    Recently Accessed
+                  </h3>
+                  {purchasedCourses.length > 3 && (
+                    <button 
+                      onClick={() => setActiveTab('myCourses')}
+                      className="text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors flex items-center group"
+                    >
+                      View All
+                      <FiArrowRight className="ml-2 group-hover:translate-x-1 transition-transform" />
+                    </button>
+                  )}
+                </div>
                     
                     {courseLoadError && (
                       <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4 rounded">
@@ -718,41 +748,51 @@ function Membership() {
                       </div>
                     )}
                     
-                    <div className="grid grid-cols-1 gap-4">
+                    <div className="grid grid-cols-1 gap-6">
                       {purchasedCourses.length > 0 ? (
-                        purchasedCourses.map(course => (
-                        <div key={course.id} className="border border-gray-100 rounded-xl overflow-hidden hover:shadow-md transition-all group">
-                          <div className="flex flex-col md:flex-row">
-                            <div className="md:w-1/3 relative">
-                              <img src={course.image} alt={course.title} className="w-full h-full object-cover min-h-[140px]" />
-                              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/80 to-indigo-600/80 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Link
-                                  to={`/school/course/${course.id}`}
-                                  className="px-4 py-2 bg-white text-blue-700 rounded-lg shadow-md font-medium transform transition-transform hover:scale-105"
-                                >
-                                  Continue
-                                </Link>
+                        purchasedCourses.slice(0, 3).map(course => (
+                        <div 
+                          key={course.id} 
+                          className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-900/5 transition-all duration-500 transform hover:-translate-y-1"
+                        >
+                          <div className="flex flex-col md:flex-row h-full">
+                            <div className="md:w-64 h-48 md:h-auto relative overflow-hidden shrink-0">
+                              <img src={course.image} alt={course.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                              <div className="absolute inset-0 bg-gradient-to-r from-blue-600/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-[2px]">
+                                <FiBookOpen className="text-white w-10 h-10 animate-pulse" />
                               </div>
                             </div>
                             
-                            <div className="p-5 md:w-2/3 flex justify-between items-center">
+                            <div className="flex-1 p-6 flex flex-col justify-between">
                               <div>
-                                <Link to={`/school/course/${course.id}`} className="font-medium text-lg text-gray-900 hover:text-blue-700 transition-colors">
-                                  {course.title}
-                                </Link>
-                                <div className="text-sm text-gray-500 flex items-center mt-1">
-                                  <FiClock className="mr-1.5" />
-                                  Last accessed {course.lastAccessed}
-                                </div>
-                                <div className="mt-3 flex items-center">
-                                  <div className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-md font-medium">
-                                    {course.progress}% Complete
+                                <div className="flex items-center justify-between mb-2">
+                                  <Link to={`/school/course/${course.id}`} className="font-bold text-xl text-gray-900 hover:text-blue-600 transition-colors tracking-tight line-clamp-1">
+                                    {course.title}
+                                  </Link>
+                                  <div className="shrink-0">
+                                    <CircularProgress progress={course.progress} size={50} strokeWidth={4} />
                                   </div>
+                                </div>
+                                <div className="text-sm text-gray-400 flex items-center">
+                                  <FiClock className="mr-1.5 w-3.5 h-3.5" />
+                                  <span>Active {course.lastAccessed}</span>
                                 </div>
                               </div>
                               
-                              <div className="hidden md:block">
-                                <CircularProgress progress={course.progress} size={60} />
+                              <div className="mt-6 flex items-center justify-between gap-4">
+                                <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                  <div 
+                                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-1000"
+                                    style={{ width: `${course.progress}%` }}
+                                  ></div>
+                                </div>
+                                <Link
+                                  to={`/school/course/${course.id}`}
+                                  className="shrink-0 inline-flex items-center justify-center px-5 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-all duration-300 group/btn shadow-lg shadow-gray-900/10"
+                                >
+                                  Resume
+                                  <FiArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                                </Link>
                               </div>
                             </div>
                           </div>
@@ -777,57 +817,7 @@ function Membership() {
                       )}
                     </div>
                   </div>
-                </div>
-
-                <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-                  <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-6 py-4 border-b border-gray-100">
-                    <h2 className="text-lg font-bold text-gray-900">Upcoming Events</h2>
-                  </div>
-                  
-                  <div className="p-6">
-                    <div className="grid grid-cols-1 gap-4">
-                      <div className="flex items-start border border-gray-100 p-4 rounded-xl hover:shadow-md transition-shadow bg-gradient-to-r from-green-50 to-green-100">
-                        <div className="mr-4 bg-white shadow-sm text-green-800 rounded-lg p-3 text-center min-w-[60px]">
-                          <div className="text-xs font-medium uppercase">MAY</div>
-                          <div className="text-xl font-bold">15</div>
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-lg">Live Trading Session</h3>
-                          <div className="text-sm text-gray-600 flex items-center mt-1">
-                            <FiCalendar className="mr-1.5" />
-                            10:00 AM - 12:00 PM
-                          </div>
-                          <div className="mt-3">
-                            <button className="text-xs bg-white text-green-700 border border-green-200 px-3 py-1.5 rounded-lg hover:bg-green-700 hover:text-white transition-colors">
-                              Add to Calendar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start border border-gray-100 p-4 rounded-xl hover:shadow-md transition-shadow bg-gradient-to-r from-blue-50 to-blue-100">
-                        <div className="mr-4 bg-white shadow-sm text-blue-800 rounded-lg p-3 text-center min-w-[60px]">
-                          <div className="text-xs font-medium uppercase">MAY</div>
-                          <div className="text-xl font-bold">22</div>
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-lg">Q&A Webinar: Trading Psychology</h3>
-                          <div className="text-sm text-gray-600 flex items-center mt-1">
-                            <FiCalendar className="mr-1.5" />
-                            4:00 PM - 5:30 PM
-                          </div>
-                          <div className="mt-3">
-                            <button className="text-xs bg-white text-blue-700 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-700 hover:text-white transition-colors">
-                              Add to Calendar
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+                )}
             
             {activeTab === 'myCourses' && (
               <div className="bg-white rounded-xl shadow-sm p-6">

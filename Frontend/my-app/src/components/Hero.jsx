@@ -140,18 +140,12 @@ const Hero = () => {
       
       {/* Background graphics - 5 with multiple images */}
       <div className="absolute inset-0 z-0 overflow-hidden">
-        <video
-          autoPlay
-          loop
-          muted
-          playsInline // Important for iOS autoplay
-          className="absolute top-1/2 left-1/2 w-auto h-auto min-w-full min-h-full transform -translate-x-1/2 -translate-y-1/2 object-cover"
-          // The className above is a common CSS trick to make the video cover the area
-          // while maintaining its aspect ratio, similar to `background-size: cover;`
-        >
-          <source src='./images/stock.mp4' type="video/mp4" />
-      
-        </video>
+        <img
+          src="./images/hero.png"
+          alt="Hero background"
+          className="absolute top-1/2 left-1/2 w-full h-full transform -translate-x-1/2 -translate-y-1/2 object-cover"
+        />
+        <div className="absolute inset-0 bg-black/40"></div> {/* Optional overlay for text readability */}
       </div>
       
       <div className="max-w-6xl mx-auto px-4 md:px-0 py-16 z-10 relative">

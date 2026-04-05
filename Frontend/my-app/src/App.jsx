@@ -16,6 +16,7 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
+import VerifyAccount from "./pages/auth/VerifyAccount";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MainSchool from "./pages/School/MainSchool";
 import ForexSchool from "./pages/School/ForexSchool";
@@ -234,6 +235,10 @@ const router = createBrowserRouter([
       {
         path: "reset-password/:token",
         element: <ResetPassword />
+      },
+      {
+        path: "verify-account",
+        element: <VerifyAccount />
       }
     ]
   },

@@ -157,6 +157,7 @@ export default function CreatorOnboarding() {
             teachesPaidCourses: form.teachesPaidCourses,
             offersMentorship: form.offersMentorship,
             idDocumentUrl: form.idDocumentUrl,
+            avatar: form.avatar,
           },
           { headers: { Authorization: `Bearer ${token}` } }
         ),
@@ -322,12 +323,42 @@ export default function CreatorOnboarding() {
               <div className="md:col-span-2 rounded-3xl border border-dashed border-slate-300 p-5">
                 <p className="text-sm font-medium text-slate-700">Profile picture</p>
                 <div className="mt-3 flex flex-wrap items-center gap-4">
-                  {form.avatar ? <img src={form.avatar} alt="" className="h-20 w-20 rounded-2xl object-cover" /> : null}
-                  <label className="rounded-2xl bg-blue-600 px-4 py-3 text-sm font-medium text-white">
-                    Upload photo
-                    <input type="file" className="hidden" accept="image/*" onChange={(event) => handleUpload('avatar', event.target.files?.[0], 'image')} />
-                  </label>
-                  {uploadProgress.avatar > 0 ? <p className="text-sm text-slate-500">Uploading {uploadProgress.avatar}%</p> : null}
+                  <div className="relative group overflow-hidden h-20 w-20 rounded-2xl bg-slate-100 border border-slate-200">
+                    {form.avatar ? (
+                      <img 
+                        src={form.avatar} 
+                        alt="" 
+                        className="h-full w-full object-cover" 
+                        onError={() => setForm(f => ({ ...f, avatar: '' }))}
+                      />
+                    ) : (
+                      <div className="h-full w-full flex items-center justify-center text-slate-400">
+                        <svg className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center gap-3">
+                      <label className="cursor-pointer rounded-2xl bg-blue-600 px-4 py-3 text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                        {form.avatar ? 'Change photo' : 'Upload photo'}
+                        <input type="file" className="hidden" accept="image/*" onChange={(event) => handleUpload('avatar', event.target.files?.[0], 'image')} />
+                      </label>
+                      
+                      {form.avatar && (
+                        <button 
+                          type="button" 
+                          onClick={() => updateField('avatar', '')}
+                          className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-rose-600 hover:bg-rose-50 transition-colors"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    {uploadProgress.avatar > 0 ? <p className="text-xs text-blue-600 font-medium">Uploading {uploadProgress.avatar}%</p> : null}
+                  </div>
                 </div>
               </div>
             </div>

@@ -9,6 +9,7 @@ function Register() {
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
+    phone: '',
     password: '',
     confirmPassword: ''
   });
@@ -33,6 +34,7 @@ function Register() {
       const response = await axios.post(`${API_URL}/api/users/register`, {
         fullName: formData.fullName,
         email: formData.email,
+        phone: formData.phone,
         password: formData.password
       });
       console.log('Received registration:', response.data);
@@ -46,8 +48,8 @@ function Register() {
       // Dispatch custom event to notify Navbar component
       window.dispatchEvent(new Event('auth-change'));
       
-      // Redirect to home page instead of membership area
-      navigate('/');
+      // Redirect to verification page
+      navigate(`/verify-account?email=${encodeURIComponent(formData.email)}&phone=${encodeURIComponent(formData.phone)}`);
     } catch (err) {
       setError(
         err.response?.data?.message || 
@@ -61,8 +63,15 @@ function Register() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
-      <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-xl bg-white mt-12">
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-16 sm:px-6 lg:px-8 overflow-hidden">
+      <img 
+        src="/images/hero.png" 
+        alt="Page Background" 
+        className="absolute inset-0 w-full h-full object-cover" 
+      />
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px]"></div>
+      
+      <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-2xl bg-white mt-12 relative z-10">
         <div className="md:flex">
           {/* Left Side - Promotional Content */}
           <div className="md:w-2/5 bg-gradient-to-r from-indigo-600 to-blue-600 p-8 text-white flex flex-col justify-center">
@@ -153,6 +162,27 @@ function Register() {
                       placeholder="name@example.com"
                       value={formData.email}
                       onChange={(e) => setFormData({...formData, email: e.target.value})}
+                      className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      {/* Using FiUser as a placeholder or we could import FiPhone */}
+                      <FiUser className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      id="phone"
+                      type="tel"
+                      required
+                      placeholder="0551234567"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({...formData, phone: e.target.value})}
                       className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>

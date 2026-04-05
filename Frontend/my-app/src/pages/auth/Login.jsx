@@ -61,8 +61,15 @@ function Login() {
   
   
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-16 sm:px-6 lg:px-8">
-      <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-xl bg-white mt-12">
+    <div className="min-h-screen relative flex items-center justify-center px-4 py-16 sm:px-6 lg:px-8 overflow-hidden">
+      <img 
+        src="/images/hero.png" 
+        alt="Page Background" 
+        className="absolute inset-0 w-full h-full object-cover" 
+      />
+      <div className="absolute inset-0 bg-white/70 backdrop-blur-[2px]"></div>
+      
+      <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-2xl bg-white mt-12 relative z-10">
         <div className="md:flex">
           {/* Left Side - Promotional Content */}
           <div className="md:w-2/5 bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white flex flex-col justify-center">

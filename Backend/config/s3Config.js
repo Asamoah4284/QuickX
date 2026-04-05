@@ -1,53 +1,57 @@
-const aws = require('aws-sdk');
+const { S3Client, PutObjectCommand } = require('@aws-sdk/client-s3');
+const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 require('dotenv').config();
-const AWS_ACCESS_KEY_ID = process.env.AWS_ACCESS_KEY_ID
 
-const s3 = new aws.S3({
-    accessKeyId:AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3Client = new S3Client({
     region: process.env.AWS_REGION || 'eu-north-1',
-    signatureVersion: 'v4'
+    credentials: {
+        accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+    },
+    requestChecksumCalculation: "WHEN_REQUIRED",
+    responseChecksumValidation: "WHEN_REQUIRED"
 });
 
-async function generateImageUrl() {
-    const ImageName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.jpg`;
+async function generateImageUrl(contentType = 'image/jpeg') {
+    try {
+        const extension = contentType.split('/')[1] || 'jpg';
+        const ImageName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.${extension}`;
 
+        const command = new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
+            Key: ImageName,
+            ContentType: contentType,
+        });
 
-
-    const params = {
-        Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
-        Key: ImageName,
-        Expires: 300, // Valid for 5 minutes
-        ContentType: 'image/jpeg',
-    };
-    
-    const uploadURL = await s3.getSignedUrlPromise('putObject', params);
-    
-
-
-
-    
-    return uploadURL;
+        const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+        console.log(`[S3] Signed PUT URL generated for image: ${ImageName}`);
+        return uploadURL;
+    } catch (error) {
+        console.error('[S3] Error generating signed PUT URL for image:', error);
+        throw error;
+    }
 }
 
 async function generateVideoUrl() {
-    const VideoName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.mp4`;
-    const params = {
-        Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
-        Key: VideoName,
-        Expires: 60 * 5,
-        ContentType: 'video/mp4'
-    };
+    try {
+        const VideoName = `${Date.now()}-${Math.random().toString(36).substring(2, 15)}.mp4`;
+        const command = new PutObjectCommand({
+            Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
+            Key: VideoName,
+            ContentType: 'video/mp4'
+        });
 
-    const uploadURL = await s3.getSignedUrlPromise('putObject', params);    
-    
-    return uploadURL;
+        const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });
+        console.log(`[S3] Signed PUT URL generated for video: ${VideoName}`);
+        return uploadURL;
+    } catch (error) {
+        console.error('[S3] Error generating signed PUT URL for video:', error);
+        throw error;
+    }
 }
 
 module.exports = {
     generateImageUrl,
     generateVideoUrl,
-    s3
+    s3: s3Client // For legacy compatibility if needed
 };
-
-

@@ -19,6 +19,7 @@ export async function uploadFileToS3({ file, token, type = 'image', onProgress }
 
   const endpoint = type === 'video' ? '/s3VideoUrl' : '/s3Url';
   const { data } = await axios.get(`${API_URL}${endpoint}`, {
+    params: { contentType: file.type || (type === 'video' ? 'video/mp4' : 'image/jpeg') },
     headers: getHeaders(token),
   });
 

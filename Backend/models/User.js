@@ -193,7 +193,19 @@ const userSchema = new mongoose.Schema({
         }
     }],
     momoDetails: momoDetailsSchema,
-    withdrawalRequests: [withdrawalRequestSchema]
+    withdrawalRequests: [withdrawalRequestSchema],
+    isVerified: {
+        type: Boolean,
+        default: false
+    },
+    verificationCode: {
+        type: String,
+        default: null
+    },
+    verificationCodeExpires: {
+        type: Date,
+        default: null
+    }
 }, {
     timestamps: true
 });

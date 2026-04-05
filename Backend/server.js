@@ -148,10 +148,12 @@ app.get('/sitemap.xml', (req, res) => {
 
 app.get('/s3Url', flexibleAuth, s3UrlLimiter, async (req, res) => {
     try {
+        const { contentType } = req.query;
         // Log the request for audit purposes
-        console.log(`S3 URL generated for ${req.userType}: ${req.user._id} at ${new Date().toISOString()}`);
+        console.log(`S3 URL generated for ${req.userType}: ${req.user._id} at ${new Date().toISOString()} (type: ${contentType})`);
         
-        const uploadURL = await s3Config.generateImageUrl();
+        const uploadURL = await s3Config.generateImageUrl(contentType);
+        console.log(`[API] Image upload URL requested by ${req.userType}: ${req.user?._id || 'unknown'} (type: ${contentType})`);
         res.json({ url: uploadURL });
     } catch (error) {
         console.error('S3 URL generation error:', error);
