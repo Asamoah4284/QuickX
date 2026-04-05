@@ -10,6 +10,7 @@ import {
 import CourseModal from './CourseModal';
 import BookModal from './BookModal';
 import CourseManagement from './CourseManagement';
+import { uploadFileToS3 } from '../../utils/uploadToS3';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -691,29 +692,9 @@ const AdminDashboard = () => {
                 setError('Please login first');
                 return;
             }
-            
-            // First, get the secure URL from our server
-            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            console.log(url);
 
-            if (!url) {
-                throw new Error('Failed to get upload URL');
-            }
+            const fileUrl = await uploadFileToS3({ file, token, type: 'image' });
 
-            // Upload the file directly to S3 using the secure URL
-            await axios.put(url, file, {
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-         
-
-            // Extract the file URL from the S3 URL
-            const fileUrl = url.split('?')[0];
-
-            // Update the form data with the file URL
             setFormData(prev => ({
                 ...prev,
                 thumbnail: fileUrl
@@ -725,7 +706,7 @@ const AdminDashboard = () => {
             } else if (error.request) {
                 setError('Could not connect to server. Please check if the server is running.');
             } else {
-                setError('Failed to upload thumbnail. Please try again.');
+                setError(error.message || 'Failed to upload thumbnail. Please try again.');
             }
         }
     };
@@ -736,25 +717,12 @@ const AdminDashboard = () => {
 
         try {
             const token = localStorage.getItem('adminToken');
-            
-            // First, get the secure URL from our server
-            const { data: { url } } = await axios.get(`${API_URL}/s3VideoUrl`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!url) {
-                throw new Error('Failed to get upload URL');
+            if (!token) {
+                setError('Please login first');
+                return;
             }
 
-            // Upload the file directly to S3 using the secure URL
-            await axios.put(url, file, {
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-
-            // Extract the file URL from the S3 URL
-            const fileUrl = url.split('?')[0];
+            const fileUrl = await uploadFileToS3({ file, token, type: 'video' });
             console.log('Uploaded video URL:', fileUrl);
 
             // Update the form data with the file URL
@@ -778,7 +746,7 @@ const AdminDashboard = () => {
             } else if (error.request) {
                 setError('Could not connect to server. Please check if the server is running.');
             } else {
-                setError('Failed to upload content. Please try again.');
+                setError(error.message || 'Failed to upload content. Please try again.');
             }
         }
     };

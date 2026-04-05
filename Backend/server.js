@@ -163,9 +163,12 @@ app.get('/s3Url', flexibleAuth, s3UrlLimiter, async (req, res) => {
 
 app.get('/s3VideoUrl', flexibleAuth, s3UrlLimiter, async (req, res) => {
     try {
-        console.log(`S3 Video URL generated for ${req.userType}: ${req.user._id} at ${new Date().toISOString()}`);
-        
-        const uploadURL = await s3Config.generateVideoUrl();
+        const { contentType } = req.query;
+        console.log(
+            `S3 Video URL generated for ${req.userType}: ${req.user._id} at ${new Date().toISOString()} (type: ${contentType || 'default'})`
+        );
+
+        const uploadURL = await s3Config.generateVideoUrl(contentType);
         res.json({ url: uploadURL });
     } catch (error) {
         console.error('S3 Video URL generation error:', error);

@@ -1,13 +1,20 @@
 /**
  * Idempotent: creates or updates the platform admin by email.
- * Usage: node scripts/seedAdmin.js
+ *
+ * Default credentials (change PASSWORD before production):
+ *   email:    admin@gmail.com
+ *   password: admin123
+ *
+ * Usage (from Backend/):
+ *   npm run seed:admin
+ *   node scripts/seedAdmin.js
  */
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 const Admin = require('../models/Admin');
 
 const EMAIL = 'admin@gmail.com';
-const PASSWORD = 'admin12334';
+const PASSWORD = 'admin123';
 const FULL_NAME = 'Platform Admin';
 
 async function run() {

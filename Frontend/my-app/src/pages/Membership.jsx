@@ -666,10 +666,10 @@ function Membership() {
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Modernized Progress Card */}
                 <div className="relative overflow-hidden group">
-                  <div className="absolute inset-0 bg-gradient-to-br from-blue-600/5 to-indigo-600/5 rounded-3xl -z-10 group-hover:scale-105 transition-transform duration-700"></div>
-                  <div className="bg-white/80 backdrop-blur-xl border border-white/40 rounded-3xl shadow-xl shadow-blue-900/5 p-8 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 -mt-8 -mr-8 w-32 h-32 bg-blue-500/5 rounded-full blur-3xl"></div>
-                    <div className="absolute bottom-0 left-0 -mb-8 -ml-8 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl"></div>
+                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-600/[0.03] to-indigo-600/[0.03] -z-10"></div>
+                  <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-8">
+                    <div className="pointer-events-none absolute top-0 right-0 -mt-6 -mr-6 h-24 w-24 rounded-full bg-blue-500/[0.04] blur-2xl"></div>
+                    <div className="pointer-events-none absolute bottom-0 left-0 -mb-6 -ml-6 h-24 w-24 rounded-full bg-indigo-500/[0.04] blur-2xl"></div>
                     
                     <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
                       <div className="flex-1">
@@ -686,8 +686,8 @@ function Membership() {
                       </div>
                       
                       <div className="flex items-center space-x-8">
-                        <div className="relative group/circle">
-                          <div className="absolute inset-0 bg-blue-600/10 rounded-full blur-2xl group-hover/circle:scale-110 transition-transform duration-500"></div>
+                        <div className="relative">
+                          <div className="pointer-events-none absolute inset-2 rounded-full bg-blue-600/[0.06] blur-md"></div>
                           <CircularProgress 
                             progress={
                               purchasedCourses.length > 0 

@@ -9,7 +9,8 @@
     "migrate:add-course-type": "node migrations/add-course-type.js",
     "migrate:fix-course-types": "node migrations/fix-course-types.js",
     "seed:creator-demo": "node scripts/seedCreatorDemoData.js",
-    "seed:admin": "node scripts/seedAdmin.js"
+    "seed:admin": "node scripts/seedAdmin.js",
+    "test:s3-upload": "node scripts/testS3Upload.js"
   },
   "keywords": [],
   "author": "",
