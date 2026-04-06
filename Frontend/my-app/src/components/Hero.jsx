@@ -4,56 +4,56 @@ import AOS from 'aos';
 import 'aos/dist/aos.css';
 
 const Hero = () => {
-  const [activeMembers, setActiveMembers] = useState([
+  const [activeMembers] = useState([
     { id: 1, image: 'https://pixner.net/html/tradexy/tradexy/assets/images/testimonial/testimonial-author1.png' },
     { id: 2, image: 'https://pixner.net/html/tradexy/tradexy/assets/images/testimonial/testimonial-author2.png' },
-    { id: 3, image: '	https://pixner.net/html/tradexy/tradexy/assets/images/testimonial/testimonial-author3.png' },
-    { id: 4, image: 'https://pixner.net/html/tradexy/tradexy/assets/images/testimonial/testimonial-author5.png' }
+    { id: 3, image: 'https://pixner.net/html/tradexy/tradexy/assets/images/testimonial/testimonial-author3.png' },
+    { id: 4, image: 'https://pixner.net/html/tradexy/tradexy/assets/images/testimonial/testimonial-author5.png' },
   ]);
 
   const [currentBackgroundIndex, setCurrentBackgroundIndex] = useState(0);
   const [nextContentIndex, setNextContentIndex] = useState(0);
-  const [animationState, setAnimationState] = useState('visible'); // 'visible', 'exiting', 'entering'
-  
+  const [animationState, setAnimationState] = useState('visible');
+
   const backgroundImages = [
     'https://pixner.net/html/tradexy/tradexy/assets/images/hero/banner5-slide2.png',
     './images/7.jpg',
     'https://i.pinimg.com/736x/47/d3/6e/47d36eab2ad7496068569c27e70823d8.jpg',
     'https://i.pinimg.com/736x/3c/a8/fd/3ca8fd1755e8349df5dffe1cb375d211.jpg',
-
-    
   ];
 
   const contentSlides = [
     {
-      tagline: "Accurate Signals for Steady Trading Success",
-      heading: "Master Forex, Crypto & Coding the Smart Way",
-      description: "Tired of trial and error? Learn with clarity, confidence, and real results—only at Quick X."
+      tagline: 'Learn anything · One place',
+      heading: 'Find Your Next Course That Move Your Career Forward',
+      description:
+        'Browse thousands of lessons across topics you care about. Learn on your schedule, track progress, and pick up new skills with instructors.',
     },
     {
-      tagline: "Proven Strategies for Consistent Growth",
-      heading: "Transform Your Trading Skills With Experts",
-      description: "Take the guesswork out of trading with our data-driven approach and personalized mentoring."
+      tagline: 'Expert-led · Always on',
+      heading: 'A Learning Hub Built Like the Platforms You Already Love',
+      description:
+        'Discover courses by category, read clear previews, and start in minutes—whether you are upskilling, switching paths, or exploring something new.',
     },
     {
-      tagline: "Become a Developer While You Trade",
-      heading: "Code Your Way to Financial Freedom",
-      description: "Unique dual-focus programs that teach both trading and in-demand coding skills for maximum opportunity."
+      tagline: 'Your pace · Your goals',
+      heading: 'From Lessons to Structured Paths That Fit Real Life',
+      description:
+        'Short modules, logical sequences, and resources you can revisit anytime. No fluff—just clear outcomes and content you can apply right away.',
     },
     {
-      tagline: "Join Our Community of Successful Traders",
-      heading: "From Beginner to Pro With Step-by-Step",
-      description: "Follow proven pathways designed by experts who have already achieved what you're aiming for."
+      tagline: 'Community · Quality',
+      heading: 'Join Learners Who Choose Clear Teaching and Fair Value',
+      description:
+        'We focus on practical courses, transparent structure, and support when you need it—so you spend less time searching and more time learning.',
     },
   ];
 
-  // For independent animations of each text element
   const taglineRef = useRef(null);
   const headingRef = useRef(null);
   const descriptionRef = useRef(null);
 
   useEffect(() => {
-    // Initialize AOS
     AOS.init({
       duration: 1000,
       once: false,
@@ -62,190 +62,233 @@ const Hero = () => {
     });
 
     const interval = setInterval(() => {
-      // Start exit animation
       setAnimationState('exiting');
-      
-      // Calculate the next content index
       const nextIndex = (currentBackgroundIndex + 1) % backgroundImages.length;
       setNextContentIndex(nextIndex);
-      
-      // After exit animation, change background and prepare for entrance
       setTimeout(() => {
         setCurrentBackgroundIndex(nextIndex);
         setAnimationState('entering');
-        
-        // After brief delay, show the content
         setTimeout(() => {
           setAnimationState('visible');
         }, 100);
       }, 600);
-      
-    }, 6000); // 6 seconds per slide for better readability
+    }, 6000);
 
     return () => clearInterval(interval);
   }, [currentBackgroundIndex, backgroundImages.length]);
 
-  // Animation classes based on state
   const getAnimationClasses = (element) => {
-    const baseClasses = "transition-all duration-700 ";
-    
+    const baseClasses = 'transition-all duration-700 ease-out ';
+
     if (animationState === 'visible') {
-      return baseClasses + "opacity-100 translate-y-0";
-    } else if (animationState === 'exiting') {
-      // Different exit animations for different elements
-      if (element === 'tagline') {
-        return baseClasses + "opacity-0 -translate-y-8 transform";
-      } else if (element === 'heading') {
-        return baseClasses + "opacity-0 -translate-y-12 transform";
-      } else {
-        return baseClasses + "opacity-0 -translate-y-16 transform";
-      }
-    } else if (animationState === 'entering') {
-      // Different entrance animations for different elements
-      if (element === 'tagline') {
-        return baseClasses + "opacity-0 translate-y-8 transform";
-      } else if (element === 'heading') {
-        return baseClasses + "opacity-0 translate-y-12 transform";
-      } else {
-        return baseClasses + "opacity-0 translate-y-16 transform";
-      }
+      return `${baseClasses}translate-y-0 opacity-100`;
     }
-    
+    if (animationState === 'exiting') {
+      if (element === 'tagline') return `${baseClasses}opacity-0 -translate-y-6`;
+      if (element === 'heading') return `${baseClasses}opacity-0 -translate-y-8`;
+      return `${baseClasses}opacity-0 -translate-y-10`;
+    }
+    if (animationState === 'entering') {
+      if (element === 'tagline') return `${baseClasses}translate-y-6 opacity-0`;
+      if (element === 'heading') return `${baseClasses}translate-y-8 opacity-0`;
+      return `${baseClasses}translate-y-10 opacity-0`;
+    }
+
     return baseClasses;
   };
 
-  // Dynamic delay for staggered animations
   const getDelay = (element) => {
     if (animationState === 'exiting') {
       if (element === 'tagline') return '0ms';
-      if (element === 'heading') return '100ms';
-      return '200ms';
-    } else if (animationState === 'entering') {
+      if (element === 'heading') return '80ms';
+      return '160ms';
+    }
+    if (animationState === 'entering') {
       if (element === 'tagline') return '0ms';
-      if (element === 'heading') return '150ms';
-      return '300ms';
+      if (element === 'heading') return '120ms';
+      return '240ms';
     }
     return '0ms';
   };
 
-  // Get content based on animation state
-  const content = animationState === 'entering' || animationState === 'visible' 
-    ? contentSlides[currentBackgroundIndex]
-    : contentSlides[nextContentIndex === 0 ? contentSlides.length - 1 : nextContentIndex - 1];
+  const content =
+    animationState === 'entering' || animationState === 'visible'
+      ? contentSlides[currentBackgroundIndex]
+      : contentSlides[nextContentIndex === 0 ? contentSlides.length - 1 : nextContentIndex - 1];
 
   return (
-    <div className="relative  text-white flex items-center overflow-hidden">
-      {/* Background gradient overlay */}
-      <div className="absolute inset-0 bg-opacity-30 z-0"></div>
-      
-      {/* Background graphics - 5 with multiple images */}
-      <div className="absolute inset-0 z-0 overflow-hidden">
+    <section className="relative flex min-h-[min(92vh,880px)] items-center overflow-hidden text-white">
+      {/* Background image + layered atmosphere */}
+      <div className="absolute inset-0 z-0">
         <img
           src="./images/hero.png"
-          alt="Hero background"
-          className="absolute top-1/2 left-1/2 w-full h-full transform -translate-x-1/2 -translate-y-1/2 object-cover"
+          alt=""
+          className="absolute left-1/2 top-1/2 h-full min-h-full w-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover"
         />
-        <div className="absolute inset-0 bg-black/40"></div> {/* Optional overlay for text readability */}
+        {/* Depth: vignette + cool gradient (reads premium on mobile & desktop) */}
+        <div
+          className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-blue-950/55 to-slate-950/90"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-gradient-to-tr from-blue-600/25 via-transparent to-emerald-500/15"
+          aria-hidden
+        />
+        <div
+          className="absolute inset-0 bg-[radial-gradient(ellipse_80%_60%_at_50%_120%,rgba(59,130,246,0.35),transparent)]"
+          aria-hidden
+        />
+        {/* Subtle grid */}
+        <div
+          className="absolute inset-0 opacity-[0.12] [background-image:linear-gradient(rgba(255,255,255,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:48px_48px]"
+          aria-hidden
+        />
       </div>
-      
-      <div className="max-w-6xl mx-auto px-4 md:px-0 py-16 z-10 relative">
-        <div className="grid grid-cols-1 py-12 lg:grid-cols-12 items-center">
+
+      <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-20 md:py-24 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-12 lg:gap-12 lg:py-4">
           <div className="lg:col-span-7">
-            <div className="hero-content relative overflow-hidden">
-              {/* Tagline with animation */}
-              <div 
-                ref={taglineRef}
-                className={getAnimationClasses('tagline')}
-                style={{ transitionDelay: getDelay('tagline') }}
-              >
-                <div className="flex items-center gap-3 mb-6">
-                  <span className="text-green-500">
-                    <img src="https://pixner.net/html/tradexy/tradexy/assets/images/element/section-badge5.png" alt="Arrow" className="w-[40px] h-6 text-green-500" />
-                  </span>
-                  <h4 className="text-green-500 font-semibold text-xl">{content.tagline}</h4>
+            <div className="relative">
+              {/* Glass card on small screens for contrast; open on large */}
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-blue-950/40 backdrop-blur-md sm:p-8 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+                {/* Tagline */}
+                <div
+                  ref={taglineRef}
+                  className={getAnimationClasses('tagline')}
+                  style={{ transitionDelay: getDelay('tagline') }}
+                >
+                  <div className="mb-5 sm:mb-6">
+                    <span className="inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/10 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-200/95 sm:text-xs">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.8)]" />
+                      {content.tagline}
+                    </span>
+                  </div>
                 </div>
-              </div>
-              
-              {/* Main heading with animation */}
-              <div 
-                ref={headingRef}
-                className={getAnimationClasses('heading')}
-                style={{ transitionDelay: getDelay('heading') }}
-              >
-                <h1 className="text-3xl lg:text-5xl font-bold mb-4 leading-tight">
-                  {content.heading}
-                </h1>
-              </div>
-              
-              {/* Description and features with animation */}
-              <div 
-                ref={descriptionRef}
-                className={getAnimationClasses('description')}
-                style={{ transitionDelay: getDelay('description') }}
-              >
-                <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-10">
-                  {/* Active members section */}
-                  <div className="member-section">
-                    <span className="block mb-3 text-gray-300">5M+ Active Members</span>
-                    <div className="flex">
-                      {activeMembers.map((member, index) => (
-                        <div 
-                          key={member.id} 
-                          className="w-10 h-10 rounded-full border-2 border-white overflow-hidden"
-                          style={{ marginLeft: index > 0 ? '-12px' : '0' }}
+
+                {/* Heading */}
+                <div
+                  ref={headingRef}
+                  className={getAnimationClasses('heading')}
+                  style={{ transitionDelay: getDelay('heading') }}
+                >
+                  <h1 className="mb-4 text-[1.35rem] font-bold leading-[1.18] tracking-tight sm:mb-5 sm:text-3xl sm:leading-[1.15] md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                    <span className="bg-gradient-to-br from-white via-white to-blue-100/90 bg-clip-text text-transparent">
+                      {content.heading}
+                    </span>
+                  </h1>
+                </div>
+
+                {/* Description + social proof */}
+                <div
+                  ref={descriptionRef}
+                  className={getAnimationClasses('description')}
+                  style={{ transitionDelay: getDelay('description') }}
+                >
+                  <p className="mb-8 max-w-xl text-xs leading-relaxed text-blue-100/90 sm:text-base md:text-lg">
+                    {content.description}
+                  </p>
+
+                  <div className="mb-8 flex flex-col gap-6 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:gap-8 md:mb-10">
+                    <div>
+                      <span className="mb-2 block text-[10px] font-medium uppercase tracking-wider text-slate-400 sm:text-xs">
+                        Join learners worldwide
+                      </span>
+                      <div className="flex items-center">
+                        {activeMembers.map((member, index) => (
+                          <div
+                            key={member.id}
+                            className="h-9 w-9 overflow-hidden rounded-full border-2 border-white/90 shadow-md ring-2 ring-slate-900/50 sm:h-10 sm:w-10"
+                            style={{ marginLeft: index > 0 ? '-12px' : '0' }}
+                          >
+                            <img src={member.image} alt="" className="h-full w-full object-cover" />
+                          </div>
+                        ))}
+                        <div
+                          className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-white/90 bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold shadow-md ring-2 ring-slate-900/50 sm:h-10 sm:w-10 sm:text-sm"
+                          style={{ marginLeft: '-12px' }}
                         >
-                          <img 
-                            src={member.image} 
-                            alt={`Member ${member.id}`} 
-                            className="w-full h-full object-cover"
-                          />
+                          +
                         </div>
-                      ))}
-                      <div 
-                        className="w-10 h-10 rounded-full border-2 border-white bg-blue-600 flex items-center justify-center font-bold"
-                        style={{ marginLeft: '-12px' }}
-                      >
-                        +
+                        <span className="ml-3 text-xs font-semibold text-white/95 sm:ml-4 sm:text-sm">Growing community</span>
                       </div>
                     </div>
                   </div>
-                  
-                  {/* Vertical line separator (hide on mobile) */}
-                  <div className="hidden md:block h-16 w-px bg-gray-600"></div>
-                  
-                  {/* Paragraph */}
-                  <p className="text-lg text-gray-300 max-w-md">
-                    {content.description}
-                  </p>
-                </div>
-                
-                {/* Call-to-action buttons */}
-                <div className="flex flex-wrap gap-4">
-                  <Link 
-                    to="/school" 
-                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-full transition duration-300 min-w-[200px] text-center"
-                  >
-                    Start Learning Now
-                  </Link>
-                  <Link 
-                    to="/store" 
-                    className="px-6 py-3 border border-green-500 text-green-500 hover:bg-green-500 hover:text-white font-medium rounded-full transition duration-300 min-w-[200px] text-center"
-                  >
-                    Explore Books
-                  </Link>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
+                    <Link
+                      to="/courses"
+                      className="group inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 text-center text-xs font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:from-blue-600 hover:to-indigo-700 hover:shadow-xl sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
+                    >
+                      Explore courses
+                      <svg
+                        className="ml-2 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 sm:h-4 sm:w-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        aria-hidden
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                      </svg>
+                    </Link>
+                    <Link
+                      to="/school"
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/10 sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
+                    >
+                      Learning hub
+                    </Link>
+                  </div>
+
+                  {/* Slide dots */}
+                  <div className="mt-8 flex items-center gap-2 sm:mt-10" role="tablist" aria-label="Hero highlights">
+                    {contentSlides.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all duration-500 ${
+                          i === currentBackgroundIndex ? 'w-8 bg-white' : 'w-1.5 bg-white/35'
+                        }`}
+                        aria-current={i === currentBackgroundIndex ? 'true' : undefined}
+                      />
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-          
-          {/* Right side - typically has an image of a person but we'll leave this as a placeholder */}
-          <div className="lg:col-span-5 hidden lg:block" data-aos="zoom-in" data-aos-delay="500">
-            {/* Image would go here in the actual implementation */}
-            {/* <img src="/images/trader.png" alt="Professional trader" className="w-full" /> */}
+
+          {/* Decorative column — light panel suggests depth (desktop) */}
+          <div className="relative hidden lg:col-span-5 lg:block" aria-hidden>
+            <div className="relative mx-auto aspect-[4/5] max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-gradient-to-b from-white/10 to-white/[0.02] p-1 shadow-2xl backdrop-blur-sm">
+              <div className="flex h-full flex-col justify-between rounded-xl bg-slate-900/40 p-6">
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-widest text-blue-200/80">Quick X</p>
+                  <p className="mt-2 text-lg font-semibold leading-snug text-white">Courses you can browse, start, and finish</p>
+                </div>
+                <div className="space-y-3 text-sm text-blue-100/80">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">✓</span>
+                    Search & filter by topic
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">✓</span>
+                    Video lessons & structured curriculum
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-300">✓</span>
+                    Learn at your own pace
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+
+      {/* Bottom fade into next section */}
+      <div
+        className="pointer-events-none absolute bottom-0 left-0 right-0 z-[1] h-24 bg-gradient-to-t from-white to-transparent"
+        aria-hidden
+      />
+    </section>
   );
 };
 

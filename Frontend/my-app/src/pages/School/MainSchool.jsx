@@ -441,12 +441,12 @@ const MainSchool = () => {
                         />
                       </Link>
                       <div className="flex flex-1 flex-col pt-3 pr-1 pl-0.5">
-                        <h3 className="line-clamp-2 min-h-[2.875rem] text-sm sm:text-base font-bold leading-snug text-gray-900">
+                        <h3 className="line-clamp-2 text-sm sm:text-base font-bold leading-snug text-gray-900">
                           <Link to={`/courses/${c._id}`} className="hover:text-indigo-700">
                             {c.title}
                           </Link>
                         </h3>
-                        <p className="mt-1.5 text-xs sm:text-sm text-gray-600 line-clamp-1">{instructorName}</p>
+                        <p className="mt-0.5 text-xs sm:text-sm text-gray-600 line-clamp-1">{instructorName}</p>
 
                         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
                           {showRating ? (

@@ -203,23 +203,23 @@ const Book = () => {
   return (
     <>
       <CustomCursor />
-      <section className="py-12 px-4 bg-gradient-to-r from-gray-50 to-gray-100">
-        <div className="max-w-4xl mx-auto">
-          <div className="flex items-center mb-8 space-x-4" data-aos="fade-right" data-aos-delay="100">
+      <section className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-10 sm:py-12">
+        <div className="mx-auto max-w-4xl">
+          <div className="mb-6 flex items-center space-x-3 sm:mb-8 sm:space-x-4" data-aos="fade-right" data-aos-delay="100">
           <span className="text-blue-500">
-                  <img src="	https://pixner.net/html/tradexy/tradexy/assets/images/element/section-badge5.png" alt="Arrow" className="w-[40px] h-6" />
+                  <img src="	https://pixner.net/html/tradexy/tradexy/assets/images/element/section-badge5.png" alt="" className="h-5 w-8 sm:h-6 sm:w-[40px]" />
                 </span>
-            <h2 className="text-2xl font-bold text-blue-600">About Us</h2>
+            <h2 className="text-xl font-bold text-blue-600 sm:text-2xl">About Us</h2>
           </div>
 
-          <div className="flex flex-col lg:flex-row items-center gap-12">
+          <div className="flex flex-col items-center gap-8 lg:flex-row lg:gap-12">
             {/* Left side with image and years of experience */}
-            <div className="relative w-full lg:w-1/2 overflow-hidden" data-aos="fade-up" data-aos-delay="200">
+            <div className="relative w-full max-w-md overflow-hidden lg:max-w-none lg:w-1/2" data-aos="fade-up" data-aos-delay="200">
               {/* Main image with infinite animation */}
               <img 
                 src="https://bitrader.thetork.com/wp-content/uploads/2023/10/banner_img-2.png" 
-                alt="Professional Trader" 
-                className="w-full h-auto animate-float"
+                alt="Learning online" 
+                className="mx-auto h-auto max-h-[260px] w-full object-contain sm:max-h-[320px] md:max-h-none animate-float"
                 style={{
                   animation: "float 6s ease-in-out infinite"
                 }}
@@ -249,18 +249,18 @@ const Book = () => {
 
             {/* Right side with text content */}
             <div className="w-full lg:w-1/2" data-aos="fade-left" data-aos-delay="300">
-              <h3 className="text-3xl font-bold text-gray-800 mb-4">
+              <h3 className="mb-3 text-xl font-bold leading-snug text-gray-800 sm:mb-4 sm:text-2xl md:text-3xl">
                 The Platform of Choice for Global Students
               </h3>
-              <p className="text-gray-700 mb-8">
-                We're committed to providing a secure and transparent learning environment,
-                empowering people to connect, learn, and succeed.
+              <p className="mb-6 text-sm leading-relaxed text-gray-700 sm:mb-8 sm:text-base">
+                We focus on a clear course experience: discover topics, understand what each program includes,
+                and learn with instructors who care about teaching—not just publishing videos.
               </p>
 
-              <div ref={sectionRef} className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8" data-aos="fade-up" data-aos-delay="400">
+              <div ref={sectionRef} className="mb-6 grid grid-cols-1 gap-6 sm:mb-8 md:grid-cols-2 md:gap-8" data-aos="fade-up" data-aos-delay="400">
                 {/* Satisfaction Rate */}
                 <div className="flex flex-col items-center">
-                  <div className="relative w-24 h-24 mb-2">
+                  <div className="relative mb-2 h-20 w-20 sm:h-24 sm:w-24">
                     <svg viewBox="0 0 100 100" className="w-full h-full">
                       <circle cx="50" cy="50" r="45" fill="none" stroke="#e6e6e6" strokeWidth="8" />
                       <circle 
@@ -278,7 +278,7 @@ const Book = () => {
                         }}
                       />
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                    <div className="absolute inset-0 flex items-center justify-center text-lg font-bold sm:text-2xl">
                       {inView ? (
                         <CountUp end={100} duration={1.5} reset={!inView} />
                       ) : (
@@ -286,12 +286,12 @@ const Book = () => {
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-800 font-semibold">Total Customer Satisfaction</p>
+                  <p className="text-center text-sm font-semibold text-gray-800 sm:text-base">Total Customer Satisfaction</p>
                 </div>
 
                 {/* Trade Reviews */}
                 <div className="flex flex-col items-center">
-                  <div className="relative w-24 h-24 mb-2">
+                  <div className="relative mb-2 h-20 w-20 sm:h-24 sm:w-24">
                     <svg viewBox="0 0 100 100" className="w-full h-full">
                       <circle cx="50" cy="50" r="45" fill="none" stroke="#e6e6e6" strokeWidth="8" />
                       <circle 
@@ -309,7 +309,7 @@ const Book = () => {
                         }}
                       />
                     </svg>
-                    <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                    <div className="absolute inset-0 flex items-center justify-center text-lg font-bold sm:text-2xl">
                       {inView ? (
                         <CountUp end={85} duration={1.5} reset={!inView} />
                       ) : (
@@ -317,7 +317,7 @@ const Book = () => {
                       )}
                     </div>
                   </div>
-                  <p className="text-gray-800 font-semibold">Student Reviews</p>
+                  <p className="text-center text-sm font-semibold text-gray-800 sm:text-base">Student Reviews</p>
                 </div>
               </div>
 

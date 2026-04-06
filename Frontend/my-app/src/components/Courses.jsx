@@ -1,56 +1,52 @@
 import React from 'react';
-import { FiClock, FiBook, FiStar } from 'react-icons/fi';
 import { Link } from 'react-router-dom';
 
 const courses = [
   {
     id: 1,
-    title: "Introduction to Forex Trading",
-    category: "Forex Trading",
-    image: "https://i.pinimg.com/736x/90/a3/bc/90a3bc59e3f92890f4c251c9d79559ae.jpg",
- 
+    title: 'Productivity Systems for Busy Professionals',
+    category: 'Business',
+    image: 'https://i.pinimg.com/736x/90/a3/bc/90a3bc59e3f92890f4c251c9d79559ae.jpg',
   },
   {
     id: 2,
-    title: "Financial Security Thinking and Principles Theory",
-    category: "Crypto",
-    image: "https://i.pinimg.com/736x/22/ff/c3/22ffc3a863846e2d265dc4f6ac994abd.jpg",
- 
+    title: 'Modern JavaScript: From Fundamentals to Real Projects',
+    category: 'Development',
+    image: 'https://i.pinimg.com/736x/22/ff/c3/22ffc3a863846e2d265dc4f6ac994abd.jpg',
   },
   {
     id: 3,
-    title: "Free Logo Design: From Concept to Presentation",
-    category: "Web Development",
-    image: "https://i.pinimg.com/736x/06/98/6a/06986a1609bd2fcbd8cb047c789738d0.jpg",
- 
-  }
+    title: 'Logo Design: From Concept to Presentation',
+    category: 'Design',
+    image: 'https://i.pinimg.com/736x/06/98/6a/06986a1609bd2fcbd8cb047c789738d0.jpg',
+  },
 ];
 
 function Courses() {
   return (
-    <section className="py-16 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 sm:text-4xl mb-4">
-            Popular Courses
+    <section className="bg-gray-50 py-10 sm:py-16">
+      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
+        <div className="mb-8 text-center sm:mb-12">
+          <h2 className="mb-3 text-2xl font-bold text-gray-900 sm:mb-4 sm:text-3xl lg:text-4xl">
+            Trending on Quick X
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Explore our most popular courses and enhance your skills with expert-led instruction
+          <p className="mx-auto max-w-2xl text-sm text-gray-600 sm:text-base md:text-lg">
+            A snapshot of what learners are opening right now—browse the full catalog anytime.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
           {courses.map((course) => (
             <Link 
-              to="/school" 
+              to="/courses" 
               key={course.id} 
-              className="bg-white rounded-xl shadow-md overflow-hidden transition-transform hover:scale-105 cursor-pointer"
+              className="cursor-pointer overflow-hidden rounded-xl bg-white shadow-md transition-transform hover:scale-[1.02] sm:hover:scale-105"
             >
               <div className="relative">
                 <img
                   src={course.image}
                   alt={course.title}
-                  className="w-full h-48 object-cover"
+                  className="h-36 w-full object-cover sm:h-44 md:h-48"
                 />
                 <div className="absolute top-4 left-4">
                   <span className="px-3 py-1 bg-teal-500 text-white text-sm font-medium rounded-md">

@@ -148,27 +148,33 @@ const Store = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Featured Book */}
-      <div className="relative h-[80vh] bg-gradient-to-r from-blue-900 to-indigo-900 overflow-hidden">
+      <div className="relative min-h-[52vh] sm:min-h-[60vh] lg:h-[80vh] lg:min-h-0 bg-gradient-to-r from-blue-900 to-indigo-900 overflow-hidden">
         <div className="absolute inset-0 bg-black/40"></div>
-        <div className="relative h-full max-w-6xl pt-18 mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 h-full items-center gap-12">
-            <div className="text-white space-y-6">
-              <div className="inline-block px-4 py-2 bg-white/10 rounded-full text-sm font-medium backdrop-blur-sm">
+        <div className="relative h-full max-w-6xl mx-auto px-4 pt-24 pb-10 sm:px-6 sm:pt-28 sm:pb-14 lg:px-8 lg:pt-18 lg:pb-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 h-full items-center gap-8 lg:gap-12">
+            <div className="text-white space-y-4 sm:space-y-5 md:space-y-6">
+              <div className="inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
                 Featured Book
               </div>
-              <h1 className="text-5xl font-bold leading-tight">
+              <h1 className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl sm:leading-tight md:text-4xl lg:text-5xl">
                 Discover Your Next Digital Adventure
               </h1>
-              <p className="text-xl text-blue-100 max-w-lg">
+              <p className="max-w-lg text-sm leading-relaxed text-blue-100/95 sm:text-base md:text-lg">
                 Explore our curated collection of digital books and expand your knowledge
               </p>
-              <div className="flex items-center space-x-4">
-                <button className="bg-white text-blue-900 px-6 py-3 rounded-lg font-semibold hover:bg-blue-50 transition-colors duration-300">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <button
+                  type="button"
+                  className="w-full rounded-lg bg-white px-5 py-2.5 text-center text-sm font-semibold text-blue-900 transition-colors duration-300 hover:bg-blue-50 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                >
                   Browse Collection
                 </button>
-                <button className="flex items-center space-x-2 text-white hover:text-blue-200 transition-colors duration-300">
+                <button
+                  type="button"
+                  className="inline-flex items-center justify-center gap-2 text-sm font-medium text-white/95 transition-colors hover:text-blue-200 sm:text-base"
+                >
                   <span>Learn More</span>
-                  <FiArrowRight />
+                  <FiArrowRight className="h-4 w-4" />
                 </button>
               </div>
             </div>
@@ -194,29 +200,31 @@ const Store = () => {
       </div>
 
       {/* Main content */}
-      <main className="max-w-6xl mx-auto px-6 py-12">
+      <main className="max-w-6xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
         <div>
           <div>
-            <div className="flex items-center justify-between mb-8">
-              <h2 className="text-3xl font-bold text-gray-800">Discover Books</h2>
-              <div className="flex space-x-3">
+            <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+              <h2 className="text-xl font-bold tracking-tight text-gray-800 sm:text-2xl md:text-3xl">
+                Discover Books
+              </h2>
+              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:space-x-3">
                 {/* Search input */}
-                <div className="relative">
+                <div className="relative min-w-0 flex-1 sm:min-w-[200px] sm:flex-initial">
                   <input
                     type="text"
                     placeholder="Search books..."
                     value={searchQuery}
                     onChange={handleSearch}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 </div>
                 
                 {/* Category filter */}
                 <select 
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto"
                 >
                   <option value="all">All Categories</option>
                   <option value="ebook">E-Books</option>
@@ -247,14 +255,14 @@ const Store = () => {
 
             {/* Books grid */}
             {!isLoading && !error && (
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8 xl:grid-cols-3">
                 {books.map((book) => (
-                  <div key={book._id} className="group bg-white rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300">
-                    <div className="h-64 overflow-hidden relative">
+                  <div key={book._id} className="group overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl">
+                    <div className="relative h-48 overflow-hidden sm:h-56 md:h-64">
                       <img 
                         src={book.thumbnail}
                         alt={book.title} 
-                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         onLoad={() => console.log('Book image loaded:', book.title, book.thumbnail)}
                         onError={(e) => {
                           console.error('Book image failed to load:', book.title, book.thumbnail);
@@ -262,15 +270,17 @@ const Store = () => {
                           e.target.src = DEFAULT_BOOK_COVER;
                         }}
                       />
-                      <div className="absolute top-3 right-3">
-                        <button className="bg-white/80 hover:bg-white p-2 rounded-full shadow-sm">
-                          <FiBookmark className="text-indigo-600" />
+                      <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
+                        <button type="button" className="rounded-full bg-white/90 p-1.5 shadow-sm hover:bg-white sm:p-2" aria-label="Bookmark">
+                          <FiBookmark className="h-3.5 w-3.5 text-indigo-600 sm:h-4 sm:w-4" />
                         </button>
                       </div>
                     </div>
-                    <div className="p-5">
-                      <h3 className="text-xl font-semibold text-gray-800 mb-2">{book.title}</h3>
-                      <p className="text-gray-600 mb-3">{book.author}</p>
+                    <div className="p-4 sm:p-5">
+                      <h3 className="mb-1 line-clamp-2 text-base font-semibold leading-snug text-gray-800 sm:mb-2 sm:text-lg md:text-xl">
+                        {book.title}
+                      </h3>
+                      <p className="mb-3 text-xs text-gray-600 sm:mb-4 sm:text-sm">{book.author}</p>
                       {/* <div className="flex items-center text-amber-400 mb-3">
                         <FiStar className="fill-current" />
                         <FiStar className="fill-current" />
@@ -281,24 +291,26 @@ const Store = () => {
                           ({book.reviews?.length || 0} reviews)
                         </span>
                       </div> */}
-                      <div className="flex justify-between items-center">
-                        <span className="text-indigo-600 font-bold text-lg">
+                      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                        <span className="text-sm font-bold text-indigo-600 sm:text-base md:text-lg">
                           GHS{book.price}
                         </span>
-                        <div className="flex gap-2">
+                        <div className="flex flex-wrap items-center justify-start gap-1.5 sm:justify-end sm:gap-2">
                           <button 
-                            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 flex items-center gap-2 transition-colors"
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-indigo-700 sm:px-3.5 sm:py-2 sm:text-sm"
                             onClick={() => handleAddBook(book)}
                           >
-                            <FiShoppingCart size={16} />
-                            <span>Ebook</span>
+                            <FiShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            Ebook
                           </button>
                           <button 
-                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 transition-colors"
+                            type="button"
+                            className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-green-700 sm:px-3.5 sm:py-2 sm:text-sm"
                             onClick={() => handleHardcopyRequest(book)}
                           >
-                            <FiPackage size={16} />
-                            <span>Hardcopy</span>
+                            <FiPackage className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                            Hardcopy
                           </button>
                         </div>
                       </div>

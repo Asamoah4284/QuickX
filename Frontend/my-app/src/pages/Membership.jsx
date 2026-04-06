@@ -212,7 +212,7 @@ function Membership() {
     const message = getSuccessMessage();
     
     return (
-      <div className="fixed top-24 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md z-50 max-w-md"
+      <div className="fixed left-4 right-4 top-16 z-50 max-w-md rounded border-l-4 border-green-500 bg-green-100 p-4 text-green-700 shadow-md sm:left-auto sm:right-4 sm:top-24"
            style={{
              animation: 'fadeInDown 0.5s ease-out forwards'
            }}>
@@ -445,86 +445,108 @@ function Membership() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen pt-20">
+    <div className="bg-gray-50 min-h-screen pt-16 md:pt-20">
       {/* Animation Styles */}
       <style>{animationStyles}</style>
       
       {/* Success Notification */}
       <SuccessNotification />
       
-      <div className="max-w-7xl mx-auto sm:px-6 lg:px-8 py-10">
-        {/* Enhanced Welcome Banner */}
-        <div className=" overflow-hidden shadow-xl mb-8 relative">
+      {/* Hero: full width on mobile; sm+ inset card. Top margin from md+ so the card clears the nav visually on desktop */}
+      <div className="sm:mx-auto sm:max-w-7xl sm:px-6 md:mt-8 lg:mt-10 lg:px-8">
+        <div className="relative mb-4 overflow-hidden rounded-none shadow-xl ring-0 sm:mb-8 sm:rounded-3xl sm:ring-1 sm:ring-white/10">
           {/* Background with gradient overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-indigo-700/90 z-10"></div>
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605792657660-596af9009e82?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-40"></div>
+          <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/92 via-indigo-600/90 to-violet-800/95"></div>
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605792657660-596af9009e82?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-35"></div>
+          {/* Soft orbs for depth (mobile-friendly, no extra assets) */}
+          <div className="pointer-events-none absolute -right-16 -top-24 z-[11] h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl sm:-right-8 sm:top-0" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 z-[11] h-40 w-40 rounded-full bg-violet-400/15 blur-3xl" />
           
-          {/* Content */}
-          <div className="relative z-20 p-8 md:p-10">
-            <div className="flex flex-col md:flex-row md:items-center md:justify-between">
-              <div className="flex items-start md:items-center">
-                <div className="bg-white/20 backdrop-blur-md p-4 rounded-full mr-5 shadow-lg">
-                  <FiUser size={36} className="text-white" />
+          {/* Content — keep readable insets inside the full-bleed card */}
+          <div className="relative z-20 px-4 py-4 sm:p-8 md:p-10">
+            <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between md:gap-8">
+              <div className="flex gap-4 sm:items-center">
+                <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/25 backdrop-blur-md sm:h-16 sm:w-16 sm:rounded-full">
+                  <FiUser className="h-7 w-7 text-white sm:h-9 sm:w-9" />
                 </div>
-                <div>
-                  <h1 className="text-3xl font-bold text-white mb-2">Welcome, {user?.fullName || 'Member'}!</h1>
-                  <p className="text-blue-100">Your Quick X membership gives you access to exclusive forex training content.</p>
+                <div className="min-w-0 flex-1">
+                  <p className="mb-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-100/90 sm:text-xs">
+                    Your dashboard
+                  </p>
+                  <h1 className="text-2xl font-bold leading-tight tracking-tight text-white sm:text-3xl md:text-4xl">
+                    Welcome, {user?.fullName || 'Member'}!
+                  </h1>
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-blue-100/95 sm:text-base">
+                    Your Quick X membership unlocks courses, books, and learning tools—study at your own pace, on any device.
+                  </p>
                 </div>
               </div>
               
-              <div className="mt-6 md:mt-0">
-                <div className="inline-flex bg-white/10 backdrop-blur-md rounded-xl p-1 shadow-lg">
-                  <Link to="/school" className="px-4 py-2 text-white hover:bg-white/20 rounded-lg transition duration-200 flex items-center">
-                    <FiBook className="mr-2" />
-                    Browse Courses
-                  </Link>
-                  <Link to="/profile" className="px-4 py-2 bg-white text-indigo-700 rounded-lg shadow-md transition duration-200 flex items-center font-medium ml-1">
-                    <FiTarget className="mr-2" />
-                    My Progress
-                  </Link>
-                </div>
+              <div className="flex w-full flex-col gap-2.5 sm:max-w-md sm:flex-row sm:gap-3 md:mt-0 md:w-auto md:shrink-0">
+                <Link
+                  to="/courses"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-950/20 transition hover:bg-blue-50 sm:flex-1 md:flex-initial md:px-5"
+                >
+                  <FiBook className="h-4 w-4 shrink-0" />
+                  Browse courses
+                </Link>
+                <Link
+                  to="/profile"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-4 py-3 text-sm font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:flex-1 md:flex-initial md:px-5"
+                >
+                  <FiTarget className="h-4 w-4 shrink-0" />
+                  My progress
+                </Link>
               </div>
             </div>
             
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center hover:bg-white/20 transition duration-200">
-                <div className="bg-blue-500/30 p-3 rounded-full mr-3">
-                  <FiTrendingUp className="text-white text-xl" />
+            {/* Stats — 2-up on mobile, full row on md+ */}
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:mt-8 md:grid-cols-3">
+              <div className="flex min-h-[88px] items-center gap-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:p-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/35 sm:h-12 sm:w-12 sm:rounded-full">
+                  <FiTrendingUp className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                 </div>
-                <div>
-                  <p className="text-white text-sm opacity-80">Completed</p>
-                  <p className="text-white font-semibold text-xl">{purchasedCourses.filter(course => course.progress === 100).length} Courses</p>
-                </div>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center hover:bg-white/20 transition duration-200">
-                <div className="bg-indigo-500/30 p-3 rounded-full mr-3">
-                  <FiClock className="text-white text-xl" />
-                </div>
-                <div>
-                  <p className="text-white text-sm opacity-80">Learning Time</p>
-                  <p className="text-white font-semibold text-xl">{purchasedCourses.length > 0 ? '3.5 Hours' : '0 Hours'}</p>
-                </div>
-              </div>
-              
-              <div className="bg-white/10 backdrop-blur-md rounded-xl p-4 flex items-center hover:bg-white/20 transition duration-200">
-                <div className="bg-purple-500/30 p-3 rounded-full mr-3">
-                  <FiDollarSign className="text-white text-xl" />
-                </div>
-                <div className="flex-grow">
-                  <p className="text-white text-sm opacity-80">Referral Earnings</p>
-                  <p className="text-white font-semibold text-xl">
-                    GH₵{user?.referralEarnings ? user.referralEarnings.toFixed(2) : '0.00'}
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-white/75 sm:text-xs">Completed</p>
+                  <p className="truncate text-base font-bold text-white sm:text-lg">
+                    {purchasedCourses.filter(course => course.progress === 100).length}{' '}
+                    <span className="font-semibold text-white/90">courses</span>
                   </p>
                 </div>
+              </div>
+              
+              <div className="flex min-h-[88px] items-center gap-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:p-4">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/35 sm:h-12 sm:w-12 sm:rounded-full">
+                  <FiClock className="h-5 w-5 text-white sm:h-6 sm:w-6" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-white/75 sm:text-xs">Learning time</p>
+                  <p className="truncate text-base font-bold text-white sm:text-lg">
+                    {purchasedCourses.length > 0 ? '3.5 hrs' : '0 hrs'}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="col-span-2 flex min-h-[88px] flex-col gap-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:flex-row sm:items-center sm:justify-between sm:p-4 md:col-span-1">
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/35 sm:h-12 sm:w-12 sm:rounded-full">
+                    <FiDollarSign className="h-5 w-5 text-white sm:h-6 sm:w-6" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-medium text-white/75 sm:text-xs">Referral earnings</p>
+                    <p className="text-base font-bold text-white sm:text-lg">
+                      GH₵{user?.referralEarnings ? user.referralEarnings.toFixed(2) : '0.00'}
+                    </p>
+                  </div>
+                </div>
                 <button
+                  type="button"
                   onClick={() => setIsWithdrawalModalOpen(true)}
                   disabled={!user?.referralEarnings || user?.referralEarnings < 20}
-                  className={`ml-3 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`w-full shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors sm:w-auto ${
                     !user?.referralEarnings || user?.referralEarnings < 20
-                      ? 'bg-white/30 text-white/50 cursor-not-allowed'
-                      : 'bg-white text-purple-700 hover:bg-white/90'
+                      ? 'cursor-not-allowed bg-white/20 text-white/50'
+                      : 'bg-white text-purple-800 shadow-sm hover:bg-blue-50'
                   }`}
                 >
                   Withdraw
@@ -532,27 +554,30 @@ function Membership() {
               </div>
             </div>
 
-            {/* Add Referral Code Card */}
-            <div className="mt-4 bg-white/10 backdrop-blur-md rounded-xl p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-white font-semibold mb-1">Your Referral Code</h3>
-                  <p className="text-white/80 text-sm">Share this code with friends to earn 10% commission on their purchases</p>
+            {/* Referral code — stacks on narrow screens */}
+            <div className="mt-3 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 backdrop-blur-md sm:mt-4 sm:p-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+                <div className="min-w-0">
+                  <h3 className="font-semibold text-white">Your referral code</h3>
+                  <p className="mt-1 text-sm text-blue-100/85">
+                    Share with friends—you earn 10% commission on their purchases.
+                  </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-4 py-2 rounded-lg">
-                    <span className="text-white font-mono font-medium text-lg">
+                <div className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto sm:justify-end sm:gap-2">
+                  <div className="min-w-0 flex-1 rounded-xl bg-white/15 px-3 py-2.5 ring-1 ring-white/20 sm:flex-initial sm:px-4">
+                    <span className="block truncate text-center font-mono text-base font-semibold tracking-wide text-white sm:text-lg">
                       {user?.referralCode || 'Loading...'}
                     </span>
                   </div>
                   {user?.referralCode && (
                     <button
+                      type="button"
                       onClick={() => {
                         navigator.clipboard.writeText(user.referralCode);
-                        // You could add a toast notification here
                         alert('Referral code copied to clipboard!');
                       }}
-                      className="p-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors"
+                      className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white/20 p-2.5 ring-1 ring-white/25 transition hover:bg-white/30"
+                      aria-label="Copy referral code"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
@@ -565,12 +590,14 @@ function Membership() {
             </div>
           </div>
         </div>
+      </div>
 
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="md:w-1/4">
-            <div className="bg-white  shadow-sm overflow-hidden">
-              <div className="p-5 border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50">
+      <div className="mx-auto max-w-7xl px-4 pb-10 pt-2 sm:px-6 sm:pb-10 sm:pt-6 md:py-10 lg:px-8">
+        <div className="flex flex-col gap-6 md:flex-row md:gap-8">
+          {/* Sidebar — below main content on mobile */}
+          <div className="order-2 md:order-1 md:w-1/4">
+            <div className="overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-sm">
+              <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-5">
                 <div className="flex items-center">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center mr-3 text-lg font-bold shadow-md">
                     {user?.fullName ? user.fullName.split(' ').map(n => n[0]).join('') : 'U'}
@@ -662,33 +689,33 @@ function Membership() {
             </div>
           </div>
 
-          {/* Content Area */}
-          <div className="md:w-3/4">
+          {/* Content Area — first on mobile for quicker access to dashboard */}
+          <div className="order-1 md:order-2 md:w-3/4">
             {activeTab === 'dashboard' && (
-              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                {/* Modernized Progress Card */}
-                <div className="relative overflow-hidden group">
-                  <div className="absolute inset-0 rounded-3xl bg-gradient-to-br from-blue-600/[0.03] to-indigo-600/[0.03] -z-10"></div>
-                  <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white p-8">
-                    <div className="pointer-events-none absolute top-0 right-0 -mt-6 -mr-6 h-24 w-24 rounded-full bg-blue-500/[0.04] blur-2xl"></div>
-                    <div className="pointer-events-none absolute bottom-0 left-0 -mb-6 -ml-6 h-24 w-24 rounded-full bg-indigo-500/[0.04] blur-2xl"></div>
+              <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                {/* Modernized Progress Card — compact on small phones; sm+ matches previous desktop sizing */}
+                <div className="group relative">
+                  <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-blue-600/[0.03] to-indigo-600/[0.03] sm:rounded-3xl"></div>
+                  <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-8">
+                    <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-blue-500/[0.06] blur-2xl sm:h-24 sm:w-24 sm:-mt-6 sm:-mr-6"></div>
+                    <div className="pointer-events-none absolute -bottom-6 -left-6 h-20 w-20 rounded-full bg-indigo-500/[0.05] blur-2xl sm:h-24 sm:w-24"></div>
                     
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
-                      <div className="flex-1">
-                        <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-xs font-semibold tracking-wide uppercase mb-3">
-                          <FiTrendingUp className="w-3 h-3" />
-                          <span>Learning Statistics</span>
+                    <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between md:gap-8">
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1.5 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-blue-700 sm:mb-3 sm:gap-2 sm:px-2.5 sm:py-1 sm:text-xs">
+                          <FiTrendingUp className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                          <span>Learning stats</span>
                         </div>
-                        <h2 className="text-3xl font-bold text-gray-900 tracking-tight mb-2">Overall Progress</h2>
-                        <p className="text-gray-500 max-w-sm leading-relaxed">
+                        <h2 className="mb-1.5 text-xl font-bold tracking-tight text-gray-900 sm:mb-2 sm:text-3xl">Overall progress</h2>
+                        <p className="max-w-sm text-xs leading-relaxed text-gray-500 sm:text-base">
                           {purchasedCourses.length > 0 
-                            ? "You're consistently making progress. Keep up the momentum to reach your goals!" 
-                            : "Your journey starts here. Browse our courses and take the first step towards mastery."}
+                            ? "You're making steady progress—keep the momentum going." 
+                            : "Start with any course in the catalog and your progress will show up here."}
                         </p>
                       </div>
                       
-                      <div className="flex items-center space-x-8">
-                        <div className="relative">
+                      <div className="flex flex-row items-center justify-center gap-4 sm:gap-8 md:justify-end">
+                        <div className="relative origin-center scale-[0.78] sm:scale-100">
                           <div className="pointer-events-none absolute inset-2 rounded-full bg-blue-600/[0.06] blur-md"></div>
                           <CircularProgress 
                             progress={
@@ -696,30 +723,28 @@ function Membership() {
                                 ? Math.floor(purchasedCourses.reduce((sum, course) => sum + course.progress, 0) / purchasedCourses.length) 
                                 : 0
                             } 
-                            size={120} 
+                            size={112} 
                             strokeWidth={8}
                           />
                         </div>
-                        <div className="h-16 w-px bg-gray-100 hidden md:block"></div>
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-gray-400 uppercase tracking-widest mb-1">Status</span>
-                          <div className="flex flex-col">
-                            <span className="text-4xl font-extrabold text-gray-900 tracking-tighter">
-                              {purchasedCourses.filter(course => course.progress === 100).length}
-                            </span>
-                            <span className="text-sm font-semibold text-blue-600">
-                              of {purchasedCourses.length} Courses Done
-                            </span>
-                          </div>
+                        <div className="hidden h-16 w-px bg-gray-100 md:block"></div>
+                        <div className="flex min-w-0 flex-col text-center md:text-left">
+                          <span className="mb-0.5 text-[9px] font-medium uppercase tracking-widest text-gray-400 sm:text-xs">Status</span>
+                          <span className="text-2xl font-extrabold tracking-tighter text-gray-900 sm:text-4xl">
+                            {purchasedCourses.filter(course => course.progress === 100).length}
+                          </span>
+                          <span className="text-[11px] font-semibold text-blue-600 sm:text-sm">
+                            of {purchasedCourses.length} courses done
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between pt-4 px-2">
-                  <h3 className="text-xl font-bold text-gray-900 flex items-center tracking-tight">
-                    <FiClock className="mr-3 text-blue-600" />
+                <div className="flex flex-col gap-2 px-0 pt-1 sm:flex-row sm:items-center sm:justify-between sm:px-2 sm:pt-4">
+                  <h3 className="flex items-center text-base font-bold tracking-tight text-gray-900 sm:text-xl">
+                    <FiClock className="mr-2 h-4 w-4 shrink-0 text-blue-600 sm:mr-3 sm:h-5 sm:w-5" />
                     Recently Accessed
                   </h3>
                   {purchasedCourses.length > 3 && (

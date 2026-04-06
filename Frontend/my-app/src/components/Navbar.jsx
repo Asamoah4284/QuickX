@@ -147,19 +147,7 @@ const Navbar = () => {
         : 'bg-transparent'
     }`}>
       <div className="md:max-w-6xl mx-auto md:py-2 md:px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Logo */}
-          <div className="flex-shrink-0 flex items-center md:-ml-10">
-            <Link to="/" className=" flex ">
-              <img 
-                src="/images/logo-1.jpg" 
-                alt="Quick X Logo" 
-                className="md:h-15 h-10 w-auto object-contain rounded-md ml-4 "
-
-              />
-            </Link>
-          </div>
-
+        <div className="flex h-16 w-full items-center justify-end px-4 sm:px-0">
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-2">
             <Link to="/courses" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
@@ -237,21 +225,15 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu - Sliding from right */}
-      <div 
-        className={`fixed top-0 right-0 h-full w-1/2 bg-white shadow-lg transform transition-transform duration-300 ease-in-out z-40 md:hidden mobile-menu-container ${
+      {/* Mobile Menu — full-width slide-over (entire screen width on small viewports) */}
+      <div
+        className={`mobile-menu-container fixed right-0 top-0 z-40 flex h-[100dvh] w-full max-w-none flex-col overflow-y-auto bg-white shadow-lg transition-transform duration-300 ease-in-out md:hidden ${
           isOpen ? 'translate-x-0' : 'translate-x-full'
         }`}
-        style={{ width: '80%' }}
       >
-        <div className="h-16 flex items-center justify-between border-b border-gray-200 px-4">
+        {/* Title only — close via the main nav toggle (hamburger → X) so we don’t duplicate icons */}
+        <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-4">
           <h2 className="text-lg font-semibold text-blue-900">Menu</h2>
-          <button 
-            onClick={() => setIsOpen(false)}
-            className="rounded-md p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-          >
-           
-          </button>
         </div>
         
         <div className="px-4 pt-4 pb-3 space-y-3">

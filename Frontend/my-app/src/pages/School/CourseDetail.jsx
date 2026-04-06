@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
@@ -27,6 +27,138 @@ const applyEnrollmentToCourse = (course) => {
   };
 };
 
+/** Shared modules / lessons list — used in desktop sidebar and mobile slide-over (Udemy-style). */
+function CourseCurriculumPanel({
+  courseData,
+  activeModule,
+  activeSection,
+  activeLesson,
+  onLessonClick,
+  thumbSrc,
+  schoolBack,
+}) {
+  return (
+    <>
+      <div className="border-b border-gray-100 p-3 sm:p-4">
+        <Link
+          to={schoolBack}
+          className="mb-3 flex items-center gap-1 text-xs text-blue-600 hover:underline"
+        >
+          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to school
+        </Link>
+        <div className="flex gap-3">
+          <img
+            src={thumbSrc}
+            alt=""
+            className="h-14 w-14 shrink-0 rounded border border-gray-200 object-cover"
+          />
+          <div className="min-w-0">
+            <h1 className="line-clamp-3 text-sm font-semibold leading-snug text-gray-900">
+              {courseData.title}
+            </h1>
+            <p className="mt-1 text-xs text-gray-500">{courseData.instructor}</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-2 py-2 sm:px-3">
+        <h2 className="px-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500 sm:px-2">
+          Course material
+        </h2>
+      </div>
+
+      <div className="pb-3 sm:pb-4">
+        {courseData.modules.map((module, moduleIndex) => (
+          <details
+            key={module._id || moduleIndex}
+            className="group border-t border-gray-100"
+            open={moduleIndex === 0}
+          >
+            <summary className="flex cursor-pointer list-none items-center justify-between bg-gray-50 px-3 py-2 text-sm font-medium text-gray-900 hover:bg-gray-100 sm:px-4 sm:py-2.5 [&::-webkit-details-marker]:hidden">
+              <span>
+                Module {moduleIndex + 1}: {module.title}
+              </span>
+              <svg
+                className="h-4 w-4 text-gray-400 transition-transform group-open:rotate-180"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </summary>
+            <div className="bg-white">
+              {module.sections.map((section, sectionIndex) => (
+                <div key={section._id || `${moduleIndex}-${sectionIndex}`}>
+                  <div className="ml-2 border-l-2 border-gray-200 px-3 py-2 text-xs font-medium text-gray-500 sm:px-4">
+                    {section.title}
+                  </div>
+                  {section.lessons.map((lesson, lessonIndex) => {
+                    const isActive =
+                      moduleIndex === activeModule &&
+                      sectionIndex === activeSection &&
+                      lessonIndex === activeLesson;
+                    return (
+                      <button
+                        type="button"
+                        key={lesson._id || `${moduleIndex}-${sectionIndex}-${lessonIndex}`}
+                        onClick={() => onLessonClick(moduleIndex, sectionIndex, lessonIndex)}
+                        className={`flex w-full items-start gap-2 border-l-4 py-2 pl-3 pr-2 text-left transition-colors sm:py-2.5 sm:pl-4 sm:pr-3 ${
+                          isActive
+                            ? 'border-blue-600 bg-blue-50'
+                            : lesson.isCompleted
+                              ? 'border-transparent hover:bg-gray-50'
+                              : 'border-transparent hover:bg-gray-50'
+                        }`}
+                      >
+                        <span
+                          className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border-2 ${
+                            lesson.isCompleted
+                              ? 'border-blue-600 bg-blue-600'
+                              : isActive
+                                ? 'border-blue-600 bg-white'
+                                : 'border-gray-300 bg-white'
+                          }`}
+                        >
+                          {lesson.isCompleted && (
+                            <svg className="h-2.5 w-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path
+                                fillRule="evenodd"
+                                d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                              />
+                            </svg>
+                          )}
+                          {isActive && !lesson.isCompleted && (
+                            <span className="h-1.5 w-1.5 rounded-full bg-blue-600" />
+                          )}
+                        </span>
+                        <span
+                          className={`min-w-0 flex-1 text-sm ${
+                            isActive ? 'font-medium text-blue-900' : 'text-gray-800'
+                          }`}
+                        >
+                          {lesson.title}
+                        </span>
+                        {lesson.duration && (
+                          <span className="shrink-0 text-[10px] text-gray-400">{lesson.duration}</span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </details>
+        ))}
+      </div>
+    </>
+  );
+}
+
 const CourseDetail = () => {
   const { courseId } = useParams();
   const [activeModule, setActiveModule] = useState(0);
@@ -40,6 +172,8 @@ const CourseDetail = () => {
   const [isVideoAccessible, setIsVideoAccessible] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
+  /** Mobile / tablet: curriculum opens in a slide-over (Udemy-style) instead of below the video. */
+  const [mobileCurriculumOpen, setMobileCurriculumOpen] = useState(false);
 
   // Add new function to update course progress
   const updateCourseProgress = async (moduleIndex, sectionIndex, lessonIndex) => {
@@ -304,12 +438,34 @@ const CourseDetail = () => {
       sectionAcc + section.lessons.filter(lesson => lesson.isCompleted).length, 0), 0) || 0;
 
   // Handle lesson selection
-  const handleLessonClick = (moduleIndex, sectionIndex, lessonIndex) => {
+  const handleLessonClick = useCallback((moduleIndex, sectionIndex, lessonIndex) => {
     setActiveModule(moduleIndex);
     setActiveSection(sectionIndex);
     setActiveLesson(lessonIndex);
     setVideoError(null);
-  };
+  }, []);
+
+  const handleLessonClickMobile = useCallback(
+    (moduleIndex, sectionIndex, lessonIndex) => {
+      handleLessonClick(moduleIndex, sectionIndex, lessonIndex);
+      setMobileCurriculumOpen(false);
+    },
+    [handleLessonClick]
+  );
+
+  useEffect(() => {
+    if (!mobileCurriculumOpen) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMobileCurriculumOpen(false);
+    };
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [mobileCurriculumOpen]);
 
   // Handle video loading issues
   const handleVideoError = (e) => {
@@ -413,124 +569,26 @@ const CourseDetail = () => {
 
   return (
     <div className="min-h-screen bg-white pt-16 md:pt-20">
-      <div className="flex flex-col xl:flex-row max-w-[1920px] mx-auto min-h-[calc(100vh-4rem)] w-full px-3 sm:px-4 xl:px-6">
-        {/* Left: course nav (Coursera-style) */}
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1920px] flex-col px-1.5 sm:px-3 xl:flex-row xl:px-6">
+        {/* Desktop: sticky left curriculum. On smaller screens it lives in the mobile drawer (see below). */}
         <aside
-          className="w-full xl:w-[360px] shrink-0 bg-white border-b xl:border-b-0 xl:border-r border-gray-200 xl:min-h-[calc(100vh-5rem)] xl:sticky xl:top-16 xl:self-start overflow-y-auto max-h-[50vh] xl:max-h-[calc(100vh-5rem)] [scrollbar-width:thin] [scrollbar-color:rgba(15,23,42,0.12)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/35 [&::-webkit-scrollbar-thumb]:hover:bg-slate-400/45"
+          className="hidden max-h-[calc(100vh-5rem)] w-full shrink-0 overflow-y-auto border-gray-200 bg-white [scrollbar-color:rgba(15,23,42,0.12)_transparent] [scrollbar-width:thin] xl:sticky xl:top-16 xl:block xl:min-h-[calc(100vh-5rem)] xl:w-[360px] xl:self-start xl:border-r [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/35 [&::-webkit-scrollbar-thumb]:hover:bg-slate-400/45 [&::-webkit-scrollbar-track]:bg-transparent"
         >
-          <div className="p-4 border-b border-gray-100">
-            <Link
-              to={schoolBack}
-              className="text-xs text-blue-600 hover:underline flex items-center gap-1 mb-3"
-            >
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-              </svg>
-              Back to school
-            </Link>
-            <div className="flex gap-3">
-              <img
-                src={thumbSrc}
-                alt=""
-                className="w-14 h-14 rounded object-cover border border-gray-200 shrink-0"
-              />
-              <div className="min-w-0">
-                <h1 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-3">
-                  {courseData.title}
-                </h1>
-                <p className="text-xs text-gray-500 mt-1">{courseData.instructor}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="px-3 py-2">
-            <h2 className="text-xs font-semibold uppercase tracking-wide text-gray-500 px-2">
-              Course material
-            </h2>
-          </div>
-
-          <div className="pb-4">
-            {courseData.modules.map((module, moduleIndex) => (
-              <details key={module._id || moduleIndex} className="border-t border-gray-100 group" open={moduleIndex === 0}>
-                <summary className="px-4 py-2.5 cursor-pointer text-sm font-medium text-gray-900 bg-gray-50 hover:bg-gray-100 list-none flex items-center justify-between [&::-webkit-details-marker]:hidden">
-                  <span>
-                    Module {moduleIndex + 1}: {module.title}
-                  </span>
-                  <svg className="w-4 h-4 text-gray-400 group-open:rotate-180 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
-                </summary>
-                <div className="bg-white">
-                  {module.sections.map((section, sectionIndex) => (
-                    <div key={section._id || `${moduleIndex}-${sectionIndex}`}>
-                      <div className="px-4 py-2 text-xs font-medium text-gray-500 border-l-2 border-gray-200 ml-2">
-                        {section.title}
-                      </div>
-                      {section.lessons.map((lesson, lessonIndex) => {
-                        const isActive =
-                          moduleIndex === activeModule &&
-                          sectionIndex === activeSection &&
-                          lessonIndex === activeLesson;
-                        return (
-                          <button
-                            type="button"
-                            key={lesson._id || `${moduleIndex}-${sectionIndex}-${lessonIndex}`}
-                            onClick={() => handleLessonClick(moduleIndex, sectionIndex, lessonIndex)}
-                            className={`w-full text-left pl-4 pr-3 py-2.5 flex items-start gap-2 border-l-4 transition-colors ${
-                              isActive
-                                ? 'border-blue-600 bg-blue-50'
-                                : lesson.isCompleted
-                                  ? 'border-transparent hover:bg-gray-50'
-                                  : 'border-transparent hover:bg-gray-50'
-                            }`}
-                          >
-                            <span
-                              className={`mt-0.5 w-4 h-4 rounded-full shrink-0 border-2 flex items-center justify-center ${
-                                lesson.isCompleted
-                                  ? 'bg-blue-600 border-blue-600'
-                                  : isActive
-                                    ? 'border-blue-600 bg-white'
-                                    : 'border-gray-300 bg-white'
-                              }`}
-                            >
-                              {lesson.isCompleted && (
-                                <svg className="w-2.5 h-2.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                  <path
-                                    fillRule="evenodd"
-                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                    clipRule="evenodd"
-                                  />
-                                </svg>
-                              )}
-                              {isActive && !lesson.isCompleted && (
-                                <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
-                              )}
-                            </span>
-                            <span
-                              className={`text-sm flex-1 min-w-0 ${
-                                isActive ? 'font-medium text-blue-900' : 'text-gray-800'
-                              }`}
-                            >
-                              {lesson.title}
-                            </span>
-                            {lesson.duration && (
-                              <span className="text-[10px] text-gray-400 shrink-0">{lesson.duration}</span>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </details>
-            ))}
-          </div>
+          <CourseCurriculumPanel
+            courseData={courseData}
+            activeModule={activeModule}
+            activeSection={activeSection}
+            activeLesson={activeLesson}
+            onLessonClick={handleLessonClick}
+            thumbSrc={thumbSrc}
+            schoolBack={schoolBack}
+          />
         </aside>
 
         {/* Center: lesson */}
-        <main className="flex-1 min-w-0 order-first xl:order-none p-4 md:p-6 xl:py-8 xl:px-8">
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-            <div className="px-5 py-4 border-b border-gray-100 flex flex-wrap items-start justify-between gap-3">
+        <main className="order-first flex min-w-0 flex-1 px-0 pt-2 pb-2 sm:px-3 sm:py-4 md:p-6 xl:order-none xl:px-8 xl:py-8">
+          <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3 border-b border-gray-100 px-3 py-3 sm:px-5 sm:py-4">
               <div>
                 <h2 className="text-lg md:text-xl font-semibold text-gray-900 pr-8">
                   {currentLesson?.title || 'Select a lesson'}
@@ -553,10 +611,27 @@ const CourseDetail = () => {
                   )}
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
                 <button
                   type="button"
-                  className="text-sm px-3 py-1.5 rounded-md border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-40"
+                  onClick={() => setMobileCurriculumOpen(true)}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50 xl:hidden"
+                  aria-expanded={mobileCurriculumOpen}
+                  aria-controls="mobile-course-curriculum"
+                >
+                  <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h7"
+                    />
+                  </svg>
+                  Course content
+                </button>
+                <button
+                  type="button"
+                  className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-40"
                   disabled={activeLesson === 0 && activeSection === 0 && activeModule === 0}
                   onClick={() => {
                     if (activeLesson > 0) {
@@ -577,7 +652,7 @@ const CourseDetail = () => {
                 </button>
                 <button
                   type="button"
-                  className="text-sm px-3 py-1.5 rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-40"
+                  className="rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700 disabled:opacity-40"
                   disabled={
                     activeModule === courseData.modules.length - 1 &&
                     activeSection === courseData.modules[activeModule].sections.length - 1 &&
@@ -701,7 +776,7 @@ const CourseDetail = () => {
                 )}
               </div>
 
-              <div className="p-5 md:p-6 space-y-6">
+              <div className="space-y-6 p-2.5 sm:p-4 md:p-6">
                 <div>
                   <h4 className="text-sm font-semibold text-gray-900 mb-2">About this lesson</h4>
                   <p className="text-sm text-gray-600 leading-relaxed">
@@ -749,8 +824,8 @@ const CourseDetail = () => {
           </main>
 
           {/* Right: widgets */}
-          <aside className="w-full xl:w-[320px] shrink-0 p-4 md:p-6 xl:py-8 xl:pl-0 xl:pr-6 space-y-4 order-last bg-white">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+          <aside className="order-last w-full shrink-0 space-y-4 bg-white px-0 pt-0 pb-2 sm:px-3 sm:pb-4 md:p-6 xl:w-[320px] xl:py-8 xl:pl-0 xl:pr-6">
+            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
               <h3 className="text-sm font-semibold text-gray-900">Your learning plan</h3>
               <p className="text-xs text-gray-600 mt-2 leading-relaxed">
                 Set a weekly goal to stay on track. You&apos;re {progressPercentage}% through this course.
@@ -763,7 +838,7 @@ const CourseDetail = () => {
               </button>
             </div>
 
-            <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+            <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
               <h3 className="text-sm font-semibold text-gray-900">Course timeline</h3>
               <div className="mt-3 rounded-md bg-amber-50 border border-amber-100 px-3 py-2 text-xs text-amber-900">
                 Stay consistent — small sessions add up.
@@ -789,6 +864,58 @@ const CourseDetail = () => {
               </ul>
             </div>
           </aside>
+
+        {/* Mobile / tablet: curriculum drawer — same pattern as Udemy (slide from right) & Coursera */}
+        <div
+          className={`fixed inset-0 z-[100] xl:hidden ${mobileCurriculumOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
+          aria-hidden={!mobileCurriculumOpen}
+        >
+          <button
+            type="button"
+            className={`absolute inset-0 bg-black/50 transition-opacity duration-200 ease-out ${
+              mobileCurriculumOpen ? 'opacity-100' : 'opacity-0'
+            }`}
+            onClick={() => setMobileCurriculumOpen(false)}
+            tabIndex={mobileCurriculumOpen ? 0 : -1}
+            aria-label="Close course content"
+          />
+          <div
+            id="mobile-course-curriculum"
+            className={`absolute right-0 top-0 flex h-[100dvh] w-full max-w-md flex-col bg-white shadow-2xl transition-transform duration-300 ease-out ${
+              mobileCurriculumOpen ? 'translate-x-0' : 'translate-x-full'
+            }`}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="mobile-curriculum-heading"
+          >
+            <div className="flex shrink-0 items-center justify-between border-b border-gray-200 px-4 py-3">
+              <h2 id="mobile-curriculum-heading" className="text-base font-semibold text-gray-900">
+                Course content
+              </h2>
+              <button
+                type="button"
+                onClick={() => setMobileCurriculumOpen(false)}
+                className="rounded-lg p-2 text-gray-600 hover:bg-gray-100"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+              <CourseCurriculumPanel
+                courseData={courseData}
+                activeModule={activeModule}
+                activeSection={activeSection}
+                activeLesson={activeLesson}
+                onLessonClick={handleLessonClickMobile}
+                thumbSrc={thumbSrc}
+                schoolBack={schoolBack}
+              />
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -61,7 +61,7 @@ function Home() {
       {/* Scroll to top button and WhatsApp */}
       <AnimatePresence>
         {showScrollTop && (
-          <div className="fixed bottom-8 right-8 flex flex-col gap-4 z-50">
+          <div className="fixed bottom-5 right-4 z-50 flex flex-col gap-3 sm:bottom-8 sm:right-8 sm:gap-4">
             {/* WhatsApp Button with enhanced animations */}
             <motion.button
               initial={{ opacity: 0, y: 20 }}
@@ -80,7 +80,7 @@ function Home() {
               onClick={handleWhatsappClick}
               onMouseEnter={() => setIsWhatsappHovered(true)}
               onMouseLeave={() => setIsWhatsappHovered(false)}
-              className="relative bg-green-500 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:bg-green-600 transition-colors duration-200 overflow-hidden"
+              className="relative flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-green-500 text-white shadow-lg transition-colors duration-200 hover:bg-green-600 sm:h-14 sm:w-14"
               aria-label="Contact us on WhatsApp"
             >
               {/* Pulse animation ring */}
@@ -132,7 +132,7 @@ function Home() {
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
               onClick={scrollToTop}
-              className="bg-blue-500 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-600 transition-colors duration-200"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-colors duration-200 hover:bg-blue-600 sm:h-12 sm:w-12"
               aria-label="Scroll to top"
             >
               <FaArrowUp className="text-xl" />
