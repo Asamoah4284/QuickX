@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -50,6 +51,71 @@ function CheckItem({ children }) {
   );
 }
 
+function parseLessonDurationSeconds(d) {
+  if (d == null || d === '') return 0;
+  const s = String(d).trim();
+  const minMatch = s.match(/^(\d+)\s*min(?:utes)?$/i);
+  if (minMatch) return parseInt(minMatch[1], 10) * 60;
+  const parts = s.split(':').map((p) => Number(p));
+  if (parts.some((n) => Number.isNaN(n))) return 0;
+  if (parts.length === 1) return parts[0];
+  if (parts.length === 2) return parts[0] * 60 + parts[1];
+  if (parts.length === 3) return parts[0] * 3600 + parts[1] * 60 + parts[2];
+  return 0;
+}
+
+function formatTotalSeconds(sec) {
+  const total = Math.max(0, Math.round(sec));
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  if (h > 0) return `${h}h ${m}m`;
+  if (m > 0) return `${m} min`;
+  return '0 min';
+}
+
+function computeCourseContentStats(course) {
+  let sections = 0;
+  let lectures = 0;
+  let seconds = 0;
+  (course?.modules || []).forEach((mod) => {
+    (mod.sections || []).forEach((sec) => {
+      sections += 1;
+      const lessons = sec.lessons || [];
+      lectures += lessons.length;
+      lessons.forEach((les) => {
+        seconds += parseLessonDurationSeconds(les.duration);
+      });
+    });
+  });
+  return { sections, lectures, totalSeconds: seconds };
+}
+
+function flattenCourseSections(course) {
+  const out = [];
+  (course?.modules || []).forEach((mod, mi) => {
+    (mod.sections || []).forEach((sec, si) => {
+      out.push({
+        key: sec._id ? String(sec._id) : `m${mi}-s${si}-${sec.title || ''}`,
+        section: sec
+      });
+    });
+  });
+  return out;
+}
+
+function lessonPreviewVideoSrc(lesson) {
+  const v = lesson?.videoUrl;
+  if (!v || !String(v).trim()) return null;
+  return publicAssetUrl(v.startsWith('http') ? v : `${API_URL}${v}`);
+}
+
+function sectionMetaLine(lessons) {
+  const list = lessons || [];
+  const n = list.length;
+  const sec = list.reduce((t, l) => t + parseLessonDurationSeconds(l.duration), 0);
+  return `${n} lecture${n === 1 ? '' : 's'} · ${formatTotalSeconds(sec)}`;
+}
+
 /** Udemy-style public course / purchase page */
 export default function CoursePublicDetail() {
   const { courseId } = useParams();
@@ -59,6 +125,49 @@ export default function CoursePublicDetail() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [purchaseMode, setPurchaseMode] = useState('course');
+  const [isLgScreen, setIsLgScreen] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false
+  );
+  const [previewLesson, setPreviewLesson] = useState(null);
+  const [sidebarCompact, setSidebarCompact] = useState(false);
+  const curriculumRef = useRef(null);
+
+  const contentStats = useMemo(
+    () => (course ? computeCourseContentStats(course) : { sections: 0, lectures: 0, totalSeconds: 0 }),
+    [course]
+  );
+  const flatSections = useMemo(() => (course ? flattenCourseSections(course) : []), [course]);
+
+  useEffect(() => {
+    if (!previewLesson) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') setPreviewLesson(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [previewLesson]);
+
+  useLayoutEffect(() => {
+    const mq = window.matchMedia('(min-width: 1024px)');
+    const apply = () => setIsLgScreen(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  /** Udemy-style: after scrolling past the hero overlap, collapse the promo block so the sticky card stays compact */
+  useEffect(() => {
+    if (!isLgScreen) {
+      setSidebarCompact(false);
+      return undefined;
+    }
+    const onScroll = () => {
+      setSidebarCompact(window.scrollY > 120);
+    };
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [isLgScreen]);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,6 +216,14 @@ export default function CoursePublicDetail() {
       }
     }
 
+    const checkoutImageUrl = course.thumbnail
+      ? publicAssetUrl(
+          String(course.thumbnail).startsWith('http')
+            ? String(course.thumbnail)
+            : `${API_URL}${String(course.thumbnail)}`
+        )
+      : null;
+
     navigate('/checkout', {
       state: {
         item: {
@@ -115,6 +232,8 @@ export default function CoursePublicDetail() {
           title: course.title,
           price: course.price,
           description: course.shortDescription || course.description,
+          thumbnail: course.thumbnail,
+          ...(checkoutImageUrl ? { image: checkoutImageUrl } : {}),
         },
         returnPath: '/courses',
         returnTabState: null,
@@ -124,8 +243,101 @@ export default function CoursePublicDetail() {
 
   if (loading) {
     return (
-      <div className="min-h-[50vh] bg-[#1c1d1f] pt-28 flex justify-center">
-        <p className="text-gray-400">Loading…</p>
+      <div className="min-h-screen bg-white" aria-busy="true">
+        <span className="sr-only">Loading course</span>
+        {/* Dark hero skeleton */}
+        <div className="bg-[#1c1d1f] text-white">
+          <div className="mx-auto max-w-[1180px] px-4 pt-20 pb-14 sm:px-6 sm:pb-16 lg:px-8 lg:pb-20">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <div className="h-3 w-14 animate-pulse rounded bg-white/15 sm:h-3.5 sm:w-16" />
+              <div className="h-3 w-2 animate-pulse rounded bg-white/10" />
+              <div className="h-3 w-12 animate-pulse rounded bg-white/15" />
+              <div className="h-3 w-2 animate-pulse rounded bg-white/10" />
+              <div className="h-3 w-40 max-w-[60%] animate-pulse rounded bg-white/10" />
+            </div>
+            <div className="max-w-4xl space-y-4">
+              <div className="h-9 max-w-xl animate-pulse rounded-md bg-white/15 md:h-11 md:max-w-2xl" />
+              <div className="h-4 max-w-2xl animate-pulse rounded bg-white/10" />
+              <div className="h-4 max-w-xl animate-pulse rounded bg-white/10" />
+              <div className="mt-6 flex flex-wrap gap-3">
+                <div className="h-4 w-44 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-36 animate-pulse rounded bg-white/10" />
+                <div className="h-4 w-24 animate-pulse rounded bg-white/10" />
+              </div>
+              <div className="mt-6 flex flex-wrap items-center gap-6 rounded-md border border-white/10 bg-white/[0.06] px-5 py-4">
+                <div className="flex items-center gap-2">
+                  <div className="h-10 w-10 shrink-0 animate-pulse rounded bg-white/15" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-28 animate-pulse rounded bg-white/15" />
+                    <div className="h-2.5 w-36 animate-pulse rounded bg-white/10" />
+                  </div>
+                </div>
+                <div className="h-4 w-40 animate-pulse rounded bg-white/10" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mx-auto max-w-[1180px] px-4 sm:px-6 lg:px-8">
+          <div className="relative z-10 -mt-12 grid gap-8 sm:-mt-16 lg:-mt-20 lg:grid-cols-[1fr_380px] lg:gap-10">
+            <div className="min-w-0 space-y-10 pt-2 lg:pt-0">
+              {/* Mobile: video area before “What you’ll learn” */}
+              {!isLgScreen ? (
+                <div className="-mx-4 mb-2 bg-black sm:mx-0">
+                  <div className="aspect-video animate-pulse bg-gradient-to-br from-gray-800 to-gray-900" />
+                  <div className="h-9 bg-[#f7f9fa]" />
+                </div>
+              ) : null}
+
+              <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-[0_2px_4px_rgba(0,0,0,.08)] sm:p-8">
+                <div className="h-8 w-52 animate-pulse rounded bg-gray-200" />
+                <ul className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-3">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <li key={i} className="flex gap-3">
+                      <div className="mt-0.5 h-5 w-5 shrink-0 animate-pulse rounded-full bg-gray-200" />
+                      <div className="h-4 flex-1 animate-pulse rounded bg-gray-100" />
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              <div className="grid gap-8 md:grid-cols-2">
+                <div className="h-40 animate-pulse rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="h-6 w-32 rounded bg-gray-200" />
+                  <div className="mt-4 space-y-2">
+                    <div className="h-3 w-full rounded bg-gray-100" />
+                    <div className="h-3 w-4/5 rounded bg-gray-100" />
+                  </div>
+                </div>
+                <div className="h-40 animate-pulse rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+                  <div className="h-6 w-28 rounded bg-gray-200" />
+                  <div className="mt-4 space-y-2">
+                    <div className="h-3 w-full rounded bg-gray-100" />
+                    <div className="h-3 w-full rounded bg-gray-100" />
+                    <div className="h-3 w-3/4 rounded bg-gray-100" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <aside className="lg:-mt-[200px] xl:-mt-[220px]">
+              <div className="sticky top-24 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,.12)]">
+                {isLgScreen ? (
+                  <>
+                    <div className="aspect-video animate-pulse bg-gradient-to-br from-gray-200 to-gray-300" />
+                    <div className="h-9 border-b border-gray-100 bg-gray-50" />
+                  </>
+                ) : null}
+                <div className="space-y-4 p-4 sm:p-5">
+                  <div className="h-28 animate-pulse rounded-lg border-2 border-gray-100 bg-gray-50" />
+                  <div className="h-24 animate-pulse rounded-lg border border-gray-100 bg-gray-50" />
+                  <div className="h-12 animate-pulse rounded-lg bg-gray-200" />
+                  <div className="h-4 animate-pulse rounded bg-gray-100" />
+                </div>
+              </div>
+            </aside>
+          </div>
+        </div>
       </div>
     );
   }
@@ -140,11 +352,21 @@ export default function CoursePublicDetail() {
     );
   }
 
-  const thumb = course.thumbnail?.startsWith('http')
-    ? course.thumbnail
-    : course.thumbnail
-      ? `${API_URL}${course.thumbnail}`
-      : null;
+  const thumb = publicAssetUrl(
+    course.thumbnail?.startsWith('http')
+      ? course.thumbnail
+      : course.thumbnail
+        ? `${API_URL}${course.thumbnail}`
+        : null
+  );
+
+  const promoVideoSrc = course.promoVideo
+    ? publicAssetUrl(
+        course.promoVideo.startsWith('http')
+          ? course.promoVideo
+          : `${API_URL}${course.promoVideo}`
+      )
+    : null;
   const instructorName =
     typeof course.instructor === 'object' && course.instructor?.fullName
       ? course.instructor.fullName
@@ -237,9 +459,9 @@ export default function CoursePublicDetail() {
         </div>
       </div>
 
-      {/* Overlapping layout: main + floating sidebar */}
+      {/* Overlapping layout: main + floating sidebar (sidebar column stretches full row height so sticky works) */}
       <div className="mx-auto max-w-[1180px] px-4 sm:px-6 lg:px-8">
-        <div className="relative z-10 -mt-12 grid gap-8 sm:-mt-16 lg:-mt-20 lg:grid-cols-[1fr_380px] lg:gap-10">
+        <div className="relative z-10 -mt-12 grid gap-8 sm:-mt-16 lg:-mt-20 lg:grid-cols-[1fr_380px] lg:items-stretch lg:gap-10">
           {/* Main column */}
           <div className="min-w-0 space-y-10 pt-2 lg:pt-0">
             {message ? (
@@ -249,6 +471,48 @@ export default function CoursePublicDetail() {
             ) : null}
             {error && purchaseMode === 'course' ? (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+            ) : null}
+
+            {/* Mobile: preview video / image before "What you'll learn" (sidebar preview only on lg+) */}
+            {!isLgScreen && (promoVideoSrc || thumb) ? (
+              <div className="-mx-4 mb-8 bg-black sm:mx-0">
+                <div className="relative aspect-video w-full overflow-hidden bg-black">
+                  {promoVideoSrc ? (
+                    <video
+                      key={`m-${courseId}-${promoVideoSrc}`}
+                      src={promoVideoSrc}
+                      controls
+                      autoPlay
+                      muted
+                      playsInline
+                      poster={thumb || undefined}
+                      className="block h-full w-full bg-black object-cover object-center outline-none ring-0"
+                    />
+                  ) : (
+                    <>
+                      <img src={thumb} alt="" className="h-full w-full object-cover opacity-90" />
+                      <div
+                        className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-black/35"
+                        aria-hidden
+                      >
+                        <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-blue-600 shadow-lg opacity-80">
+                          <svg className="ml-1 h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
+                        </span>
+                        <p className="absolute bottom-3 left-4 text-left text-sm font-bold text-white drop-shadow-md">
+                          Preview this course
+                        </p>
+                      </div>
+                    </>
+                  )}
+                </div>
+                {promoVideoSrc ? (
+                  <p className="bg-[#f7f9fa] px-3 py-2 text-center text-[11px] text-gray-500">
+                    Starts muted so autoplay is allowed — use the player controls for sound.
+                  </p>
+                ) : null}
+              </div>
             ) : null}
 
             <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-[0_2px_4px_rgba(0,0,0,.08)] sm:p-8">
@@ -285,23 +549,122 @@ export default function CoursePublicDetail() {
             </div>
 
             <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
-              <h2 className="text-xl font-bold text-gray-900">Curriculum</h2>
-              <div className="mt-5 space-y-4">
-                {(course.modules || []).map((module, index) => (
-                  <div key={`${module.title}-${index}`} className="rounded-lg border border-gray-200 p-4">
-                    <p className="font-semibold text-gray-900">{module.title}</p>
-                    <div className="mt-3 space-y-2">
-                      {(module.sections || []).map((section) => (
-                        <div key={section._id || section.title} className="rounded-md bg-gray-50 px-3 py-2 text-sm text-gray-700">
-                          {section.title}{' '}
-                          <span className="text-gray-400">
-                            ({(section.lessons || []).length} lessons)
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Course content</h2>
+                  <p className="mt-1 text-sm text-gray-600">
+                    {contentStats.sections} section{contentStats.sections === 1 ? '' : 's'} ·{' '}
+                    {contentStats.lectures} lecture{contentStats.lectures === 1 ? '' : 's'} ·{' '}
+                    {formatTotalSeconds(contentStats.totalSeconds)} total length
+                  </p>
+                </div>
+                {flatSections.length > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      curriculumRef.current?.querySelectorAll('details').forEach((el) => {
+                        el.open = true;
+                      });
+                    }}
+                    className="text-sm font-semibold text-violet-700 hover:text-violet-800 hover:underline"
+                  >
+                    Expand all sections
+                  </button>
+                ) : null}
+              </div>
+
+              <div ref={curriculumRef} className="mt-5 space-y-2 border border-gray-200">
+                {flatSections.length === 0 ? (
+                  <p className="p-4 text-sm text-gray-500">No curriculum published yet.</p>
+                ) : (
+                  flatSections.map(({ key, section }, idx) => {
+                    const lessons = section.lessons || [];
+                    return (
+                      <details key={key} className="group border-b border-gray-200 last:border-b-0" open={idx === 0}>
+                        <summary className="flex cursor-pointer list-none items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-left text-sm font-semibold text-gray-900 hover:bg-gray-100 [&::-webkit-details-marker]:hidden">
+                          <span className="flex min-w-0 flex-1 items-center gap-2">
+                            <svg
+                              className="h-4 w-4 shrink-0 text-gray-500 transition-transform group-open:-rotate-180"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                              aria-hidden
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                            </svg>
+                            <span className="min-w-0">{section.title}</span>
                           </span>
+                          <span className="shrink-0 text-xs font-normal text-gray-500">{sectionMetaLine(lessons)}</span>
+                        </summary>
+                        <div className="divide-y divide-gray-100 bg-white">
+                          {lessons.map((lesson, li) => {
+                            const lt = lesson.type || lesson.lessonType || 'video';
+                            const isVideo = lt === 'video';
+                            const canPreview = lesson.isPreview === true || lesson.free === true;
+                            const previewSrc = canPreview ? lessonPreviewVideoSrc(lesson) : null;
+                            return (
+                              <div
+                                key={lesson._id || `${key}-l${li}`}
+                                className="flex items-center gap-3 px-4 py-2.5 pr-3"
+                              >
+                                {isVideo ? (
+                                  <svg
+                                    className="h-4 w-4 shrink-0 text-gray-400"
+                                    fill="none"
+                                    viewBox="0 0 24 24"
+                                    stroke="currentColor"
+                                    aria-hidden
+                                  >
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"
+                                    />
+                                    <path
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                      d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                    />
+                                  </svg>
+                                ) : (
+                                  <span className="flex h-4 w-4 shrink-0 items-center justify-center text-gray-400" aria-hidden>
+                                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                  </span>
+                                )}
+                                <span className="min-w-0 flex-1 text-sm text-gray-800">{lesson.title}</span>
+                                {previewSrc ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPreviewLesson({ title: lesson.title, src: previewSrc })}
+                                    className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-violet-700 hover:text-violet-800"
+                                  >
+                                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-violet-100 text-violet-700" aria-hidden>
+                                      <svg className="ml-0.5 h-2.5 w-2.5" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M8 5v14l11-7z" />
+                                      </svg>
+                                    </span>
+                                    Preview
+                                  </button>
+                                ) : null}
+                                {lesson.duration ? (
+                                  <span className="w-12 shrink-0 text-right text-xs tabular-nums text-gray-500">
+                                    {lesson.duration}
+                                  </span>
+                                ) : (
+                                  <span className="w-12 shrink-0" />
+                                )}
+                              </div>
+                            );
+                          })}
                         </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
+                      </details>
+                    );
+                  })
+                )}
               </div>
             </section>
 
@@ -325,26 +688,70 @@ export default function CoursePublicDetail() {
             </section>
           </div>
 
-          {/* Floating purchase card — Udemy sidebar */}
+          {/* Floating purchase card — Udemy sidebar: sticky + compact promo when scrolling */}
           <aside className="lg:-mt-[200px] xl:-mt-[220px]">
-            <div className="sticky top-24 overflow-hidden rounded-lg border border-gray-200 bg-white shadow-[0_2px_8px_rgba(0,0,0,.12)]">
-              <div className="relative aspect-video bg-black">
-                {thumb ? (
-                  <img src={thumb} alt="" className="h-full w-full object-cover opacity-90" />
-                ) : (
-                  <div className="flex h-full items-center justify-center bg-gray-900 text-gray-500">No preview image</div>
-                )}
-                <div className="absolute inset-0 flex items-center justify-center bg-black/35">
-                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-blue-600 shadow-lg">
-                    <svg className="ml-1 h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z" />
-                    </svg>
-                  </span>
+            <div
+              className={`z-30 flex flex-col rounded-lg border border-gray-200 bg-white transition-shadow duration-300 lg:sticky lg:top-[4.75rem] ${
+                sidebarCompact && isLgScreen
+                  ? 'shadow-[0_4px_20px_rgba(0,0,0,.14)]'
+                  : 'shadow-[0_2px_8px_rgba(0,0,0,.12)]'
+              }`}
+            >
+              {isLgScreen && (promoVideoSrc || thumb) ? (
+                <div
+                  className={`grid shrink-0 transition-[grid-template-rows] duration-300 ease-in-out ${
+                    sidebarCompact && isLgScreen ? 'grid-rows-[0fr]' : 'grid-rows-[1fr]'
+                  }`}
+                  aria-hidden={sidebarCompact && isLgScreen}
+                >
+                  <div className="min-h-0 overflow-hidden">
+                    <div>
+                      <div className="relative aspect-video w-full overflow-hidden bg-black">
+                        {promoVideoSrc ? (
+                          <video
+                            key={`d-${courseId}-${promoVideoSrc}`}
+                            src={promoVideoSrc}
+                            controls
+                            autoPlay
+                            muted
+                            playsInline
+                            poster={thumb || undefined}
+                            className="block h-full w-full bg-black object-cover object-center outline-none ring-0"
+                          />
+                        ) : (
+                          <>
+                            {thumb ? (
+                              <img src={thumb} alt="" className="h-full w-full object-cover opacity-90" />
+                            ) : (
+                              <div className="flex h-full items-center justify-center bg-gray-900 text-gray-500">
+                                No preview image
+                              </div>
+                            )}
+                            <div
+                              className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center bg-black/35"
+                              aria-hidden
+                            >
+                              <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-blue-600 shadow-lg opacity-80">
+                                <svg className="ml-1 h-8 w-8" fill="currentColor" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </span>
+                              <p className="absolute bottom-3 left-4 text-left text-sm font-bold text-white drop-shadow-md">
+                                Preview this course
+                              </p>
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      {promoVideoSrc ? (
+                        <p className="bg-[#f7f9fa] px-3 py-2 text-center text-[11px] text-gray-500">
+                          Starts muted so autoplay is allowed — use the player controls for sound.
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                <p className="absolute bottom-3 left-4 text-sm font-bold text-white drop-shadow-md">
-                  Preview this course
-                </p>
-              </div>
+              ) : null}
 
               <div className="space-y-4 p-4 sm:p-5">
                 <label className="flex cursor-pointer gap-3 rounded border-2 border-gray-900 p-4 transition hover:bg-gray-50">
@@ -465,6 +872,43 @@ export default function CoursePublicDetail() {
         </div>
       </div>
 
+      {previewLesson ? (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[1px]"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="preview-lesson-title"
+          onClick={() => setPreviewLesson(null)}
+        >
+          <div
+            className="relative w-full max-w-3xl overflow-hidden rounded-lg bg-black shadow-2xl ring-1 ring-white/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 bg-white px-4 py-3">
+              <p id="preview-lesson-title" className="min-w-0 text-sm font-semibold text-gray-900">
+                {previewLesson.title}
+              </p>
+              <button
+                type="button"
+                onClick={() => setPreviewLesson(null)}
+                className="shrink-0 rounded p-1 text-gray-500 hover:bg-gray-100 hover:text-gray-800"
+                aria-label="Close preview"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <video
+              key={previewLesson.src}
+              src={previewLesson.src}
+              controls
+              playsInline
+              className="aspect-video w-full bg-black object-contain"
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

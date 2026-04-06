@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -375,11 +376,13 @@ const CourseDetail = () => {
     return null;
   }
 
-  const thumbSrc = courseData.thumbnail?.startsWith('http')
-    ? courseData.thumbnail
-    : courseData.thumbnail
-      ? `${API_URL}${courseData.thumbnail}`
-      : '/images/logo-1.jpg';
+  const thumbSrc = publicAssetUrl(
+    courseData.thumbnail?.startsWith('http')
+      ? courseData.thumbnail
+      : courseData.thumbnail
+        ? `${API_URL}${courseData.thumbnail}`
+        : '/images/logo-1.jpg'
+  );
 
   const schoolBack =
     courseData.courseType === 'crypto'

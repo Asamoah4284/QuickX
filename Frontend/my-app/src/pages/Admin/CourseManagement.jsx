@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 import {
     FiBook,
     FiUsers,
@@ -23,6 +24,14 @@ import {
 } from 'react-icons/fi';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+/** Admin API may return relative paths or full S3/CloudFront URLs — never double-prefix API_URL. */
+function resolveCourseThumbnailUrl(thumbnail) {
+  if (!thumbnail) return null;
+  const raw = thumbnail.startsWith('http') ? thumbnail : `${API_URL}${thumbnail}`;
+  return publicAssetUrl(raw);
+}
+
 // Mock data for testing
 const mockCourses = [
     {
@@ -82,10 +91,9 @@ const CourseManagement = ({ onRequestDelete }) => {
             const response = await axios.get(`${API_URL}/api/admin/courses`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            // Transform the courses to include full thumbnail URLs
-            const coursesWithFullUrls = response.data.map(course => ({
-                ...course,
-                thumbnail: course.thumbnail ? `${API_URL}${course.thumbnail}` : null
+            const coursesWithFullUrls = response.data.map((course) => ({
+              ...course,
+              thumbnail: resolveCourseThumbnailUrl(course.thumbnail),
             }));
             setCourses(Array.isArray(coursesWithFullUrls) ? coursesWithFullUrls : []);
             setError('');

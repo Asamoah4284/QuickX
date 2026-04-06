@@ -25,7 +25,6 @@ const validatePayment = [
     body('transactionId')
         .notEmpty()
         .trim()
-        .escape()
         .withMessage('Transaction ID is required'),
     body('paymentMethod')
         .isIn(['MTN', 'Vodafone', 'AirtelTigo', 'momo', 'paystack', 'card', 'direct'])
@@ -206,8 +205,14 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             if (!purchaseItem) {
                 return res.status(404).json({ message: 'Course not found' });
             }
-            
-         
+            // Allow amount ≤ list price (coupons reduce price on the client; full verification would need coupon API).
+            if (finalAmount > Number(purchaseItem.price) + 0.02 || finalAmount < 0.01) {
+                return res.status(400).json({
+                    message: 'Invalid amount for this course.',
+                    max: purchaseItem.price,
+                    received: finalAmount
+                });
+            }
         } else if (itemType === 'book') {
             purchaseItem = await Book.findById(itemId);
             if (!purchaseItem) {
@@ -242,24 +247,29 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                 finalAmount = Number((amount - commissionAmount).toFixed(2));
                 referringUserId = referringUser._id;
 
-                // Update referring user's earnings and history
-                await User.findByIdAndUpdate(
-                    referringUser._id,
-                    {
-                        $inc: { referralEarnings: commissionAmount },
-                        $push: {
-                            referralHistory: {
-                                referredUser: req.user._id,
-                                courseId: itemId,
-                                amount: commissionAmount,
-                                date: new Date()
+                try {
+                    await User.findByIdAndUpdate(
+                        referringUser._id,
+                        {
+                            $inc: { referralEarnings: commissionAmount },
+                            $push: {
+                                referralHistory: {
+                                    referredUser: req.user._id,
+                                    courseId: itemId,
+                                    amount: commissionAmount,
+                                    date: new Date()
+                                }
                             }
-                        }
-                    },
-                    { new: true }
-                );
-
-                console.log(`Referral commission of ${commissionAmount} credited to user ${referringUser._id}`);
+                        },
+                        { new: true }
+                    );
+                    console.log(`Referral commission of ${commissionAmount} credited to user ${referringUser._id}`);
+                } catch (referralErr) {
+                    console.error('Referral credit failed (payment will still complete):', referralErr);
+                    commissionAmount = 0;
+                    finalAmount = Number(amount);
+                    referringUserId = null;
+                }
             }
         }
 
@@ -268,7 +278,7 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             userId: req.user._id,
             itemType,
             itemId,
-            originalAmount: amount,
+            originalAmount: Number(amount),
             finalAmount: finalAmount,
             commissionAmount: commissionAmount,
             referringUserId: referringUserId,
@@ -276,7 +286,7 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             paymentMethod,
             momoNumber,
             shippingAddress,
-            referralCode,
+            referralCode: referralCode || '',
             status: 'completed',
             createdAt: new Date()
         };

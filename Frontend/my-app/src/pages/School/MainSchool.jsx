@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Link } from 'react-router-dom';
 import Features from '../../components/Features';
 import axios from 'axios';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -18,7 +19,8 @@ function courseThumbUrl(c) {
   if (!c.thumbnail) {
     return FALLBACK_THUMB;
   }
-  return c.thumbnail.startsWith('http') ? c.thumbnail : `${API_URL}${c.thumbnail}`;
+  const raw = c.thumbnail.startsWith('http') ? c.thumbnail : `${API_URL}${c.thumbnail}`;
+  return publicAssetUrl(raw) || FALLBACK_THUMB;
 }
 
 function formatCount(n) {

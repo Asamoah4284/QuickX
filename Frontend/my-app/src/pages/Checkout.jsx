@@ -1,8 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiCreditCard, FiLock, FiArrowLeft, FiCheck, FiShoppingBag, FiCalendar, FiPhone, FiChevronDown } from 'react-icons/fi';
+import { SiVisa, SiMastercard } from 'react-icons/si';
 import { PaystackButton } from 'react-paystack';
 import axios from 'axios';
+import { publicAssetUrl } from '../utils/publicAssetUrl';
+
+/** Same rules as CoursePublicDetail / store: absolute URL or `${apiUrl}${path}`. */
+function resolveCheckoutItemImageUrl(item, apiUrl) {
+  const raw = item?.image ?? item?.thumbnail;
+  if (raw == null || raw === '') return null;
+  const s = typeof raw === 'string' ? raw.trim() : String(raw).trim();
+  if (!s) return null;
+  if (s.startsWith('http')) return publicAssetUrl(s);
+  if (!apiUrl) return null;
+  return publicAssetUrl(`${apiUrl}${s}`);
+}
 
 function Checkout() {
   const location = useLocation();
@@ -29,6 +43,8 @@ function Checkout() {
   const [couponError, setCouponError] = useState('');
   const [couponId, setCouponId] = useState(null);
   const [discount, setDiscount] = useState(0);
+  /** Success modal after Paystack — replaces window.alert */
+  const [paymentSuccessModal, setPaymentSuccessModal] = useState(null);
 
   const API_URL = import.meta.env.VITE_API_URL;
 
@@ -52,6 +68,31 @@ function Checkout() {
       navigate('/');
     }
   }, [location, navigate]);
+
+  /** If course thumbnail wasn’t in navigation state, load it from the preview API. */
+  useEffect(() => {
+    if (!checkoutItem || checkoutItem.type !== 'course') return;
+    if (resolveCheckoutItemImageUrl(checkoutItem, API_URL)) return;
+    const id = checkoutItem.id ?? checkoutItem._id;
+    const idStr = id != null ? String(id) : '';
+    if (!idStr || !API_URL) return;
+
+    let cancelled = false;
+    axios
+      .get(`${API_URL}/api/courses/${idStr}/preview`)
+      .then(({ data }) => {
+        if (cancelled || !data?.thumbnail) return;
+        setCheckoutItem((prev) => {
+          if (!prev) return prev;
+          if (resolveCheckoutItemImageUrl(prev, API_URL)) return prev;
+          return { ...prev, thumbnail: data.thumbnail };
+        });
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [checkoutItem, API_URL]);
 
   // Handle form field changes
   const handleChange = (e) => {
@@ -215,6 +256,10 @@ function Checkout() {
       
       // Calculate the final price with proper decimal handling
       const finalPrice = calculateFinalPrice();
+      const itemId = checkoutItem?.id ?? checkoutItem?._id;
+      if (!itemId) {
+        throw new Error('Missing item id — return to the course page and try checkout again.');
+      }
       console.log('Calculated final price:', {
         original: checkoutItem?.price,
         discount: discount,
@@ -222,9 +267,9 @@ function Checkout() {
       });
       
       // Program enrollment uses dedicated endpoint (idempotent enrollment on transactionId)
-      if (checkoutItem?.type === 'program' && checkoutItem?.id) {
+      if (checkoutItem?.type === 'program' && itemId) {
         const programPayload = {
-          programId: checkoutItem.id,
+          programId: String(itemId),
           paymentMethod: formData.provider === 'mtn' ? 'MTN' : 
                         formData.provider === 'vodafone' ? 'Vodafone' : 
                         formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
@@ -247,8 +292,13 @@ function Checkout() {
         });
 
         if (paymentResponse.data.success) {
-          alert(`Payment successful! You are enrolled in ${checkoutItem.title}. You can now create courses in this track.`);
-          navigate('/instructor');
+          setPaymentSuccessModal({
+            title: "You're enrolled!",
+            description: `You're enrolled in ${checkoutItem.title}. You can start creating courses in this track.`,
+            ctaLabel: 'Open creator studio',
+            navigateTo: '/instructor',
+            navigateState: undefined
+          });
           setIsProcessing(false);
           return;
         }
@@ -258,7 +308,7 @@ function Checkout() {
       // First save the payment data
       const paymentData = {
         itemType: checkoutItem.type,
-        itemId: checkoutItem.id,
+        itemId: String(itemId),
         paymentMethod: formData.provider === 'mtn' ? 'MTN' : 
                       formData.provider === 'vodafone' ? 'Vodafone' : 
                       formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
@@ -279,7 +329,7 @@ function Checkout() {
       console.log('Sending payment data:', JSON.stringify(paymentData, null, 2));
 
       // Validate required fields before sending
-      if (!paymentData.itemType || !paymentData.itemId || !paymentData.momoNumber || !paymentData.amount) {
+      if (!paymentData.itemType || !paymentData.itemId || !paymentData.momoNumber || paymentData.amount == null) {
         throw new Error('Missing required payment data fields');
       }
 
@@ -299,10 +349,10 @@ function Checkout() {
         console.log('Payment initialization response:', paymentResponse.data);
 
         if (paymentResponse.data.success) {
-          if (checkoutItem?.type === 'course' && checkoutItem?.id) {
+          if (checkoutItem?.type === 'course' && itemId) {
             // Save course purchase to database
             await axios.post(
-              `${API_URL}/api/courses/${checkoutItem.id}/purchase`, 
+              `${API_URL}/api/courses/${String(itemId)}/purchase`, 
               {
                 reference: referenceString,
                 amount: finalPrice,
@@ -316,36 +366,54 @@ function Checkout() {
 
             // Update localStorage for course
             const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
-            if (!purchasedCourses.some(course => course.id === checkoutItem.id)) {
+            if (!purchasedCourses.some(course => course.id === itemId || course.id === String(itemId))) {
               purchasedCourses.push({
                 ...checkoutItem,
+                id: itemId,
                 purchaseDate: new Date().toISOString(),
                 status: 'purchased'
               });
               localStorage.setItem('purchasedCourses', JSON.stringify(purchasedCourses));
             }
 
-            alert(`Payment successful! You now have access to ${checkoutItem.title}`);
-            navigate(`/school/course/${checkoutItem.id}`, { 
-              state: { fromPurchase: true, courseId: checkoutItem.id }
+            setPaymentSuccessModal({
+              title: 'Payment successful',
+              description: `You now have full access to ${checkoutItem.title}.`,
+              ctaLabel: 'Start learning',
+              navigateTo: `/school/course/${String(itemId)}`,
+              navigateState: { fromPurchase: true, courseId: String(itemId) }
             });
           } 
-          else if (checkoutItem?.type === 'book' && checkoutItem?.id) {
+          else if (checkoutItem?.type === 'book' && itemId) {
             // Update localStorage for book
             const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
-            if (!purchasedBooks.some(book => book.id === checkoutItem.id)) {
+            if (!purchasedBooks.some(book => book.id === itemId || book.id === String(itemId))) {
               purchasedBooks.push({
                 ...checkoutItem,
+                id: itemId,
                 purchaseDate: new Date().toISOString(),
                 status: 'purchased'
               });
               localStorage.setItem('purchasedBooks', JSON.stringify(purchasedBooks));
             }
             localStorage.removeItem('pendingBookPurchase');
-            navigate('/library');
+            setPaymentSuccessModal({
+              title: 'Payment successful',
+              description: `Your purchase of ${checkoutItem.title} is complete.`,
+              ctaLabel: 'Go to library',
+              navigateTo: '/library',
+              navigateState: undefined
+            });
           } else {
-            navigate(returnInfo.path, { state: returnInfo.state });
+            setPaymentSuccessModal({
+              title: 'Payment successful',
+              description: 'Your purchase is complete.',
+              ctaLabel: 'Continue',
+              navigateTo: returnInfo.path,
+              navigateState: returnInfo.state
+            });
           }
+          setIsProcessing(false);
         } else {
           throw new Error('Payment initialization failed');
         }
@@ -365,7 +433,16 @@ function Checkout() {
       }
     } catch (error) {
       console.error('Error in handlePaymentSuccess:', error);
-      const errorMessage = error.response?.data?.message || error.message;
+      const data = error.response?.data;
+      const validationMsgs =
+        Array.isArray(data?.errors) && data.errors.length
+          ? data.errors.map((e) => e.msg || e.message || String(e)).join(' ')
+          : '';
+      const errorMessage =
+        data?.message ||
+        data?.error ||
+        validationMsgs ||
+        error.message;
       alert(`Error processing payment: ${errorMessage}`);
       setIsProcessing(false);
     }
@@ -409,7 +486,7 @@ function Checkout() {
     const finalPrice = calculateFinalPrice();
     
     return {
-      reference: `${checkoutItem?.type}_${checkoutItem?.id}_${Date.now()}`,
+      reference: `${checkoutItem?.type}_${checkoutItem?.id ?? checkoutItem?._id}_${Date.now()}`,
       email: formData.email,
       amount: finalPrice * 100,
       publicKey: paystackPublicKey,
@@ -438,7 +515,7 @@ function Checkout() {
           {
             display_name: "Item ID",
             variable_name: "item_id",
-            value: checkoutItem?.id
+            value: String(checkoutItem?.id ?? checkoutItem?._id ?? '')
           },
           {
             display_name: "Referral Code",
@@ -528,6 +605,37 @@ function Checkout() {
     return Number(subtotal.toFixed(2));
   };
 
+  const checkoutItemImageSrc = useMemo(
+    () => resolveCheckoutItemImageUrl(checkoutItem, API_URL),
+    [checkoutItem]
+  );
+
+  const completeSuccessAndNavigate = () => {
+    setPaymentSuccessModal((current) => {
+      if (!current) return null;
+      navigate(current.navigateTo, current.navigateState != null ? { state: current.navigateState } : undefined);
+      return null;
+    });
+  };
+
+  useEffect(() => {
+    if (!paymentSuccessModal) return undefined;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => {
+      if (e.key !== 'Escape') return;
+      setPaymentSuccessModal((current) => {
+        if (!current) return null;
+        navigate(current.navigateTo, current.navigateState != null ? { state: current.navigateState } : undefined);
+        return null;
+      });
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = '';
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [paymentSuccessModal, navigate]);
+
   if (!checkoutItem) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -567,12 +675,18 @@ function Checkout() {
               
               <div className="mb-6">
                 <div className="flex items-start">
-                  <div className="h-20 w-16 bg-white rounded-md overflow-hidden shadow-sm flex-shrink-0">
-                    <img 
-                      src={checkoutItem.image} 
-                      alt={checkoutItem.title} 
-                      className="w-full h-full object-cover" 
-                    />
+                  <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-gray-100 shadow-sm sm:h-24 sm:w-32">
+                    {checkoutItemImageSrc ? (
+                      <img
+                        src={checkoutItemImageSrc}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-[5rem] w-full items-center justify-center text-gray-400" aria-hidden>
+                        <FiShoppingBag className="h-8 w-8" />
+                      </div>
+                    )}
                   </div>
                   <div className="ml-4">
                     <h3 className="font-medium text-gray-900">{checkoutItem.title}</h3>
@@ -768,12 +882,6 @@ function Checkout() {
                       {errors.phoneNumber && <p className="mt-1 text-sm text-red-500">{errors.phoneNumber}</p>}
                       <p className="mt-1 text-xs text-gray-500">Enter your registered Mobile Money number</p>
                     </div>
-                    
-                    <div className="bg-yellow-50 border border-yellow-100 rounded-lg p-4">
-                      <p className="text-sm text-yellow-800">
-                        You will receive a prompt on your phone to confirm payment. Please follow the instructions to complete your purchase.
-                      </p>
-                    </div>
                   </div>
                 )}
                 
@@ -812,13 +920,16 @@ function Checkout() {
                               setErrors(prev => ({ ...prev, cardNumber: null }));
                             }
                           }}
-                          className={`w-full px-3 py-2 border ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                          className={`w-full border py-2 pl-3 pr-[5.5rem] ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                           placeholder="1234 5678 9012 3456"
                           maxLength="19"
                         />
-                        <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                          <img src="/images/visa.svg" alt="Visa" className="h-6 w-auto" />
-                          <img src="/images/mastercard.svg" alt="Mastercard" className="h-6 w-auto" />
+                        <div
+                          className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2"
+                          aria-hidden
+                        >
+                          <SiVisa className="h-7 w-auto shrink-0 text-[#1434CB]" title="Visa" />
+                          <SiMastercard className="h-8 w-auto shrink-0" title="Mastercard" />
                         </div>
                       </div>
                       {errors.cardNumber && <p className="mt-1 text-sm text-red-500">{errors.cardNumber}</p>}
@@ -928,6 +1039,51 @@ function Checkout() {
           </div>
         </div>
       </div>
+
+      <AnimatePresence mode="wait">
+        {paymentSuccessModal ? (
+          <motion.div
+            key="payment-success-overlay"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="payment-success-title"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.22 }}
+            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
+            onClick={completeSuccessAndNavigate}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94, y: 14 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.97, y: 8 }}
+              transition={{ type: 'spring', damping: 26, stiffness: 340 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5"
+            >
+              <div className="bg-gradient-to-br from-emerald-50 via-white to-blue-50 px-6 pb-6 pt-8 text-center">
+                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
+                  <FiCheck className="h-7 w-7 stroke-[3]" aria-hidden />
+                </div>
+                <h2 id="payment-success-title" className="text-xl font-bold tracking-tight text-gray-900">
+                  {paymentSuccessModal.title}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">{paymentSuccessModal.description}</p>
+              </div>
+              <div className="border-t border-gray-100 bg-gray-50/90 px-6 py-4">
+                <button
+                  type="button"
+                  onClick={completeSuccessAndNavigate}
+                  className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                >
+                  {paymentSuccessModal.ctaLabel}
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </div>
   );
 }

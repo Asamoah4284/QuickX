@@ -15,6 +15,7 @@ import WizardStepper from '../../components/creator/WizardStepper';
 import CurriculumBuilder from '../../components/creator/CurriculumBuilder';
 import StatusBadge from '../../components/creator/StatusBadge';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -180,7 +181,12 @@ export default function CreatorCourseWizard() {
   const [courseStatus, setCourseStatus] = useState('draft');
   const [settings, setSettings] = useState({ courseAutoApproval: false });
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0, promoVideo: 0 });
+  const [thumbnailPreviewFailed, setThumbnailPreviewFailed] = useState(false);
   const hydratedRef = useRef(false);
+
+  useEffect(() => {
+    setThumbnailPreviewFailed(false);
+  }, [form.thumbnail]);
 
   useEffect(() => {
     async function loadCourse() {
@@ -581,11 +587,23 @@ export default function CreatorCourseWizard() {
                     </span>
                   </label>
                   {form.thumbnail ? (
-                    <img
-                      src={form.thumbnail}
-                      alt=""
-                      className="h-44 w-full rounded-3xl object-cover"
-                    />
+                    <div className="space-y-2">
+                      <img
+                        src={publicAssetUrl(form.thumbnail)}
+                        alt=""
+                        className="h-44 w-full rounded-3xl object-cover"
+                        onLoad={() => setThumbnailPreviewFailed(false)}
+                        onError={() => setThumbnailPreviewFailed(true)}
+                      />
+                      {thumbnailPreviewFailed ? (
+                        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                          The file uploaded, but the preview URL is not readable in the browser. S3 objects are
+                          private by default — add a bucket policy that allows <code className="text-[11px]">s3:GetObject</code>{' '}
+                          for your bucket (see <code className="text-[11px]">Backend/s3-bucket-policy-public-read-example.json</code>
+                          ) or open the URL in a new tab to confirm a 403.
+                        </p>
+                      ) : null}
+                    </div>
                   ) : null}
                 </div>
 
@@ -948,7 +966,7 @@ export default function CreatorCourseWizard() {
         >
           <div className="space-y-6">
             {form.thumbnail ? (
-              <img src={form.thumbnail} alt="" className="h-72 w-full rounded-3xl object-cover" />
+              <img src={publicAssetUrl(form.thumbnail)} alt="" className="h-72 w-full rounded-3xl object-cover" />
             ) : null}
 
             <div className="flex flex-wrap items-center gap-3">

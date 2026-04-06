@@ -12,6 +12,7 @@ import {
   FiToggleLeft,
 } from 'react-icons/fi';
 import StatusBadge from '../../components/creator/StatusBadge';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -20,9 +21,11 @@ const filterOptions = ['all', 'published', 'draft', 'under_review', 'rejected', 
 function courseThumbnailUrl(course) {
   const t = course?.thumbnail;
   if (!t) return null;
-  if (typeof t === 'string' && (t.startsWith('http://') || t.startsWith('https://'))) return t;
-  const path = String(t).startsWith('/') ? t : `/${t}`;
-  return `${API_URL}${path}`;
+  const resolved =
+    typeof t === 'string' && (t.startsWith('http://') || t.startsWith('https://'))
+      ? t
+      : `${API_URL}${String(t).startsWith('/') ? t : `/${t}`}`;
+  return publicAssetUrl(resolved);
 }
 
 function CourseThumb({ url }) {

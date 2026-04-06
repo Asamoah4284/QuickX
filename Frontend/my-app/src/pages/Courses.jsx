@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -122,11 +123,13 @@ export default function Courses() {
             )}
             <div className="grid gap-6 sm:grid-cols-2">
               {list.map((c) => {
-                const thumb = c.thumbnail?.startsWith('http')
-                  ? c.thumbnail
-                  : c.thumbnail
-                    ? `${API_URL}${c.thumbnail}`
-                    : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80';
+                const thumb = publicAssetUrl(
+                  c.thumbnail?.startsWith('http')
+                    ? c.thumbnail
+                    : c.thumbnail
+                      ? `${API_URL}${c.thumbnail}`
+                      : 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80'
+                );
                 const instructorName =
                   typeof c.instructor === 'object' && c.instructor?.fullName
                     ? c.instructor.fullName

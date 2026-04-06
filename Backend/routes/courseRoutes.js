@@ -17,6 +17,15 @@ const { videoUpload, thumbnailUpload } = require('../config/s3Config');
 
 const axios = require('axios');
 
+/** Ensure tutor ref is a plain ObjectId (handles populated instructor/createdBy). */
+function resolveCourseTutorId(course) {
+    if (!course || course.source !== 'user') return null;
+    const raw = course.createdBy || course.instructor;
+    if (raw == null) return null;
+    if (typeof raw === 'object' && raw._id) return raw._id;
+    return raw;
+}
+
 async function buildTransactionRecord({ course, userId, amount, paymentReference = '' }) {
     const settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
     const commissionRate = Number(settings?.commissionRate || 15);
@@ -28,7 +37,7 @@ async function buildTransactionRecord({ course, userId, amount, paymentReference
 
     return {
         studentId: userId,
-        tutorId: course.source === 'user' ? (course.createdBy || course.instructor) : null,
+        tutorId: resolveCourseTutorId(course),
         courseId: course._id,
         amount: gross,
         platformCommission,
@@ -36,6 +45,32 @@ async function buildTransactionRecord({ course, userId, amount, paymentReference
         status: 'completed',
         paymentReference
     };
+}
+
+/** Strip lesson media from non-preview lessons so public /preview cannot leak full curriculum URLs. */
+function sanitizeCourseModulesForPublicPreview(courseObj) {
+    const modules = (courseObj.modules || []).map((mod) => ({
+        ...mod,
+        sections: (mod.sections || []).map((sec) => ({
+            ...sec,
+            lessons: (sec.lessons || []).map((lesson) => {
+                const previewAllowed = lesson.isPreview === true || lesson.free === true;
+                if (previewAllowed) return lesson;
+                return {
+                    ...lesson,
+                    videoUrl: '',
+                    pdfUrl: '',
+                    textContent: '',
+                    videoKey: undefined,
+                    videoPublicId: undefined,
+                    filePath: undefined,
+                    resourceUrl: undefined,
+                    resources: []
+                };
+            })
+        }))
+    }));
+    return { ...courseObj, modules };
 }
 
 // Get user's purchased courses
@@ -207,8 +242,9 @@ router.get('/:id/preview', async (req, res) => {
             course.createdBy ? TutorProfile.findOne({ userId: course.createdBy }) : null
         ]);
 
+        const safeCourse = sanitizeCourseModulesForPublicPreview(course.toObject());
         res.json({
-            ...course.toObject(),
+            ...safeCourse,
             reviews,
             relatedCourses,
             tutorProfile

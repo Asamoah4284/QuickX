@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { publicAssetUrl } from './publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -84,5 +85,5 @@ export async function uploadFileToS3({ file, token, type = 'image', onProgress }
 
   await putToPresignedUrl(data.url, file, contentType, onProgress);
 
-  return getPublicUrlFromSignedUrl(data.url);
+  return publicAssetUrl(getPublicUrlFromSignedUrl(data.url));
 }

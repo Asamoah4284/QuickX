@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget, FiArrowRight } from 'react-icons/fi';
 import axios from 'axios';
-
+import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -62,8 +62,10 @@ function Membership() {
 
       if (coursesResponse.data && coursesResponse.data.length > 0) {
         const formattedCourses = coursesResponse.data.map(course => {
-          const imagePath = course.thumbnail ? 
-            (course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`)
+          const imagePath = course.thumbnail
+            ? publicAssetUrl(
+                course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`
+              )
             : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
           
           return {
