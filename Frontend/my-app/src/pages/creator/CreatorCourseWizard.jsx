@@ -1123,7 +1123,7 @@ export default function CreatorCourseWizard() {
       <WizardStepper steps={steps} currentStep={currentStep} onStepSelect={setCurrentStep} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-creator">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-[32px] sm:p-6 md:p-8">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-5">
             <div>
               <p className="text-sm font-medium text-slate-500">

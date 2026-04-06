@@ -231,8 +231,8 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
   const lessonCount = countLessons(modules);
 
   return (
-    <div className="space-y-6">
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-creator">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-3xl sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-slate-950">Curriculum designer</p>
@@ -268,7 +268,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
         return (
           <div
             key={`module-${moduleIndex}`}
-            className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-creator"
+            className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-[28px] sm:p-5 md:p-6"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -347,7 +347,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
               {sections.map((section, sectionIndex) => (
                 <div
                   key={`section-${sectionIndex}`}
-                  className="rounded-3xl border border-slate-200 bg-slate-50 p-4"
+                  className="rounded-2xl border border-slate-200 bg-slate-50 p-3 sm:rounded-3xl sm:p-4"
                 >
                   <div className="flex flex-wrap items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
@@ -401,7 +401,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                       return (
                         <div
                           key={`lesson-${lessonIndex}`}
-                          className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator"
+                          className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 shadow-creator sm:rounded-2xl sm:p-4 md:p-5"
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>
@@ -428,7 +428,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                             </div>
                           </div>
 
-                          <div className="mt-4 grid gap-3 lg:grid-cols-[minmax(0,1.2fr)_200px_180px]">
+                          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.2fr)_200px_180px]">
                             <input
                               value={lesson.title}
                               onChange={(event) =>
@@ -437,7 +437,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                                 })
                               }
                               placeholder="Lesson title"
-                              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+                              className="min-w-0 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm sm:col-span-2 sm:px-4 sm:py-3 lg:col-span-1"
                             />
                             <select
                               value={lesson.lessonType}
@@ -453,7 +453,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                                   resourceUrl: event.target.value === 'resource' ? lesson.resourceUrl || '' : '',
                                 })
                               }
-                              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm capitalize"
+                              className="min-w-0 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm capitalize sm:px-4 sm:py-3"
                             >
                               {lessonTypes.map((type) => (
                                 <option key={type} value={type}>
@@ -469,19 +469,19 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                                 })
                               }
                               placeholder="Duration (e.g. 08:30)"
-                              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+                              className="min-w-0 rounded-2xl border border-slate-200 px-3 py-2.5 text-sm sm:px-4 sm:py-3"
                             />
                           </div>
 
                           <div className="mt-3">
                             {videoLesson ? (
-                              <div className="space-y-3">
-                                <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50/40">
-                                  <FiUploadCloud className="h-9 w-9 text-slate-400" aria-hidden />
+                              <div className="min-w-0 space-y-3">
+                                <label className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-3 py-8 text-center transition hover:border-blue-400 hover:bg-blue-50/40 sm:px-5 sm:py-10">
+                                  <FiUploadCloud className="h-8 w-8 text-slate-400 sm:h-9 sm:w-9" aria-hidden />
                                   <span className="mt-2 text-sm font-semibold text-slate-800">
                                     Upload video file
                                   </span>
-                                  <span className="mt-1 max-w-md text-xs text-slate-500">
+                                  <span className="mt-1.5 w-full max-w-none px-0.5 text-left text-[11px] leading-relaxed text-slate-500 sm:max-w-xl sm:text-center sm:text-xs">
                                     MP4, WebM, MOV, or other video formats. The file is stored securely and
                                     the lesson will use the resulting URL.
                                   </span>
@@ -521,12 +521,20 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                                   <p className="text-sm text-rose-600">{uploadErr}</p>
                                 ) : null}
                                 {lesson.videoUrl ? (
-                                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 px-3 py-2">
+                                  <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-3">
                                     <p className="text-xs font-medium text-emerald-900">Video ready</p>
-                                    <p className="mt-1 break-all text-xs text-slate-600">{lesson.videoUrl}</p>
+                                    <div className="mt-2 max-w-full overflow-x-auto rounded-lg bg-white/80 px-2 py-2.5 ring-1 ring-emerald-100/80 [-webkit-overflow-scrolling:touch]">
+                                      <code className="inline-block max-w-none whitespace-nowrap font-mono text-[10px] leading-normal text-slate-700 sm:text-[11px]">
+                                        {lesson.videoUrl}
+                                      </code>
+                                    </div>
+                                    <p className="mt-1.5 text-[10px] text-slate-500 sm:text-xs">
+                                      Scroll horizontally if the URL is long. You can also trim it in the field
+                                      below.
+                                    </p>
                                   </div>
                                 ) : null}
-                                <div>
+                                <div className="min-w-0">
                                   <p className="mb-1.5 text-xs font-medium text-slate-500">
                                     Or paste a hosted video URL
                                   </p>
@@ -540,7 +548,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                                       })
                                     }
                                     placeholder="https://…"
-                                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm"
+                                    className="w-full min-w-0 rounded-2xl border border-slate-200 px-3 py-2.5 font-mono text-xs text-slate-800 placeholder:text-slate-400 sm:px-4 sm:py-3 sm:text-sm"
                                   />
                                 </div>
                               </div>

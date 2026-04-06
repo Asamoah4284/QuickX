@@ -8,7 +8,7 @@ export default function CreatorLayout() {
 
   return (
     <div className="min-h-screen bg-[#f7f9fa] pt-24 pb-16">
-      <div className="w-full max-w-none px-3 sm:px-4 lg:px-5">
+      <div className="w-full max-w-none px-2 sm:px-4 lg:px-5">
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
