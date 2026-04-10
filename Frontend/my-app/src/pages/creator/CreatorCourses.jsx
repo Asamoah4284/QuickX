@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -144,15 +144,21 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
     return 'My Courses';
   }, [location.pathname]);
 
-  const loadCourses = () => {
+  const loadCourses = useCallback(() => {
+    if (!token) {
+      setLoading(false);
+      setCourses([]);
+      return;
+    }
     setLoading(true);
+    setError('');
     axios
       .get(`${API_URL}/api/instructor/courses`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { status: activeFilter },
       })
       .then(({ data }) => {
-        setCourses(data);
+        setCourses(Array.isArray(data) ? data : []);
       })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || requestError.message);
@@ -160,11 +166,11 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
       .finally(() => {
         setLoading(false);
       });
-  };
+  }, [token, activeFilter]);
 
   useEffect(() => {
     loadCourses();
-  }, [activeFilter]);
+  }, [loadCourses]);
 
   const runAction = async (courseId, action, body = {}) => {
     try {

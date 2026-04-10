@@ -145,7 +145,20 @@ export default function Courses() {
                     <div className="p-4 flex-1 flex flex-col">
                       <span className="text-xs uppercase text-blue-600 dark:text-blue-400">{c.courseType}</span>
                       <h2 className="mt-1 font-semibold text-slate-900 dark:text-white line-clamp-2">{c.title}</h2>
-                      <p className="text-sm text-slate-500 mt-1">{instructorName}</p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        {c.instructorModel === 'User' &&
+                        typeof c.instructor === 'object' &&
+                        c.instructor?._id ? (
+                          <Link
+                            to={`/instructors/${c.instructor._id}`}
+                            className="hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline"
+                          >
+                            {instructorName}
+                          </Link>
+                        ) : (
+                          instructorName
+                        )}
+                      </p>
                       <p className="text-sm text-slate-600 dark:text-slate-300 mt-2 line-clamp-2">
                         {c.shortDescription || c.description}
                       </p>

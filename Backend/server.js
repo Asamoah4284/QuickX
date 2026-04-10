@@ -96,9 +96,12 @@ console.log('Attempting to connect to MongoDB...');
 mongoose.connect(process.env.MONGODB_URI, {
     authSource: 'admin',
     connectTimeoutMS: 30000,
-    socketTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
     serverSelectionTimeoutMS: 30000,
-    retryWrites: true
+    retryWrites: true,
+    maxPoolSize: 10,
+    minPoolSize: 0,
+    heartbeatFrequencyMS: 10000
 })
 .then(() => {
     console.log('MongoDB connection successful');
@@ -221,4 +224,29 @@ app.use((err, req, res, next) => {
 });
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const server = app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+/** Graceful shutdown so nodemon/dev restarts close HTTP + Mongo cleanly (fewer ECONNRESET mid-query logs). */
+function gracefulShutdown(signal) {
+    console.log(`\n${signal}: closing HTTP server and MongoDB connection...`);
+    server.close((err) => {
+        if (err) console.error('Error closing HTTP server:', err.message);
+        mongoose
+            .disconnect()
+            .then(() => {
+                console.log('MongoDB disconnected.');
+                process.exit(0);
+            })
+            .catch((e) => {
+                console.error('MongoDB close error:', e.message);
+                process.exit(1);
+            });
+    });
+    setTimeout(() => {
+        console.error('Forced shutdown after timeout.');
+        process.exit(1);
+    }, 10000).unref();
+}
+
+process.once('SIGTERM', () => gracefulShutdown('SIGTERM'));
+process.once('SIGINT', () => gracefulShutdown('SIGINT'));

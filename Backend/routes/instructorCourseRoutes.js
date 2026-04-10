@@ -6,8 +6,41 @@ const Review = require('../models/Review');
 const Transaction = require('../models/Transaction');
 const Payout = require('../models/Payout');
 const PlatformSetting = require('../models/PlatformSetting');
+const TutorProfile = require('../models/TutorProfile');
 const auth = require('../middleware/auth');
 const requireApprovedCreator = require('../middleware/requireApprovedCreator');
+
+const COURSE_TYPE_LABEL = { forex: 'Forex', crypto: 'Crypto', webdev: 'Web dev' };
+
+/**
+ * When a creator saves a course, merge category / subcategory / track into TutorProfile.teachingCategories
+ * so GET /api/users/public/:id/instructor and discovery filters stay aligned with what they set on the course.
+ */
+async function mergeTeachingCategoriesFromCourse(userId, course) {
+    try {
+        const labels = [];
+        const cat = String(course.category || '').trim();
+        if (cat) labels.push(cat);
+        const sub = String(course.subcategory || '').trim();
+        if (sub) labels.push(sub);
+        const trackLabel = COURSE_TYPE_LABEL[course.courseType];
+        if (trackLabel) labels.push(trackLabel);
+        if (labels.length === 0) return;
+
+        let profile = await TutorProfile.findOne({ userId });
+        if (!profile) {
+            profile = new TutorProfile({ userId, teachingCategories: [] });
+        }
+        const merged = new Set(
+            (profile.teachingCategories || []).map((x) => String(x).trim()).filter(Boolean)
+        );
+        labels.forEach((l) => merged.add(l));
+        profile.teachingCategories = Array.from(merged).slice(0, 24);
+        await profile.save();
+    } catch (err) {
+        console.error('mergeTeachingCategoriesFromCourse:', err.message);
+    }
+}
 
 function canEdit(course, userId) {
     return (
@@ -101,20 +134,31 @@ function buildCoursePayload(body = {}) {
 
     const descriptionRaw = String(body.description || body.fullDescription || '').trim();
     const titleRaw = String(body.title || '').trim();
+    const courseType = body.courseType || body.categoryTrack || 'forex';
+    const categoryStr = String(body.category || '').trim();
+    const subcategoryStr = String(body.subcategory || '').trim();
+    const explicitTags = normalizeStringArray(body.tags);
+    const tagSet = new Set(explicitTags);
+    if (categoryStr) tagSet.add(categoryStr);
+    if (subcategoryStr) tagSet.add(subcategoryStr);
+    if (courseType && ['forex', 'crypto', 'webdev'].includes(courseType)) {
+        tagSet.add(courseType);
+    }
+    const mergedTags = Array.from(tagSet).filter(Boolean);
 
     return {
         title: titleRaw || 'Untitled course',
         subtitle: String(body.subtitle || '').trim(),
         description: descriptionRaw || DEFAULT_COURSE_DESCRIPTION,
         shortDescription: String(body.shortDescription || '').trim(),
-        category: String(body.category || '').trim(),
-        subcategory: String(body.subcategory || '').trim(),
+        category: categoryStr,
+        subcategory: subcategoryStr,
         language: String(body.language || body.primaryLanguage || 'English').trim(),
         thumbnail: String(body.thumbnail || '').trim(),
         promoVideo: String(body.promoVideo || '').trim(),
-        courseType: body.courseType || body.categoryTrack || 'forex',
+        courseType,
         level: body.level || 'beginner',
-        tags: normalizeStringArray(body.tags),
+        tags: mergedTags,
         learningOutcomes: normalizeStringArray(body.learningOutcomes),
         requirements: normalizeStringArray(body.requirements),
         targetAudience: normalizeStringArray(body.targetAudience),
@@ -329,6 +373,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
         });
 
         await course.save();
+        await mergeTeachingCategoriesFromCourse(req.user._id, course);
         res.status(201).json(course);
     } catch (err) {
         console.error('instructor create course:', err);
@@ -377,6 +422,7 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
 
         Object.assign(course, updates);
         await course.save();
+        await mergeTeachingCategoriesFromCourse(req.user._id, course);
         res.json(course);
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
@@ -405,6 +451,7 @@ router.post('/:id/duplicate', auth, requireApprovedCreator, async (req, res) => 
         });
 
         await clone.save();
+        await mergeTeachingCategoriesFromCourse(req.user._id, clone);
         res.status(201).json(clone);
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });

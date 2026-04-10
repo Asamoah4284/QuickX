@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
+const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const Course = require('../models/Course');
 const ProgramEnrollment = require('../models/ProgramEnrollment');
 const TutorProfile = require('../models/TutorProfile');
 const PlatformSetting = require('../models/PlatformSetting');
@@ -16,6 +18,59 @@ const { sendOTP } = require('../services/sms');
 
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+
+/**
+ * Flatten curriculum lessons marked preview/free (same idea as public course preview).
+ * Used for instructor profile TikTok grid — one tile per preview clip, not per course.
+ */
+/**
+ * Count curriculum lessons that include a video (published course content).
+ */
+function countLessonVideos(courseDocs) {
+    let n = 0;
+    for (const c of courseDocs) {
+        for (const mod of c.modules || []) {
+            for (const sec of mod.sections || []) {
+                for (const les of sec.lessons || []) {
+                    const v = les.videoUrl != null && String(les.videoUrl).trim();
+                    if (v) n += 1;
+                }
+            }
+        }
+    }
+    return n;
+}
+
+function collectPublicPreviewLessons(courseDocs) {
+    const out = [];
+    for (const c of courseDocs) {
+        const modules = c.modules || [];
+        modules.forEach((mod, mi) => {
+            (mod.sections || []).forEach((sec, si) => {
+                (sec.lessons || []).forEach((les, li) => {
+                    const canPreview = les.isPreview === true || les.free === true;
+                    if (!canPreview) return;
+                    const lessonKey = les._id != null ? String(les._id) : `m${mi}-s${si}-l${li}`;
+                    out.push({
+                        key: `${String(c._id)}-${lessonKey}`,
+                        courseId: String(c._id),
+                        courseTitle: String(c.title || '').trim(),
+                        courseThumbnail: c.thumbnail || '',
+                        coursePromoVideo: c.promoVideo || '',
+                        lessonTitle: String(les.title || 'Lesson').trim(),
+                        /** Public preview clip — same lesson field used on course page */
+                        previewVideoUrl: String(les.videoUrl || '').trim(),
+                        category: c.category || '',
+                        courseType: c.courseType,
+                        tags: Array.isArray(c.tags) ? c.tags : [],
+                        totalStudents: Number(c.totalStudents) || 0
+                    });
+                });
+            });
+        });
+    }
+    return out;
+}
 
 // Rate limiter for auth endpoints
 const authLimiter = rateLimit({
@@ -703,6 +758,103 @@ router.post('/reset-password', authLimiter, [
             message: 'Server error', 
             error: process.env.NODE_ENV === 'development' ? error.message : undefined 
         });
+    }
+});
+
+/**
+ * Public instructor profile + published courses (same visibility rules as the course catalog).
+ */
+router.get('/public/:userId/instructor', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        if (!mongoose.Types.ObjectId.isValid(userId)) {
+            return res.status(400).json({ message: 'Invalid instructor id' });
+        }
+
+        const user = await User.findById(userId).select(
+            'fullName avatar profilePicture creatorHeadline creatorBio socialLinks role creatorStatus'
+        );
+        if (!user) {
+            return res.status(404).json({ message: 'Instructor not found' });
+        }
+
+        const tutorProfile = await TutorProfile.findOne({ userId }).lean();
+
+        // Any course authored by this user OR whose instructor ref is this user id
+        // (instructorModel is still User for normal UGC; admin-created User-assigned courses match via instructor id)
+        const visibility = {
+            $and: [
+                {
+                    $or: [{ source: { $ne: 'user' } }, { listingStatus: 'published' }]
+                },
+                {
+                    $or: [{ createdBy: userId }, { instructor: userId }]
+                }
+            ]
+        };
+
+        const coursesWithModules = await Course.find(visibility)
+            .select(
+                'title thumbnail promoVideo shortDescription subtitle courseType category tags totalStudents averageRating createdAt modules'
+            )
+            .sort({ createdAt: -1 })
+            .lean();
+
+        const previewLessons = collectPublicPreviewLessons(coursesWithModules);
+        const videoCount = countLessonVideos(coursesWithModules);
+        const courses = coursesWithModules.map(({ modules, ...rest }) => rest);
+
+        const totalLearners = courses.reduce((sum, c) => sum + (Number(c.totalStudents) || 0), 0);
+        const avgRating =
+            courses.length > 0
+                ? courses.reduce((s, c) => s + (Number(c.averageRating) || 0), 0) / courses.length
+                : 0;
+
+        const categories = new Set();
+        if (tutorProfile?.teachingCategories?.length) {
+            tutorProfile.teachingCategories.forEach((t) => categories.add(String(t).trim()));
+        }
+        courses.forEach((c) => {
+            if (c.category) categories.add(String(c.category).trim());
+            const typeLabels = { forex: 'Forex', crypto: 'Crypto', webdev: 'Web dev' };
+            if (c.courseType && typeLabels[c.courseType]) {
+                categories.add(typeLabels[c.courseType]);
+            }
+            (c.tags || []).forEach((t) => categories.add(String(t).trim()));
+        });
+        const categoryList = Array.from(categories).filter(Boolean).slice(0, 16);
+
+        res.json({
+            user: {
+                _id: user._id,
+                fullName: user.fullName,
+                avatar: user.avatar,
+                profilePicture: user.profilePicture,
+                creatorHeadline: user.creatorHeadline,
+                creatorBio: user.creatorBio,
+                socialLinks: user.socialLinks || {}
+            },
+            tutorProfile: tutorProfile
+                ? {
+                      headline: tutorProfile.headline,
+                      bio: tutorProfile.bio,
+                      teachingCategories: tutorProfile.teachingCategories || [],
+                      socialLinks: tutorProfile.socialLinks || {}
+                  }
+                : null,
+            stats: {
+                courses: courses.length,
+                videos: videoCount,
+                learners: totalLearners,
+                avgRating: Math.round(avgRating * 10) / 10
+            },
+            categories: categoryList,
+            previewLessons,
+            courses
+        });
+    } catch (error) {
+        console.error('GET /public/:userId/instructor:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 

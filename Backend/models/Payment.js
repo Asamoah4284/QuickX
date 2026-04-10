@@ -9,7 +9,12 @@ const paymentSchema = new mongoose.Schema({
     itemType: {
         type: String,
         required: true,
-        enum: ['course', 'book', 'program']
+        enum: ['course', 'book', 'program', 'creator_subscription']
+    },
+    /** Set when itemType is creator_subscription (plan id: 1m, 2m, 3m, 1y). */
+    subscriptionPlanId: {
+        type: String,
+        default: '',
     },
     itemId: {
         type: mongoose.Schema.Types.ObjectId,

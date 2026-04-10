@@ -124,7 +124,6 @@ export default function CoursePublicDetail() {
   const [message, setMessage] = useState('');
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [purchaseMode, setPurchaseMode] = useState('course');
   const [isLgScreen, setIsLgScreen] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(min-width: 1024px)').matches : false
   );
@@ -190,10 +189,6 @@ export default function CoursePublicDetail() {
 
   const buy = async () => {
     if (!course) return;
-    if (purchaseMode === 'membership') {
-      navigate('/membership');
-      return;
-    }
     const token = localStorage.getItem('authToken');
     if (!token) {
       navigate('/login', { state: { from: `/courses/${courseId}` } });
@@ -371,16 +366,21 @@ export default function CoursePublicDetail() {
     typeof course.instructor === 'object' && course.instructor?.fullName
       ? course.instructor.fullName
       : course.instructor || 'Instructor';
+  const instructorUserId =
+    course.instructorModel === 'User' &&
+    typeof course.instructor === 'object' &&
+    course.instructor?._id
+      ? String(course.instructor._id)
+      : null;
   const reviewCount = (course.reviews || []).length;
   const rating = Number(course.averageRating) || 0;
   const students = Number(course.totalStudents) || 0;
   const typeName = TYPE_LABEL[course.courseType] || course.courseType || 'Courses';
   const showBestseller = students >= 15 || rating >= 4.5;
   const currentPrice = Number(course.price) || 0;
-  const compareAt =
-    course.discountPrice != null && Number(course.discountPrice) > currentPrice
-      ? Number(course.discountPrice)
-      : null;
+  /** Prefer linked User instructor; fall back to creator for UGC when opening membership on profile */
+  const membershipInstructorPathId =
+    instructorUserId || (course.createdBy ? String(course.createdBy) : null);
   const outcomes = course.learningOutcomes?.length
     ? course.learningOutcomes
     : [course.shortDescription || course.description || 'Practical lessons you can apply right away.'].filter(Boolean);
@@ -416,9 +416,18 @@ export default function CoursePublicDetail() {
             <div className="mt-6 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-gray-400">
               <span>
                 Created by{' '}
-                <span className="font-semibold text-blue-300 underline decoration-blue-500/50">
-                  {instructorName}
-                </span>
+                {instructorUserId ? (
+                  <Link
+                    to={`/instructors/${instructorUserId}`}
+                    className="font-semibold text-blue-300 underline decoration-blue-500/50 transition hover:text-white"
+                  >
+                    {instructorName}
+                  </Link>
+                ) : (
+                  <span className="font-semibold text-blue-300 underline decoration-blue-500/50">
+                    {instructorName}
+                  </span>
+                )}
               </span>
               <span className="hidden sm:inline">·</span>
               <span>Last updated {formatUpdated(course.updatedAt)}</span>
@@ -469,11 +478,11 @@ export default function CoursePublicDetail() {
                 {message}
               </div>
             ) : null}
-            {error && purchaseMode === 'course' ? (
+            {error ? (
               <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
             ) : null}
 
-            {/* Mobile: preview video / image before "What you'll learn" (sidebar preview only on lg+) */}
+            {/* Mobile: preview video / image, then Meet your instructor + What you’ll learn (sidebar preview only on lg+) */}
             {!isLgScreen && (promoVideoSrc || thumb) ? (
               <div className="-mx-4 mb-8 bg-black sm:mx-0">
                 <div className="relative aspect-video w-full overflow-hidden bg-black">
@@ -515,6 +524,65 @@ export default function CoursePublicDetail() {
               </div>
             ) : null}
 
+            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
+              <h2 className="text-lg font-bold text-gray-900">Meet your instructor</h2>
+              {instructorUserId ? (
+                <Link
+                  to={`/instructors/${instructorUserId}`}
+                  className="group mt-4 block rounded-xl p-2 -m-2 transition hover:bg-violet-50/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500"
+                >
+                  <div className="flex items-start gap-4">
+                    {course.instructor?.avatar || course.instructor?.profilePicture ? (
+                      <img
+                        src={publicAssetUrl(
+                          (course.instructor.avatar || course.instructor.profilePicture).startsWith('http')
+                            ? course.instructor.avatar || course.instructor.profilePicture
+                            : `${API_URL}${course.instructor.avatar || course.instructor.profilePicture}`
+                        )}
+                        alt=""
+                        className="h-16 w-16 rounded-full object-cover ring-2 ring-violet-100"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-800 ring-2 ring-violet-100">
+                        {instructorName.charAt(0)}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      <p className="font-bold text-gray-900 group-hover:text-violet-800">{instructorName}</p>
+                      <p className="text-sm text-gray-500">{course.tutorProfile?.headline || 'QuickX creator'}</p>
+                      <p className="mt-2 text-xs font-semibold text-violet-600">View profile →</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                    {course.tutorProfile?.bio || 'This instructor builds practical, real-world lessons on QuickX.'}
+                  </p>
+                </Link>
+              ) : (
+                <>
+                  <div className="mt-4 flex items-start gap-4">
+                    {course.instructor?.avatar || course.instructor?.profilePicture ? (
+                      <img
+                        src={course.instructor.avatar || course.instructor.profilePicture}
+                        alt=""
+                        className="h-16 w-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-800">
+                        {instructorName.charAt(0)}
+                      </div>
+                    )}
+                    <div>
+                      <p className="font-bold text-gray-900">{instructorName}</p>
+                      <p className="text-sm text-gray-500">{course.tutorProfile?.headline || 'QuickX creator'}</p>
+                    </div>
+                  </div>
+                  <p className="mt-3 text-sm leading-relaxed text-gray-600">
+                    {course.tutorProfile?.bio || 'This instructor builds practical, real-world lessons on QuickX.'}
+                  </p>
+                </>
+              )}
+            </section>
+
             <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-[0_2px_4px_rgba(0,0,0,.08)] sm:p-8">
               <h2 className="text-2xl font-bold text-gray-900">What you&apos;ll learn</h2>
               <ul className="mt-6 grid gap-3 sm:grid-cols-2 sm:gap-x-8 sm:gap-y-3">
@@ -523,30 +591,6 @@ export default function CoursePublicDetail() {
                 ))}
               </ul>
             </section>
-
-            <div className="grid gap-8 md:grid-cols-2">
-              <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900">Requirements</h2>
-                <ul className="mt-4 space-y-2 text-sm text-gray-700">
-                  {(course.requirements || []).length ? (
-                    course.requirements.map((item) => (
-                      <li key={item} className="flex gap-2">
-                        <span className="text-gray-400">•</span>
-                        {item}
-                      </li>
-                    ))
-                  ) : (
-                    <li className="text-gray-500">No prerequisites listed.</li>
-                  )}
-                </ul>
-              </section>
-              <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900">Description</h2>
-                <p className="mt-4 whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-                  {course.description}
-                </p>
-              </section>
-            </div>
 
             <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm sm:p-8">
               <div className="flex flex-wrap items-start justify-between gap-3">
@@ -667,25 +711,6 @@ export default function CoursePublicDetail() {
                 )}
               </div>
             </section>
-
-            <section className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900">Reviews</h2>
-              <div className="mt-5 space-y-4">
-                {(course.reviews || []).length === 0 ? (
-                  <p className="text-sm text-gray-500">No reviews yet.</p>
-                ) : (
-                  course.reviews.map((review) => (
-                    <div key={review._id} className="rounded-lg border border-gray-100 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <p className="font-semibold text-gray-900">{review.studentId?.fullName || 'Student'}</p>
-                        <p className="text-sm font-semibold text-amber-600">{review.rating}/5</p>
-                      </div>
-                      <p className="mt-2 text-sm text-gray-600">{review.comment || '—'}</p>
-                    </div>
-                  ))
-                )}
-              </div>
-            </section>
           </div>
 
           {/* Floating purchase card — Udemy sidebar: sticky + compact promo when scrolling */}
@@ -754,58 +779,27 @@ export default function CoursePublicDetail() {
               ) : null}
 
               <div className="space-y-4 p-4 sm:p-5">
-                <label className="flex cursor-pointer gap-3 rounded border-2 border-gray-900 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="purchase"
-                    checked={purchaseMode === 'course'}
-                    onChange={() => setPurchaseMode('course')}
-                    className="mt-1 h-4 w-4 accent-blue-600"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-gray-900">Start subscription</p>
-                    <div className="mt-2 flex flex-wrap items-baseline gap-2">
-                      {currentPrice === 0 ? (
-                        <span className="text-3xl font-bold text-gray-900">Free</span>
-                      ) : (
-                        <>
-                          <span className="text-3xl font-bold text-gray-900">GH₵{currentPrice.toFixed(2)}</span>
-                          {compareAt != null ? (
-                            <span className="text-lg text-gray-400 line-through">GH₵{compareAt.toFixed(2)}</span>
-                          ) : null}
-                        </>
-                      )}
-                    </div>
-                    <p className="mt-2 text-xs text-gray-600">Full lifetime access · Certificate info below</p>
-                  </div>
-                </label>
-
-                <label className="flex cursor-pointer gap-3 rounded border border-gray-200 p-4 transition hover:bg-gray-50">
-                  <input
-                    type="radio"
-                    name="purchase"
-                    checked={purchaseMode === 'membership'}
-                    onChange={() => setPurchaseMode('membership')}
-                    className="mt-1 h-4 w-4 accent-blue-600"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="font-bold text-gray-900">Membership</p>
-                    <p className="mt-1 text-sm text-gray-600">
-                      Explore plans that bundle courses and perks on QuickX.
-                    </p>
-                  </div>
-                </label>
+                <div className="rounded border-2 border-gray-900 p-4">
+                  <p className="font-bold text-gray-900">Start subscription</p>
+                  <p className="mt-2 text-xs text-gray-600">Full lifetime access · Certificate info below</p>
+                </div>
 
                 <button
                   type="button"
-                  onClick={buy}
+                  onClick={() => {
+                    if (currentPrice === 0) {
+                      void buy();
+                      return;
+                    }
+                    if (membershipInstructorPathId) {
+                      navigate(`/instructors/${membershipInstructorPathId}`);
+                      return;
+                    }
+                    void buy();
+                  }}
                   className="w-full rounded bg-blue-600 py-3.5 text-base font-bold text-white shadow-sm transition hover:bg-blue-700"
                 >
-                  {purchaseMode === 'membership'
-                    ? 'View membership plans'
-                    : currentPrice === 0
-                      ? 'Enroll for free'
-                      : 'Start subscription'}
+                  {currentPrice === 0 ? 'Enroll for free' : 'Start Membership'}
                 </button>
 
                 <Link
@@ -823,30 +817,6 @@ export default function CoursePublicDetail() {
                 </div>
               </div>
             </div>
-
-            <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-bold text-gray-900">Meet your instructor</h2>
-              <div className="mt-4 flex items-start gap-4">
-                {course.instructor?.avatar || course.instructor?.profilePicture ? (
-                  <img
-                    src={course.instructor.avatar || course.instructor.profilePicture}
-                    alt=""
-                    className="h-16 w-16 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xl font-bold text-blue-800">
-                    {instructorName.charAt(0)}
-                  </div>
-                )}
-                <div>
-                  <p className="font-bold text-gray-900">{instructorName}</p>
-                  <p className="text-sm text-gray-500">{course.tutorProfile?.headline || 'QuickX creator'}</p>
-                </div>
-              </div>
-              <p className="mt-3 text-sm leading-relaxed text-gray-600">
-                {course.tutorProfile?.bio || 'This instructor builds practical, real-world lessons on QuickX.'}
-              </p>
-            </section>
 
             {(course.relatedCourses || []).length > 0 ? (
               <section className="mt-6 rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

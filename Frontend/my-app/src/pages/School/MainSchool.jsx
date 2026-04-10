@@ -121,8 +121,6 @@ function PriceLine({ course }) {
 }
 
 const MainSchool = () => {
-  const [advertisements, setAdvertisements] = useState([]);
-  const [currentAdIndex, setCurrentAdIndex] = useState(0);
   const [allCourses, setAllCourses] = useState([]);
   const [coursesLoading, setCoursesLoading] = useState(true);
   const [coursesError, setCoursesError] = useState(null);
@@ -153,7 +151,6 @@ const MainSchool = () => {
 
   useEffect(() => {
     window.scrollTo(0, 0);
-    fetchAdvertisements();
   }, []);
 
   useEffect(() => {
@@ -196,32 +193,11 @@ const MainSchool = () => {
     if (el) el.scrollLeft = 0;
   }, [courseTab]);
 
-  useEffect(() => {
-    if (advertisements.length > 1) {
-      const timer = setInterval(() => {
-        setCurrentAdIndex((prevIndex) =>
-          prevIndex === advertisements.length - 1 ? 0 : prevIndex + 1
-        );
-      }, 5000);
-
-      return () => clearInterval(timer);
-    }
-  }, [advertisements]);
-
   const scrollCarousel = (dir) => {
     const el = carouselRef.current;
     if (!el) return;
     const step = Math.min(el.clientWidth * 0.85, 300 * 2.5);
     el.scrollBy({ left: dir * step, behavior: 'smooth' });
-  };
-
-  const fetchAdvertisements = async () => {
-    try {
-      const response = await axios.get(`${API_URL}/api/advertisements`);
-      setAdvertisements(response.data.filter(ad => ad.isActive));
-    } catch (error) {
-      console.error('Error fetching advertisements:', error);
-    }
   };
 
   return (
@@ -262,81 +238,6 @@ const MainSchool = () => {
           </div>
         </div>
         <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
-      </div>
-
-      {/* Advertisement Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxwYXRoIGQ9Ik0zNiA4YzAgMi0yIDQtNCA0cy00LTItNC00IDItNCA0LTQgNCAyIDQgNHoiIGZpbGw9IiNlZWUiLz48L2c+PC9zdmc+')] opacity-10"></div>
-        <div className="max-w-6xl mx-auto px-4 py-8 relative">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2">
-              {advertisements.length > 0 && (
-                <div className="bg-white rounded-xl p-4 shadow-2xl transform hover:scale-[1.02] transition-all duration-300">
-                  <div className="relative">
-                    <div className="absolute top-0 right-0">
-                      <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-600 text-xs font-medium">Featured</span>
-                    </div>
-                    <div className="aspect-[16/9] bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden relative group">
-                      <div className="absolute inset-0 bg-black/5 group-hover:bg-black/10 transition-colors duration-300"></div>
-                      <img
-                        src={advertisements[currentAdIndex].imageUrl}
-                        alt={advertisements[currentAdIndex].title}
-                        className="w-full h-full object-cover"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/30">
-                      </div>
-                    </div>
-                    <div className="mt-3 flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xs text-gray-500">Premium Placement</span>
-                        <span className="w-1 h-1 rounded-full bg-gray-300"></span>
-                        <span className="text-xs font-medium text-blue-600">Sponsored</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        {advertisements.map((_, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            onClick={() => setCurrentAdIndex(index)}
-                            className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                              currentAdIndex === index ? 'bg-blue-600 w-4' : 'bg-gray-300'
-                            }`}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            <div className="lg:col-span-1">
-              <div className="bg-white rounded-xl p-4 shadow-xl h-full">
-                <div className="flex flex-col h-full">
-                  <div className="flex-1">
-                    <div className="aspect-[4/3] bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg overflow-hidden relative group">
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center p-3">
-                          <div className="w-10 h-10 mx-auto mb-2 rounded-full bg-white shadow-md flex items-center justify-center">
-                            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
-                            </svg>
-                          </div>
-                          <h4 className="text-base font-semibold text-gray-800">Quick Ad</h4>
-                          <p className="text-xs text-gray-600">Your quick message here</p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-2 flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Sponsored Content</span>
-                    <button type="button" className="text-xs text-blue-600 hover:text-blue-700">View Details</button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Courses — Udemy-style */}
@@ -446,7 +347,20 @@ const MainSchool = () => {
                             {c.title}
                           </Link>
                         </h3>
-                        <p className="mt-0.5 text-xs sm:text-sm text-gray-600 line-clamp-1">{instructorName}</p>
+                        <p className="mt-0.5 text-xs sm:text-sm text-gray-600 line-clamp-1">
+                          {c.instructorModel === 'User' &&
+                          typeof c.instructor === 'object' &&
+                          c.instructor?._id ? (
+                            <Link
+                              to={`/instructors/${c.instructor._id}`}
+                              className="hover:text-indigo-700 hover:underline"
+                            >
+                              {instructorName}
+                            </Link>
+                          ) : (
+                            instructorName
+                          )}
+                        </p>
 
                         <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
                           {showRating ? (

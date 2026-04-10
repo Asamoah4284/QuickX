@@ -15,7 +15,13 @@ function Login() {
   
   const navigate = useNavigate();
   const location = useLocation();
-  const from = location.state?.from?.pathname || '/';
+  const rawFrom = location.state?.from;
+  const postLoginPath =
+    typeof rawFrom === 'string'
+      ? rawFrom
+      : typeof rawFrom === 'object' && rawFrom != null && typeof rawFrom.pathname === 'string'
+        ? `${rawFrom.pathname}${rawFrom.search || ''}`
+        : '/';
   
   const [formData, setFormData] = useState({
     email: '',
@@ -46,8 +52,7 @@ function Login() {
       // Dispatch custom event to notify components of authentication
       window.dispatchEvent(new Event('auth-change'));
       
-      // Redirect to home page instead of membership area
-      navigate('/', { replace: true });
+      navigate(postLoginPath, { replace: true });
     } catch (err) {
       setError(
         err.response?.data?.message || 

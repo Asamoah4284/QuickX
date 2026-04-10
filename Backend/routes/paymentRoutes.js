@@ -9,6 +9,7 @@ const User = require('../models/User');
 const Program = require('../models/Program');
 const { body, validationResult } = require('express-validator');
 const { createEnrollmentFromPayment } = require('../services/programEnrollmentService');
+const { getCreatorSubscriptionPlanPrice } = require('../constants/creatorSubscriptionPlans');
 
 // Validation middleware for payment initialization
 const validatePayment = [
@@ -76,6 +77,39 @@ const handleValidationErrors = (req, res, next) => {
     next();
 };
 
+const validateCreatorSubscriptionPayment = [
+    body('instructorId').isMongoId().withMessage('Invalid instructor ID'),
+    body('planId')
+        .isIn(['1m', '2m', '3m', '1y'])
+        .withMessage('Invalid subscription plan'),
+    body('amount')
+        .isFloat({ min: 0.01 })
+        .withMessage('Amount must be greater than 0')
+        .toFloat(),
+    body('transactionId')
+        .notEmpty()
+        .trim()
+        .withMessage('Transaction ID is required'),
+    body('paymentMethod')
+        .isIn(['MTN', 'Vodafone', 'AirtelTigo', 'momo', 'paystack', 'card', 'direct'])
+        .withMessage('Invalid payment method'),
+    body('momoNumber')
+        .matches(/^0\d{9}$/)
+        .withMessage('Invalid mobile money number format'),
+    body('shippingAddress')
+        .isObject()
+        .withMessage('Shipping address must be an object'),
+    body('shippingAddress.email')
+        .isEmail()
+        .withMessage('Valid email is required'),
+    body('shippingAddress.phone')
+        .matches(/^0\d{9}$/)
+        .withMessage('Valid phone number is required in shipping address'),
+    body('currency')
+        .equals('GHS')
+        .withMessage('Currency must be GHS'),
+];
+
 const validateProgramPayment = [
     body('programId').isMongoId().withMessage('Invalid program ID'),
     body('amount')
@@ -105,6 +139,85 @@ const validateProgramPayment = [
         .equals('GHS')
         .withMessage('Currency must be GHS')
 ];
+
+/** Subscriber payment to a creator (instructor) — records payment; itemId is the instructor user id */
+router.post(
+    '/initialize-creator-subscription',
+    auth,
+    validateCreatorSubscriptionPayment,
+    handleValidationErrors,
+    async (req, res) => {
+        try {
+            const { instructorId, planId, amount, transactionId, paymentMethod, momoNumber, shippingAddress } =
+                req.body;
+
+            if (req.user._id.toString() === String(instructorId)) {
+                return res.status(400).json({ message: 'Cannot subscribe to your own profile' });
+            }
+
+            const instructor = await User.findById(instructorId).select('_id role fullName');
+            if (!instructor) {
+                return res.status(404).json({ message: 'Instructor not found' });
+            }
+            if (instructor.role !== 'tutor') {
+                return res.status(400).json({ message: 'This user is not a creator' });
+            }
+
+            const expectedPrice = getCreatorSubscriptionPlanPrice(planId);
+            if (expectedPrice == null) {
+                return res.status(400).json({ message: 'Unknown plan' });
+            }
+
+            const finalAmount = Number(amount);
+            if (Math.abs(expectedPrice - finalAmount) > 0.02) {
+                return res.status(400).json({
+                    message: 'Invalid amount. Price mismatch.',
+                    expected: expectedPrice,
+                    received: finalAmount,
+                });
+            }
+
+            const paymentRecord = {
+                userId: req.user._id,
+                itemType: 'creator_subscription',
+                itemId: instructor._id,
+                subscriptionPlanId: planId,
+                originalAmount: finalAmount,
+                finalAmount: finalAmount,
+                commissionAmount: 0,
+                referringUserId: null,
+                transactionId,
+                paymentMethod,
+                momoNumber,
+                shippingAddress,
+                referralCode: '',
+                status: 'completed',
+                createdAt: new Date(),
+            };
+
+            const payment = new Payment(paymentRecord);
+            await payment.save();
+
+            res.json({
+                success: true,
+                message: 'Creator subscription payment recorded',
+                payment: {
+                    ...paymentRecord,
+                    instructor: {
+                        id: instructor._id,
+                        fullName: instructor.fullName,
+                    },
+                },
+            });
+        } catch (error) {
+            console.error('initialize-creator-subscription error:', error);
+            res.status(500).json({
+                message: 'Failed to process creator subscription payment',
+                error: error.message,
+            });
+        }
+    }
+);
 
 /** Program enrollment payment (creator program SKU) — completes enrollment after Paystack success */
 router.post('/initialize-program', auth, validateProgramPayment, handleValidationErrors, async (req, res) => {

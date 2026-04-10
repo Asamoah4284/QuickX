@@ -305,6 +305,62 @@ function Checkout() {
         throw new Error('Program payment initialization failed');
       }
 
+      if (checkoutItem?.type === 'creator_subscription') {
+        const instructorId = String(checkoutItem.instructorId ?? checkoutItem.id ?? '');
+        if (!instructorId) {
+          throw new Error('Missing instructor — return to the profile and try checkout again.');
+        }
+        if (!checkoutItem.planId) {
+          throw new Error('Missing subscription plan — return to the profile and try again.');
+        }
+        const subPayload = {
+          instructorId,
+          planId: checkoutItem.planId,
+          paymentMethod:
+            formData.provider === 'mtn'
+              ? 'MTN'
+              : formData.provider === 'vodafone'
+                ? 'Vodafone'
+                : formData.provider === 'airtel'
+                  ? 'AirtelTigo'
+                  : 'MTN',
+          momoNumber: formData.phoneNumber,
+          shippingAddress: {
+            fullName: formData.email.split('@')[0] || 'Customer',
+            phone: formData.phoneNumber || '',
+            email: formData.email || '',
+          },
+          transactionId: referenceString,
+          amount: finalPrice,
+          currency: 'GHS',
+        };
+
+        const subResponse = await axios.post(
+          `${API_URL}/api/payments/initialize-creator-subscription`,
+          subPayload,
+          {
+            headers: {
+              Authorization: `Bearer ${authToken}`,
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+
+        if (subResponse.data.success) {
+          const name = checkoutItem.instructorName || 'this creator';
+          setPaymentSuccessModal({
+            title: 'Payment successful',
+            description: `Your subscription to ${name} is confirmed.`,
+            ctaLabel: 'Back to profile',
+            navigateTo: `/instructors/${instructorId}`,
+            navigateState: { subscriptionSuccess: true },
+          });
+          setIsProcessing(false);
+          return;
+        }
+        throw new Error('Subscription payment failed');
+      }
+
       // First save the payment data
       const paymentData = {
         itemType: checkoutItem.type,
@@ -466,6 +522,9 @@ function Checkout() {
       backPath = '/courses';
     } else if (checkoutItem?.type === 'program') {
       backPath = '/creator/onboarding';
+    } else if (checkoutItem?.type === 'creator_subscription') {
+      const iid = checkoutItem.instructorId ?? checkoutItem.id;
+      backPath = iid ? `/instructors/${iid}` : '/courses';
     }
     
     // If we have specific return path from state, use that instead
@@ -486,7 +545,7 @@ function Checkout() {
     const finalPrice = calculateFinalPrice();
     
     return {
-      reference: `${checkoutItem?.type}_${checkoutItem?.id ?? checkoutItem?._id}_${Date.now()}`,
+      reference: `${checkoutItem?.type}_${checkoutItem?.id ?? checkoutItem?._id}_${checkoutItem?.planId ?? ''}_${Date.now()}`,
       email: formData.email,
       amount: finalPrice * 100,
       publicKey: paystackPublicKey,
@@ -656,7 +715,14 @@ function Checkout() {
             className="flex mt-4 items-center text-blue-600 hover:text-blue-800 transition-colors"
           >
             <FiArrowLeft className="mr-2" />
-            Back to {checkoutItem.type === 'book' ? 'Library' : checkoutItem.type === 'program' ? 'Creator onboarding' : 'Courses'}
+            Back to{' '}
+            {checkoutItem.type === 'book'
+              ? 'Library'
+              : checkoutItem.type === 'program'
+                ? 'Creator onboarding'
+                : checkoutItem.type === 'creator_subscription'
+                  ? 'Instructor'
+                  : 'Courses'}
           </button>
           
          
@@ -690,9 +756,17 @@ function Checkout() {
                   </div>
                   <div className="ml-4">
                     <h3 className="font-medium text-gray-900">{checkoutItem.title}</h3>
+                    {checkoutItem.type === 'creator_subscription' && checkoutItem.description ? (
+                      <p className="text-sm text-gray-500">{checkoutItem.description}</p>
+                    ) : null}
                     <p className="text-sm text-gray-500">
-                      {checkoutItem.type === 'book' ? 'Digital Book' : 
-                       checkoutItem.type === 'course' ? 'Online Course' : 'Product'}
+                      {checkoutItem.type === 'book'
+                        ? 'Digital Book'
+                        : checkoutItem.type === 'course'
+                          ? 'Online Course'
+                          : checkoutItem.type === 'creator_subscription'
+                            ? 'Creator subscription'
+                            : 'Product'}
                     </p>
                     <p className="text-blue-600 font-bold mt-1">GH₵{checkoutItem.price}</p>
                   </div>
@@ -700,41 +774,43 @@ function Checkout() {
               </div>
               
               {/* Coupon Code Section */}
-              <div className="mt-4 mb-6">
-                <div className="flex">
-                  <input
-                    type="text"
-                    placeholder="Enter coupon code"
-                    value={couponCode}
-                    onChange={(e) => setCouponCode(e.target.value)}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                    disabled={couponApplied}
-                  />
-                  {!couponApplied ? (
-                    <button
-                      onClick={handleApplyCoupon}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                    >
-                      Apply
-                    </button>
-                  ) : (
-                    <button
-                      onClick={handleRemoveCoupon}
-                      className="px-4 py-2 bg-red-600 text-white rounded-r-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                    >
-                      Remove
-                    </button>
+              {checkoutItem?.type !== 'creator_subscription' ? (
+                <div className="mt-4 mb-6">
+                  <div className="flex">
+                    <input
+                      type="text"
+                      placeholder="Enter coupon code"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value)}
+                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
+                      disabled={couponApplied}
+                    />
+                    {!couponApplied ? (
+                      <button
+                        onClick={handleApplyCoupon}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                      >
+                        Apply
+                      </button>
+                    ) : (
+                      <button
+                        onClick={handleRemoveCoupon}
+                        className="px-4 py-2 bg-red-600 text-white rounded-r-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {couponError && (
+                    <p className="mt-1 text-sm text-red-600">{couponError}</p>
+                  )}
+                  {couponApplied && (
+                    <p className="mt-1 text-sm text-green-600">
+                      Coupon applied! {discount}% discount
+                    </p>
                   )}
                 </div>
-                {couponError && (
-                  <p className="mt-1 text-sm text-red-600">{couponError}</p>
-                )}
-                {couponApplied && (
-                  <p className="mt-1 text-sm text-green-600">
-                    Coupon applied! {discount}% discount
-                  </p>
-                )}
-              </div>
+              ) : null}
               
               <div className="mt-6 border-t border-gray-200 pt-6">
                 <h3 className="text-lg font-medium text-gray-900">Order Summary</h3>
@@ -820,21 +896,23 @@ function Checkout() {
                       {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                     </div>
                     
-                    <div>
-                      <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-1">
-                        Referral Code (Optional)
-                      </label>
-                      <input
-                        type="text"
-                        id="referralCode"
-                        name="referralCode"
-                        value={formData.referralCode}
-                        onChange={handleChange}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                        placeholder="Enter referral code"
-                      />
-                    </div>
-                    
+                    {checkoutItem?.type !== 'creator_subscription' ? (
+                      <div>
+                        <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-1">
+                          Referral Code (Optional)
+                        </label>
+                        <input
+                          type="text"
+                          id="referralCode"
+                          name="referralCode"
+                          value={formData.referralCode}
+                          onChange={handleChange}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter referral code"
+                        />
+                      </div>
+                    ) : null}
+
                     <div>
                       <label htmlFor="provider" className="block text-sm font-medium text-gray-700 mb-1">
                         Mobile Money Provider
