@@ -111,7 +111,7 @@ function Login() {
                 </div>
               </div>
               
-              {from !== '/' && (
+              {postLoginPath !== '/' && (
                 <div className="mt-8 p-3 bg-white/10 text-white rounded-lg text-sm backdrop-blur-sm">
                   Please sign in to access the requested page
                 </div>
