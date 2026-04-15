@@ -5,6 +5,18 @@ import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+function getInstructorPathId(course) {
+  if (
+    course?.instructorModel === 'User' &&
+    typeof course?.instructor === 'object' &&
+    course?.instructor?._id
+  ) {
+    return String(course.instructor._id);
+  }
+  if (course?.createdBy) return String(course.createdBy);
+  return null;
+}
+
 export default function Courses() {
   const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -134,12 +146,14 @@ export default function Courses() {
                   typeof c.instructor === 'object' && c.instructor?.fullName
                     ? c.instructor.fullName
                     : 'Instructor';
+                const instructorPathId = getInstructorPathId(c);
+                const courseClickHref = instructorPathId ? `/instructors/${instructorPathId}` : `/courses/${c._id}`;
                 return (
                   <article
                     key={c._id}
                     className="rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 overflow-hidden shadow-sm flex flex-col"
                   >
-                    <Link to={`/courses/${c._id}`} className="block aspect-video bg-slate-200">
+                    <Link to={courseClickHref} className="block aspect-video bg-slate-200">
                       <img src={thumb} alt="" className="w-full h-full object-cover" />
                     </Link>
                     <div className="p-4 flex-1 flex flex-col">
@@ -167,10 +181,10 @@ export default function Courses() {
                           {Number(c.price) === 0 ? 'Free' : `GH₵${c.price}`}
                         </span>
                         <Link
-                          to={`/courses/${c._id}`}
+                          to={courseClickHref}
                           className="text-sm font-medium text-blue-600 hover:underline"
                         >
-                          View
+                          View instructor
                         </Link>
                       </div>
                     </div>

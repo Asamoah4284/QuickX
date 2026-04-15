@@ -20,7 +20,7 @@ import { publicAssetUrl } from '../../utils/publicAssetUrl';
 const API_URL = import.meta.env.VITE_API_URL;
 
 const steps = [
-  { label: 'Landing page', description: 'Title, thumbnail, promo media, positioning' },
+  { label: 'Landing page', description: 'Title, thumbnail, promo media, and description' },
   { label: 'Learning promise', description: 'Outcomes, audience, and prerequisites' },
   { label: 'Pricing', description: 'Monetization, discounting, and certificate setup' },
   { label: 'Curriculum', description: 'Modules, sections, lessons, and preview strategy' },
@@ -182,6 +182,8 @@ export default function CreatorCourseWizard() {
   const [settings, setSettings] = useState({ courseAutoApproval: false });
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0, promoVideo: 0 });
   const [thumbnailPreviewFailed, setThumbnailPreviewFailed] = useState(false);
+  const [subscriptionPricing, setSubscriptionPricing] = useState({ month1: 49, month2: 89, year1: 399 });
+  const [subscriptionPricingSaving, setSubscriptionPricingSaving] = useState(false);
   const hydratedRef = useRef(false);
 
   useEffect(() => {
@@ -203,6 +205,12 @@ export default function CreatorCourseWizard() {
         ]);
 
         setSettings(profileResponse.data.settings || { courseAutoApproval: false });
+        const sp = profileResponse.data?.tutorProfile?.subscriptionPricing;
+        setSubscriptionPricing({
+          month1: Number(sp?.month1 ?? 49) || 0,
+          month2: Number(sp?.month2 ?? 89) || 0,
+          year1: Number(sp?.year1 ?? 399) || 0,
+        });
 
         if (courseResponse.data) {
           const course = courseResponse.data;
@@ -248,7 +256,7 @@ export default function CreatorCourseWizard() {
   useEffect(() => {
     if (!hydratedRef.current) return undefined;
 
-    const hasMinimumDraftData = form.title || form.shortDescription || form.description;
+    const hasMinimumDraftData = form.title || form.description;
     if (!hasMinimumDraftData) return undefined;
 
     const timeoutId = setTimeout(() => {
@@ -290,9 +298,9 @@ export default function CreatorCourseWizard() {
         hint: 'A strong title makes your course immediately understandable.',
       },
       {
-        done: Boolean(form.shortDescription.trim()),
-        label: 'Conversion-ready summary',
-        hint: 'Short description should explain the value in one scan.',
+        done: Boolean(form.description.trim()),
+        label: 'Course description',
+        hint: 'Explain the teaching style, journey, and why students should trust this course.',
       },
       {
         done: Boolean(form.thumbnail),
@@ -315,7 +323,7 @@ export default function CreatorCourseWizard() {
         hint: 'Category and level help discovery and relevance.',
       },
     ],
-    [form.category, form.level, form.shortDescription, form.thumbnail, form.title, learningOutcomes.length, lessonCount]
+    [form.category, form.description, form.level, form.thumbnail, form.title, learningOutcomes.length, lessonCount]
   );
 
   const completedChecklistCount = checklist.filter((item) => item.done).length;
@@ -377,6 +385,29 @@ export default function CreatorCourseWizard() {
       return null;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveSubscriptionPricing = async (silent = true) => {
+    try {
+      setSubscriptionPricingSaving(true);
+      const payload = {
+        subscriptionPricing: {
+          month1: Math.max(0, Math.round(Number(subscriptionPricing.month1) || 0)),
+          month2: Math.max(0, Math.round(Number(subscriptionPricing.month2) || 0)),
+          year1: Math.max(0, Math.round(Number(subscriptionPricing.year1) || 0)),
+        },
+      };
+      await axios.put(`${API_URL}/api/users/creator/profile`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!silent) setMessage('Subscription pricing saved.');
+      return true;
+    } catch (e) {
+      if (!silent) setError(e.response?.data?.message || e.message);
+      return false;
+    } finally {
+      setSubscriptionPricingSaving(false);
     }
   };
 
@@ -467,14 +498,14 @@ export default function CreatorCourseWizard() {
         <div className="space-y-6">
           <StepIntro
             eyebrow="Landing page"
-            title="Position the course like a premium catalog product"
-            description="This is where creators on marketplaces win trust fast: strong title, sharp thumbnail, a clean promise, and metadata that helps discovery."
+            title="Build a landing page students trust"
+            description="Strong title, sharp thumbnail, clear description, and metadata that helps discovery."
           />
 
           <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
             <StudioPanel
               title="Course identity"
-              description="Define the course title, track, positioning, and searchable metadata."
+              description="Define the course title, track, and searchable metadata."
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="space-y-2 text-sm text-slate-600">
@@ -637,35 +668,21 @@ export default function CreatorCourseWizard() {
           </div>
 
           <StudioPanel
-            title="Positioning copy"
-            description="Describe the course like a polished sales page: short hook first, detailed credibility second."
+            title="Course description"
+            description="Explain the teaching style, journey, and why students should trust this course."
           >
-            <div className="grid gap-4">
-              <label className="space-y-2 text-sm text-slate-600">
-                <span>Short description</span>
-                <textarea
-                  value={form.shortDescription}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, shortDescription: event.target.value }))
-                  }
-                  rows={3}
-                  placeholder="Summarize the core result students can expect."
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
-                />
-              </label>
-              <label className="space-y-2 text-sm text-slate-600">
-                <span>Full description</span>
-                <textarea
-                  value={form.description}
-                  onChange={(event) =>
-                    setForm((current) => ({ ...current, description: event.target.value }))
-                  }
-                  rows={6}
-                  placeholder="Explain the teaching style, journey, and why students should trust this course."
-                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
-                />
-              </label>
-            </div>
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>Full description</span>
+              <textarea
+                value={form.description}
+                onChange={(event) =>
+                  setForm((current) => ({ ...current, description: event.target.value }))
+                }
+                rows={8}
+                placeholder="Explain the teaching style, journey, and why students should trust this course."
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+              />
+            </label>
           </StudioPanel>
         </div>
       );
@@ -747,111 +764,80 @@ export default function CreatorCourseWizard() {
           <StepIntro
             eyebrow="Pricing"
             title="Design the monetization layer"
-            description="Creators on mature marketplaces separate pricing decisions from content decisions. Price for perceived value, use discounts intentionally, and decide whether completion certificates are included."
+            description="Set your subscription pricing for full access. Learners will subscribe to you and unlock all of your courses."
           />
 
-          <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-            <StudioPanel
-              title="Pricing setup"
-              description="Configure the commercial model your landing page will show."
-            >
-              <div className="grid gap-4 md:grid-cols-2">
-                <label className="space-y-2 text-sm text-slate-600">
-                  <span>Pricing type</span>
-                  <select
-                    value={form.pricingType}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, pricingType: event.target.value }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3"
-                  >
-                    <option value="paid">Paid</option>
-                    <option value="free">Free</option>
-                  </select>
-                </label>
-                <label className="space-y-2 text-sm text-slate-600">
-                  <span>Currency</span>
-                  <input
-                    value={form.currency}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, currency: event.target.value }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3"
-                  />
-                </label>
-                <label className="space-y-2 text-sm text-slate-600">
-                  <span>Full price</span>
-                  <input
-                    type="number"
-                    min="0"
-                    disabled={form.pricingType === 'free'}
-                    value={form.price}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, price: event.target.value }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 disabled:bg-slate-50"
-                  />
-                </label>
-                <label className="space-y-2 text-sm text-slate-600">
-                  <span>Discount price</span>
-                  <input
-                    type="number"
-                    min="0"
-                    disabled={form.pricingType === 'free'}
-                    value={form.discountPrice}
-                    onChange={(event) =>
-                      setForm((current) => ({ ...current, discountPrice: event.target.value }))
-                    }
-                    className="w-full rounded-2xl border border-slate-200 px-4 py-3 disabled:bg-slate-50"
-                  />
-                </label>
-                <label className="md:col-span-2 inline-flex items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-sm text-slate-700">
-                  <input
-                    type="checkbox"
-                    checked={form.certificateEnabled}
-                    onChange={(event) =>
-                      setForm((current) => ({
-                        ...current,
-                        certificateEnabled: event.target.checked,
-                      }))
-                    }
-                  />
-                  Certificate included for students who complete the course
-                </label>
-              </div>
-            </StudioPanel>
+          <StudioPanel
+            title="Subscription pricing (full access)"
+            description="Set the 3 prices learners see when subscribing to you."
+          >
+            <div className="grid gap-4 sm:grid-cols-3">
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>1 month (GHS)</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={subscriptionPricing.month1}
+                  onChange={(e) => setSubscriptionPricing((cur) => ({ ...cur, month1: e.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>2 months (GHS)</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={subscriptionPricing.month2}
+                  onChange={(e) => setSubscriptionPricing((cur) => ({ ...cur, month2: e.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>1 year (GHS)</span>
+                <input
+                  type="number"
+                  min="0"
+                  value={subscriptionPricing.year1}
+                  onChange={(e) => setSubscriptionPricing((cur) => ({ ...cur, year1: e.target.value }))}
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                />
+              </label>
+            </div>
 
-            <StudioPanel
-              title="Pricing preview"
-              description="See how the current pricing structure communicates value."
-            >
-              <div className="space-y-4">
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm text-slate-500">Current commercial model</p>
-                  <p className="mt-2 text-2xl font-semibold text-slate-950">
-                    {form.pricingType === 'free'
-                      ? 'Free enrollment'
-                      : `GH${String.fromCharCode(0x20b5)}${Number(form.price || 0).toFixed(2)}`}
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    {form.discountPrice
-                      ? `Discounted to GH${String.fromCharCode(0x20b5)}${Number(
-                          form.discountPrice || 0
-                        ).toFixed(2)}`
-                      : 'No promotional pricing configured yet.'}
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                  <p className="text-sm font-medium text-slate-700">
-                    {form.certificateEnabled ? 'Certificate included' : 'No certificate yet'}
-                  </p>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Strong certificate and outcome positioning usually improve perceived value for paid courses.
-                  </p>
-                </div>
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+              <p className="text-sm font-medium text-slate-700">Preview</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {[
+                  { label: '1 month', value: subscriptionPricing.month1 },
+                  { label: '2 months', value: subscriptionPricing.month2 },
+                  { label: '1 year', value: subscriptionPricing.year1 },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-950">
+                      GH{String.fromCharCode(0x20b5)}
+                      {Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500">Full access</p>
+                  </div>
+                ))}
               </div>
-            </StudioPanel>
-          </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+              <p className="text-xs text-slate-600">
+                Saved to your creator profile and shown on your instructor subscription drawer.
+              </p>
+              <button
+                type="button"
+                onClick={() => saveSubscriptionPricing(false)}
+                disabled={subscriptionPricingSaving}
+                className="rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 disabled:opacity-60"
+              >
+                {subscriptionPricingSaving ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </StudioPanel>
         </div>
       );
     }
@@ -990,7 +976,7 @@ export default function CreatorCourseWizard() {
             </div>
 
             <p className="text-sm leading-7 text-slate-600">
-              {form.shortDescription || form.description || 'Add a short description to make the value clear.'}
+              {form.description || 'Add a description to make the value clear.'}
             </p>
 
             <div className="grid gap-4 lg:grid-cols-4">
@@ -1160,7 +1146,12 @@ export default function CreatorCourseWizard() {
               </button>
               <button
                 type="button"
-                onClick={() => setCurrentStep((step) => Math.min(step + 1, steps.length))}
+                onClick={async () => {
+                  if (currentStep === 3) {
+                    await saveSubscriptionPricing(true);
+                  }
+                  setCurrentStep((step) => Math.min(step + 1, steps.length));
+                }}
                 disabled={currentStep === steps.length}
                 className="inline-flex items-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 text-sm font-semibold text-white disabled:opacity-40"
               >
@@ -1172,61 +1163,6 @@ export default function CreatorCourseWizard() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <StudioPanel
-            title="Studio health"
-            description="Track draft quality before you submit to admin or publish."
-            tone="dark"
-          >
-            <div className="space-y-4">
-              <div className="rounded-2xl border border-white/20 bg-white/10 px-4 py-4 backdrop-blur-sm">
-                <div className="flex items-center justify-between gap-3">
-                  <p className="text-sm font-medium text-blue-50">Readiness</p>
-                  <span className="text-lg font-semibold text-white">
-                    {completedChecklistCount}/{checklist.length}
-                  </span>
-                </div>
-                <div className="mt-3 h-2 rounded-full bg-white/20">
-                  <div
-                    className="h-2 rounded-full bg-emerald-300 transition-all"
-                    style={{ width: `${(completedChecklistCount / checklist.length) * 100}%` }}
-                  />
-                </div>
-                <p className="mt-3 text-xs text-blue-100/80">
-                  {readyToSubmit
-                    ? 'This course meets the core submission checklist.'
-                    : 'Finish the missing essentials before requesting review.'}
-                </p>
-              </div>
-
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
-                <MetricCard
-                  icon={FiLayers}
-                  label="Modules"
-                  value={form.modules.length}
-                  hint="How your teaching journey is structured."
-                />
-                <MetricCard
-                  icon={FiBookOpen}
-                  label="Lessons"
-                  value={lessonCount}
-                  hint="Every lesson should move the learner forward."
-                />
-                <MetricCard
-                  icon={FiTarget}
-                  label="Outcomes"
-                  value={learningOutcomes.length}
-                  hint="The strongest courses are explicit about results."
-                />
-                <MetricCard
-                  icon={FiPackage}
-                  label="Materials"
-                  value={form.additionalMaterials.length}
-                  hint="Downloads and resources increase perceived value."
-                />
-              </div>
-            </div>
-          </StudioPanel>
-
           <StudioPanel
             title="Submission checklist"
             description="These are the minimum quality signals before launch."

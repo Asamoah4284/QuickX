@@ -200,6 +200,18 @@ const MainSchool = () => {
     el.scrollBy({ left: dir * step, behavior: 'smooth' });
   };
 
+  function getInstructorPathId(course) {
+    if (
+      course?.instructorModel === 'User' &&
+      typeof course?.instructor === 'object' &&
+      course?.instructor?._id
+    ) {
+      return String(course.instructor._id);
+    }
+    if (course?.createdBy) return String(course.createdBy);
+    return null;
+  }
+
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero Section */}
@@ -317,6 +329,8 @@ const MainSchool = () => {
                     typeof c.instructor === 'object' && c.instructor?.fullName
                       ? c.instructor.fullName
                       : 'Instructor';
+                  const instructorPathId = getInstructorPathId(c);
+                  const courseClickHref = instructorPathId ? `/instructors/${instructorPathId}` : `/courses/${c._id}`;
                   const rating = Number(c.averageRating) || 0;
                   const showRating = rating > 0;
                   const students = Number(c.totalStudents) || 0;
@@ -328,7 +342,7 @@ const MainSchool = () => {
                       className="w-[min(100%,22rem)] min-w-[17rem] sm:min-w-[18.5rem] md:min-w-[20rem] max-w-[22rem] shrink-0 snap-start flex flex-col rounded-sm border border-transparent bg-white transition hover:opacity-[0.98]"
                     >
                       <Link
-                        to={`/courses/${c._id}`}
+                        to={courseClickHref}
                         className="block aspect-[16/10] overflow-hidden bg-slate-200 ring-1 ring-gray-200/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                       >
                         <img
@@ -343,7 +357,7 @@ const MainSchool = () => {
                       </Link>
                       <div className="flex flex-1 flex-col pt-3 pr-1 pl-0.5">
                         <h3 className="line-clamp-2 text-sm sm:text-base font-bold leading-snug text-gray-900">
-                          <Link to={`/courses/${c._id}`} className="hover:text-indigo-700">
+                          <Link to={courseClickHref} className="hover:text-indigo-700">
                             {c.title}
                           </Link>
                         </h3>

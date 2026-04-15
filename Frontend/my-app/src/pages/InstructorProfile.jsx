@@ -14,45 +14,40 @@ const TYPE_LABEL = {
   webdev: 'Web dev',
 };
 
-/** Creator subscription tiers — amounts in GHS (adjust or load from API). */
-const SUBSCRIPTION_PLANS = [
-  {
-    id: '1m',
-    label: '1 mo',
-    title: '1 month',
-    price: 49,
-    compareAt: 59,
-    periodNote: '1st month',
-    badge: 'New subscriber offer',
-  },
-  {
-    id: '2m',
-    label: '2 mo',
-    title: '2 months',
-    price: 89,
-    compareAt: 98,
-    periodNote: '2-month bundle',
-    badge: null,
-  },
-  {
-    id: '3m',
-    label: '3 mo',
-    title: '3 months',
-    price: 129,
-    compareAt: 147,
-    periodNote: 'Quarterly',
-    badge: null,
-  },
-  {
-    id: '1y',
-    label: '1 yr',
-    title: '1 year',
-    price: 399,
-    compareAt: 588,
-    periodNote: 'Annual',
-    badge: 'Best value',
-  },
-];
+function buildSubscriptionPlans(subscriptionPricing) {
+  const month1 = Number(subscriptionPricing?.month1 ?? 49);
+  const month2 = Number(subscriptionPricing?.month2 ?? 89);
+  const year1 = Number(subscriptionPricing?.year1 ?? 399);
+  return [
+    {
+      id: '1m',
+      label: '1 mo',
+      title: '1 month',
+      price: Number.isFinite(month1) ? month1 : 49,
+      compareAt: null,
+      periodNote: 'Monthly',
+      badge: null,
+    },
+    {
+      id: '2m',
+      label: '2 mo',
+      title: '2 months',
+      price: Number.isFinite(month2) ? month2 : 89,
+      compareAt: null,
+      periodNote: '2-month bundle',
+      badge: null,
+    },
+    {
+      id: '1y',
+      label: '1 yr',
+      title: '1 year',
+      price: Number.isFinite(year1) ? year1 : 399,
+      compareAt: null,
+      periodNote: 'Annual',
+      badge: 'Best value',
+    },
+  ];
+}
 
 const SUBSCRIPTION_BENEFITS = [
   {
@@ -80,6 +75,29 @@ const SUBSCRIPTION_BENEFITS = [
     icon: 'chat',
   },
 ];
+
+function normalizeOutcome(value) {
+  const s = String(value || '').trim();
+  if (!s) return null;
+  return s.replace(/\s+/g, ' ');
+}
+
+function collectLearningOutcomes(courses, limit = 12) {
+  const seen = new Set();
+  const out = [];
+  (courses || []).forEach((c) => {
+    const items = Array.isArray(c?.learningOutcomes) ? c.learningOutcomes : [];
+    items.forEach((it) => {
+      const n = normalizeOutcome(it);
+      if (!n) return;
+      const key = n.toLowerCase();
+      if (seen.has(key)) return;
+      seen.add(key);
+      out.push(n);
+    });
+  });
+  return out.slice(0, Math.max(0, limit));
+}
 
 function subscriptionSavingsPercent(price, compareAt) {
   const p = Number(price) || 0;
@@ -528,6 +546,13 @@ export default function InstructorProfile() {
   const [subscriptionDrawerOpen, setSubscriptionDrawerOpen] = useState(false);
   const [selectedSubscriptionPlanId, setSelectedSubscriptionPlanId] = useState('1m');
   const [profileVideoPreview, setProfileVideoPreview] = useState(null);
+  const [videoDropdownOpen, setVideoDropdownOpen] = useState(false);
+  const [videoSidebarOpen, setVideoSidebarOpen] = useState(false);
+  const [videoSidebarRender, setVideoSidebarRender] = useState(false);
+  const [videoSidebarEntered, setVideoSidebarEntered] = useState(false);
+  const [isMobile, setIsMobile] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(max-width: 639px)').matches : false
+  );
 
   useEffect(() => {
     if (subscriptionDrawerOpen) setSelectedSubscriptionPlanId('1m');
@@ -572,6 +597,36 @@ export default function InstructorProfile() {
       window.removeEventListener('keydown', onKey);
     };
   }, [subscriptionDrawerOpen]);
+
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 639px)');
+    const apply = () => setIsMobile(mq.matches);
+    apply();
+    mq.addEventListener('change', apply);
+    return () => mq.removeEventListener('change', apply);
+  }, []);
+
+  useEffect(() => {
+    if (!videoSidebarOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e) => {
+      if (e.key === 'Escape') setVideoSidebarOpen(false);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [videoSidebarOpen]);
+
+  useEffect(() => {
+    if (videoSidebarOpen) return;
+    if (!videoSidebarRender) return;
+    setVideoSidebarEntered(false);
+    const t = setTimeout(() => setVideoSidebarRender(false), 260);
+    return () => clearTimeout(t);
+  }, [videoSidebarOpen, videoSidebarRender]);
 
   useEffect(() => {
     if (!profileVideoPreview) return undefined;
@@ -629,11 +684,12 @@ export default function InstructorProfile() {
 
   const handleChooseSubscriptionPlan = useCallback(
     (planId) => {
-      const plan = SUBSCRIPTION_PLANS.find((p) => p.id === planId) ?? SUBSCRIPTION_PLANS[0];
+      const plans = buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing);
+      const plan = plans.find((p) => p.id === planId) ?? plans[0];
       setSubscriptionDrawerOpen(false);
       goToSubscriptionCheckout(plan);
     },
-    [goToSubscriptionCheckout]
+    [data?.tutorProfile?.subscriptionPricing, goToSubscriptionCheckout]
   );
 
   const openProfileVideoPreview = useCallback((payload) => {
@@ -645,6 +701,8 @@ export default function InstructorProfile() {
     return data.courses;
   }, [data]);
 
+  const learningOutcomes = useMemo(() => collectLearningOutcomes(data?.courses, 12), [data?.courses]);
+
   /** When the API returns preview lessons, grid = one tile per curriculum preview (not per course). */
   const filteredPreviewLessons = useMemo(() => {
     if (!data?.previewLessons?.length) return [];
@@ -652,6 +710,40 @@ export default function InstructorProfile() {
   }, [data]);
 
   const usePreviewLessonGrid = Boolean(data?.previewLessons?.length);
+
+  const videoDropdownItems = useMemo(() => {
+    if (Array.isArray(data?.videoContent) && data.videoContent.length > 0) {
+      return data.videoContent.map((v) => ({
+        key: v.key,
+        title: v.lessonTitle || 'Lesson',
+        subtitle: v.courseTitle || '',
+        href: v.courseId ? `/school/course/${v.courseId}` : null,
+        isLocked: Boolean(v.isLocked),
+        isPreview: Boolean(v.isPreview),
+        duration: v.duration || '',
+      }));
+    }
+    if (usePreviewLessonGrid) {
+      return (filteredPreviewLessons || []).map((p) => ({
+        key: p.key,
+        title: p.lessonTitle || 'Preview lesson',
+        subtitle: p.courseTitle || '',
+        href: p.courseId ? `/school/course/${p.courseId}` : null,
+        isLocked: false,
+        isPreview: true,
+        duration: '',
+      }));
+    }
+    return (filteredCourses || []).map((c) => ({
+      key: c._id,
+      title: c.title || 'Course',
+      subtitle: c.courseType ? TYPE_LABEL[c.courseType] || c.courseType : '',
+      href: c._id ? `/school/course/${c._id}` : null,
+      isLocked: false,
+      isPreview: false,
+      duration: '',
+    }));
+  }, [data?.videoContent, filteredCourses, filteredPreviewLessons, usePreviewLessonGrid]);
 
   /** Must run before any conditional return (Rules of Hooks). */
   const videoGrid = useMemo(() => {
@@ -734,8 +826,11 @@ export default function InstructorProfile() {
 
   const displayName = data?.user?.fullName || 'Instructor';
   const selectedSubscriptionPlan = useMemo(
-    () => SUBSCRIPTION_PLANS.find((p) => p.id === selectedSubscriptionPlanId) ?? SUBSCRIPTION_PLANS[0],
-    [selectedSubscriptionPlanId]
+    () => {
+      const plans = buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing);
+      return plans.find((p) => p.id === selectedSubscriptionPlanId) ?? plans[0];
+    },
+    [data?.tutorProfile?.subscriptionPricing, selectedSubscriptionPlanId]
   );
   const subscriptionCtaSavingsPct = subscriptionSavingsPercent(
     selectedSubscriptionPlan.price,
@@ -743,7 +838,7 @@ export default function InstructorProfile() {
   );
   const handle = data?.user ? `@${slugHandle(data.user.fullName, userId)}` : '';
   const headline =
-    data?.tutorProfile?.headline || data?.user?.creatorHeadline || 'QuickX creator';
+    data?.tutorProfile?.headline || data?.user?.creatorHeadline || '';
   const bio = data?.tutorProfile?.bio || data?.user?.creatorBio || '';
   const website =
     data?.tutorProfile?.socialLinks?.website || data?.user?.socialLinks?.website || '';
@@ -793,7 +888,7 @@ export default function InstructorProfile() {
 
   const statItems = [
     {
-      label: 'Videos',
+      label: 'Video',
       value:
         stats.videos != null
           ? formatCompact(stats.videos)
@@ -803,6 +898,10 @@ export default function InstructorProfile() {
     {
       label: 'Rating',
       value: stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '—',
+    },
+    {
+      label: 'Video content',
+      value: '',
     },
   ];
 
@@ -866,19 +965,19 @@ export default function InstructorProfile() {
   );
 
   const librarySection = (
-    <div className="px-0 py-2 sm:py-4">
+    <div className="px-0 pt-2 pb-0 sm:py-4">
       {/* Same horizontal strip as preview grid so “Videos” lines up with first tile (esp. desktop) */}
       <div className={PREVIEW_STRIP_BLEED}>
         {/* TikTok-style content tab: videos active */}
         <div className="flex border-b border-zinc-100">
-          <div className="relative flex flex-1 justify-center pb-3 sm:flex-none sm:justify-start">
+          <div className="relative flex flex-1 justify-start pb-3 pl-2">
             <span className="inline-flex items-center gap-2 text-[15px] font-bold text-zinc-900">
               <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
               </svg>
               Videos
             </span>
-            <span className="absolute bottom-0 left-0 right-0 mx-auto h-[3px] w-12 rounded-full bg-zinc-900 sm:left-0 sm:right-auto sm:mx-0 sm:w-14" />
+            <span className="absolute bottom-0 left-2 h-[3px] w-14 rounded-full bg-zinc-900" />
           </div>
           <div className="hidden flex-1 justify-center pb-3 opacity-40 sm:flex sm:justify-start sm:px-6">
             <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-zinc-500">
@@ -962,7 +1061,7 @@ export default function InstructorProfile() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 pb-24 pt-6 sm:px-6 lg:px-10 lg:pb-16 lg:pt-10">
+      <main className="mx-auto max-w-7xl px-4 pb-0 pt-6 sm:px-6 sm:pb-24 lg:px-10 lg:pb-16 lg:pt-10">
         <section className="px-0 py-4 sm:py-6 lg:py-8">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start lg:gap-10">
@@ -973,17 +1072,103 @@ export default function InstructorProfile() {
                   {displayName}
                 </h1>
                 <p className="mt-2 font-mono text-sm text-zinc-500">{handle}</p>
-                <div className="mt-6 mx-auto grid w-full max-w-xs grid-cols-3 divide-x divide-zinc-200 sm:mx-0 sm:max-w-sm">
-                  {statItems.map((s) => (
-                    <div key={s.label} className="flex min-w-0 flex-col items-center px-2 text-center sm:px-4">
-                      <span className="text-lg font-bold leading-none tabular-nums text-zinc-900 sm:text-xl">
-                        {s.value}
-                      </span>
-                      <span className="mt-1.5 text-[11px] font-medium leading-tight text-zinc-500 sm:text-xs">
-                        {s.label}
-                      </span>
+                <div className="relative mt-6 grid w-full max-w-md grid-cols-4 divide-x divide-zinc-200 sm:max-w-lg">
+                  {statItems.map((s) => {
+                    const isVideoContent = s.label === 'Video content';
+                    return (
+                      <div key={s.label} className="flex min-w-0 flex-col items-center px-2 py-1 text-center sm:px-4">
+                        {/* Fixed-height top row so values + icon align across columns */}
+                        <div className="flex min-h-[34px] items-center justify-center">
+                          {isVideoContent ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (isMobile) {
+                                  setVideoDropdownOpen(false);
+                                  setVideoSidebarRender(true);
+                                  setVideoSidebarEntered(false);
+                                  window.requestAnimationFrame(() => setVideoSidebarEntered(true));
+                                  setVideoSidebarOpen(true);
+                                  return;
+                                }
+                                setVideoDropdownOpen((v) => !v);
+                              }}
+                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-zinc-200"
+                              aria-expanded={videoDropdownOpen}
+                              aria-controls="video-dropdown-panel-stats"
+                              aria-label="Toggle video content"
+                            >
+                              <svg
+                                className={`h-4 w-4 transition-transform ${videoDropdownOpen ? 'rotate-180' : ''}`}
+                                fill="none"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                                strokeWidth={2}
+                                aria-hidden
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                              </svg>
+                            </button>
+                          ) : (
+                            <span className="text-lg font-bold leading-none tabular-nums text-zinc-900 sm:text-xl">
+                              {s.value}
+                            </span>
+                          )}
+                        </div>
+                        <span className="mt-1 text-[11px] font-medium leading-tight text-zinc-500 sm:text-xs">
+                          {s.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+
+                  {videoDropdownOpen && !isMobile ? (
+                    <div
+                      id="video-dropdown-panel-stats"
+                      className="absolute left-0 top-full z-20 mt-3 w-full overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-lg"
+                    >
+                      <div className="flex items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-4 py-3">
+                        <p className="text-sm font-semibold text-zinc-900">Video content</p>
+                        <button
+                          type="button"
+                          onClick={() => setVideoDropdownOpen(false)}
+                          className="rounded-full px-2 py-1 text-xs font-semibold text-zinc-600 hover:bg-zinc-100"
+                        >
+                          Close
+                        </button>
+                      </div>
+                      <div className="divide-y divide-zinc-100">
+                        {videoDropdownItems.length === 0 ? (
+                          <p className="px-4 py-4 text-sm text-zinc-500">No videos yet.</p>
+                        ) : (
+                          videoDropdownItems.slice(0, 50).map((item) => (
+                            <div key={item.key} className="flex items-center justify-between gap-3 px-4 py-3">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className="truncate text-sm font-semibold text-zinc-900">{item.title}</p>
+                                  {item.isLocked ? (
+                                    <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-600">
+                                      Locked
+                                    </span>
+                                  ) : item.isPreview ? (
+                                    <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                                      Preview
+                                    </span>
+                                  ) : null}
+                                </div>
+                                {item.subtitle ? (
+                                  <p className="mt-0.5 truncate text-xs text-zinc-500">{item.subtitle}</p>
+                                ) : null}
+                                {item.duration ? (
+                                  <p className="mt-0.5 text-[11px] text-zinc-400">{item.duration}</p>
+                                ) : null}
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
                     </div>
-                  ))}
+                  ) : null}
                 </div>
                 <div className="mt-6 hidden sm:block">{bioBlock}</div>
               </div>
@@ -996,11 +1181,7 @@ export default function InstructorProfile() {
         <div className="mt-8 lg:mt-10">{librarySection}</div>
       </main>
 
-      <footer className="bg-white py-10">
-        <p className="text-center text-xs font-medium text-zinc-500">
-          Learn on <span className="font-semibold text-blue-700">QuickX</span>
-        </p>
-      </footer>
+      
 
       {subscriptionDrawerOpen ? (
         <div className="fixed inset-0 z-[100] flex items-end justify-center sm:p-4" role="presentation">
@@ -1066,7 +1247,7 @@ export default function InstructorProfile() {
               </div>
               <p className="mt-5 text-base font-bold text-zinc-900">Subscription benefits</p>
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {SUBSCRIPTION_PLANS.map((plan) => {
+                {buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing).map((plan) => {
                   const active = plan.id === selectedSubscriptionPlanId;
                   return (
                     <button
@@ -1084,20 +1265,20 @@ export default function InstructorProfile() {
                   );
                 })}
               </div>
-              <div className="relative mt-4 overflow-hidden rounded-3xl bg-gradient-to-br from-amber-50 via-orange-50/90 to-amber-100/80 p-4 shadow-inner ring-1 ring-amber-200/60">
+              <div className="relative mt-4 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-blue-50/90 to-indigo-100/80 p-4 shadow-inner ring-1 ring-blue-200/60">
                 <div
                   className="pointer-events-none absolute inset-0 opacity-[0.12]"
                   style={{
-                    backgroundImage: `radial-gradient(circle at 20% 30%, #f59e0b 0, transparent 45%),
-                      radial-gradient(circle at 80% 70%, #fb923c 0, transparent 40%),
-                      radial-gradient(circle at 50% 50%, #fcd34d 0, transparent 55%)`,
+                    backgroundImage: `radial-gradient(circle at 20% 30%, #0ea5e9 0, transparent 45%),
+                      radial-gradient(circle at 80% 70%, #2563eb 0, transparent 40%),
+                      radial-gradient(circle at 50% 50%, #4f46e5 0, transparent 55%)`,
                   }}
                   aria-hidden
                 />
                 <div className="relative flex gap-3">
                   <div className="min-w-0 flex-1">
                     {selectedSubscriptionPlan.badge ? (
-                      <span className="inline-flex rounded-full bg-orange-200/90 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-orange-900">
+                      <span className="inline-flex rounded-full bg-blue-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
                         {selectedSubscriptionPlan.badge}
                       </span>
                     ) : null}
@@ -1118,16 +1299,35 @@ export default function InstructorProfile() {
                   </div>
                   <div className="flex shrink-0 items-center justify-center" aria-hidden>
                     <div className="relative flex h-20 w-20 items-center justify-center">
-                      <div className="absolute inset-0 rounded-full border-[3px] border-amber-300/80" />
-                      <div className="absolute inset-2 rounded-full border border-amber-200/60" />
-                      <svg className="relative h-12 w-12 text-amber-400 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
+                      <div className="absolute inset-0 rounded-full border-[3px] border-blue-300/80" />
+                      <div className="absolute inset-2 rounded-full border border-blue-200/60" />
+                      <svg className="relative h-12 w-12 text-blue-600 drop-shadow-sm" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2l2.4 7.4h7.6l-6 4.6 2.3 7-6.3-4.6-6.3 4.6 2.3-7-6-4.6h7.6z" />
                       </svg>
                     </div>
                   </div>
                 </div>
               </div>
-              <ul className="mt-6 space-y-4 pb-2">
+              {learningOutcomes.length > 0 ? (
+                <>
+                  <p className="mt-6 text-sm font-bold tracking-tight text-zinc-900">What you&apos;ll learn</p>
+                  <ul className="mt-3 space-y-3 pb-1">
+                    {learningOutcomes.map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-[15px] leading-snug text-zinc-800">
+                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200/70">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                        <span className="pt-0.5">{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-5 border-t border-zinc-100" />
+                </>
+              ) : null}
+
+              <ul className="mt-5 space-y-4 pb-2">
                 {SUBSCRIPTION_BENEFITS.map((b) => (
                   <li key={b.label} className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100">
@@ -1142,7 +1342,7 @@ export default function InstructorProfile() {
               <button
                 type="button"
                 onClick={() => handleChooseSubscriptionPlan(selectedSubscriptionPlanId)}
-                className="w-full rounded-2xl bg-rose-500 py-4 text-center text-[17px] font-bold text-white shadow-lg shadow-rose-500/25 transition hover:bg-rose-600 active:scale-[0.99]"
+                className="w-full rounded-2xl bg-blue-600 py-4 text-center text-[17px] font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99]"
               >
                 {subscriptionCtaSavingsPct > 0
                   ? `Subscribe (${subscriptionCtaSavingsPct}% off)`
@@ -1201,6 +1401,73 @@ export default function InstructorProfile() {
               >
                 View full course
               </Link>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {videoSidebarRender ? (
+        <div className="fixed inset-0 z-[110] sm:hidden" role="presentation">
+          <button
+            type="button"
+            className={`absolute inset-0 bg-black/40 backdrop-blur-[1px] transition-opacity duration-200 ${
+              videoSidebarEntered ? 'opacity-100' : 'opacity-0'
+            }`}
+            aria-label="Close video content"
+            onClick={() => setVideoSidebarOpen(false)}
+          />
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Video content"
+            className={`absolute inset-0 overflow-hidden bg-white shadow-2xl ring-1 ring-black/10 transition-transform duration-200 ease-out ${
+              videoSidebarEntered ? 'translate-x-0' : 'translate-x-full'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-3 border-b border-zinc-100 px-4 py-4">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-zinc-900">Video content</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setVideoSidebarOpen(false)}
+                className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-700 hover:bg-zinc-100"
+                aria-label="Close"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            <div className="h-[calc(100%-64px)] overflow-y-auto">
+              {videoDropdownItems.length === 0 ? (
+                <p className="px-4 py-6 text-sm text-zinc-500">No videos yet.</p>
+              ) : (
+                <div className="divide-y divide-zinc-100">
+                  {videoDropdownItems.map((item) => (
+                    <div key={item.key} className="flex items-start justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate text-sm font-semibold text-zinc-900">{item.title}</p>
+                          {item.isLocked ? (
+                            <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-zinc-600">
+                              Subscribe
+                            </span>
+                          ) : item.isPreview ? (
+                            <span className="shrink-0 rounded-full bg-blue-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-blue-700">
+                              Preview
+                            </span>
+                          ) : null}
+                        </div>
+                        {item.subtitle ? (
+                          <p className="mt-0.5 truncate text-xs text-zinc-500">{item.subtitle}</p>
+                        ) : null}
+                        {item.duration ? <p className="mt-0.5 text-[11px] text-zinc-400">{item.duration}</p> : null}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
