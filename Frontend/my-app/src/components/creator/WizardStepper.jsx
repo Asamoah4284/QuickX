@@ -13,7 +13,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
             completed
               ? 'border-emerald-200 bg-emerald-50'
               : active
-                ? 'border-blue-400/30 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 text-white shadow-md shadow-blue-900/15'
+                ? 'border-white/15 bg-blue-950 text-white shadow-md shadow-blue-950/25'
                 : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
           } ${isClickable ? 'cursor-pointer' : ''}`;
 
@@ -24,7 +24,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
                   completed
                     ? 'bg-emerald-500 text-white'
                     : active
-                      ? 'bg-white text-blue-800 shadow-sm'
+                      ? 'bg-white text-blue-950 shadow-sm'
                       : 'bg-slate-100 text-slate-500'
                 }`}
               >
