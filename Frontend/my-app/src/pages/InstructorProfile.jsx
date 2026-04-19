@@ -51,27 +51,19 @@ function buildSubscriptionPlans(subscriptionPricing) {
 
 const SUBSCRIPTION_BENEFITS = [
   {
-    label: 'Exclusive lessons & creator updates',
+    label: 'Easy access to all current and future uploaded courses',
     icon: 'star-card',
   },
   {
-    label: 'Subscriber-only resources & study space',
-    icon: 'home-star',
+    label: 'Download course and watch offline',
+    icon: 'download',
   },
   {
-    label: 'Priority notes & announcements',
-    icon: 'note',
-  },
-  {
-    label: 'Direct line for questions & support',
+    label: 'Direct one on one with instructor',
     icon: 'bolt',
   },
   {
-    label: 'Request topics & bonus video ideas',
-    icon: 'globe',
-  },
-  {
-    label: 'Faster responses on your comments',
+    label: 'Join in structured fun and community for updates and signals',
     icon: 'chat',
   },
 ];
@@ -142,6 +134,12 @@ function SubscriptionBenefitIcon({ name }) {
       return (
         <svg className={cls} fill="currentColor" viewBox="0 0 24 24">
           <path d="M13 2L3 14h8l-1 8 10-12h-8l1-8z" />
+        </svg>
+      );
+    case 'download':
+      return (
+        <svg className={cls} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+          <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
         </svg>
       );
     case 'globe':
@@ -1394,13 +1392,16 @@ export default function InstructorProfile() {
               className="aspect-video w-full bg-black object-contain"
             />
             <div className="border-t border-zinc-100 bg-white px-4 py-3 text-center">
-              <Link
-                to={`/courses/${profileVideoPreview.courseId}`}
+              <button
+                type="button"
                 className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
-                onClick={() => setProfileVideoPreview(null)}
+                onClick={() => {
+                  setProfileVideoPreview(null);
+                  setSubscriptionDrawerOpen(true);
+                }}
               >
                 View full course
-              </Link>
+              </button>
             </div>
           </div>
         </div>

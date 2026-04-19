@@ -214,42 +214,53 @@ const MainSchool = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* Hero Section */}
-      <div className="bg-blue-900 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/40 backdrop-blur-sm"></div>
-        <div className="max-w-6xl mx-auto px-6 py-32 relative z-10">
-          <div className="grid grid-cols-12 gap-8 items-center">
-            <div className="col-span-12 lg:col-span-7 text-center lg:text-left">
-              <h1 className="text-6xl font-extrabold tracking-tight text-white mb-6 drop-shadow-lg"
-                  style={{ lineHeight: '1.1', letterSpacing: '-0.02em' }}>
-
-                <span className="text-blue-400">Quick</span><span className="text-yellow-400">XLearn</span>
+      {/* Hero — deep blue (matches Navbar bg-blue-950) */}
+      <div className="relative overflow-x-hidden bg-blue-950">
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-28 md:py-32">
+          {/*
+            Single column + items-center on small screens so copy and CTAs stay visually centered.
+            lg: 12-col row. min-w-0 on grid children avoids min-content overflow (was shifting layout right on mobile).
+          */}
+          <div className="grid grid-cols-1 items-center justify-items-center gap-10 lg:grid-cols-12 lg:justify-items-stretch lg:gap-8">
+            <div className="min-w-0 w-full max-w-full text-center lg:col-span-7 lg:text-left">
+              <h1
+                className="mb-5 text-4xl font-extrabold tracking-tight drop-shadow-sm sm:text-5xl md:text-6xl"
+                style={{ lineHeight: '1.08', letterSpacing: '-0.02em' }}
+              >
+                <span className="text-sky-300">Quick</span>
+                <span className="text-white">X</span>
+                <span className="text-teal-300">Learn</span>
               </h1>
-              <p className="text-2xl text-blue-100 mb-12 font-light leading-relaxed">
-              Welcome to QuicKxLearning Center, Lighting up minds through learning to build the skillset and mindset for financial freedom
+              <p className="mx-auto mb-8 max-w-2xl text-base font-medium leading-relaxed text-blue-100/95 sm:text-lg lg:mx-0 lg:mb-9 lg:text-xl">
+                Welcome to QuickX Learning Center — lighting up minds through learning so you can build the skillset and
+                mindset for financial freedom.
               </p>
-              <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-                <a href="#courses" className="px-10 py-3 rounded-full bg-blue-500 text-white font-semibold shadow-lg hover:bg-blue-600 transition-all duration-200 border-2 border-blue-500"
+              <div className="flex w-full flex-wrap justify-center gap-3 sm:gap-4 lg:justify-start">
+                <a
+                  href="#courses"
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-blue-900 shadow-lg shadow-blue-950/30 transition hover:bg-blue-50 sm:px-10 sm:text-base"
                 >
-                 View courses
+                  View courses
                 </a>
-                <a href="#courses" className="px-10 py-3 rounded-full border-2 border-white text-white font-semibold bg-white/10 hover:bg-white/20 shadow-lg transition-all duration-200">
+                <a
+                  href="#courses"
+                  className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/35 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/50 hover:bg-white/15 sm:px-10 sm:text-base"
+                >
                   Explore now
                 </a>
               </div>
             </div>
-            <div className="col-span-12 lg:col-span-5">
-              <figure className="w-full h-full flex items-center justify-center">
+            <div className="min-w-0 w-full max-w-full lg:col-span-5">
+              <figure className="mx-auto flex w-full max-w-[min(100%,20rem)] justify-center lg:max-w-none">
                 <img
                   src="./images/school-pic.png"
-                  alt="a school picture"
-                  className="w-full h-auto object-contain"
+                  alt=""
+                  className="h-auto w-full max-w-full object-contain [filter:drop-shadow(0_12px_28px_rgba(0,0,0,0.2))]"
                 />
               </figure>
             </div>
           </div>
         </div>
-        <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent"></div>
       </div>
 
       {/* Courses — Udemy-style */}

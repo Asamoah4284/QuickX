@@ -455,12 +455,12 @@ function Membership() {
       {/* Hero: full width on mobile; sm+ inset card. Top margin from md+ so the card clears the nav visually on desktop */}
       <div className="sm:mx-auto sm:max-w-7xl sm:px-6 md:mt-8 lg:mt-10 lg:px-8">
         <div className="relative mb-4 overflow-hidden rounded-none shadow-xl ring-0 sm:mb-8 sm:rounded-3xl sm:ring-1 sm:ring-white/10">
-          {/* Background with gradient overlay */}
-          <div className="absolute inset-0 z-10 bg-gradient-to-br from-blue-600/92 via-indigo-600/90 to-violet-800/95"></div>
+          {/* Background — same deep blue as Navbar */}
+          <div className="absolute inset-0 z-10 bg-blue-950"></div>
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605792657660-596af9009e82?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-35"></div>
-          {/* Soft orbs for depth (mobile-friendly, no extra assets) */}
-          <div className="pointer-events-none absolute -right-16 -top-24 z-[11] h-48 w-48 rounded-full bg-cyan-400/20 blur-3xl sm:-right-8 sm:top-0" />
-          <div className="pointer-events-none absolute -bottom-20 -left-12 z-[11] h-40 w-40 rounded-full bg-violet-400/15 blur-3xl" />
+          {/* Soft highlights on deep blue */}
+          <div className="pointer-events-none absolute -right-16 -top-24 z-[11] h-48 w-48 rounded-full bg-white/[0.06] blur-3xl sm:-right-8 sm:top-0" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 z-[11] h-40 w-40 rounded-full bg-blue-950/40 blur-3xl" />
           
           {/* Content — keep readable insets inside the full-bleed card */}
           <div className="relative z-20 px-4 py-4 sm:p-8 md:p-10">
@@ -485,7 +485,7 @@ function Membership() {
               <div className="flex w-full flex-col gap-2.5 sm:max-w-md sm:flex-row sm:gap-3 md:mt-0 md:w-auto md:shrink-0">
                 <Link
                   to="/courses"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-indigo-700 shadow-lg shadow-indigo-950/20 transition hover:bg-blue-50 sm:flex-1 md:flex-initial md:px-5"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 text-sm font-semibold text-blue-900 shadow-lg shadow-blue-900/25 transition hover:bg-blue-50 sm:flex-1 md:flex-initial md:px-5"
                 >
                   <FiBook className="h-4 w-4 shrink-0" />
                   Browse courses
@@ -503,7 +503,7 @@ function Membership() {
             {/* Stats — 2-up on mobile, full row on md+ */}
             <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4 md:mt-8 md:grid-cols-3">
               <div className="flex min-h-[88px] items-center gap-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:p-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-500/35 sm:h-12 sm:w-12 sm:rounded-full">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-12 sm:w-12 sm:rounded-full">
                   <FiTrendingUp className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                 </div>
                 <div className="min-w-0">
@@ -516,7 +516,7 @@ function Membership() {
               </div>
               
               <div className="flex min-h-[88px] items-center gap-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:p-4">
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-indigo-500/35 sm:h-12 sm:w-12 sm:rounded-full">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-12 sm:w-12 sm:rounded-full">
                   <FiClock className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                 </div>
                 <div className="min-w-0">
@@ -529,7 +529,7 @@ function Membership() {
               
               <div className="col-span-2 flex min-h-[88px] flex-col gap-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:flex-row sm:items-center sm:justify-between sm:p-4 md:col-span-1">
                 <div className="flex min-w-0 flex-1 items-center gap-3">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-purple-500/35 sm:h-12 sm:w-12 sm:rounded-full">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-12 sm:w-12 sm:rounded-full">
                     <FiDollarSign className="h-5 w-5 text-white sm:h-6 sm:w-6" />
                   </div>
                   <div>
@@ -546,7 +546,7 @@ function Membership() {
                   className={`w-full shrink-0 rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors sm:w-auto ${
                     !user?.referralEarnings || user?.referralEarnings < 20
                       ? 'cursor-not-allowed bg-white/20 text-white/50'
-                      : 'bg-white text-purple-800 shadow-sm hover:bg-blue-50'
+                      : 'bg-white text-blue-900 shadow-sm hover:bg-blue-50'
                   }`}
                 >
                   Withdraw
@@ -597,9 +597,9 @@ function Membership() {
           {/* Sidebar — below main content on mobile */}
           <div className="order-2 md:order-1 md:w-1/4">
             <div className="overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-sm">
-              <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-indigo-50 p-4 sm:p-5">
+              <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100/80 p-4 sm:p-5">
                 <div className="flex items-center">
-                  <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-full flex items-center justify-center mr-3 text-lg font-bold shadow-md">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-blue-950 text-lg font-bold text-white shadow-md ring-1 ring-white/10">
                     {user?.fullName ? user.fullName.split(' ').map(n => n[0]).join('') : 'U'}
                   </div>
                   <div>
@@ -695,10 +695,10 @@ function Membership() {
               <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Modernized Progress Card — compact on small phones; sm+ matches previous desktop sizing */}
                 <div className="group relative">
-                  <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-blue-600/[0.03] to-indigo-600/[0.03] sm:rounded-3xl"></div>
+                  <div className="absolute inset-0 -z-10 rounded-2xl bg-blue-950/[0.06] sm:rounded-3xl"></div>
                   <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-8">
                     <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-blue-500/[0.06] blur-2xl sm:h-24 sm:w-24 sm:-mt-6 sm:-mr-6"></div>
-                    <div className="pointer-events-none absolute -bottom-6 -left-6 h-20 w-20 rounded-full bg-indigo-500/[0.05] blur-2xl sm:h-24 sm:w-24"></div>
+                    <div className="pointer-events-none absolute -bottom-6 -left-6 h-20 w-20 rounded-full bg-blue-500/[0.05] blur-2xl sm:h-24 sm:w-24"></div>
                     
                     <div className="flex flex-col gap-4 sm:gap-6 md:flex-row md:items-center md:justify-between md:gap-8">
                       <div className="min-w-0 flex-1">
@@ -809,7 +809,7 @@ function Membership() {
                               <div className="mt-6 flex items-center justify-between gap-4">
                                 <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
                                   <div 
-                                    className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full transition-all duration-1000"
+                                    className="h-full bg-blue-950 rounded-full transition-all duration-1000"
                                     style={{ width: `${course.progress}%` }}
                                   ></div>
                                 </div>

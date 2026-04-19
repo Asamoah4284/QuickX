@@ -19,6 +19,12 @@ const payoutDetailsSchema = new mongoose.Schema({
     currency: { type: String, default: 'GHS' }
 }, { _id: false });
 
+const subscriptionPricingSchema = new mongoose.Schema({
+    month1: { type: Number, default: 49, min: 0 },
+    month2: { type: Number, default: 89, min: 0 },
+    year1: { type: Number, default: 399, min: 0 }
+}, { _id: false });
+
 const tutorProfileSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -107,6 +113,10 @@ const tutorProfileSchema = new mongoose.Schema({
     },
     payoutDetails: {
         type: payoutDetailsSchema,
+        default: () => ({})
+    },
+    subscriptionPricing: {
+        type: subscriptionPricingSchema,
         default: () => ({})
     },
     avatar: {

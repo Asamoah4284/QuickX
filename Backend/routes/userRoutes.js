@@ -72,6 +72,34 @@ function collectPublicPreviewLessons(courseDocs) {
     return out;
 }
 
+function collectInstructorVideoContent(courseDocs) {
+    const out = [];
+    for (const c of courseDocs) {
+        const modules = c.modules || [];
+        modules.forEach((mod, mi) => {
+            (mod.sections || []).forEach((sec, si) => {
+                (sec.lessons || []).forEach((les, li) => {
+                    const lessonType = les.lessonType || les.type || 'video';
+                    if (lessonType !== 'video') return;
+                    const lessonKey = les._id != null ? String(les._id) : `m${mi}-s${si}-l${li}`;
+                    const isPreview = les.isPreview === true || les.free === true;
+                    const isLocked = les.isLocked === undefined ? !isPreview : Boolean(les.isLocked);
+                    out.push({
+                        key: `${String(c._id)}-${lessonKey}`,
+                        courseId: String(c._id),
+                        courseTitle: String(c.title || '').trim(),
+                        lessonTitle: String(les.title || 'Lesson').trim(),
+                        duration: String(les.duration || '').trim(),
+                        isPreview,
+                        isLocked
+                    });
+                });
+            });
+        });
+    }
+    return out;
+}
+
 // Rate limiter for auth endpoints
 const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
@@ -127,6 +155,17 @@ const creatorProfileValidation = [
             return Number.isFinite(n) && Number.isInteger(n) && n >= 0 && n <= 80;
         })
         .withMessage('Experience years must be a whole number between 0 and 80'),
+    body('subscriptionPricing').optional().custom((value) => {
+        if (value == null || value === '') return true;
+        if (typeof value !== 'object') return false;
+        const keys = ['month1', 'month2', 'year1'];
+        for (const k of keys) {
+            if (value[k] === undefined || value[k] === null || value[k] === '') continue;
+            const n = Number(value[k]);
+            if (!Number.isFinite(n) || n < 0 || n > 1_000_000) return false;
+        }
+        return true;
+    }).withMessage('Subscription pricing must include valid numeric amounts'),
 ];
 
 function signUserToken(user) {
@@ -160,8 +199,16 @@ function clampExperienceYears(value) {
     return Math.max(0, Math.min(80, Math.floor(n)));
 }
 
+function clampPrice(value, fallback = 0) {
+    if (value === undefined || value === null || value === '') return fallback;
+    const n = Number(value);
+    if (!Number.isFinite(n)) return fallback;
+    return Math.max(0, Math.min(1_000_000, Math.round(n)));
+}
+
 function sanitizeCreatorDraft(body = {}) {
     const socialLinks = body.socialLinks || {};
+    const pricing = body.subscriptionPricing || {};
 
     return {
         headline: String(body.headline || '').trim(),
@@ -196,6 +243,11 @@ function sanitizeCreatorDraft(body = {}) {
             provider: String(body.payoutDetails?.provider || '').trim(),
             accountNumber: String(body.payoutDetails?.accountNumber || '').trim(),
             currency: String(body.payoutDetails?.currency || 'GHS').trim()
+        },
+        subscriptionPricing: {
+            month1: clampPrice(pricing.month1, 49),
+            month2: clampPrice(pricing.month2, 89),
+            year1: clampPrice(pricing.year1, 399)
         }
     };
 }
@@ -795,12 +847,13 @@ router.get('/public/:userId/instructor', async (req, res) => {
 
         const coursesWithModules = await Course.find(visibility)
             .select(
-                'title thumbnail promoVideo shortDescription subtitle courseType category tags totalStudents averageRating createdAt modules'
+                'title thumbnail promoVideo shortDescription subtitle courseType category tags totalStudents averageRating createdAt learningOutcomes modules'
             )
             .sort({ createdAt: -1 })
             .lean();
 
         const previewLessons = collectPublicPreviewLessons(coursesWithModules);
+        const videoContent = collectInstructorVideoContent(coursesWithModules);
         const videoCount = countLessonVideos(coursesWithModules);
         const courses = coursesWithModules.map(({ modules, ...rest }) => rest);
 
@@ -839,7 +892,8 @@ router.get('/public/:userId/instructor', async (req, res) => {
                       headline: tutorProfile.headline,
                       bio: tutorProfile.bio,
                       teachingCategories: tutorProfile.teachingCategories || [],
-                      socialLinks: tutorProfile.socialLinks || {}
+                      socialLinks: tutorProfile.socialLinks || {},
+                      subscriptionPricing: tutorProfile.subscriptionPricing || null
                   }
                 : null,
             stats: {
@@ -850,6 +904,7 @@ router.get('/public/:userId/instructor', async (req, res) => {
             },
             categories: categoryList,
             previewLessons,
+            videoContent,
             courses
         });
     } catch (error) {

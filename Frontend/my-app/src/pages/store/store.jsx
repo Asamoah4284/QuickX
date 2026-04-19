@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiSearch, FiFilter, FiStar, FiShoppingCart, FiBook, FiTrendingUp, FiArrowRight, FiBookmark, FiX, FiPackage } from 'react-icons/fi';
+import { FiShoppingCart, FiBook, FiArrowRight, FiBookmark, FiX, FiPackage, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -9,8 +9,6 @@ const API_URL = import.meta.env.VITE_API_URL;
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 
 const Store = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
@@ -24,20 +22,11 @@ const Store = () => {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
-  // Hero section images
-  const heroImages = [
-    {
-      url: '/images/bk-1.jpg',
-      alt: 'Library bookshelf'
-    },
-    {
-      url: '/images/bk-3.jpg',
-      alt: 'Reading corner'
-    },
-    {
-      url: '/images/bk-5.jpg',
-      alt: 'Modern library'
-    }
+  /** Hero carousel slides — book-style covers; images keep natural aspect inside frame (no stretch). */
+  const heroSlides = [
+    { url: '/images/bk-1.jpg', alt: 'Featured digital book — The Wise Scholar', tag: 'Spotlight' },
+    { url: '/images/bk-3.jpg', alt: 'Reading collection highlight', tag: 'Trending' },
+    { url: '/images/bk-5.jpg', alt: 'New in the library', tag: 'New' }
   ];
 
   // Fetch books from API
@@ -47,12 +36,7 @@ const Store = () => {
         setIsLoading(true);
         setError(null);
         
-        // Construct query parameters
-        const params = new URLSearchParams();
-        if (searchQuery) params.append('search', searchQuery);
-        if (selectedCategory !== 'all') params.append('type', selectedCategory);
-        
-        const response = await axios.get(`${API_URL}/api/books?${params.toString()}`);
+        const response = await axios.get(`${API_URL}/api/books`);
         setBooks(response.data);
       } catch (err) {
         console.error('Error fetching books:', err);
@@ -63,16 +47,23 @@ const Store = () => {
     };
 
     fetchBooks();
-  }, [searchQuery, selectedCategory]);
+  }, []);
 
-  // Rotate images every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentImageIndex((prevIndex) => (prevIndex + 1) % heroImages.length);
-    }, 5000);
-
+      setCurrentImageIndex((prev) => (prev + 1) % heroSlides.length);
+    }, 6000);
     return () => clearInterval(interval);
   }, []);
+
+  const goHeroSlide = (dir) => {
+    setCurrentImageIndex((prev) => {
+      const next = prev + dir;
+      if (next < 0) return heroSlides.length - 1;
+      if (next >= heroSlides.length) return 0;
+      return next;
+    });
+  };
 
   // Handle adding book to cart
   const handleAddBook = (book) => {
@@ -140,19 +131,14 @@ const Store = () => {
     setHardcopyRequest({ name: '', location: '' });
   };
 
-  // Handle search
-  const handleSearch = (e) => {
-    setSearchQuery(e.target.value);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Featured Book */}
-      <div className="relative min-h-[52vh] sm:min-h-[60vh] lg:h-[80vh] lg:min-h-0 bg-gradient-to-r from-blue-900 to-indigo-900 overflow-hidden">
-        <div className="absolute inset-0 bg-black/40"></div>
-        <div className="relative h-full max-w-6xl mx-auto px-4 pt-24 pb-10 sm:px-6 sm:pt-28 sm:pb-14 lg:px-8 lg:pt-18 lg:pb-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 h-full items-center gap-8 lg:gap-12">
-            <div className="text-white space-y-4 sm:space-y-5 md:space-y-6">
+      <div className="relative min-h-[52vh] overflow-hidden bg-gradient-to-r from-blue-950 to-blue-900 sm:min-h-[56vh] lg:min-h-[72vh]">
+        <div className="absolute inset-0 bg-black/35" />
+        <div className="relative mx-auto flex h-full min-h-0 max-w-6xl flex-col px-4 pb-12 pt-24 sm:px-6 sm:pb-14 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-24">
+          <div className="grid min-w-0 grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="min-w-0 space-y-4 text-white sm:space-y-5 md:space-y-6">
               <div className="inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
                 Featured Book
               </div>
@@ -163,35 +149,77 @@ const Store = () => {
                 Explore our curated collection of digital books and expand your knowledge
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
-                <button
-                  type="button"
+                <a
+                  href="#store-books"
                   className="w-full rounded-lg bg-white px-5 py-2.5 text-center text-sm font-semibold text-blue-900 transition-colors duration-300 hover:bg-blue-50 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
                 >
                   Browse Collection
-                </button>
-                <button
-                  type="button"
+                </a>
+                <a
+                  href="#store-books"
                   className="inline-flex items-center justify-center gap-2 text-sm font-medium text-white/95 transition-colors hover:text-blue-200 sm:text-base"
                 >
                   <span>Learn More</span>
                   <FiArrowRight className="h-4 w-4" />
-                </button>
+                </a>
               </div>
             </div>
-            <div className="hidden lg:block relative perspective-1000">
-              <div className="absolute -right-20 -top-20 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl"></div>
-              <div className="absolute -left-20 -bottom-20 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl"></div>
-              <div className="relative animate-float-3d">
-                <div className="relative w-full max-w-md mx-auto transform-gpu">
-                  <img
-                    src={heroImages[currentImageIndex].url}
-                    alt={heroImages[currentImageIndex].alt}
-                    className="w-full drop-shadow-2xl h-96 object-cover transition-opacity duration-1000"
-                    style={{
-                      backfaceVisibility: 'hidden',
-                      transform: 'translateZ(0)',
-                    }}
-                  />
+
+            {/* Hero carousel — sits on hero background (no card frame); crossfade; arrows + dots */}
+            <div className="relative min-w-0 w-full max-w-md justify-self-center lg:max-w-none lg:justify-self-end">
+              <div className="relative mx-auto w-full max-w-[min(100%,320px)] sm:max-w-sm">
+                <div
+                  className="relative aspect-[3/4] w-full"
+                  role="region"
+                  aria-roledescription="carousel"
+                  aria-label="Featured books and promotions"
+                >
+                  {heroSlides.map((slide, i) => (
+                    <img
+                      key={slide.url}
+                      src={slide.url}
+                      alt={slide.alt}
+                      className={`absolute inset-0 m-auto max-h-full max-w-full object-contain p-2 transition-opacity duration-700 ease-out sm:p-3 ${
+                        i === currentImageIndex ? 'z-10 opacity-100' : 'z-0 opacity-0'
+                      }`}
+                      draggable={false}
+                    />
+                  ))}
+                  <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 text-center text-[11px] font-semibold uppercase tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
+                    {heroSlides[currentImageIndex]?.tag}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => goHeroSlide(-1)}
+                    className="absolute left-0 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 sm:left-1"
+                    aria-label="Previous slide"
+                  >
+                    <FiChevronLeft className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => goHeroSlide(1)}
+                    className="absolute right-0 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 sm:right-1"
+                    aria-label="Next slide"
+                  >
+                    <FiChevronRight className="h-5 w-5" />
+                  </button>
+                </div>
+
+                <div className="mt-4 flex justify-center gap-2" role="tablist" aria-label="Slide indicators">
+                  {heroSlides.map((slide, i) => (
+                    <button
+                      key={slide.url}
+                      type="button"
+                      role="tab"
+                      aria-selected={i === currentImageIndex}
+                      aria-label={`Go to slide ${i + 1}`}
+                      onClick={() => setCurrentImageIndex(i)}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        i === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
+                      }`}
+                    />
+                  ))}
                 </div>
               </div>
             </div>
@@ -200,37 +228,13 @@ const Store = () => {
       </div>
 
       {/* Main content */}
-      <main className="max-w-6xl mx-auto px-4 py-8 sm:px-6 sm:py-12">
+      <main id="store-books" className="max-w-6xl mx-auto scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
         <div>
           <div>
-            <div className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+            <div className="mb-6 sm:mb-8">
               <h2 className="text-xl font-bold tracking-tight text-gray-800 sm:text-2xl md:text-3xl">
                 Discover Books
               </h2>
-              <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:space-x-3">
-                {/* Search input */}
-                <div className="relative min-w-0 flex-1 sm:min-w-[200px] sm:flex-initial">
-                  <input
-                    type="text"
-                    placeholder="Search books..."
-                    value={searchQuery}
-                    onChange={handleSearch}
-                    className="w-full rounded-lg border border-gray-300 py-2 pl-9 pr-3 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                </div>
-                
-                {/* Category filter */}
-                <select 
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full shrink-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 sm:w-auto"
-                >
-                  <option value="all">All Categories</option>
-                  <option value="ebook">E-Books</option>
-                  <option value="hardcopy">Hardcopy</option>
-                </select>
-              </div>
             </div>
 
             {/* Loading state */}
@@ -331,7 +335,7 @@ const Store = () => {
                 <FiBook className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-2 text-sm font-medium text-gray-900">No books found</h3>
                 <p className="mt-1 text-sm text-gray-500">
-                  Try adjusting your search or filter to find what you're looking for.
+                  Check back later for new titles.
                 </p>
               </div>
             )}
