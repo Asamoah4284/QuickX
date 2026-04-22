@@ -40,11 +40,11 @@ const Features = () => {
             
             <div className="mb-2 flex items-center sm:mb-3" data-aos="fade-left" data-aos-delay="200">
               <div className="flex space-x-1">
-                <span className="h-2 w-2 rounded-full bg-blue-600"></span>
+                <span className="h-2 w-2 rounded-full bg-blue-500"></span>
                 <span className="h-2 w-2 rounded-full bg-orange-500"></span>
                 <span className="h-2 w-2 rounded-full bg-blue-300"></span>
               </div>
-              <h3 className="ml-3 text-lg font-medium text-blue-600 sm:text-xl md:text-2xl">Why Choose Us</h3>
+              <h3 className="ml-3 text-lg font-medium text-blue-500 sm:text-xl md:text-2xl">Why Choose Us</h3>
             </div>
             
             <h2 className="mb-4 text-xl font-bold leading-snug text-gray-800 sm:mb-6 sm:text-2xl md:text-3xl" data-aos="fade-left" data-aos-delay="300">
@@ -58,7 +58,7 @@ const Features = () => {
             
             <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-2" data-aos="fade-up" data-aos-delay="500">
               <div className="flex items-start">
-                <div className="mr-3 h-5 w-5 shrink-0 text-blue-600 sm:h-6 sm:w-6">
+                <div className="mr-3 h-5 w-5 shrink-0 text-blue-500 sm:h-6 sm:w-6">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -67,7 +67,7 @@ const Features = () => {
               </div>
               
               <div className="flex items-start">
-                <div className="mr-3 h-5 w-5 shrink-0 text-blue-600 sm:h-6 sm:w-6">
+                <div className="mr-3 h-5 w-5 shrink-0 text-blue-500 sm:h-6 sm:w-6">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -76,7 +76,7 @@ const Features = () => {
               </div>
               
               <div className="flex items-start">
-                <div className="mr-3 h-5 w-5 shrink-0 text-blue-600 sm:h-6 sm:w-6">
+                <div className="mr-3 h-5 w-5 shrink-0 text-blue-500 sm:h-6 sm:w-6">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>
@@ -85,7 +85,7 @@ const Features = () => {
               </div>
               
               <div className="flex items-start">
-                <div className="mr-3 h-5 w-5 shrink-0 text-blue-600 sm:h-6 sm:w-6">
+                <div className="mr-3 h-5 w-5 shrink-0 text-blue-500 sm:h-6 sm:w-6">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                   </svg>

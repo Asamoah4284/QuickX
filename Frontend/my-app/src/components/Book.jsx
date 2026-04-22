@@ -206,10 +206,10 @@ const Book = () => {
       <section className="bg-gradient-to-r from-gray-50 to-gray-100 px-4 py-10 sm:py-12">
         <div className="mx-auto max-w-4xl">
           <div className="mb-6 flex items-center space-x-3 sm:mb-8 sm:space-x-4" data-aos="fade-right" data-aos-delay="100">
-          <span className="text-blue-500">
+          <span className="text-blue-400">
                   <img src="	https://pixner.net/html/tradexy/tradexy/assets/images/element/section-badge5.png" alt="" className="h-5 w-8 sm:h-6 sm:w-[40px]" />
                 </span>
-            <h2 className="text-xl font-bold text-blue-600 sm:text-2xl">About Us</h2>
+            <h2 className="text-xl font-bold text-blue-500 sm:text-2xl">About Us</h2>
           </div>
 
           <div className="flex flex-col items-center gap-8 lg:flex-row lg:gap-12">

@@ -15,10 +15,10 @@ const Call = () => {
           </p>
           
           <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
-           <Link to="/courses"><button type="button" className="rounded-lg bg-gradient-to-r from-blue-500 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white transition duration-300 hover:from-blue-600 hover:to-blue-600 sm:px-8 sm:py-3 sm:text-base">
+           <Link to="/courses"><button type="button" className="rounded-lg bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white transition duration-300 hover:from-blue-500 hover:to-blue-600 sm:px-8 sm:py-3 sm:text-base">
               Browse the catalog
             </button></Link> 
-            <Link to="/register"><button type="button" className="rounded-lg border border-blue-500 bg-transparent px-6 py-2.5 text-sm font-semibold text-blue-500 transition duration-300 hover:bg-blue-500/10 sm:px-8 sm:py-3 sm:text-base">
+            <Link to="/register"><button type="button" className="rounded-lg border border-blue-400 bg-transparent px-6 py-2.5 text-sm font-semibold text-blue-400 transition duration-300 hover:bg-blue-400/10 sm:px-8 sm:py-3 sm:text-base">
               Create an account
             </button></Link>
           </div>

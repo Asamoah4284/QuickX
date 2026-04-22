@@ -245,7 +245,7 @@ export default function CreatorOnboarding() {
       <div className="min-h-screen bg-slate-50 pt-24">
         <div className="mx-auto max-w-5xl px-4">
           <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-creator">
-            <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-950 border-t-transparent animate-spin" />
+            <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-700 border-t-transparent animate-spin" />
             <p className="mt-4 text-sm text-slate-500">Loading your creator onboarding workspace...</p>
           </div>
         </div>
@@ -256,11 +256,11 @@ export default function CreatorOnboarding() {
   return (
     <div className="min-h-screen bg-slate-50 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4">
-        <div className="rounded-[32px] bg-blue-950 p-8 text-white shadow-xl ring-1 ring-white/10">
+        <div className="rounded-[32px] bg-blue-900 p-8 text-white shadow-xl ring-1 ring-white/10">
           <p className="text-sm font-medium text-blue-100">Creator onboarding</p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h1 className="text-3xl font-semibold">Become a tutor on Quick X</h1>
+              <h1 className="text-2xl font-semibold sm:text-3xl">Become a tutor on Quick X</h1>
               <p className="mt-2 max-w-2xl text-sm text-blue-100/90">
                 Build a polished public instructor profile, get approved by the team, and start publishing
                 courses with a step-by-step workflow designed for serious creators.
@@ -291,7 +291,7 @@ export default function CreatorOnboarding() {
               </button>
               <Link
                 to={creatorStatus === 'approved' ? '/creator/dashboard' : '/'}
-                className="text-sm font-medium text-blue-950"
+                className="text-sm font-medium text-blue-800"
               >
                 Exit
               </Link>
@@ -342,7 +342,7 @@ export default function CreatorOnboarding() {
                   
                   <div className="flex flex-col gap-2">
                     <div className="flex items-center gap-3">
-                      <label className="cursor-pointer rounded-2xl bg-blue-950 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-900">
+                      <label className="cursor-pointer rounded-2xl bg-blue-700 px-4 py-3 text-sm font-medium text-white transition-colors hover:bg-blue-600">
                         {form.avatar ? 'Change photo' : 'Upload photo'}
                         <input type="file" className="hidden" accept="image/*" onChange={(event) => handleUpload('avatar', event.target.files?.[0], 'image')} />
                       </label>
@@ -357,7 +357,7 @@ export default function CreatorOnboarding() {
                         </button>
                       )}
                     </div>
-                    {uploadProgress.avatar > 0 ? <p className="text-xs font-medium text-blue-950">Uploading {uploadProgress.avatar}%</p> : null}
+                    {uploadProgress.avatar > 0 ? <p className="text-xs font-medium text-blue-800">Uploading {uploadProgress.avatar}%</p> : null}
                   </div>
                 </div>
               </div>
@@ -472,8 +472,8 @@ export default function CreatorOnboarding() {
                 </div>
               </div>
 
-              <div className="rounded-3xl border border-blue-950/15 bg-blue-950/[0.04] p-5">
-                <p className="text-sm text-blue-950">
+              <div className="rounded-3xl border border-blue-900/15 bg-blue-900/[0.06] p-5">
+                <p className="text-sm text-blue-900">
                   Once you submit, your application can be approved, rejected, or suspended by the admin team.
                   Approved creators get instant access to the full course dashboard and upload workflow.
                 </p>
@@ -495,7 +495,7 @@ export default function CreatorOnboarding() {
               <button
                 type="button"
                 onClick={() => setCurrentStep((step) => Math.min(step + 1, steps.length))}
-                className="rounded-2xl bg-blue-950 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-900"
+                className="rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600"
               >
                 Continue
               </button>

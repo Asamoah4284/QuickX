@@ -101,7 +101,7 @@ function listToText(value) {
 function StudioPanel({ title, description, children, tone = 'light' }) {
   const isDark = tone === 'dark';
   const styles = isDark
-    ? 'border-white/10 bg-blue-950 text-white shadow-none ring-1 ring-white/10'
+    ? 'border-white/10 bg-blue-900 text-white shadow-none ring-1 ring-white/10'
     : 'border-slate-200/80 bg-white text-slate-950 shadow-creator';
 
   const padding = isDark ? 'p-4 sm:p-5' : 'p-6';
@@ -160,7 +160,7 @@ function StepIntro({ eyebrow, title, description }) {
   return (
     <div className="mb-6 border-b border-slate-200 pb-5">
       <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">{eyebrow}</p>
-      <h3 className="mt-3 text-2xl font-semibold text-slate-950">{title}</h3>
+      <h3 className="mt-3 text-xl font-semibold text-slate-950 sm:text-2xl">{title}</h3>
       <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-500">{description}</p>
     </div>
   );
@@ -832,7 +832,7 @@ export default function CreatorCourseWizard() {
                 type="button"
                 onClick={() => saveSubscriptionPricing(false)}
                 disabled={subscriptionPricingSaving}
-                className="rounded-xl bg-blue-950 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-900 disabled:opacity-60"
+                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
               >
                 {subscriptionPricingSaving ? 'Saving…' : 'Save'}
               </button>
@@ -969,7 +969,7 @@ export default function CreatorCourseWizard() {
             </div>
 
             <div>
-              <h3 className="text-3xl font-semibold text-slate-950">
+              <h3 className="text-2xl font-semibold text-slate-950 sm:text-3xl">
                 {form.title || 'Untitled course'}
               </h3>
               <p className="mt-2 text-lg text-slate-500">{form.subtitle}</p>
@@ -1037,7 +1037,7 @@ export default function CreatorCourseWizard() {
                   type="button"
                   onClick={() => submitForReview('publish')}
                   disabled={submitting || !readyToSubmit}
-                  className="rounded-2xl bg-blue-950 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-50"
+                  className="rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
                 >
                   Publish now
                 </button>
@@ -1059,13 +1059,13 @@ export default function CreatorCourseWizard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-blue-950 p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
+      <div className="rounded-2xl bg-blue-900 p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-blue-100/90">
               Course studio
             </p>
-            <h2 className="mt-3 text-3xl font-semibold">
+            <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
               {activeCourseId ? 'Refine and publish your course' : 'Build your next premium course'}
             </h2>
             <p className="mt-3 text-sm leading-6 text-blue-100/85">
@@ -1087,7 +1087,7 @@ export default function CreatorCourseWizard() {
             <button
               type="button"
               onClick={() => saveDraft(false)}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-950 hover:bg-blue-50"
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50"
             >
               {saving ? 'Saving...' : 'Save draft'}
             </button>
@@ -1115,7 +1115,7 @@ export default function CreatorCourseWizard() {
               <p className="text-sm font-medium text-slate-500">
                 Step {currentStep} of {steps.length}
               </p>
-              <h3 className="mt-1 text-xl font-semibold text-slate-950">
+              <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">
                 {currentStepMeta.label}
               </h3>
             </div>
@@ -1153,7 +1153,7 @@ export default function CreatorCourseWizard() {
                   setCurrentStep((step) => Math.min(step + 1, steps.length));
                 }}
                 disabled={currentStep === steps.length}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-950 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-900 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-40"
               >
                 Continue
                 <FiChevronRight className="h-4 w-4" />

@@ -132,7 +132,7 @@ function Home() {
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.3 }}
               onClick={scrollToTop}
-              className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg transition-colors duration-200 hover:bg-blue-600 sm:h-12 sm:w-12"
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-400 text-white shadow-lg transition-colors duration-200 hover:bg-blue-500 sm:h-12 sm:w-12"
               aria-label="Scroll to top"
             >
               <FaArrowUp className="text-xl" />

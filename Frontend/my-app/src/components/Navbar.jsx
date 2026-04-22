@@ -143,7 +143,7 @@ const Navbar = () => {
   return (
     <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
       navSolid
-        ? 'bg-blue-950 text-white shadow-md'
+        ? 'bg-blue-900 text-white shadow-md'
         : 'bg-transparent'
     }`}>
       <div className="md:max-w-6xl mx-auto md:py-2 md:px-4 sm:px-6 lg:px-8">
@@ -168,8 +168,8 @@ const Navbar = () => {
                     <FiBook className="mr-1.5" /> My Courses
                   </Link>
                   <div className="relative group">
-                    <button className="flex items-center space-x-1 bg-blue-50 text-blue-600 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium">
-                      <div className="w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center text-xs font-bold">
+                    <button className="flex items-center space-x-1 bg-blue-50 text-blue-500 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium">
+                      <div className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center text-xs font-bold">
                         {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                       </div>
                       <span className="ml-1.5">{user?.fullName?.split(' ')[0] || 'User'}</span>
@@ -193,10 +193,10 @@ const Navbar = () => {
                 </div>
               ) : (
                 <>
-                  <Link to="/login" className="bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  <Link to="/login" className="bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-md text-sm font-medium transition-colors">
                     Log In
                   </Link>
-                  <Link to="/register" className={`${navSolid ? 'bg-transparent text-white hover:bg-white hover:text-blue-900' : 'bg-white text-blue-600 hover:bg-blue-50'} border ${navSolid ? 'border-white' : 'border-blue-600'} px-4 py-2 rounded-md text-sm font-medium transition-colors`}>
+                  <Link to="/register" className={`${navSolid ? 'bg-transparent text-white hover:bg-white hover:text-blue-800' : 'bg-white text-blue-500 hover:bg-blue-50'} border ${navSolid ? 'border-white' : 'border-blue-500'} px-4 py-2 rounded-md text-sm font-medium transition-colors`}>
                     Sign Up
                   </Link>
                 </>
@@ -237,13 +237,13 @@ const Navbar = () => {
       >
         {/* Title only — close via the main nav toggle (hamburger → X) so we don’t duplicate icons */}
         <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-4">
-          <h2 className="text-lg font-semibold text-blue-900">Menu</h2>
+          <h2 className="text-lg font-semibold text-blue-800">Menu</h2>
         </div>
         
         <div className="px-4 pt-4 pb-3 space-y-3">
-          <Link to="/courses" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Courses</Link>
-          <Link to="/store" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Books</Link>
-          <Link to="/creator/onboarding" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Creator programs</Link>
+          <Link to="/courses" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Courses</Link>
+          <Link to="/store" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Books</Link>
+          <Link to="/creator/onboarding" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Creator programs</Link>
         </div>
         
         <div className="pt-4 pb-3 border-t border-gray-200 px-4">
@@ -251,7 +251,7 @@ const Navbar = () => {
             <>
               <div className="flex items-center px-3 py-2">
                 <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-blue-600 flex items-center justify-center text-white text-lg font-bold">
+                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-lg font-bold">
                     {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
                   </div>
                 </div>
@@ -263,21 +263,21 @@ const Navbar = () => {
               <div className="mt-3 space-y-1">
                 <Link
                   to="/membership"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
+                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
                   onClick={() => setIsOpen(false)}
                 >
                   Dashboard
                 </Link>
                 <Link
                   to={creatorDestination}
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
+                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
                   onClick={() => setIsOpen(false)}
                 >
                   {creatorLabel}
                 </Link>
                 <Link
                   to="/profile"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-700 hover:bg-blue-50 rounded-md"
+                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
                   onClick={() => setIsOpen(false)}
                 >
                   Profile
@@ -297,14 +297,14 @@ const Navbar = () => {
             <div className="space-y-2">
               <Link 
                 to="/login" 
-                className="block w-full px-3 py-2 text-base font-medium text-center text-white bg-blue-600 hover:bg-blue-700 rounded-md"
+                className="block w-full px-3 py-2 text-base font-medium text-center text-white bg-blue-500 hover:bg-blue-600 rounded-md"
                 onClick={() => setIsOpen(false)}
               >
                 Login
               </Link>
               <Link 
                 to="/register" 
-                className="block w-full px-3 py-2 text-base font-medium text-center text-blue-600 bg-white border border-blue-600 hover:bg-blue-50 rounded-md"
+                className="block w-full px-3 py-2 text-base font-medium text-center text-blue-500 bg-white border border-blue-500 hover:bg-blue-50 rounded-md"
                 onClick={() => setIsOpen(false)}
               >
                 Sign Up

@@ -16,7 +16,7 @@ const Intro = () => {
   }, []);
 
   return (
-    <div className="bg-[#1e3a64] py-12 text-white sm:py-20 md:py-24">
+    <div className="bg-blue-900 py-12 text-white sm:py-20 md:py-24">
       <div className="mx-auto max-w-5xl px-4">
         <div className="flex flex-col items-center justify-between gap-8 md:flex-row md:gap-10">
           {/* Left Content */}
@@ -35,8 +35,8 @@ const Intro = () => {
           
 
             <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-6" data-aos="fade-up" data-aos-delay="300">
-              <div className="flex items-center gap-3 rounded-lg bg-[#17325a] p-3 sm:p-4">
-                <div className="text-2xl text-[#00b8ff] sm:text-3xl">
+              <div className="flex items-center gap-3 rounded-lg bg-blue-800/25 p-3 sm:p-4">
+                <div className="text-2xl text-sky-400 sm:text-3xl">
                   <FaUserPlus />
                 </div>
                 <div>
@@ -44,8 +44,8 @@ const Intro = () => {
                   <p className="text-xs text-gray-300 sm:text-sm">Browse and enroll in minutes</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 rounded-lg bg-[#17325a] p-3 sm:p-4">
-                <div className="text-2xl text-[#00b8ff] sm:text-3xl">
+              <div className="flex items-center gap-3 rounded-lg bg-blue-800/25 p-3 sm:p-4">
+                <div className="text-2xl text-sky-400 sm:text-3xl">
                   <FaGraduationCap />
                 </div>
                 <div>
@@ -64,7 +64,7 @@ const Intro = () => {
                 alt="Online learning and course platform" 
                 className="w-full rounded-lg object-contain"
               />
-              <div className="absolute -bottom-5 -left-5 bg-[#00b8ff] text-white p-6 rounded-lg" data-aos="zoom-in" data-aos-delay="600">
+              <div className="absolute -bottom-5 -left-5 bg-sky-400 text-white p-6 rounded-lg" data-aos="zoom-in" data-aos-delay="600">
               </div>
             </div>
           </div>

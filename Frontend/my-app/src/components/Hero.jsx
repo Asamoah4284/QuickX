@@ -127,11 +127,11 @@ const Hero = () => {
         />
         {/* Depth: vignette + cool gradient (reads premium on mobile & desktop) */}
         <div
-          className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-blue-950/55 to-slate-950/90"
+          className="absolute inset-0 bg-gradient-to-b from-slate-950/75 via-blue-900/50 to-slate-950/90"
           aria-hidden
         />
         <div
-          className="absolute inset-0 bg-gradient-to-tr from-blue-600/25 via-transparent to-emerald-500/15"
+          className="absolute inset-0 bg-gradient-to-tr from-blue-500/22 via-transparent to-emerald-500/15"
           aria-hidden
         />
         <div
@@ -150,7 +150,7 @@ const Hero = () => {
           <div className="lg:col-span-7">
             <div className="relative">
               {/* Glass card on small screens for contrast; open on large */}
-              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-blue-950/40 backdrop-blur-md sm:p-8 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
+              <div className="rounded-2xl border border-white/10 bg-white/[0.06] p-6 shadow-2xl shadow-blue-800/30 backdrop-blur-md sm:p-8 lg:border-transparent lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none">
                 {/* Tagline */}
                 <div
                   ref={taglineRef}
@@ -217,7 +217,7 @@ const Hero = () => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
                     <Link
                       to="/courses"
-                      className="group inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 text-center text-xs font-semibold text-white shadow-lg shadow-blue-900/40 transition hover:from-blue-600 hover:to-indigo-700 hover:shadow-xl sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
+                      className="group inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 text-center text-xs font-semibold text-white shadow-lg shadow-blue-800/30 transition hover:from-blue-400 hover:to-indigo-600 hover:shadow-xl sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
                     >
                       Explore courses
                       <svg

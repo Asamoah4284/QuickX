@@ -10,8 +10,8 @@ const categories = [
       'Leadership, productivity, communication, and skills that help you grow at work.',
     href: '/courses',
     Icon: FiBriefcase,
-    iconWrap: 'from-sky-500 to-blue-600 shadow-sky-500/25',
-    linkClass: 'text-sky-600 group-hover:text-sky-700',
+    iconWrap: 'from-sky-400 to-blue-500 shadow-sky-400/25',
+    linkClass: 'text-sky-500 group-hover:text-sky-600',
   },
   {
     id: 2,
@@ -50,7 +50,7 @@ const Learn = () => {
     <section className="relative border-y border-gray-100/80 bg-gradient-to-b from-slate-50/90 via-white to-slate-50/50">
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 md:py-20">
         <div className="mb-10 text-center sm:mb-14">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-600 sm:text-xs">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-blue-500 sm:text-xs">
             Browse by topic
           </p>
           <h2 className="mx-auto mb-3 max-w-2xl text-xl font-bold tracking-tight text-gray-900 sm:mb-4 sm:text-2xl md:text-3xl lg:text-4xl">
