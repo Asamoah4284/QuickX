@@ -159,7 +159,7 @@ export default function CreatorDashboardOverview() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-5 text-sm text-slate-500 shadow-creator">
+      <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-5 text-sm text-slate-500">
         Loading creator overview...
       </div>
     );
@@ -167,7 +167,7 @@ export default function CreatorDashboardOverview() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-rose-200/80 bg-rose-50 px-4 py-5 text-sm text-rose-700 shadow-creator">{error}</div>
+      <div className="rounded-2xl border border-rose-200/80 bg-rose-50 px-4 py-5 text-sm text-rose-700">{error}</div>
     );
   }
 
@@ -189,7 +189,7 @@ export default function CreatorDashboardOverview() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-1 xl:grid-cols-3">
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:p-5 xl:col-span-2">
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 xl:col-span-2">
           <h2 className="text-base font-semibold text-slate-950">Revenue &amp; enrollments</h2>
           <p className="mt-0.5 text-xs text-slate-500">Last 6 months — completed payouts to you and new student enrollments.</p>
           <div className="mt-3 h-[220px] w-full sm:h-[240px]">
@@ -197,7 +197,7 @@ export default function CreatorDashboardOverview() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:p-5">
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
           <h2 className="text-base font-semibold text-slate-950">Courses by status</h2>
           <p className="mt-0.5 text-xs text-slate-500">How your catalog is distributed across listing states.</p>
           {totalStatusCount === 0 ? (

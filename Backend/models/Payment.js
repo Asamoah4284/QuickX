@@ -9,7 +9,7 @@ const paymentSchema = new mongoose.Schema({
     itemType: {
         type: String,
         required: true,
-        enum: ['course', 'book', 'program', 'creator_subscription']
+        enum: ['course', 'book', 'book_cart', 'program', 'creator_subscription']
     },
     /** Set when itemType is creator_subscription (plan id: 1m, 2m, 3m, 1y). */
     subscriptionPlanId: {
@@ -18,7 +18,15 @@ const paymentSchema = new mongoose.Schema({
     },
     itemId: {
         type: mongoose.Schema.Types.ObjectId,
-        required: true
+        required: function () {
+            return this.itemType !== 'book_cart';
+        },
+        default: null
+    },
+    /** For book cart purchases (multiple ebook items). */
+    cartItemIds: {
+        type: [mongoose.Schema.Types.ObjectId],
+        default: []
     },
     originalAmount: {
         type: Number,

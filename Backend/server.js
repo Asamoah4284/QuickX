@@ -135,6 +135,7 @@ app.use('/api', require('./routes/couponRoutes'));
 app.use('/api/mentorships', require('./routes/mentorshipRoutes'));
 app.use('/api/programs', require('./routes/programRoutes'));
 app.use('/api/instructor/courses', require('./routes/instructorCourseRoutes'));
+app.use('/api/instructor/books', require('./routes/instructorBookRoutes'));
 app.use('/api', require('./routes/referralRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
 app.use('/', require('./routes/advertisementRoutes'));

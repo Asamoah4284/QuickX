@@ -375,6 +375,57 @@ exports.getBookById = async (req, res) => {
     }
 };
 
+/** List instructor-submitted books pending admin review */
+exports.getBookReviewQueue = async (req, res) => {
+    try {
+        const books = await Book.find({
+            source: 'instructor',
+            listingStatus: 'pending_review'
+        })
+            .populate('createdBy', 'fullName email avatar profilePicture')
+            .sort({ updatedAt: -1 });
+        res.json(books);
+    } catch (error) {
+        console.error('getBookReviewQueue:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+/** Approve or reject an instructor-submitted book */
+exports.reviewInstructorBook = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { action, rejectionReason } = req.body;
+
+        if (!['approve', 'reject'].includes(action)) {
+            return res.status(400).json({ message: 'action must be approve or reject' });
+        }
+
+        const book = await Book.findById(id);
+        if (!book) return res.status(404).json({ message: 'Book not found' });
+        if (book.source !== 'instructor') {
+            return res.status(400).json({ message: 'Only instructor-submitted books require this review' });
+        }
+        if (book.listingStatus !== 'pending_review') {
+            return res.status(400).json({ message: 'Book is not pending review' });
+        }
+
+        if (action === 'approve') {
+            book.listingStatus = 'published';
+            book.rejectionReason = '';
+        } else {
+            book.listingStatus = 'rejected';
+            book.rejectionReason = (rejectionReason || 'Does not meet guidelines').slice(0, 2000);
+        }
+
+        await book.save();
+        res.json(book);
+    } catch (error) {
+        console.error('reviewInstructorBook:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 /** Approve or reject user-authored course listing */
 exports.reviewUserCourse = async (req, res) => {
     try {

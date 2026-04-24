@@ -1511,15 +1511,8 @@ const AdminDashboard = () => {
                     <div className="space-y-4 lg:space-y-6">
                         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
                             <h2 className="text-lg lg:text-xl font-bold mb-2 sm:mb-0">Course Management</h2>
-                            <button
-                                onClick={() => setShowAddCourse(true)}
-                                className="flex items-center px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm w-full sm:w-auto"
-                            >
-                                <FiPlus className="mr-1 lg:mr-2" />
-                                Add New Course
-                            </button>
                         </div>
-                        <CourseManagement onRequestDelete={handleDeleteCourse} />
+                        <CourseManagement />
                     </div>
                 );
             case 'books':

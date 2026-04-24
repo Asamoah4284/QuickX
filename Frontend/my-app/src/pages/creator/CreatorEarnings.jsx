@@ -20,21 +20,21 @@ export default function CreatorEarnings() {
   return (
     <div className="space-y-6">
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-creator">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
           <p className="text-sm text-slate-500">Gross revenue</p>
           <p className="mt-3 text-3xl font-semibold text-slate-950">GH₵{Number(data?.totalRevenue || 0).toFixed(2)}</p>
         </div>
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-creator">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
           <p className="text-sm text-slate-500">Net earnings</p>
           <p className="mt-3 text-3xl font-semibold text-slate-950">GH₵{Number(data?.totalEarnings || 0).toFixed(2)}</p>
         </div>
-        <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-creator">
+        <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
           <p className="text-sm text-slate-500">Available balance</p>
           <p className="mt-3 text-3xl font-semibold text-slate-950">GH₵{Number(data?.availableBalance || 0).toFixed(2)}</p>
         </div>
       </div>
 
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-creator">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-6">
         <h2 className="text-2xl font-semibold text-slate-950">Transactions</h2>
         <div className="mt-6 space-y-3">
           {loading ? (

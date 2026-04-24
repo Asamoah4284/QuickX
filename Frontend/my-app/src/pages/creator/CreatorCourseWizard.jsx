@@ -102,7 +102,7 @@ function StudioPanel({ title, description, children, tone = 'light' }) {
   const isDark = tone === 'dark';
   const styles = isDark
     ? 'border-white/10 bg-blue-900 text-white shadow-none ring-1 ring-white/10'
-    : 'border-slate-200/80 bg-white text-slate-950 shadow-creator';
+    : 'border-slate-200/80 bg-white text-slate-950';
 
   const padding = isDark ? 'p-4 sm:p-5' : 'p-6';
 
@@ -123,7 +123,7 @@ function StudioPanel({ title, description, children, tone = 'light' }) {
 
 function MetricCard({ icon: Icon, label, value, hint }) {
   return (
-    <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator">
+    <div className="rounded-2xl border border-slate-200/80 bg-white p-4">
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-500">{label}</p>
@@ -812,7 +812,7 @@ export default function CreatorCourseWizard() {
                   { label: '2 months', value: subscriptionPricing.month2 },
                   { label: '1 year', value: subscriptionPricing.year1 },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-2xl bg-white px-4 py-3 shadow-sm ring-1 ring-slate-200">
+                  <div key={item.label} className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">{item.label}</p>
                     <p className="mt-2 text-xl font-semibold text-slate-950">
                       GH{String.fromCharCode(0x20b5)}
@@ -1051,7 +1051,7 @@ export default function CreatorCourseWizard() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-sm text-slate-500 shadow-creator">
+      <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-sm text-slate-500">
         Loading course studio...
       </div>
     );
@@ -1109,7 +1109,7 @@ export default function CreatorCourseWizard() {
       <WizardStepper steps={steps} currentStep={currentStep} onStepSelect={setCurrentStep} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_340px]">
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-[32px] sm:p-6 md:p-8">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-[32px] sm:p-6 md:p-8">
           <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-5">
             <div>
               <p className="text-sm font-medium text-slate-500">

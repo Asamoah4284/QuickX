@@ -21,6 +21,16 @@ function resolveContentType(file, type) {
   const name = (file.name || '').toLowerCase();
   const raw = (file.type || '').trim();
 
+  if (type === 'file') {
+    if (raw.length > 0 && raw !== 'application/octet-stream') {
+      return raw;
+    }
+    if (name.endsWith('.pdf')) return 'application/pdf';
+    if (name.endsWith('.epub')) return 'application/epub+zip';
+    if (name.endsWith('.zip')) return 'application/zip';
+    return 'application/octet-stream';
+  }
+
   if (type === 'video') {
     if (raw.startsWith('video/')) {
       return raw;

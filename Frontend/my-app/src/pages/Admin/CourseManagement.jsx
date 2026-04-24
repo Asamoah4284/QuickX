@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
 import {
@@ -7,9 +6,6 @@ import {
     FiUsers,
     FiFileText,
     FiPlus,
-    FiEdit2,
-    FiTrash2,
-    FiEye,
     FiDownload,
     FiUpload,
     FiVideo,
@@ -70,7 +66,7 @@ const mockCourses = [
     }
 ];
 
-const CourseManagement = ({ onRequestDelete }) => {
+const CourseManagement = () => {
     const [courses, setCourses] = useState([]);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [students, setStudents] = useState([]);
@@ -254,28 +250,6 @@ const CourseManagement = ({ onRequestDelete }) => {
                                     <FiBook />
                                     Courses
                                 </button>
-                                <button
-                                    onClick={() => setActiveTab('students')}
-                                    className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                                        activeTab === 'students'
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    }`}
-                                >
-                                    <FiUsers />
-                                    Students
-                                </button>
-                                <button
-                                    onClick={() => setActiveTab('content')}
-                                    className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center gap-2 ${
-                                        activeTab === 'content'
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                                    }`}
-                                >
-                                    <FiFileText />
-                                    Content
-                                </button>
                             </nav>
                         </div>
 
@@ -285,7 +259,7 @@ const CourseManagement = ({ onRequestDelete }) => {
                                     {Array.isArray(courses) && courses.map(course => (
                                         <div
                                             key={course._id}
-                                            className="bg-white rounded-xl border border-gray-200 overflow-hidden hover:shadow-lg transition-shadow"
+                                            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
                                         >
                                             <div className="relative h-48">
                                                 <img
@@ -327,29 +301,6 @@ const CourseManagement = ({ onRequestDelete }) => {
                                                     }`}>
                                                         {course.courseType === 'crypto' ? 'Crypto' : 'Forex'}
                                                     </span>
-                                                </div>
-                                                <div className="flex gap-2">
-                                                    <button
-                                                        onClick={() => handleCourseSelect(course._id)}
-                                                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-blue-700"
-                                                    >
-                                                        <FiEye />
-                                                        View
-                                                    </button>
-                                                    <Link
-                                                        to={`/admin/courses/edit/${course._id}`}
-                                                        className="flex-1 bg-yellow-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-yellow-700"
-                                                    >
-                                                        <FiEdit2 />
-                                                        Edit
-                                                    </Link>
-                                                    <button
-                                                        onClick={() => onRequestDelete(course._id)}
-                                                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg flex items-center justify-center gap-2 hover:bg-red-700"
-                                                    >
-                                                        <FiTrash2 />
-                                                        Delete
-                                                    </button>
                                                 </div>
                                             </div>
                                         </div>

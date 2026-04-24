@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   FiBarChart2,
   FiBookOpen,
+  FiBook,
   FiEdit3,
   FiFileText,
   FiUsers,
@@ -35,6 +36,7 @@ const items = [
   { to: '/creator/dashboard', label: 'Overview', icon: FiBarChart2, end: true },
   { to: '/creator/dashboard/courses', label: 'My Courses', icon: FiBookOpen },
   { to: '/creator/dashboard/courses/new', label: 'Create New Course', icon: FiEdit3 },
+  { to: '/creator/dashboard/books', label: 'My Books', icon: FiBook },
   { to: '/creator/dashboard/drafts', label: 'Drafts', icon: FiFileText },
   { to: '/creator/dashboard/students', label: 'Students', icon: FiUsers },
   { to: '/creator/dashboard/reviews', label: 'Reviews', icon: FiStar },
@@ -54,7 +56,7 @@ export default function CreatorSidebar({ onNavigate }) {
   }, []);
 
   return (
-    <aside className="w-full rounded-2xl border border-slate-200/80 bg-white p-3 shadow-creator-lg lg:w-64 lg:p-4">
+    <aside className="w-full rounded-2xl border border-slate-200/80 bg-white p-3 lg:w-64 lg:p-4">
       <div className="relative mb-4 overflow-hidden rounded-xl bg-blue-900 p-4 text-white ring-1 ring-white/10">
         <div className="relative min-h-[7.5rem]">
           {CREATOR_PROMO_SLIDES.map((slide, i) => (

@@ -232,7 +232,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-3xl sm:p-6">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold text-slate-950">Curriculum designer</p>
@@ -268,7 +268,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
         return (
           <div
             key={`module-${moduleIndex}`}
-            className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-[28px] sm:p-5 md:p-6"
+            className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-[28px] sm:p-5 md:p-6"
           >
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div className="min-w-0 flex-1">
@@ -401,7 +401,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
                       return (
                         <div
                           key={`lesson-${lessonIndex}`}
-                          className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 shadow-creator sm:rounded-2xl sm:p-4 md:p-5"
+                          className="min-w-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white p-3 sm:rounded-2xl sm:p-4 md:p-5"
                         >
                           <div className="flex flex-wrap items-start justify-between gap-3">
                             <div>

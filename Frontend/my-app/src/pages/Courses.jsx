@@ -74,7 +74,7 @@ export default function Courses() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Title…"
-                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white px-2 py-1.5 text-sm text-slate-900"
               />
             </div>
             <div>
@@ -82,7 +82,7 @@ export default function Courses() {
               <select
                 value={courseType}
                 onChange={(e) => setCourseType(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white px-2 py-1.5 text-sm text-slate-900"
               >
                 <option value="">All</option>
                 <option value="forex">Forex</option>
@@ -95,7 +95,7 @@ export default function Courses() {
               <select
                 value={level}
                 onChange={(e) => setLevel(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white px-2 py-1.5 text-sm text-slate-900"
               >
                 <option value="">All</option>
                 <option value="beginner">Beginner</option>
@@ -109,7 +109,7 @@ export default function Courses() {
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="Exact tag or category"
-                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white px-2 py-1.5 text-sm text-slate-900"
               />
             </div>
             <div>
@@ -117,7 +117,7 @@ export default function Courses() {
               <select
                 value={sort}
                 onChange={(e) => setSort(e.target.value)}
-                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 px-2 py-1.5 text-sm"
+                className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white px-2 py-1.5 text-sm text-slate-900"
               >
                 <option value="">Newest</option>
                 <option value="oldest">Oldest</option>

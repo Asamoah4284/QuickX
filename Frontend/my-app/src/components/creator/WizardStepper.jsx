@@ -2,7 +2,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
   const isClickable = typeof onStepSelect === 'function';
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-5 shadow-creator">
+    <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         {steps.map((step, index) => {
           const stepNumber = index + 1;
@@ -13,7 +13,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
             completed
               ? 'border-emerald-200 bg-emerald-50'
               : active
-                ? 'border-white/20 bg-blue-900 text-white shadow-md shadow-blue-800/25'
+                ? 'border-white/20 bg-blue-900 text-white'
                 : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
           } ${isClickable ? 'cursor-pointer' : ''}`;
 
@@ -24,7 +24,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
                   completed
                     ? 'bg-emerald-500 text-white'
                     : active
-                      ? 'bg-white text-blue-800 shadow-sm'
+                      ? 'bg-white text-blue-800'
                       : 'bg-slate-100 text-slate-500'
                 }`}
               >

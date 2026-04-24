@@ -54,7 +54,7 @@ function CourseRowActions({ course, navigate, runAction }) {
       <button
         type="button"
         onClick={() => navigate(`/creator/dashboard/courses/${course._id}/edit`)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
       >
         <FiEdit3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
         Edit
@@ -69,11 +69,11 @@ function CourseRowActions({ course, navigate, runAction }) {
       </button>
 
       <details className="group relative">
-        <summary className="flex cursor-pointer list-none items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 shadow-sm transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+        <summary className="flex cursor-pointer list-none items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
           <FiMoreHorizontal className="h-4 w-4" aria-hidden />
           <span className="sr-only">More actions</span>
         </summary>
-        <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-slate-900/5 max-[480px]:left-0 max-[480px]:right-auto">
+        <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 ring-1 ring-slate-900/5 max-[480px]:left-0 max-[480px]:right-auto">
           <button
             type="button"
             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
@@ -197,7 +197,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 shadow-creator sm:rounded-3xl sm:p-6">
+      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
             <h2 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{pageTitle}</h2>
@@ -221,7 +221,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
               onClick={() => setActiveFilter(option)}
               className={`shrink-0 snap-start rounded-full px-3 py-1.5 text-xs font-medium capitalize transition sm:px-4 sm:py-2 sm:text-sm ${
                 activeFilter === option
-                  ? 'bg-blue-600 text-white shadow-sm shadow-blue-600/25'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
               }`}
             >
@@ -238,7 +238,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-creator sm:rounded-3xl">
+      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white sm:rounded-3xl">
         {loading ? (
           <div className="p-6 text-sm text-slate-500 sm:p-8">Loading courses…</div>
         ) : courses.length === 0 ? (
@@ -268,7 +268,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                 return (
                   <article
                     key={course._id}
-                    className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-3 shadow-sm sm:p-4"
+                    className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-3 sm:p-4"
                   >
                     <div className="flex gap-3">
                       <div className="relative h-16 w-[4.75rem] shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-[4.5rem] sm:w-[5.25rem]">

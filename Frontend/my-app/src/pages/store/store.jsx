@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { FiShoppingCart, FiBook, FiArrowRight, FiBookmark, FiX, FiPackage, FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import React, { useMemo, useState, useEffect } from 'react';
+import { FiShoppingCart, FiBook, FiArrowRight, FiX, FiPackage, FiChevronLeft, FiChevronRight, FiCheck } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -8,11 +8,16 @@ const API_URL = import.meta.env.VITE_API_URL;
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 
+function formatGhs(value) {
+  const n = Number(value || 0);
+  return `GH₵${n.toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+}
+
 const Store = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [showPurchaseModal, setShowPurchaseModal] = useState(false);
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
+  const [cartCount, setCartCount] = useState(0);
   const [hardcopyRequest, setHardcopyRequest] = useState({
     name: '',
     location: ''
@@ -20,6 +25,7 @@ const Store = () => {
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [justAddedId, setJustAddedId] = useState('');
   const navigate = useNavigate();
 
   /** Hero carousel slides — book-style covers; images keep natural aspect inside frame (no stretch). */
@@ -49,6 +55,24 @@ const Store = () => {
     fetchBooks();
   }, []);
 
+  // Keep cart count in sync with localStorage
+  useEffect(() => {
+    const readCount = () => {
+      try {
+        const raw = JSON.parse(localStorage.getItem('bookCart') || '[]');
+        setCartCount(Array.isArray(raw) ? raw.length : 0);
+      } catch {
+        setCartCount(0);
+      }
+    };
+    readCount();
+    const onStorage = (e) => {
+      if (e.key === 'bookCart') readCount();
+    };
+    window.addEventListener('storage', onStorage);
+    return () => window.removeEventListener('storage', onStorage);
+  }, []);
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % heroSlides.length);
@@ -65,53 +89,58 @@ const Store = () => {
     });
   };
 
-  // Handle adding book to cart
-  const handleAddBook = (book) => {
-    setSelectedBook(book);
-    setShowPurchaseModal(true);
+  const getCart = () => {
+    try {
+      const raw = JSON.parse(localStorage.getItem('bookCart') || '[]');
+      return Array.isArray(raw) ? raw : [];
+    } catch {
+      return [];
+    }
   };
 
-  // Handle purchase confirmation
-  const handleConfirmPurchase = () => {
-    // Get existing purchased books from localStorage or initialize empty array
-    const existingBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
-    
-    // Check if book is already in the purchased list
-    if (!existingBooks.some(book => book.id === selectedBook._id)) {
-      // Add new book to the list with a pending status
-      const updatedBooks = [...existingBooks, {
-        id: selectedBook._id,
-        title: selectedBook.title,
-        author: selectedBook.author,
-        thumbnail: selectedBook.thumbnail,
-        fileUrl: selectedBook.fileUrl,
-        description: selectedBook.description,
-        status: 'pending' // Mark as pending until payment is completed
-      }];
-      
-      // Save to localStorage
-      localStorage.setItem('purchasedBooks', JSON.stringify(updatedBooks));
-      
-      // Store the current book ID for payment confirmation
-      localStorage.setItem('pendingBookPurchase', selectedBook._id);
+  const setCart = (next) => {
+    localStorage.setItem('bookCart', JSON.stringify(next));
+    setCartCount(next.length);
+  };
+
+  // Add e-book to cart (marketplace flow)
+  const handleAddBookToCart = (book) => {
+    const existing = getCart();
+    if (existing.some((b) => b?.id === book._id || b?.id === String(book._id))) {
+      return;
     }
-    
-    // Close modal
-    setShowPurchaseModal(false);
-    
-    // Redirect to checkout page with item data
-    navigate('/checkout', { 
-      state: { 
+    setCart([
+      ...existing,
+      {
+        id: book._id,
+        type: 'book',
+        title: book.title,
+        price: Number(book.price || 0),
+        image: book.thumbnail,
+        thumbnail: book.thumbnail,
+        fileUrl: book.fileUrl,
+        author: book.author,
+      },
+    ]);
+    setJustAddedId(String(book._id));
+    window.setTimeout(() => setJustAddedId(''), 1200);
+  };
+
+  const handleGoToCheckout = () => {
+    const items = getCart();
+    const total = items.reduce((sum, item) => sum + Number(item?.price || 0), 0);
+    if (!items.length) return;
+    navigate('/checkout', {
+      state: {
         item: {
-          type: 'book',
-          id: selectedBook._id,
-          title: selectedBook.title,
-          price: selectedBook.price,
-          image: selectedBook.thumbnail
+          type: 'book_cart',
+          title: 'Book cart',
+          items,
+          price: total,
+          image: items[0]?.image,
         },
-        returnPath: '/membership',
-        returnTabState: { activeTab: 'myBooks' }
-      } 
+        returnPath: '/store',
+      },
     });
   };
 
@@ -134,15 +163,15 @@ const Store = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Featured Book */}
-      <div className="relative min-h-[52vh] overflow-hidden bg-gradient-to-r from-blue-950 to-blue-900 sm:min-h-[56vh] lg:min-h-[72vh]">
+      <div className="relative min-h-[34vh] bg-blue-900 sm:min-h-[38vh] lg:min-h-[44vh]">
         <div className="absolute inset-0 bg-black/35" />
-        <div className="relative mx-auto flex h-full min-h-0 max-w-6xl flex-col px-4 pb-12 pt-24 sm:px-6 sm:pb-14 sm:pt-28 lg:px-8 lg:pb-16 lg:pt-24">
-          <div className="grid min-w-0 grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
-            <div className="min-w-0 space-y-4 text-white sm:space-y-5 md:space-y-6">
+        <div className="relative mx-auto flex h-full min-h-0 max-w-6xl flex-col px-4 pb-6 pt-12 sm:px-6 sm:pb-8 sm:pt-14 lg:px-8 lg:pb-10 lg:pt-12">
+          <div className="grid min-w-0 grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-10">
+            <div className="min-w-0 space-y-3 text-white sm:space-y-4">
               <div className="inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
                 Featured Book
               </div>
-              <h1 className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl sm:leading-tight md:text-4xl lg:text-5xl">
+              <h1 className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl sm:leading-tight md:text-4xl lg:text-4xl">
                 Discover Your Next Digital Adventure
               </h1>
               <p className="max-w-lg text-sm leading-relaxed text-blue-100/95 sm:text-base md:text-lg">
@@ -185,9 +214,7 @@ const Store = () => {
                       draggable={false}
                     />
                   ))}
-                  <p className="pointer-events-none absolute bottom-1 left-0 right-0 z-20 text-center text-[11px] font-semibold uppercase tracking-wider text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.45)]">
-                    {heroSlides[currentImageIndex]?.tag}
-                  </p>
+                  {/* Removed slide tag + dots to save vertical space */}
                   <button
                     type="button"
                     onClick={() => goHeroSlide(-1)}
@@ -206,21 +233,7 @@ const Store = () => {
                   </button>
                 </div>
 
-                <div className="mt-4 flex justify-center gap-2" role="tablist" aria-label="Slide indicators">
-                  {heroSlides.map((slide, i) => (
-                    <button
-                      key={slide.url}
-                      type="button"
-                      role="tab"
-                      aria-selected={i === currentImageIndex}
-                      aria-label={`Go to slide ${i + 1}`}
-                      onClick={() => setCurrentImageIndex(i)}
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        i === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
-                      }`}
-                    />
-                  ))}
-                </div>
+                {/* Slide indicators removed */}
               </div>
             </div>
           </div>
@@ -232,9 +245,29 @@ const Store = () => {
         <div>
           <div>
             <div className="mb-6 sm:mb-8">
-              <h2 className="text-xl font-bold tracking-tight text-gray-800 sm:text-2xl md:text-3xl">
-                Discover Books
-              </h2>
+              <div className="flex items-end justify-between gap-4">
+                <div>
+                  <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-3xl">
+                    Marketplace
+                  </h2>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Buy digital books instantly. Hardcopy requests are handled via WhatsApp.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleGoToCheckout}
+                  className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                >
+                  <FiShoppingCart className="h-4 w-4" />
+                  View cart
+                  {cartCount > 0 ? (
+                    <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
+                      {cartCount}
+                    </span>
+                  ) : null}
+                </button>
+              </div>
             </div>
 
             {/* Loading state */}
@@ -259,14 +292,17 @@ const Store = () => {
 
             {/* Books grid */}
             {!isLoading && !error && (
-              <div className="grid grid-cols-1 gap-5 md:grid-cols-2 md:gap-8 xl:grid-cols-3">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {books.map((book) => (
-                  <div key={book._id} className="group overflow-hidden rounded-xl bg-white shadow-md transition-all duration-300 hover:shadow-xl">
-                    <div className="relative h-48 overflow-hidden sm:h-56 md:h-64">
+                  <div
+                    key={book._id}
+                    className="group mx-auto w-full max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 sm:max-w-none"
+                  >
+                    <div className="relative aspect-[16/9] overflow-hidden bg-slate-50">
                       <img 
                         src={book.thumbnail}
                         alt={book.title} 
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                         onLoad={() => console.log('Book image loaded:', book.title, book.thumbnail)}
                         onError={(e) => {
                           console.error('Book image failed to load:', book.title, book.thumbnail);
@@ -274,17 +310,21 @@ const Store = () => {
                           e.target.src = DEFAULT_BOOK_COVER;
                         }}
                       />
-                      <div className="absolute right-2 top-2 sm:right-3 sm:top-3">
-                        <button type="button" className="rounded-full bg-white/90 p-1.5 shadow-sm hover:bg-white sm:p-2" aria-label="Bookmark">
-                          <FiBookmark className="h-3.5 w-3.5 text-indigo-600 sm:h-4 sm:w-4" />
-                        </button>
+                      <div className="absolute left-3 top-3">
+                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                          book.type === 'ebook'
+                            ? 'bg-indigo-600 text-white'
+                            : 'bg-emerald-600 text-white'
+                        }`}>
+                          {book.type === 'ebook' ? 'E-book' : 'Hardcopy'}
+                        </span>
                       </div>
                     </div>
-                    <div className="p-4 sm:p-5">
-                      <h3 className="mb-1 line-clamp-2 text-base font-semibold leading-snug text-gray-800 sm:mb-2 sm:text-lg md:text-xl">
+                    <div className="p-3 sm:p-4">
+                      <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 sm:text-lg">
                         {book.title}
                       </h3>
-                      <p className="mb-3 text-xs text-gray-600 sm:mb-4 sm:text-sm">{book.author}</p>
+                      <p className="mt-1 text-xs text-slate-600 sm:text-sm">{book.author}</p>
                       {/* <div className="flex items-center text-amber-400 mb-3">
                         <FiStar className="fill-current" />
                         <FiStar className="fill-current" />
@@ -295,34 +335,50 @@ const Store = () => {
                           ({book.reviews?.length || 0} reviews)
                         </span>
                       </div> */}
-                      <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
-                        <span className="text-sm font-bold text-indigo-600 sm:text-base md:text-lg">
-                          GHS{book.price}
+                      <div className="mt-3 flex items-center justify-between gap-3">
+                        <span className="text-sm font-bold text-slate-900 sm:text-base">
+                          {formatGhs(book.price)}
                         </span>
-                        <div className="flex flex-wrap items-center justify-start gap-1.5 sm:justify-end sm:gap-2">
-                          <button 
-                            type="button"
-                            className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-indigo-700 sm:px-3.5 sm:py-2 sm:text-sm"
-                            onClick={() => handleAddBook(book)}
-                          >
-                            <FiShoppingCart className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Ebook
-                          </button>
-                          <button 
-                            type="button"
-                            className="inline-flex items-center gap-1 rounded-md bg-green-600 px-2.5 py-1.5 text-[11px] font-medium text-white transition-colors hover:bg-green-700 sm:px-3.5 sm:py-2 sm:text-sm"
-                            onClick={() => handleHardcopyRequest(book)}
-                          >
-                            <FiPackage className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                            Hardcopy
-                          </button>
+                        <div className="flex items-center gap-2">
+                          {book.type === 'ebook' ? (
+                            <button
+                              type="button"
+                              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${
+                                justAddedId === String(book._id)
+                                  ? 'bg-emerald-600'
+                                  : 'bg-indigo-600 hover:bg-indigo-700'
+                              }`}
+                              onClick={() => handleAddBookToCart(book)}
+                            >
+                              {justAddedId === String(book._id) ? (
+                                <>
+                                  <FiCheck className="h-4 w-4" />
+                                  Added
+                                </>
+                              ) : (
+                                <>
+                                  <FiShoppingCart className="h-4 w-4" />
+                                  Add
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
+                              onClick={() => handleHardcopyRequest(book)}
+                            >
+                              <FiPackage className="h-4 w-4" />
+                              Request
+                            </button>
+                          )}
                         </div>
                       </div>
-                      {book.type === 'hardcopy' && book.stock < 1 && (
-                        <div className="mt-2 text-red-600 text-sm">
+                      {book.type === 'hardcopy' && book.stock < 1 ? (
+                        <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
                           Out of stock
                         </div>
-                      )}
+                      ) : null}
                     </div>
                   </div>
                 ))}
@@ -342,70 +398,19 @@ const Store = () => {
           </div>
         </div>
       </main>
-     
-      {/* Purchase Confirmation Modal */}
-      {showPurchaseModal && selectedBook && (
-        <div className="fixed inset-0 bg-gray-900/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden animate-fadeIn">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Purchase Confirmation</h3>
-              <button 
-                className="text-gray-400 hover:text-gray-600" 
-                onClick={() => setShowPurchaseModal(false)}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div className="flex items-start mb-4">
-                <img 
-                  src={selectedBook.thumbnail || DEFAULT_BOOK_COVER}
-                  alt={selectedBook.title} 
-                  className="h-24 w-20 object-cover rounded-md shadow-sm mr-4"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = DEFAULT_BOOK_COVER;
-                  }}
-                />
-                <div>
-                  <h4 className="font-medium text-gray-900">{selectedBook.title}</h4>
-                  <p className="text-sm text-gray-600">{selectedBook.author}</p>
-                  <p className="mt-1 text-indigo-600 font-bold">GHS{selectedBook.price}</p>
-                </div>
-              </div>
-              
-              <p className="text-gray-700 mb-4">
-                Add this book to your dashboard? You'll be directed to complete the purchase.
-              </p>
-              
-              <div className="flex justify-end space-x-3 mt-6">
-                <button 
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
-                  onClick={() => setShowPurchaseModal(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700"
-                  onClick={handleConfirmPurchase}
-                >
-                  Confirm
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Hardcopy Request Modal */}
       {showHardcopyModal && selectedBook && (
         <div className="fixed inset-0 bg-gray-900/70 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden animate-fadeIn">
-            <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
-              <h3 className="text-lg font-semibold text-gray-900">Request Hardcopy</h3>
+          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+              <div>
+                <h3 className="text-lg font-semibold tracking-tight text-slate-950">Request hardcopy</h3>
+                <p className="mt-0.5 text-sm text-slate-500">Tell us where to deliver it.</p>
+              </div>
               <button 
-                className="text-gray-400 hover:text-gray-600" 
+                type="button"
+                className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
                 onClick={() => setShowHardcopyModal(false)}
               >
                 <FiX size={20} />
@@ -413,59 +418,61 @@ const Store = () => {
             </div>
             
             <form onSubmit={handleHardcopySubmit} className="p-6">
-              <div className="flex items-start mb-4">
+              <div className="flex items-start gap-4 mb-5">
                 <img 
                   src={selectedBook.thumbnail || DEFAULT_BOOK_COVER}
                   alt={selectedBook.title} 
-                  className="h-24 w-20 object-cover rounded-md shadow-sm mr-4"
+                  className="h-20 w-16 flex-none rounded-xl border border-slate-200 object-cover"
                   onError={(e) => {
                     e.target.onerror = null;
                     e.target.src = DEFAULT_BOOK_COVER;
                   }}
                 />
                 <div>
-                  <h4 className="font-medium text-gray-900">{selectedBook.title}</h4>
-                  <p className="text-sm text-gray-600">{selectedBook.author}</p>
-                  <p className="mt-1 text-indigo-600 font-bold">GHS{selectedBook.price}</p>
+                  <h4 className="text-base font-semibold text-slate-950">{selectedBook.title}</h4>
+                  <p className="mt-0.5 text-sm text-slate-600">{selectedBook.author}</p>
+                  <p className="mt-1 text-sm font-semibold text-blue-700">GHS{selectedBook.price}</p>
                 </div>
               </div>
               
               <div className="space-y-4">
                 <div>
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700">Your Name</label>
+                  <label htmlFor="name" className="block text-sm font-semibold text-slate-800">Your name</label>
                   <input
                     type="text"
                     id="name"
                     required
                     value={hardcopyRequest.name}
                     onChange={(e) => setHardcopyRequest({ ...hardcopyRequest, name: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. Asamoah Richard"
+                    className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label htmlFor="location" className="block text-sm font-medium text-gray-700">Your Location</label>
+                  <label htmlFor="location" className="block text-sm font-semibold text-slate-800">Your location</label>
                   <input
                     type="text"
                     id="location"
                     required
                     value={hardcopyRequest.location}
                     onChange={(e) => setHardcopyRequest({ ...hardcopyRequest, location: e.target.value })}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                    placeholder="e.g. Accra, East Legon"
+                    className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
                   />
                 </div>
               </div>
               
-              <div className="flex justify-end space-x-3 mt-6">
+              <div className="mt-6 flex justify-end gap-3">
                 <button 
                   type="button"
-                  className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
                   onClick={() => setShowHardcopyModal(false)}
                 >
                   Cancel
                 </button>
                 <button 
                   type="submit"
-                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
                 >
                   Submit Request
                 </button>

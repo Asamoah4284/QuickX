@@ -186,6 +186,58 @@ function Membership() {
     fetchUserData();
   }, [location.state]);
 
+  // Hydrate purchased books with missing fileUrl/thumbnail (older purchases/cart items).
+  useEffect(() => {
+    const missing = purchasedBooks
+      .filter((b) => b && (b.fileUrl == null || String(b.fileUrl).trim() === ''))
+      .map((b) => String(b.id || b._id || ''))
+      .filter(Boolean);
+    const uniqueIds = Array.from(new Set(missing));
+    if (!uniqueIds.length) return;
+
+    let cancelled = false;
+    Promise.all(
+      uniqueIds.map((id) =>
+        axios
+          .get(`${API_URL}/api/books/${id}/preview`)
+          .then(({ data }) => ({ id, data }))
+          .catch(() => null)
+      )
+    ).then((results) => {
+      if (cancelled) return;
+      const updates = results.filter(Boolean);
+      if (!updates.length) return;
+
+      setPurchasedBooks((prev) => {
+        const next = prev.map((b) => {
+          const bid = String(b?.id || b?._id || '');
+          const hit = updates.find((u) => u.id === bid);
+          if (!hit) return b;
+          const d = hit.data || {};
+          return {
+            ...b,
+            title: b.title || d.title,
+            author: b.author || d.author,
+            description: b.description || d.description,
+            thumbnail: b.thumbnail || d.thumbnail,
+            image: b.image || d.thumbnail || b.thumbnail,
+            fileUrl: b.fileUrl || d.fileUrl,
+          };
+        });
+        try {
+          localStorage.setItem('purchasedBooks', JSON.stringify(next));
+        } catch {
+          // ignore
+        }
+        return next;
+      });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [purchasedBooks]);
+
   // Success Notification Component
   const SuccessNotification = () => {
     if (!showSuccessMessage) return null;
@@ -928,57 +980,123 @@ function Membership() {
             )}
             
             {activeTab === 'myBooks' && (
-              <div className="bg-white rounded-xl shadow-sm p-6">
-                <h2 className="text-lg font-bold text-gray-900 mb-4">My Books</h2>
+              <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                <div className="mb-5 flex items-end justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight text-slate-950">My Books</h2>
+                    <p className="mt-1 text-sm text-slate-500">Your purchased ebooks, ready to download anytime.</p>
+                  </div>
+                  <Link
+                    to="/store"
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <FiBookOpen />
+                    Browse store
+                  </Link>
+                </div>
                 
                 {purchasedBooks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
                     {purchasedBooks.map(book => (
-                      <div key={book.id} className="border border-gray-200 rounded-xl overflow-hidden hover:shadow-md transition-shadow flex flex-col">
-                        <div className="h-56 overflow-hidden">
-                          <img src={book.thumbnail} alt={book.title} className="w-full h-full object-cover" />
+                      <div
+                        key={book.id}
+                        className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300"
+                      >
+                        <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
+                          <img
+                            src={(() => {
+                              const raw = book?.thumbnail || book?.image;
+                              if (!raw) return '';
+                              const s = typeof raw === 'string' ? raw.trim() : String(raw).trim();
+                              if (!s) return '';
+                              if (s.startsWith('http')) return publicAssetUrl(s);
+                              if (s.startsWith('/')) return publicAssetUrl(`${API_URL}${s}`);
+                              return publicAssetUrl(s);
+                            })()}
+                            alt={book.title}
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            loading="lazy"
+                          />
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/5 to-transparent" />
+                          <div className="absolute bottom-3 left-3 right-3">
+                            <p className="line-clamp-2 text-sm font-semibold text-white">{book.title}</p>
+                            <p className="mt-0.5 text-xs text-white/80">{book.author ? `by ${book.author}` : ''}</p>
+                          </div>
                         </div>
-                        <div className="p-4 flex-grow flex flex-col">
-                          <h3 className="font-medium text-gray-900 mb-1">{book.title}</h3>
-                          <p className="text-sm text-gray-600 mb-2">by {book.author}</p>
-                          <p className="text-sm text-gray-500 mb-4 flex-grow">{book.description}</p>
-                          <a
-                            href={book.fileUrl}
-                            className="text-sm text-white bg-blue-600 px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-center"
-                            download
-                          >
-                            Download PDF
-                          </a>
+
+                        <div className="p-4">
+                          <p className="line-clamp-2 text-sm text-slate-600">{book.description || '—'}</p>
+                          <div className="mt-4 flex items-center justify-between gap-3">
+                            <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
+                              <FiBookOpen />
+                              Ebook
+                            </span>
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={(() => {
+                                  const raw = book?.fileUrl;
+                                  if (!raw) return '';
+                                  const s = typeof raw === 'string' ? raw.trim() : String(raw).trim();
+                                  if (!s) return '';
+                                  if (s.startsWith('http')) return publicAssetUrl(s);
+                                  if (s.startsWith('/')) return publicAssetUrl(`${API_URL}${s}`);
+                                  return publicAssetUrl(s);
+                                })()}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                              >
+                                View
+                              </a>
+                              <a
+                                href={(() => {
+                                  const raw = book?.fileUrl;
+                                  if (!raw) return '';
+                                  const s = typeof raw === 'string' ? raw.trim() : String(raw).trim();
+                                  if (!s) return '';
+                                  if (s.startsWith('http')) return publicAssetUrl(s);
+                                  if (s.startsWith('/')) return publicAssetUrl(`${API_URL}${s}`);
+                                  return publicAssetUrl(s);
+                                })()}
+                                className="inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                                download
+                              >
+                                Download
+                              </a>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
                     
-                    <div className="border border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center p-6 hover:bg-gray-50 transition-colors">
-                      <div className="bg-blue-100 text-blue-600 p-3 rounded-full mb-3">
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                      <div className="mx-auto flex max-w-xs flex-col items-center text-center">
+                        <div className="mb-3 rounded-full bg-blue-100 p-3 text-blue-700">
                         <FiBookOpen size={24} />
+                        </div>
+                        <h3 className="text-base font-semibold text-slate-900">Discover more books</h3>
+                        <p className="mt-1 text-sm text-slate-500">Expand your knowledge with premium ebooks.</p>
+                        <Link
+                          to="/store"
+                          className="mt-4 inline-flex items-center justify-center rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                        >
+                          Browse Books
+                        </Link>
                       </div>
-                      <h3 className="font-medium text-gray-900 mb-1">Discover More Books</h3>
-                      <p className="text-sm text-gray-500 text-center mb-3">Expand your trading knowledge with our premium books</p>
-                      <Link
-                        to="/store"
-                        className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Browse Books
-                      </Link>
                     </div>
                   </div>
                 ) : (
-                  <div className="text-center py-10">
-                    <div className="bg-blue-100 text-blue-600 p-3 rounded-full inline-block mb-3">
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+                    <div className="mx-auto mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">
                       <FiBookOpen size={24} />
                     </div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No books yet</h3>
-                    <p className="text-gray-500 mb-4 max-w-md mx-auto">
-                      You haven't purchased any books yet. Expand your trading knowledge with our premium books.
+                    <h3 className="text-lg font-semibold text-slate-900">No books yet</h3>
+                    <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                      When you buy ebooks from the store, they’ll show up here.
                     </p>
                     <Link
                       to="/store"
-                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-block"
+                      className="mt-5 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
                     >
                       Browse Books
                     </Link>

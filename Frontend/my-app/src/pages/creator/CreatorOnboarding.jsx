@@ -244,7 +244,7 @@ export default function CreatorOnboarding() {
     return (
       <div className="min-h-screen bg-slate-50 pt-24">
         <div className="mx-auto max-w-5xl px-4">
-          <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-center shadow-creator">
+          <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-center">
             <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-700 border-t-transparent animate-spin" />
             <p className="mt-4 text-sm text-slate-500">Loading your creator onboarding workspace...</p>
           </div>
@@ -256,7 +256,7 @@ export default function CreatorOnboarding() {
   return (
     <div className="min-h-screen bg-slate-50 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4">
-        <div className="rounded-[32px] bg-blue-900 p-8 text-white shadow-xl ring-1 ring-white/10">
+        <div className="rounded-[32px] bg-blue-900 p-8 text-white ring-1 ring-white/10">
           <p className="text-sm font-medium text-blue-100">Creator onboarding</p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <div>
@@ -274,7 +274,7 @@ export default function CreatorOnboarding() {
           <WizardStepper steps={steps} currentStep={currentStep} />
         </div>
 
-        <div className="mt-6 rounded-[32px] border border-slate-200/80 bg-white p-6 shadow-creator">
+        <div className="mt-6 rounded-[32px] border border-slate-200/80 bg-white p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
               <h2 className="text-xl font-semibold text-slate-950">{steps[currentStep - 1].label}</h2>

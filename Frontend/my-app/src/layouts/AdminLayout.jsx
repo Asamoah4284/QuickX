@@ -4,12 +4,10 @@ import {
   FiHome,
   FiUsers,
   FiBook,
-  FiVideo,
   FiSettings,
   FiLogOut,
   FiBookOpen,
   FiTag,
-  FiStar,
   FiImage,
   FiDollarSign,
   FiX,
@@ -37,16 +35,14 @@ export default function AdminLayout() {
 
   const isTutorApps = pathname.startsWith('/admin/tutors/applications');
   const isCourseReview = pathname.includes('/courses/review-queue');
+  const isBookReview = pathname.includes('/books/review-queue');
   const isPlatformSettings = pathname.startsWith('/admin/platform/settings');
   const isCourses =
     pathname === '/admin/courses' ||
     pathname.startsWith('/admin/courses/add') ||
     pathname.startsWith('/admin/courses/edit');
-  const isBooks = pathname.startsWith('/admin/books');
-  const isUpload = pathname.startsWith('/admin/upload');
   const isSettingsTab = pathname.startsWith('/admin/settings') && !pathname.startsWith('/admin/platform');
   const isCoupons = pathname.startsWith('/admin/coupons');
-  const isMentorship = pathname.startsWith('/admin/mentorship');
   const isAds = pathname.startsWith('/admin/advertisements');
   const isWithdrawals = pathname.startsWith('/admin/withdrawals');
 
@@ -91,6 +87,10 @@ export default function AdminLayout() {
               <FiClipboard className="mr-2 lg:mr-3" />
               Course review queue
             </NavLink>
+            <NavLink to="/admin/books/review-queue" className={() => navClass(isBookReview)} onClick={close}>
+              <FiClipboard className="mr-2 lg:mr-3" />
+              Book review queue
+            </NavLink>
             <NavLink to="/admin/platform/settings" className={() => navClass(isPlatformSettings)} onClick={close}>
               <FiSettings className="mr-2 lg:mr-3" />
               Platform settings
@@ -99,14 +99,6 @@ export default function AdminLayout() {
               <FiBook className="mr-2 lg:mr-3" />
               Courses
             </NavLink>
-            <NavLink to="/admin/books" className={() => navClass(isBooks)} onClick={close}>
-              <FiBookOpen className="mr-2 lg:mr-3" />
-              Books
-            </NavLink>
-            <NavLink to="/admin/upload" className={() => navClass(isUpload)} onClick={close}>
-              <FiVideo className="mr-2 lg:mr-3" />
-              Upload Content
-            </NavLink>
             <NavLink to="/admin/settings" className={() => navClass(isSettingsTab)} onClick={close}>
               <FiSettings className="mr-2 lg:mr-3" />
               Settings
@@ -114,10 +106,6 @@ export default function AdminLayout() {
             <NavLink to="/admin/coupons" className={() => navClass(isCoupons)} onClick={close}>
               <FiTag className="mr-2 lg:mr-3" />
               Coupons
-            </NavLink>
-            <NavLink to="/admin/mentorship" className={() => navClass(isMentorship)} onClick={close}>
-              <FiStar className="mr-2 lg:mr-3" />
-              Mentorship
             </NavLink>
             <NavLink to="/admin/advertisements" className={() => navClass(isAds)} onClick={close}>
               <FiImage className="mr-2 lg:mr-3" />

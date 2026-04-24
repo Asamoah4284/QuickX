@@ -77,7 +77,9 @@ router.put('/books/:id',
 
 router.delete('/books/:id', adminAuth, adminController.deleteBook);
 router.get('/books', adminAuth, adminController.getAllBooks);
+router.get('/books/review-queue/list', adminAuth, adminController.getBookReviewQueue);
 router.get('/books/:id', adminAuth, adminController.getBookById);
+router.patch('/books/:id/review', adminAuth, adminController.reviewInstructorBook);
 
 // Content upload route
 router.post('/upload-content', (req, res) => {

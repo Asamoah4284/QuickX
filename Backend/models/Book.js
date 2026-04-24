@@ -56,6 +56,26 @@ const bookSchema = new mongoose.Schema({
     published: {
         type: Date,
         default: Date.now
+    },
+    // Instructor workflow fields
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
+    source: {
+        type: String,
+        enum: ['admin', 'instructor'],
+        default: 'admin'
+    },
+    listingStatus: {
+        type: String,
+        enum: ['draft', 'pending_review', 'published', 'rejected'],
+        default: 'draft'
+    },
+    rejectionReason: {
+        type: String,
+        default: ''
     }
 }, {
     timestamps: true

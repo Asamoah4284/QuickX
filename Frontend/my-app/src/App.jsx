@@ -50,6 +50,9 @@ import CreatorApplications from "./pages/Admin/CreatorApplications";
 import CourseReviewQueue from "./pages/Admin/CourseReviewQueue";
 import CreatorSettings from "./pages/Admin/CreatorSettings";
 import AdminLayout from "./layouts/AdminLayout";
+import BookReviewQueue from "./pages/Admin/BookReviewQueue";
+import CreatorBooks from "./pages/creator/CreatorBooks";
+import CreatorBookWizard from "./pages/creator/CreatorBookWizard";
 
 
 // Define router with scrolling behavior
@@ -199,6 +202,18 @@ const router = createBrowserRouter([
               {
                 path: "settings",
                 element: <CreatorProfileSettings />
+              },
+              {
+                path: "books",
+                element: <CreatorBooks />
+              },
+              {
+                path: "books/new",
+                element: <CreatorBookWizard />
+              },
+              {
+                path: "books/:bookId/edit",
+                element: <CreatorBookWizard />
               }
             ]
           }
@@ -263,13 +278,14 @@ const router = createBrowserRouter([
           { path: "courses/edit/:courseId", element: <EditCourse /> },
           { path: "courses/review-queue", element: <CourseReviewQueue /> },
           { path: "courses", element: <AdminDashboard /> },
+          { path: "books/review-queue", element: <BookReviewQueue /> },
           { path: "tutors/applications", element: <CreatorApplications /> },
           { path: "platform/settings", element: <CreatorSettings /> },
-          { path: "books", element: <AdminDashboard /> },
-          { path: "upload", element: <AdminDashboard /> },
+          { path: "books", element: <Navigate to="/admin/books/review-queue" replace /> },
+          { path: "upload", element: <Navigate to="/admin/dashboard" replace /> },
           { path: "settings", element: <AdminDashboard /> },
           { path: "coupons", element: <AdminDashboard /> },
-          { path: "mentorship", element: <AdminDashboard /> },
+          { path: "mentorship", element: <Navigate to="/admin/dashboard" replace /> },
           { path: "advertisements", element: <AdminDashboard /> },
           { path: "withdrawals", element: <AdminDashboard /> }
         ]

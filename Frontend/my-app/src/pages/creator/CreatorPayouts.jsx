@@ -19,7 +19,7 @@ export default function CreatorPayouts() {
   }, [token]);
 
   return (
-    <div className="rounded-3xl border border-slate-200/80 bg-white p-6 shadow-creator">
+    <div className="rounded-3xl border border-slate-200/80 bg-white p-6">
       <h2 className="text-2xl font-semibold text-slate-950">Payouts</h2>
       <p className="mt-1 text-sm text-slate-500">Track requests, processing states, and completed creator payouts.</p>
 

@@ -69,6 +69,12 @@ function Checkout() {
     }
   }, [location, navigate]);
 
+  const isBookCart = checkoutItem?.type === 'book_cart';
+  const bookCartItems = useMemo(() => {
+    if (!isBookCart) return [];
+    return Array.isArray(checkoutItem?.items) ? checkoutItem.items : [];
+  }, [checkoutItem, isBookCart]);
+
   /** If course thumbnail wasn’t in navigation state, load it from the preview API. */
   useEffect(() => {
     if (!checkoutItem || checkoutItem.type !== 'course') return;
@@ -256,9 +262,9 @@ function Checkout() {
       
       // Calculate the final price with proper decimal handling
       const finalPrice = calculateFinalPrice();
-      const itemId = checkoutItem?.id ?? checkoutItem?._id;
-      if (!itemId) {
-        throw new Error('Missing item id — return to the course page and try checkout again.');
+      const itemId = checkoutItem?.type === 'book_cart' ? null : (checkoutItem?.id ?? checkoutItem?._id);
+      if (checkoutItem?.type !== 'book_cart' && !itemId) {
+        throw new Error('Missing item id — return to the previous page and try checkout again.');
       }
       console.log('Calculated final price:', {
         original: checkoutItem?.price,
@@ -364,7 +370,9 @@ function Checkout() {
       // First save the payment data
       const paymentData = {
         itemType: checkoutItem.type,
-        itemId: String(itemId),
+        ...(checkoutItem?.type === 'book_cart'
+          ? { items: (checkoutItem?.items || []).map((i) => String(i?.id || i?._id || i)) }
+          : { itemId: String(itemId) }),
         paymentMethod: formData.provider === 'mtn' ? 'MTN' : 
                       formData.provider === 'vodafone' ? 'Vodafone' : 
                       formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
@@ -385,7 +393,12 @@ function Checkout() {
       console.log('Sending payment data:', JSON.stringify(paymentData, null, 2));
 
       // Validate required fields before sending
-      if (!paymentData.itemType || !paymentData.itemId || !paymentData.momoNumber || paymentData.amount == null) {
+      if (
+        !paymentData.itemType ||
+        (paymentData.itemType === 'book_cart' ? !Array.isArray(paymentData.items) || paymentData.items.length === 0 : !paymentData.itemId) ||
+        !paymentData.momoNumber ||
+        paymentData.amount == null
+      ) {
         throw new Error('Missing required payment data fields');
       }
 
@@ -440,6 +453,35 @@ function Checkout() {
               navigateState: { fromPurchase: true, courseId: String(itemId) }
             });
           } 
+          else if (checkoutItem?.type === 'book_cart') {
+            const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
+            const items = Array.isArray(checkoutItem.items) ? checkoutItem.items : [];
+            const next = [...purchasedBooks];
+            const nowIso = new Date().toISOString();
+
+            items.forEach((it) => {
+              const id = it?.id ?? it?._id;
+              if (!id) return;
+              const idStr = String(id);
+              if (next.some((b) => String(b?.id ?? '') === idStr)) return;
+              next.push({
+                ...it,
+                id: idStr,
+                purchaseDate: nowIso,
+                status: 'purchased',
+              });
+            });
+
+            localStorage.setItem('purchasedBooks', JSON.stringify(next));
+            localStorage.removeItem('bookCart');
+            setPaymentSuccessModal({
+              title: 'Payment successful',
+              description: `Your purchase is complete. ${items.length} book(s) added to your dashboard.`,
+              ctaLabel: 'Go to dashboard',
+              navigateTo: '/dashboard',
+              navigateState: undefined,
+            });
+          }
           else if (checkoutItem?.type === 'book' && itemId) {
             // Update localStorage for book
             const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
@@ -456,8 +498,8 @@ function Checkout() {
             setPaymentSuccessModal({
               title: 'Payment successful',
               description: `Your purchase of ${checkoutItem.title} is complete.`,
-              ctaLabel: 'Go to library',
-              navigateTo: '/library',
+              ctaLabel: 'Go to dashboard',
+              navigateTo: '/dashboard',
               navigateState: undefined
             });
           } else {
@@ -517,7 +559,9 @@ function Checkout() {
     
     // If we have item information, determine better back destination
     if (checkoutItem?.type === 'book') {
-      backPath = '/library';
+      backPath = '/dashboard';
+    } else if (checkoutItem?.type === 'book_cart') {
+      backPath = '/store';
     } else if (checkoutItem?.type === 'course') {
       backPath = '/courses';
     } else if (checkoutItem?.type === 'program') {
@@ -545,7 +589,7 @@ function Checkout() {
     const finalPrice = calculateFinalPrice();
     
     return {
-      reference: `${checkoutItem?.type}_${checkoutItem?.id ?? checkoutItem?._id}_${checkoutItem?.planId ?? ''}_${Date.now()}`,
+      reference: `${checkoutItem?.type}_${checkoutItem?.id ?? checkoutItem?._id ?? 'cart'}_${checkoutItem?.planId ?? ''}_${Date.now()}`,
       email: formData.email,
       amount: finalPrice * 100,
       publicKey: paystackPublicKey,
@@ -574,7 +618,9 @@ function Checkout() {
           {
             display_name: "Item ID",
             variable_name: "item_id",
-            value: String(checkoutItem?.id ?? checkoutItem?._id ?? '')
+            value: isBookCart
+              ? bookCartItems.map((i) => String(i?.id ?? '')).filter(Boolean).join(',')
+              : String(checkoutItem?.id ?? checkoutItem?._id ?? '')
           },
           {
             display_name: "Referral Code",
@@ -718,6 +764,8 @@ function Checkout() {
             Back to{' '}
             {checkoutItem.type === 'book'
               ? 'Library'
+              : checkoutItem.type === 'book_cart'
+                ? 'Store'
               : checkoutItem.type === 'program'
                 ? 'Creator onboarding'
                 : checkoutItem.type === 'creator_subscription'
@@ -762,12 +810,26 @@ function Checkout() {
                     <p className="text-sm text-gray-500">
                       {checkoutItem.type === 'book'
                         ? 'Digital Book'
+                        : checkoutItem.type === 'book_cart'
+                          ? `${bookCartItems.length} digital book(s)`
                         : checkoutItem.type === 'course'
                           ? 'Online Course'
                           : checkoutItem.type === 'creator_subscription'
                             ? 'Creator subscription'
                             : 'Product'}
                     </p>
+                    {checkoutItem.type === 'book_cart' ? (
+                      <div className="mt-2 space-y-1">
+                        {bookCartItems.slice(0, 4).map((it) => (
+                          <p key={String(it?.id ?? it?.title)} className="text-xs text-gray-600 line-clamp-1">
+                            • {it?.title}
+                          </p>
+                        ))}
+                        {bookCartItems.length > 4 ? (
+                          <p className="text-xs text-gray-500">+ {bookCartItems.length - 4} more…</p>
+                        ) : null}
+                      </div>
+                    ) : null}
                     <p className="text-blue-600 font-bold mt-1">GH₵{checkoutItem.price}</p>
                   </div>
                 </div>

@@ -18,11 +18,22 @@ const validatePayment = [
         .withMessage('Amount must be greater than 0')
         .toFloat(),
     body('itemType')
-        .isIn(['course', 'book'])
+        .isIn(['course', 'book', 'book_cart'])
         .withMessage('Invalid item type'),
+    // itemId is required for single-item purchases only
     body('itemId')
+        .if(body('itemType').isIn(['course', 'book']))
         .isMongoId()
         .withMessage('Invalid item ID'),
+    // For cart purchases, validate items[] ids
+    body('items')
+        .if(body('itemType').equals('book_cart'))
+        .isArray({ min: 1 })
+        .withMessage('items must be a non-empty array'),
+    body('items.*')
+        .if(body('itemType').equals('book_cart'))
+        .isMongoId()
+        .withMessage('Invalid book id in items'),
     body('transactionId')
         .notEmpty()
         .trim()
@@ -304,7 +315,8 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             paymentMethod,
             momoNumber,
             shippingAddress,
-            currency 
+            currency,
+            items
         } = req.body;
 
         // Validate the purchase item exists and verify price
@@ -342,6 +354,24 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                     difference: priceDiff
                 });
             }
+        } else if (itemType === 'book_cart') {
+            const ids = Array.isArray(items) ? items : [];
+            const books = await Book.find({ _id: { $in: ids } });
+            if (books.length !== ids.length) {
+                return res.status(400).json({ message: 'One or more books not found' });
+            }
+            const total = books.reduce((sum, b) => sum + Number(b.price || 0), 0);
+            const diff = Math.abs(total - finalAmount);
+            if (diff > 0.02) {
+                return res.status(400).json({
+                    message: 'Invalid amount. Cart total mismatch.',
+                    expected: total,
+                    received: finalAmount,
+                    difference: diff
+                });
+            }
+            // keep for payment record
+            purchaseItem = books;
         }
 
         // Process referral if code provided
@@ -390,7 +420,8 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
         const paymentRecord = {
             userId: req.user._id,
             itemType,
-            itemId,
+            itemId: itemType === 'book_cart' ? null : itemId,
+            cartItemIds: itemType === 'book_cart' ? (Array.isArray(items) ? items : []) : [],
             originalAmount: Number(amount),
             finalAmount: finalAmount,
             commissionAmount: commissionAmount,
@@ -507,6 +538,13 @@ router.post('/webhook', async (req, res) => {
                     }
                 } else if (payment.itemType === 'book' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
                     user.purchasedBooks.push(payment.itemId);
+                } else if (payment.itemType === 'book_cart' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
+                    const ids = Array.isArray(payment.cartItemIds) ? payment.cartItemIds : [];
+                    for (const id of ids) {
+                        if (!user.purchasedBooks.some((b) => String(b) === String(id))) {
+                            user.purchasedBooks.push(id);
+                        }
+                    }
                 }
 
                 await user.save();
