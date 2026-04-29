@@ -8,12 +8,62 @@ function PremiumAnalysis() {
   
   // State to track image loading errors
   const [imageErrors, setImageErrors] = useState({});
+  const [toast, setToast] = useState('');
 
   const handleImageError = (id, type, index) => {
     setImageErrors(prev => ({
       ...prev,
       [`${id}-${type}${index ? `-${index}` : ''}`]: true
     }));
+  };
+
+  const showToast = (message) => {
+    setToast(message);
+    window.clearTimeout(showToast._t);
+    showToast._t = window.setTimeout(() => setToast(''), 2000);
+  };
+
+  const copyToClipboard = async (text) => {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const el = document.createElement('textarea');
+    el.value = text;
+    el.setAttribute('readonly', '');
+    el.style.position = 'fixed';
+    el.style.left = '-9999px';
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+  };
+
+  const handleShareAnalysis = async (analysis) => {
+    const baseUrl = `${window.location.origin}${window.location.pathname}`;
+    const url = `${baseUrl}#analysis-${analysis.id}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: analysis.title,
+          text: analysis.title,
+          url,
+        });
+        return;
+      }
+
+      await copyToClipboard(url);
+      showToast('Link copied');
+    } catch {
+      try {
+        await copyToClipboard(url);
+        showToast('Link copied');
+      } catch {
+        showToast('Could not share');
+      }
+    }
   };
 
   // Popular tags for sidebar
@@ -105,6 +155,11 @@ function PremiumAnalysis() {
 
   return (
     <div className="font-sans">
+      {toast ? (
+        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-gray-900 px-5 py-2.5 text-sm font-medium text-white shadow-2xl">
+          {toast}
+        </div>
+      ) : null}
       {/* Hero Section */}
       <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white">
         <div className="max-w-7xl mx-auto px-4 md:px-8 py-20">
@@ -253,7 +308,8 @@ function PremiumAnalysis() {
             <div className="flex flex-col gap-16">
               {premiumAnalysisData.map((analysis) => (
                 <motion.article 
-                  key={analysis.id} 
+                  key={analysis.id}
+                  id={`analysis-${analysis.id}`}
                   className="bg-white rounded-lg shadow-lg overflow-hidden pb-8"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -358,7 +414,11 @@ function PremiumAnalysis() {
                       <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors duration-200 font-medium flex items-center">
                         <FaNewspaper className="mr-2" /> Download PDF
                       </button>
-                      <button className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors duration-200 font-medium">
+                      <button
+                        type="button"
+                        onClick={() => handleShareAnalysis(analysis)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded transition-colors duration-200 font-medium"
+                      >
                         Share Analysis
                       </button>
                     </div>

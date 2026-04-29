@@ -1,6 +1,4 @@
 import React, { useEffect } from 'react';
-import CountUp from 'react-countup';
-import { FaUserPlus, FaGraduationCap } from 'react-icons/fa';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
 
@@ -30,29 +28,6 @@ const Intro = () => {
                 Quick X brings together video courses, structured modules, and supplemental resources so you can
                 browse what interests you, enroll with confidence, and learn at your pace—whether you are starting out or leveling up.
               </p>
-            </div>
-
-          
-
-            <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:gap-6" data-aos="fade-up" data-aos-delay="300">
-              <div className="flex items-center gap-3 rounded-lg bg-blue-800/25 p-3 sm:p-4">
-                <div className="text-2xl text-sky-400 sm:text-3xl">
-                  <FaUserPlus />
-                </div>
-                <div>
-                  <h5 className="text-sm font-semibold sm:text-base">Easy to start</h5>
-                  <p className="text-xs text-gray-300 sm:text-sm">Browse and enroll in minutes</p>
-                </div>
-              </div>
-              <div className="flex items-center gap-3 rounded-lg bg-blue-800/25 p-3 sm:p-4">
-                <div className="text-2xl text-sky-400 sm:text-3xl">
-                  <FaGraduationCap />
-                </div>
-                <div>
-                  <h5 className="text-sm font-semibold sm:text-base">Structured paths</h5>
-                  <p className="text-xs text-gray-300 sm:text-sm">Modules & lessons in order</p>
-                </div>
-              </div>
             </div>
           </div>
 

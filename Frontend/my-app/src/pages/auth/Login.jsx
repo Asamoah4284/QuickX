@@ -77,7 +77,7 @@ function Login() {
       <div className="w-full max-w-5xl overflow-hidden rounded-sm shadow-2xl bg-white mt-12 relative z-10">
         <div className="md:flex">
           {/* Left Side - Promotional Content */}
-          <div className="md:w-2/5 bg-gradient-to-r from-blue-600 to-indigo-600 p-8 text-white flex flex-col justify-center">
+          <div className="md:w-2/5 bg-[#1B5EF5] p-8 text-white flex flex-col justify-center">
             <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold mb-2">Welcome Back!</h1>
               <p className="text-blue-100 mb-6">Sign in to continue your learning journey</p>

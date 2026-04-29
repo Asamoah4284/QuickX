@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import AOS from 'aos';
 import 'aos/dist/aos.css';
@@ -15,12 +15,15 @@ const Hero = () => {
   const [nextContentIndex, setNextContentIndex] = useState(0);
   const [animationState, setAnimationState] = useState('visible');
 
-  const backgroundImages = [
-    'https://pixner.net/html/tradexy/tradexy/assets/images/hero/banner5-slide2.png',
-    './images/7.jpg',
-    'https://i.pinimg.com/736x/47/d3/6e/47d36eab2ad7496068569c27e70823d8.jpg',
-    'https://i.pinimg.com/736x/3c/a8/fd/3ca8fd1755e8349df5dffe1cb375d211.jpg',
-  ];
+  const backgroundImages = useMemo(
+    () => [
+      '/images/hero.png',
+      '/images/7.jpg',
+      'https://pixner.net/html/tradexy/tradexy/assets/images/hero/banner5-slide2.png',
+      'https://i.pinimg.com/736x/47/d3/6e/47d36eab2ad7496068569c27e70823d8.jpg',
+    ],
+    []
+  );
 
   const contentSlides = [
     {
@@ -115,15 +118,32 @@ const Hero = () => {
     animationState === 'entering' || animationState === 'visible'
       ? contentSlides[currentBackgroundIndex]
       : contentSlides[nextContentIndex === 0 ? contentSlides.length - 1 : nextContentIndex - 1];
+  const currentBg = backgroundImages[currentBackgroundIndex % backgroundImages.length];
+  const nextBg = backgroundImages[nextContentIndex % backgroundImages.length];
 
   return (
     <section className="relative flex min-h-[min(92vh,880px)] items-center overflow-hidden text-white">
       {/* Background image + layered atmosphere */}
       <div className="absolute inset-0 z-0">
+        {/* Crossfade background slider (syncs with the text slide timing) */}
         <img
-          src="./images/hero.png"
+          src={currentBg}
           alt=""
-          className="absolute left-1/2 top-1/2 h-full min-h-full w-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover"
+          className={`absolute left-1/2 top-1/2 h-full min-h-full w-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-700 ease-out ${
+            animationState === 'exiting' ? 'opacity-0' : 'opacity-100'
+          }`}
+          loading="eager"
+          decoding="async"
+        />
+        <img
+          src={nextBg}
+          alt=""
+          className={`absolute left-1/2 top-1/2 h-full min-h-full w-full min-w-full -translate-x-1/2 -translate-y-1/2 object-cover transition-opacity duration-700 ease-out ${
+            animationState === 'exiting' ? 'opacity-100' : 'opacity-0'
+          }`}
+          loading="lazy"
+          decoding="async"
+          aria-hidden
         />
         {/* Depth: vignette + cool gradient (reads premium on mobile & desktop) */}
         <div
@@ -217,7 +237,7 @@ const Hero = () => {
                   <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:gap-4">
                     <Link
                       to="/courses"
-                      className="group inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 text-center text-xs font-semibold text-white shadow-lg shadow-blue-800/30 transition hover:from-blue-400 hover:to-indigo-600 hover:shadow-xl sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
+                      className="group inline-flex min-h-[44px] items-center justify-center rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-6 py-3 text-center text-xs font-semibold text-white shadow-lg shadow-blue-800/30 transition hover:from-blue-400 hover:to-indigo-600 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
                     >
                       Explore courses
                       <svg
@@ -232,7 +252,7 @@ const Hero = () => {
                     </Link>
                     <Link
                       to="/school"
-                      className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/10 sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
                     >
                       Learning hub
                     </Link>

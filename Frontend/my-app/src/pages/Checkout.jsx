@@ -753,12 +753,12 @@ function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-12">
+    <div className="min-h-screen bg-gray-50 pt-6 sm:pt-8">
       <div className="max-w-5xl mx-auto px-4 py-8">
         <div className="flex items-center justify-between mb-2">
           <button 
             onClick={handleBack}
-            className="flex mt-4 items-center text-blue-600 hover:text-blue-800 transition-colors"
+            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
           >
             <FiArrowLeft className="mr-2" />
             Back to{' '}

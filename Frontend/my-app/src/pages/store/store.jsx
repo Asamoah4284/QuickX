@@ -163,10 +163,29 @@ const Store = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Featured Book */}
-      <div className="relative min-h-[34vh] bg-blue-900 sm:min-h-[38vh] lg:min-h-[44vh]">
-        <div className="absolute inset-0 bg-black/35" />
-        <div className="relative mx-auto flex h-full min-h-0 max-w-6xl flex-col px-4 pb-6 pt-12 sm:px-6 sm:pb-8 sm:pt-14 lg:px-8 lg:pb-10 lg:pt-12">
-          <div className="grid min-w-0 grid-cols-1 items-center gap-6 lg:grid-cols-2 lg:gap-10">
+      <div className="relative min-h-[34vh] overflow-hidden text-white sm:min-h-[38vh] lg:min-h-[44vh]">
+        {/* Hero-style layered background (matches main hero vibe) */}
+        <div className="absolute inset-0 z-0" aria-hidden>
+          {/* Solid brand base (slightly darker for a calmer, premium look) */}
+          <div className="absolute inset-0 bg-[#1552D6]" />
+
+          {/* Soft light blobs (solid colors + blur, no gradients) */}
+          <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-white/14 blur-3xl" />
+          <div className="absolute -left-28 -bottom-24 h-80 w-80 rounded-full bg-indigo-950/28 blur-3xl" />
+          <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-3xl" />
+
+          {/* Grain texture for a premium feel */}
+          <div
+            className="absolute inset-0 opacity-[0.07] mix-blend-overlay"
+            style={{
+              backgroundImage:
+                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E\")",
+            }}
+          />
+        </div>
+
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
+          <div className="grid min-w-0 grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-10">
             <div className="min-w-0 space-y-3 text-white sm:space-y-4">
               <div className="inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
                 Featured Book
@@ -195,10 +214,10 @@ const Store = () => {
             </div>
 
             {/* Hero carousel — sits on hero background (no card frame); crossfade; arrows + dots */}
-            <div className="relative min-w-0 w-full max-w-md justify-self-center lg:max-w-none lg:justify-self-end">
-              <div className="relative mx-auto w-full max-w-[min(100%,320px)] sm:max-w-sm">
+            <div className="relative min-w-0 w-full justify-self-center lg:justify-self-end">
+              <div className="relative mx-auto w-full max-w-[min(100%,300px)] sm:max-w-sm lg:max-w-[280px]">
                 <div
-                  className="relative aspect-[3/4] w-full"
+                  className="relative aspect-[4/3] w-full sm:aspect-[3/4]"
                   role="region"
                   aria-roledescription="carousel"
                   aria-label="Featured books and promotions"
@@ -208,7 +227,7 @@ const Store = () => {
                       key={slide.url}
                       src={slide.url}
                       alt={slide.alt}
-                      className={`absolute inset-0 m-auto max-h-full max-w-full object-contain p-2 transition-opacity duration-700 ease-out sm:p-3 ${
+                      className={`absolute inset-0 m-auto max-h-full max-w-full object-contain p-3 transition-opacity duration-700 ease-out sm:p-3 ${
                         i === currentImageIndex ? 'z-10 opacity-100' : 'z-0 opacity-0'
                       }`}
                       draggable={false}
@@ -218,7 +237,7 @@ const Store = () => {
                   <button
                     type="button"
                     onClick={() => goHeroSlide(-1)}
-                    className="absolute left-0 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 sm:left-1"
+                    className="absolute left-1 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
                     aria-label="Previous slide"
                   >
                     <FiChevronLeft className="h-5 w-5" />
@@ -226,7 +245,7 @@ const Store = () => {
                   <button
                     type="button"
                     onClick={() => goHeroSlide(1)}
-                    className="absolute right-0 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20 sm:right-1"
+                    className="absolute right-1 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
                     aria-label="Next slide"
                   >
                     <FiChevronRight className="h-5 w-5" />
@@ -254,19 +273,39 @@ const Store = () => {
                     Buy digital books instantly. Hardcopy requests are handled via WhatsApp.
                   </p>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleGoToCheckout}
-                  className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
-                >
-                  <FiShoppingCart className="h-4 w-4" />
-                  View cart
-                  {cartCount > 0 ? (
-                    <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
-                      {cartCount}
+                <div className="flex items-center gap-2">
+                  {/* Mobile cart button */}
+                  <button
+                    type="button"
+                    onClick={handleGoToCheckout}
+                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-slate-900 hover:bg-slate-50 sm:hidden"
+                    aria-label="View cart"
+                  >
+                    <span className="relative">
+                      <FiShoppingCart className="h-5 w-5" />
+                      {cartCount > 0 ? (
+                        <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-bold leading-none text-white">
+                          {cartCount}
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
-                </button>
+                  </button>
+
+                  {/* Desktop cart button */}
+                  <button
+                    type="button"
+                    onClick={handleGoToCheckout}
+                    className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+                  >
+                    <FiShoppingCart className="h-4 w-4" />
+                    View cart
+                    {cartCount > 0 ? (
+                      <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
+                        {cartCount}
+                      </span>
+                    ) : null}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -292,13 +331,13 @@ const Store = () => {
 
             {/* Books grid */}
             {!isLoading && !error && (
-              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5 xl:grid-cols-4 xl:gap-5">
                 {books.map((book) => (
                   <div
                     key={book._id}
-                    className="group mx-auto w-full max-w-[340px] overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300 sm:max-w-none"
+                    className="group flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-slate-300"
                   >
-                    <div className="relative aspect-[16/9] overflow-hidden bg-slate-50">
+                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10] lg:aspect-[16/9]">
                       <img 
                         src={book.thumbnail}
                         alt={book.title} 
@@ -310,8 +349,8 @@ const Store = () => {
                           e.target.src = DEFAULT_BOOK_COVER;
                         }}
                       />
-                      <div className="absolute left-3 top-3">
-                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:px-2.5 sm:py-1 sm:text-[11px] ${
                           book.type === 'ebook'
                             ? 'bg-indigo-600 text-white'
                             : 'bg-emerald-600 text-white'
@@ -320,11 +359,15 @@ const Store = () => {
                         </span>
                       </div>
                     </div>
-                    <div className="p-3 sm:p-4">
-                      <h3 className="line-clamp-2 text-sm font-semibold leading-snug text-slate-900 sm:text-lg">
-                        {book.title}
-                      </h3>
-                      <p className="mt-1 text-xs text-slate-600 sm:text-sm">{book.author}</p>
+                    <div className="flex flex-1 flex-col p-3 sm:p-4 lg:p-4">
+                      <div className="min-w-0">
+                        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 sm:text-lg lg:text-lg">
+                          {book.title}
+                        </h3>
+                        <p className="mt-1 line-clamp-1 text-[11px] text-slate-600 sm:text-sm lg:text-[13px]">
+                          {book.author}
+                        </p>
+                      </div>
                       {/* <div className="flex items-center text-amber-400 mb-3">
                         <FiStar className="fill-current" />
                         <FiStar className="fill-current" />
@@ -335,43 +378,45 @@ const Store = () => {
                           ({book.reviews?.length || 0} reviews)
                         </span>
                       </div> */}
-                      <div className="mt-3 flex items-center justify-between gap-3">
-                        <span className="text-sm font-bold text-slate-900 sm:text-base">
-                          {formatGhs(book.price)}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {book.type === 'ebook' ? (
-                            <button
-                              type="button"
-                              className={`inline-flex items-center gap-2 rounded-xl px-3 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${
-                                justAddedId === String(book._id)
-                                  ? 'bg-emerald-600'
-                                  : 'bg-indigo-600 hover:bg-indigo-700'
-                              }`}
-                              onClick={() => handleAddBookToCart(book)}
-                            >
-                              {justAddedId === String(book._id) ? (
-                                <>
-                                  <FiCheck className="h-4 w-4" />
-                                  Added
-                                </>
-                              ) : (
-                                <>
-                                  <FiShoppingCart className="h-4 w-4" />
-                                  Add
-                                </>
-                              )}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
-                              onClick={() => handleHardcopyRequest(book)}
-                            >
-                              <FiPackage className="h-4 w-4" />
-                              Request
-                            </button>
-                          )}
+                      <div className="mt-auto pt-3">
+                        <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
+                          <span className="text-sm font-bold text-slate-900 sm:text-base lg:text-base">
+                            {formatGhs(book.price)}
+                          </span>
+                          <div className="flex items-center gap-2">
+                            {book.type === 'ebook' ? (
+                              <button
+                                type="button"
+                                className={`inline-flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${
+                                  justAddedId === String(book._id)
+                                    ? 'bg-emerald-600'
+                                    : 'bg-indigo-600 hover:bg-indigo-700'
+                                }`}
+                                onClick={() => handleAddBookToCart(book)}
+                              >
+                                {justAddedId === String(book._id) ? (
+                                  <>
+                                    <FiCheck className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Added</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <FiShoppingCart className="h-4 w-4" />
+                                    <span className="hidden sm:inline">Add</span>
+                                  </>
+                                )}
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
+                                onClick={() => handleHardcopyRequest(book)}
+                              >
+                                <FiPackage className="h-4 w-4" />
+                                <span className="hidden sm:inline">Request</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                       {book.type === 'hardcopy' && book.stock < 1 ? (

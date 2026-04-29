@@ -57,7 +57,7 @@ export default function CreatorSidebar({ onNavigate }) {
 
   return (
     <aside className="w-full rounded-2xl border border-slate-200/80 bg-white p-3 lg:w-64 lg:p-4">
-      <div className="relative mb-4 overflow-hidden rounded-xl bg-blue-900 p-4 text-white ring-1 ring-white/10">
+      <div className="relative mb-4 overflow-hidden rounded-xl bg-[#1B5EF5] p-4 text-white ring-1 ring-white/10">
         <div className="relative min-h-[7.5rem]">
           {CREATOR_PROMO_SLIDES.map((slide, i) => (
             <div
@@ -104,7 +104,7 @@ export default function CreatorSidebar({ onNavigate }) {
               className={({ isActive }) =>
                 `flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition ${
                   isActive
-                    ? 'bg-blue-900/12 text-blue-900'
+                    ? 'bg-[#1B5EF5]/12 text-[#1B5EF5]'
                     : 'text-slate-600 hover:bg-slate-50 hover:text-slate-950'
                 }`
               }

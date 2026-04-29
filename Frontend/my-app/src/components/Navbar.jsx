@@ -4,7 +4,6 @@ import { FiUser, FiLogOut, FiBook } from 'react-icons/fi';
 import { FaWhatsapp } from 'react-icons/fa';
 
 const Navbar = () => {
-  const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
@@ -12,9 +11,15 @@ const Navbar = () => {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
-  /** Solid blue bar everywhere except the home hero, where transparent + white text sits on the dark banner */
-  const isHomePage = pathname === '/';
-  const navSolid = scrolled || !isHomePage;
+  /** Navbar is scroll-only on marketing pages, always visible in app flows. */
+  const alwaysVisible =
+    pathname === '/membership' ||
+    pathname.startsWith('/creator') ||
+    pathname.startsWith('/store') ||
+    pathname.startsWith('/admin') ||
+    pathname.startsWith('/checkout');
+
+  const navSolid = scrolled || alwaysVisible;
   const creatorDestination =
     user?.role === 'tutor' && user?.creatorStatus === 'approved'
       ? '/creator/dashboard'
@@ -107,30 +112,6 @@ const Navbar = () => {
     navigate('/');
   };
 
-  // Close mobile menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (isOpen && !event.target.closest('.mobile-menu-container') && 
-          !event.target.closest('.mobile-menu-button')) {
-        setIsOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    
-    // Lock scroll when menu is open
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-      document.body.style.overflow = 'auto';
-    };
-  }, [isOpen]);
-
   // WhatsApp contact function
   const handleWhatsappClick = () => {
     // Replace with your actual WhatsApp number
@@ -141,11 +122,11 @@ const Navbar = () => {
   };
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-      navSolid
-        ? 'bg-blue-900 text-white shadow-md'
-        : 'bg-transparent'
-    }`}>
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 translate-y-0 opacity-100 pointer-events-auto transition-all duration-300 ${
+        navSolid ? 'bg-[#1B5EF5] text-white shadow-md' : 'bg-transparent'
+      }`}
+    >
       <div className="md:max-w-6xl mx-auto md:py-2 md:px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 w-full items-center justify-end px-4 sm:px-0">
           {/* Desktop Menu */}
@@ -204,123 +185,8 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
-            <button
-              onClick={() => setIsOpen(!isOpen)}
-              className={`mobile-menu-button inline-flex items-center justify-center rounded-md p-2 focus:outline-none z-50 ${
-                navSolid
-                  ? 'text-white hover:bg-white/10 hover:text-white'
-                  : 'text-gray-400 hover:bg-gray-100 hover:text-gray-500'
-              }`}
-            >
-              <span className="sr-only">Open main menu</span>
-              {!isOpen ? (
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              ) : (
-                <svg className="block h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              )}
-            </button>
-          </div>
         </div>
       </div>
-
-      {/* Mobile Menu — full-width slide-over (entire screen width on small viewports) */}
-      <div
-        className={`mobile-menu-container fixed right-0 top-0 z-40 flex h-[100dvh] w-full max-w-none flex-col overflow-y-auto bg-white shadow-lg transition-transform duration-300 ease-in-out md:hidden ${
-          isOpen ? 'translate-x-0' : 'translate-x-full'
-        }`}
-      >
-        {/* Title only — close via the main nav toggle (hamburger → X) so we don’t duplicate icons */}
-        <div className="flex h-16 shrink-0 items-center border-b border-gray-200 px-4">
-          <h2 className="text-lg font-semibold text-blue-800">Menu</h2>
-        </div>
-        
-        <div className="px-4 pt-4 pb-3 space-y-3">
-          <Link to="/courses" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Courses</Link>
-          <Link to="/store" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Books</Link>
-          <Link to="/creator/onboarding" className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md" onClick={() => setIsOpen(false)}>Creator programs</Link>
-        </div>
-        
-        <div className="pt-4 pb-3 border-t border-gray-200 px-4">
-          {isLoggedIn ? (
-            <>
-              <div className="flex items-center px-3 py-2">
-                <div className="flex-shrink-0">
-                  <div className="h-10 w-10 rounded-full bg-blue-500 flex items-center justify-center text-white text-lg font-bold">
-                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <div className="text-base font-medium text-gray-800">{user?.fullName || 'User'}</div>
-                  <div className="text-sm font-medium text-gray-500">{user?.email}</div>
-                </div>
-              </div>
-              <div className="mt-3 space-y-1">
-                <Link
-                  to="/membership"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to={creatorDestination}
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {creatorLabel}
-                </Link>
-                <Link
-                  to="/profile"
-                  className="block px-3 py-2 text-base font-medium text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-md"
-                  onClick={() => setIsOpen(false)}
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setIsOpen(false);
-                  }}
-                  className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-md"
-                >
-                  Sign out
-                </button>
-              </div>
-            </>
-          ) : (
-            <div className="space-y-2">
-              <Link 
-                to="/login" 
-                className="block w-full px-3 py-2 text-base font-medium text-center text-white bg-blue-500 hover:bg-blue-600 rounded-md"
-                onClick={() => setIsOpen(false)}
-              >
-                Login
-              </Link>
-              <Link 
-                to="/register" 
-                className="block w-full px-3 py-2 text-base font-medium text-center text-blue-500 bg-white border border-blue-500 hover:bg-blue-50 rounded-md"
-                onClick={() => setIsOpen(false)}
-              >
-                Sign Up
-              </Link>
-            </div>
-          )}
-        </div>
-      </div>
-      
-      {/* Overlay when menu is open */}
-      {isOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-25 z-30 md:hidden"
-          onClick={() => setIsOpen(false)}
-        ></div>
-      )}
     </nav>
   );
 };

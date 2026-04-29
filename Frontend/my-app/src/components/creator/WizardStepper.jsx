@@ -13,7 +13,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
             completed
               ? 'border-emerald-200 bg-emerald-50'
               : active
-                ? 'border-white/20 bg-blue-900 text-white'
+                ? 'border-white/20 bg-[#1B5EF5] text-white'
                 : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300'
           } ${isClickable ? 'cursor-pointer' : ''}`;
 
@@ -24,7 +24,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
                   completed
                     ? 'bg-emerald-500 text-white'
                     : active
-                      ? 'bg-white text-blue-800'
+                      ? 'bg-white text-[#1B5EF5]'
                       : 'bg-slate-100 text-slate-500'
                 }`}
               >

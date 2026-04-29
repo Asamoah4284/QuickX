@@ -3,6 +3,7 @@ import { Link, Navigate, useLocation } from 'react-router-dom';
 import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget, FiArrowRight } from 'react-icons/fi';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import Loader from '../components/Loader';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -485,11 +486,7 @@ function Membership() {
   };
 
   if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
-      </div>
-    );
+    return <Loader label="Loading your dashboard…" sublabel="Fetching your courses and account details." />;
   }
 
   if (!user) {
@@ -506,29 +503,29 @@ function Membership() {
       
       {/* Hero: full width on mobile; sm+ inset card. Top margin from md+ so the card clears the nav visually on desktop */}
       <div className="sm:mx-auto sm:max-w-7xl sm:px-6 md:mt-8 lg:mt-10 lg:px-8">
-        <div className="relative mb-4 overflow-hidden rounded-none shadow-xl ring-0 sm:mb-8 sm:rounded-3xl sm:ring-1 sm:ring-white/10">
-          {/* Background — same deep blue as Navbar */}
-          <div className="absolute inset-0 z-10 bg-blue-900"></div>
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605792657660-596af9009e82?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-35"></div>
-          {/* Soft highlights on deep blue */}
-          <div className="pointer-events-none absolute -right-16 -top-24 z-[11] h-48 w-48 rounded-full bg-white/[0.06] blur-3xl sm:-right-8 sm:top-0" />
-          <div className="pointer-events-none absolute -bottom-20 -left-12 z-[11] h-40 w-40 rounded-full bg-blue-800/35 blur-3xl" />
+        <div className="relative mb-4 overflow-hidden rounded-none bg-white ring-0 sm:mb-8 sm:rounded-3xl sm:ring-1 sm:ring-slate-200/80">
+          {/* Background — white */}
+          <div className="absolute inset-0 z-10 bg-white" />
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1605792657660-596af9009e82?ixlib=rb-1.2.1&auto=format&fit=crop&w=1920&q=80')] bg-cover bg-center opacity-[0.07]"></div>
+          {/* Soft highlights */}
+          <div className="pointer-events-none absolute -right-16 -top-24 z-[11] h-48 w-48 rounded-full bg-[#1B5EF5]/10 blur-3xl sm:-right-8 sm:top-0" />
+          <div className="pointer-events-none absolute -bottom-20 -left-12 z-[11] h-40 w-40 rounded-full bg-sky-400/15 blur-3xl" />
           
           {/* Content — keep readable insets inside the full-bleed card */}
           <div className="relative z-20 px-4 py-4 sm:p-6 md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between md:gap-6">
               <div className="flex gap-3 sm:items-center sm:gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/20 shadow-lg ring-1 ring-white/25 backdrop-blur-md sm:h-14 sm:w-14 sm:rounded-full">
-                  <FiUser className="h-6 w-6 text-white sm:h-7 sm:w-7" />
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-slate-100 shadow-sm ring-1 ring-slate-200 sm:h-14 sm:w-14 sm:rounded-full">
+                  <FiUser className="h-6 w-6 text-[#1B5EF5] sm:h-7 sm:w-7" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-blue-100/90 sm:text-[11px]">
+                  <p className="mb-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-slate-500 sm:text-[11px]">
                     Your dashboard
                   </p>
-                  <h1 className="text-xl font-bold leading-snug tracking-tight text-white sm:text-2xl md:text-3xl">
+                  <h1 className="text-xl font-bold leading-snug tracking-tight text-slate-950 sm:text-2xl md:text-3xl">
                     Welcome, {user?.fullName || 'Member'}!
                   </h1>
-                  <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-blue-100/95 sm:text-sm">
+                  <p className="mt-1.5 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
                     Your Quick X membership unlocks courses, books, and learning tools—study at your own pace, on any device.
                   </p>
                 </div>
@@ -537,56 +534,49 @@ function Membership() {
               <div className="flex w-full flex-col gap-2 sm:max-w-md sm:flex-row sm:gap-2.5 md:mt-0 md:w-auto md:shrink-0">
                 <Link
                   to="/courses"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-white px-3 py-2.5 text-xs font-semibold text-blue-800 shadow-lg shadow-blue-800/20 transition hover:bg-blue-50 sm:flex-1 sm:px-4 md:flex-initial"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-3 py-2.5 text-xs font-semibold text-white shadow-sm transition hover:bg-[#1552D6] sm:flex-1 sm:px-4 md:flex-initial"
                 >
                   <FiBook className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
                   Browse courses
-                </Link>
-                <Link
-                  to="/profile"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl border border-white/35 bg-white/10 px-3 py-2.5 text-xs font-semibold text-white backdrop-blur-md transition hover:bg-white/20 sm:flex-1 sm:px-4 md:flex-initial"
-                >
-                  <FiTarget className="h-4 w-4 shrink-0" />
-                  My progress
                 </Link>
               </div>
             </div>
             
             {/* Stats — 2-up on mobile, full row on md+ */}
             <div className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3 md:mt-6 md:grid-cols-3">
-              <div className="flex min-h-[76px] items-center gap-2.5 rounded-2xl bg-white/10 p-2.5 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:min-h-[80px] sm:p-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-11 sm:w-11 sm:rounded-full">
-                  <FiTrendingUp className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+              <div className="flex min-h-[76px] items-center gap-2.5 rounded-2xl bg-slate-50 p-2.5 ring-1 ring-slate-200/80 transition hover:bg-slate-100/60 sm:min-h-[80px] sm:p-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-slate-200 sm:h-11 sm:w-11 sm:rounded-full">
+                  <FiTrendingUp className="h-4 w-4 text-[#1B5EF5] sm:h-5 sm:w-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-medium text-white/75 sm:text-[11px]">Completed</p>
-                  <p className="truncate text-sm font-bold text-white sm:text-base">
+                  <p className="text-[10px] font-medium text-slate-500 sm:text-[11px]">Completed</p>
+                  <p className="truncate text-sm font-bold text-slate-950 sm:text-base">
                     {purchasedCourses.filter(course => course.progress === 100).length}{' '}
-                    <span className="font-semibold text-white/90">courses</span>
+                    <span className="font-semibold text-slate-700">courses</span>
                   </p>
                 </div>
               </div>
               
-              <div className="flex min-h-[76px] items-center gap-2.5 rounded-2xl bg-white/10 p-2.5 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:min-h-[80px] sm:p-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-11 sm:w-11 sm:rounded-full">
-                  <FiClock className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+              <div className="flex min-h-[76px] items-center gap-2.5 rounded-2xl bg-slate-50 p-2.5 ring-1 ring-slate-200/80 transition hover:bg-slate-100/60 sm:min-h-[80px] sm:p-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-slate-200 sm:h-11 sm:w-11 sm:rounded-full">
+                  <FiClock className="h-4 w-4 text-[#1B5EF5] sm:h-5 sm:w-5" />
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[10px] font-medium text-white/75 sm:text-[11px]">Learning time</p>
-                  <p className="truncate text-sm font-bold text-white sm:text-base">
+                  <p className="text-[10px] font-medium text-slate-500 sm:text-[11px]">Learning time</p>
+                  <p className="truncate text-sm font-bold text-slate-950 sm:text-base">
                     {purchasedCourses.length > 0 ? '3.5 hrs' : '0 hrs'}
                   </p>
                 </div>
               </div>
               
-              <div className="col-span-2 flex min-h-[76px] flex-col gap-2.5 rounded-2xl bg-white/10 p-2.5 ring-1 ring-white/15 backdrop-blur-md transition hover:bg-white/[0.14] sm:flex-row sm:items-center sm:justify-between sm:min-h-[80px] sm:p-3 md:col-span-1">
+              <div className="col-span-2 flex min-h-[76px] flex-col gap-2.5 rounded-2xl bg-slate-50 p-2.5 ring-1 ring-slate-200/80 transition hover:bg-slate-100/60 sm:flex-row sm:items-center sm:justify-between sm:min-h-[80px] sm:p-3 md:col-span-1">
                 <div className="flex min-w-0 flex-1 items-center gap-2.5 sm:gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/15 sm:h-11 sm:w-11 sm:rounded-full">
-                    <FiDollarSign className="h-4 w-4 text-white sm:h-5 sm:w-5" />
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white ring-1 ring-slate-200 sm:h-11 sm:w-11 sm:rounded-full">
+                    <FiDollarSign className="h-4 w-4 text-[#1B5EF5] sm:h-5 sm:w-5" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-medium text-white/75 sm:text-[11px]">Referral earnings</p>
-                    <p className="text-sm font-bold text-white sm:text-base">
+                    <p className="text-[10px] font-medium text-slate-500 sm:text-[11px]">Referral earnings</p>
+                    <p className="text-sm font-bold text-slate-950 sm:text-base">
                       GH₵{user?.referralEarnings ? user.referralEarnings.toFixed(2) : '0.00'}
                     </p>
                   </div>
@@ -597,8 +587,8 @@ function Membership() {
                   disabled={!user?.referralEarnings || user?.referralEarnings < 20}
                   className={`w-full shrink-0 rounded-xl px-3 py-2 text-xs font-semibold transition-colors sm:w-auto ${
                     !user?.referralEarnings || user?.referralEarnings < 20
-                      ? 'cursor-not-allowed bg-white/20 text-white/50'
-                      : 'bg-white text-blue-800 shadow-sm hover:bg-blue-50'
+                      ? 'cursor-not-allowed bg-slate-200 text-slate-400'
+                      : 'bg-[#1B5EF5] text-white shadow-sm hover:bg-[#1552D6]'
                   }`}
                 >
                   Withdraw
@@ -607,17 +597,17 @@ function Membership() {
             </div>
 
             {/* Referral code — stacks on narrow screens */}
-            <div className="mt-3 rounded-2xl bg-white/10 p-3 ring-1 ring-white/15 backdrop-blur-md sm:mt-3.5 sm:p-4">
+            <div className="mt-3 rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-200/80 sm:mt-3.5 sm:p-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-5">
                 <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-white sm:text-base">Your referral code</h3>
-                  <p className="mt-0.5 text-xs text-blue-100/85 sm:text-sm">
+                  <h3 className="text-sm font-semibold text-slate-950 sm:text-base">Your referral code</h3>
+                  <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">
                     Share with friends—you earn 10% commission on their purchases.
                   </p>
                 </div>
                 <div className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto sm:justify-end sm:gap-2">
-                  <div className="min-w-0 flex-1 rounded-xl bg-white/15 px-2.5 py-2 ring-1 ring-white/20 sm:flex-initial sm:px-3">
-                    <span className="block truncate text-center font-mono text-sm font-semibold tracking-wide text-white sm:text-base">
+                  <div className="min-w-0 flex-1 rounded-xl bg-white px-2.5 py-2 ring-1 ring-slate-200 sm:flex-initial sm:px-3">
+                    <span className="block truncate text-center font-mono text-sm font-semibold tracking-wide text-slate-900 sm:text-base">
                       {user?.referralCode || 'Loading...'}
                     </span>
                   </div>
@@ -628,10 +618,10 @@ function Membership() {
                         navigator.clipboard.writeText(user.referralCode);
                         alert('Referral code copied to clipboard!');
                       }}
-                      className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white/20 p-2.5 ring-1 ring-white/25 transition hover:bg-white/30"
+                      className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white p-2.5 ring-1 ring-slate-200 transition hover:bg-slate-50"
                       aria-label="Copy referral code"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-[#1B5EF5]" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M8 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" />
                         <path d="M6 3a2 2 0 00-2 2v11a2 2 0 002 2h8a2 2 0 002-2V5a2 2 0 00-2-2 3 3 0 01-3 3H9a3 3 0 01-3-3z" />
                       </svg>
@@ -648,7 +638,7 @@ function Membership() {
         <div className="flex flex-col gap-6 md:flex-row md:gap-8">
           {/* Sidebar — below main content on mobile */}
           <div className="order-2 md:order-1 md:w-1/4">
-            <div className="overflow-hidden rounded-2xl border border-gray-100/80 bg-white shadow-sm">
+            <div className="overflow-hidden rounded-2xl border border-gray-100/80 bg-white">
               <div className="border-b border-gray-100 bg-gradient-to-r from-blue-50 to-blue-100/80 p-4 sm:p-5">
                 <div className="flex items-center gap-3">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-800 text-sm font-bold text-white shadow-md ring-1 ring-white/10">
@@ -747,8 +737,8 @@ function Membership() {
               <div className="space-y-6 sm:space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
                 {/* Modernized Progress Card — compact on small phones; sm+ matches previous desktop sizing */}
                 <div className="group relative">
-                  <div className="absolute inset-0 -z-10 rounded-2xl bg-blue-900/[0.07] sm:rounded-3xl"></div>
-                  <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm sm:rounded-3xl sm:p-6">
+                  <div className="absolute inset-0 -z-10 rounded-2xl bg-[#1B5EF5]/[0.07] sm:rounded-3xl"></div>
+                  <div className="relative overflow-hidden rounded-xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
                     <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-blue-500/[0.06] blur-2xl sm:h-24 sm:w-24 sm:-mt-6 sm:-mr-6"></div>
                     <div className="pointer-events-none absolute -bottom-6 -left-6 h-20 w-20 rounded-full bg-blue-500/[0.05] blur-2xl sm:h-24 sm:w-24"></div>
                     
@@ -832,7 +822,7 @@ function Membership() {
                         purchasedCourses.slice(0, 3).map(course => (
                         <div 
                           key={course.id} 
-                          className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-2xl hover:shadow-blue-800/5 transition-all duration-500 transform hover:-translate-y-1"
+                          className="group relative bg-white border border-gray-100 rounded-2xl overflow-hidden hover:shadow-lg hover:shadow-blue-800/5 transition-all duration-500 transform hover:-translate-y-1"
                         >
                           <div className="flex flex-col md:flex-row h-full">
                             <div className="md:w-64 h-48 md:h-auto relative overflow-hidden shrink-0">
@@ -867,7 +857,7 @@ function Membership() {
                                 </div>
                                 <Link
                                   to={`/school/course/${course.id}`}
-                                  className="shrink-0 inline-flex items-center justify-center px-5 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-all duration-300 group/btn shadow-lg shadow-gray-900/10"
+                                  className="shrink-0 inline-flex items-center justify-center px-5 py-2 bg-gray-900 text-white rounded-xl font-semibold text-sm hover:bg-blue-600 transition-all duration-300 group/btn shadow-sm"
                                 >
                                   Resume
                                   <FiArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />

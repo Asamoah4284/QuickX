@@ -504,14 +504,14 @@ function TikTokVideoTile({ course, pinned }) {
   );
 }
 
-function AvatarRing({ avatarSrc, displayName, size = 'lg' }) {
+function AvatarRing({ avatarSrc, displayName, size = 'lg', className = '' }) {
   const sizes =
     size === 'xl'
-      ? 'h-36 w-36 sm:h-40 sm:w-40'
+      ? 'h-24 w-24 sm:h-36 sm:w-36 lg:h-40 lg:w-40'
       : 'h-28 w-28 sm:h-32 sm:w-32 lg:h-36 lg:w-36';
   return (
     <div
-      className="rounded-full p-[3px] shadow-lg shadow-blue-500/20"
+      className={`rounded-full p-[3px] shadow-lg shadow-blue-500/20 ${className}`}
       style={{
         background: 'linear-gradient(135deg, #38bdf8, #3b82f6, #1d4ed8)',
       }}
@@ -840,6 +840,7 @@ export default function InstructorProfile() {
   const bio = data?.tutorProfile?.bio || data?.user?.creatorBio || '';
   const website =
     data?.tutorProfile?.socialLinks?.website || data?.user?.socialLinks?.website || '';
+  const hasBioContent = Boolean((headline || '').trim() || (bio || '').trim() || (website || '').trim());
 
   if (loading) {
     return (
@@ -908,7 +909,7 @@ export default function InstructorProfile() {
       <button
         type="button"
         onClick={() => setSubscriptionDrawerOpen(true)}
-        className="group relative inline-flex min-h-[3rem] min-w-[11rem] items-center justify-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 px-7 text-sm font-bold tracking-tight text-white shadow-[0_8px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(37,99,235,0.65)] hover:brightness-[1.03] active:translate-y-0 active:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+        className="group relative inline-flex min-h-[2.75rem] min-w-[10.5rem] items-center justify-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 px-6 text-sm font-bold tracking-tight text-white shadow-[0_8px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(37,99,235,0.65)] hover:brightness-[1.03] active:translate-y-0 active:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:min-h-[3rem] sm:min-w-[11rem] sm:px-7"
       >
         <span
           className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition group-hover:opacity-100"
@@ -963,7 +964,7 @@ export default function InstructorProfile() {
   );
 
   const librarySection = (
-    <div className="px-0 pt-2 pb-0 sm:py-4">
+    <div className="px-0 pt-0 pb-0 sm:py-4">
       {/* Same horizontal strip as preview grid so “Videos” lines up with first tile (esp. desktop) */}
       <div className={PREVIEW_STRIP_BLEED}>
         {/* TikTok-style content tab: videos active */}
@@ -987,7 +988,7 @@ export default function InstructorProfile() {
           </div>
         </div>
 
-        <div className="mt-3">
+        <div className="mt-2 sm:mt-3">
           {videoGridEmpty ? (
             <div className="py-16 text-center">
               <p className="text-sm text-zinc-500">Nothing here yet.</p>
@@ -1004,7 +1005,7 @@ export default function InstructorProfile() {
   );
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900">
+    <div className="bg-white text-zinc-900">
       {toast ? (
         <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-2xl">
           {toast}
@@ -1059,24 +1060,29 @@ export default function InstructorProfile() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-7xl px-4 pb-0 pt-6 sm:px-6 sm:pb-24 lg:px-10 lg:pb-16 lg:pt-10">
-        <section className="px-0 py-4 sm:py-6 lg:py-8">
-          <div className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between">
-            <div className="flex flex-col items-center gap-6 sm:flex-row sm:items-start lg:gap-10">
-              <AvatarRing avatarSrc={avatarSrc} displayName={displayName} size="xl" />
+      <main className="mx-auto max-w-7xl px-4 pb-0 pt-2 sm:px-6 sm:pb-24 sm:pt-6 lg:px-10 lg:pb-16 lg:pt-10">
+        <section className="px-0 pt-2 pb-0 sm:py-6 lg:py-8">
+          <div className="flex flex-col gap-4 sm:gap-7 lg:flex-row lg:items-start lg:justify-between">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-6 lg:gap-10">
+              <AvatarRing
+                avatarSrc={avatarSrc}
+                displayName={displayName}
+                size="xl"
+                className="-mt-2 sm:mt-0"
+              />
               <div className="min-w-0 flex-1 text-center sm:text-left">
                 <p className="text-xs font-bold uppercase tracking-[0.25em] text-blue-600">Instructor</p>
-                <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+                <h1 className="mt-1.5 text-2xl font-bold tracking-tight text-zinc-900 sm:mt-2 sm:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
                   {displayName}
                 </h1>
-                <p className="mt-2 font-mono text-sm text-zinc-500">{handle}</p>
-                <div className="relative mt-6 grid w-full max-w-md grid-cols-4 divide-x divide-zinc-200 sm:max-w-lg">
+                <p className="mt-1.5 font-mono text-sm text-zinc-500 sm:mt-2">{handle}</p>
+                <div className="relative mt-3 grid w-full max-w-md grid-cols-4 divide-x divide-zinc-200 sm:mt-6 sm:max-w-lg">
                   {statItems.map((s) => {
                     const isVideoContent = s.label === 'Video content';
                     return (
-                      <div key={s.label} className="flex min-w-0 flex-col items-center px-2 py-1 text-center sm:px-4">
+                      <div key={s.label} className="flex min-w-0 flex-col items-center px-2 py-0.5 text-center sm:px-4 sm:py-1">
                         {/* Fixed-height top row so values + icon align across columns */}
-                        <div className="flex min-h-[34px] items-center justify-center">
+                        <div className="flex min-h-[30px] items-center justify-center sm:min-h-[34px]">
                           {isVideoContent ? (
                             <button
                               type="button"
@@ -1091,7 +1097,7 @@ export default function InstructorProfile() {
                                 }
                                 setVideoDropdownOpen((v) => !v);
                               }}
-                              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-zinc-200"
+                              className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-zinc-100 text-zinc-700 transition hover:bg-zinc-200 sm:h-9 sm:w-9"
                               aria-expanded={videoDropdownOpen}
                               aria-controls="video-dropdown-panel-stats"
                               aria-label="Toggle video content"
@@ -1108,7 +1114,7 @@ export default function InstructorProfile() {
                               </svg>
                             </button>
                           ) : (
-                            <span className="text-lg font-bold leading-none tabular-nums text-zinc-900 sm:text-xl">
+                            <span className="text-[15px] font-bold leading-none tabular-nums text-zinc-900 sm:text-xl">
                               {s.value}
                             </span>
                           )}
@@ -1168,21 +1174,24 @@ export default function InstructorProfile() {
                     </div>
                   ) : null}
                 </div>
-                <div className="mt-6 hidden sm:block">{bioBlock}</div>
+                {hasBioContent ? <div className="mt-6 hidden sm:block">{bioBlock}</div> : null}
               </div>
             </div>
             <div className="w-full max-w-md lg:max-w-xs lg:shrink-0">{actionButtons}</div>
           </div>
-          <div className="mt-6 sm:hidden">{bioBlock}</div>
+          {hasBioContent ? <div className="mt-2 sm:hidden">{bioBlock}</div> : null}
         </section>
 
-        <div className="mt-8 lg:mt-10">{librarySection}</div>
+        <div className="mt-0 sm:mt-8 lg:mt-10">{librarySection}</div>
       </main>
 
       
 
       {subscriptionDrawerOpen ? (
-        <div className="fixed inset-0 z-[100] flex items-end justify-center sm:p-4" role="presentation">
+        <div
+          className="fixed inset-0 z-[100] flex items-stretch justify-center sm:items-end sm:p-4"
+          role="presentation"
+        >
           <button
             type="button"
             className="absolute inset-0 bg-zinc-900/50 backdrop-blur-[1px]"
@@ -1193,7 +1202,7 @@ export default function InstructorProfile() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="subscription-drawer-title"
-            className="relative z-[101] flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-zinc-200 bg-white shadow-2xl sm:mb-0 sm:max-h-[min(92vh,720px)] sm:rounded-2xl"
+            className="relative z-[101] flex h-[100dvh] w-full max-w-none flex-col overflow-hidden rounded-none border-0 bg-white shadow-2xl sm:mb-0 sm:h-auto sm:max-h-[min(92vh,720px)] sm:max-w-lg sm:rounded-2xl sm:border sm:border-zinc-200"
             onClick={(e) => e.stopPropagation()}
           >
             <h2 id="subscription-drawer-title" className="sr-only">
@@ -1215,16 +1224,12 @@ export default function InstructorProfile() {
               </button>
               <button
                 type="button"
-                onClick={handleShare}
+                onClick={() => setSubscriptionDrawerOpen(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-full text-zinc-800 transition hover:bg-zinc-100"
-                aria-label="Share profile"
+                aria-label="Close"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                  />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
             </div>
@@ -1239,11 +1244,11 @@ export default function InstructorProfile() {
                     </div>
                   )}
                 </div>
-                <p className="min-w-0 text-[15px] font-bold leading-snug text-zinc-900">
+                <p className="min-w-0 text-sm font-bold leading-snug text-zinc-900 sm:text-[15px]">
                   {displayName}&apos;s community
                 </p>
               </div>
-              <p className="mt-5 text-base font-bold text-zinc-900">Subscription benefits</p>
+              <p className="mt-4 text-sm font-bold text-zinc-900 sm:mt-5 sm:text-base">Subscription benefits</p>
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing).map((plan) => {
                   const active = plan.id === selectedSubscriptionPlanId;
@@ -1308,10 +1313,15 @@ export default function InstructorProfile() {
               </div>
               {learningOutcomes.length > 0 ? (
                 <>
-                  <p className="mt-6 text-sm font-bold tracking-tight text-zinc-900">What you&apos;ll learn</p>
+                  <p className="mt-5 text-[13px] font-bold tracking-tight text-zinc-900 sm:mt-6 sm:text-sm">
+                    What you&apos;ll learn
+                  </p>
                   <ul className="mt-3 space-y-3 pb-1">
                     {learningOutcomes.map((item) => (
-                      <li key={item} className="flex items-start gap-3 text-[15px] leading-snug text-zinc-800">
+                      <li
+                        key={item}
+                        className="flex items-start gap-3 text-[13px] leading-snug text-zinc-800 sm:text-[15px]"
+                      >
                         <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200/70">
                           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -1331,7 +1341,7 @@ export default function InstructorProfile() {
                     <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100">
                       <SubscriptionBenefitIcon name={b.icon} />
                     </span>
-                    <span className="pt-1.5 text-[15px] leading-snug text-zinc-800">{b.label}</span>
+                    <span className="pt-1.5 text-[13px] leading-snug text-zinc-800 sm:text-[15px]">{b.label}</span>
                   </li>
                 ))}
               </ul>
@@ -1340,7 +1350,7 @@ export default function InstructorProfile() {
               <button
                 type="button"
                 onClick={() => handleChooseSubscriptionPlan(selectedSubscriptionPlanId)}
-                className="w-full rounded-2xl bg-blue-600 py-4 text-center text-[17px] font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99]"
+                className="w-full rounded-2xl bg-blue-600 py-3.5 text-center text-base font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99] sm:py-4 sm:text-[17px]"
               >
                 {subscriptionCtaSavingsPct > 0
                   ? `Subscribe (${subscriptionCtaSavingsPct}% off)`

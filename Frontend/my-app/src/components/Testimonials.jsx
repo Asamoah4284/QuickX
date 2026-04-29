@@ -33,10 +33,7 @@ const Testimonials = () => {
               Video-first courses with clear structure
             </h2>
             
-            <p className="mb-6 text-sm leading-relaxed text-gray-300 sm:mb-8 sm:text-base">
-              Every course is organized into sections and lessons—so you always know what comes next. Replay what you need,
-              skip what you already know, and learn in the order that makes sense for you.
-            </p>
+           
             
             <div className="mb-8 grid grid-cols-1 gap-4 sm:mb-10 md:grid-cols-2 md:gap-6">
               <div className="flex items-start gap-2 sm:gap-3">

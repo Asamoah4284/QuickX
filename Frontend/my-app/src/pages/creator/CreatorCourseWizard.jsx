@@ -101,7 +101,7 @@ function listToText(value) {
 function StudioPanel({ title, description, children, tone = 'light' }) {
   const isDark = tone === 'dark';
   const styles = isDark
-    ? 'border-white/10 bg-blue-900 text-white shadow-none ring-1 ring-white/10'
+    ? 'border-white/10 bg-[#1B5EF5] text-white shadow-none ring-1 ring-white/10'
     : 'border-slate-200/80 bg-white text-slate-950';
 
   const padding = isDark ? 'p-4 sm:p-5' : 'p-6';
@@ -832,7 +832,7 @@ export default function CreatorCourseWizard() {
                 type="button"
                 onClick={() => saveSubscriptionPricing(false)}
                 disabled={subscriptionPricingSaving}
-                className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-600 disabled:opacity-60"
+                className="rounded-xl bg-[#1B5EF5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1552D6] disabled:opacity-60"
               >
                 {subscriptionPricingSaving ? 'Saving…' : 'Save'}
               </button>
@@ -1037,7 +1037,7 @@ export default function CreatorCourseWizard() {
                   type="button"
                   onClick={() => submitForReview('publish')}
                   disabled={submitting || !readyToSubmit}
-                  className="rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-50"
+                  className="rounded-2xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1552D6] disabled:opacity-50"
                 >
                   Publish now
                 </button>
@@ -1059,7 +1059,7 @@ export default function CreatorCourseWizard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-blue-900 p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
+      <div className="rounded-2xl bg-[#1B5EF5] p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-3xl">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-blue-100/90">
@@ -1087,7 +1087,7 @@ export default function CreatorCourseWizard() {
             <button
               type="button"
               onClick={() => saveDraft(false)}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-blue-800 hover:bg-blue-50"
+              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#1B5EF5] hover:bg-blue-50"
             >
               {saving ? 'Saving...' : 'Save draft'}
             </button>
@@ -1153,7 +1153,7 @@ export default function CreatorCourseWizard() {
                   setCurrentStep((step) => Math.min(step + 1, steps.length));
                 }}
                 disabled={currentStep === steps.length}
-                className="inline-flex items-center gap-2 rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-600 disabled:opacity-40"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1552D6] disabled:opacity-40"
               >
                 Continue
                 <FiChevronRight className="h-4 w-4" />

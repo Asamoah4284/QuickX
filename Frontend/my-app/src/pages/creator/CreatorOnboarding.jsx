@@ -256,7 +256,7 @@ export default function CreatorOnboarding() {
   return (
     <div className="min-h-screen bg-slate-50 pt-24 pb-16">
       <div className="mx-auto max-w-5xl px-4">
-        <div className="rounded-[32px] bg-blue-900 p-8 text-white ring-1 ring-white/10">
+        <div className="rounded-[32px] bg-[#1B5EF5] p-8 text-white ring-1 ring-white/10">
           <p className="text-sm font-medium text-blue-100">Creator onboarding</p>
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
             <div>

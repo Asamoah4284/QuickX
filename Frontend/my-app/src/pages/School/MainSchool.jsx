@@ -215,49 +215,79 @@ const MainSchool = () => {
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Hero — deep blue (matches Navbar bg-blue-950) */}
-      <div className="relative overflow-x-hidden bg-blue-950">
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 sm:py-28 md:py-32">
-          {/*
-            Single column + items-center on small screens so copy and CTAs stay visually centered.
-            lg: 12-col row. min-w-0 on grid children avoids min-content overflow (was shifting layout right on mobile).
-          */}
-          <div className="grid grid-cols-1 items-center justify-items-center gap-10 lg:grid-cols-12 lg:justify-items-stretch lg:gap-8">
-            <div className="min-w-0 w-full max-w-full text-center lg:col-span-7 lg:text-left">
-              <h1
-                className="mb-5 text-4xl font-extrabold tracking-tight drop-shadow-sm sm:text-5xl md:text-6xl"
-                style={{ lineHeight: '1.08', letterSpacing: '-0.02em' }}
-              >
-                <span className="text-sky-300">Quick</span>
-                <span className="text-white">X</span>
-                <span className="text-teal-300">Learn</span>
+      <div className="relative overflow-hidden bg-[#1B5EF5]">
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.10] [background-image:linear-gradient(rgba(255,255,255,0.10)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.10)_1px,transparent_1px)] [background-size:60px_60px]"
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute -right-24 top-12 h-80 w-80 rounded-full bg-white/10 blur-3xl" aria-hidden />
+        <div className="pointer-events-none absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-sky-400/15 blur-3xl" aria-hidden />
+
+        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 md:py-24">
+          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:items-center lg:gap-10">
+            <div className="min-w-0 lg:col-span-7">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/90">
+                QuickX Learning Center
+              </div>
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
+                Learn practical skills with clear outcomes.
               </h1>
-              <p className="mx-auto mb-8 max-w-2xl text-base font-medium leading-relaxed text-blue-100/95 sm:text-lg lg:mx-0 lg:mb-9 lg:text-xl">
-                Welcome to QuickX Learning Center — lighting up minds through learning so you can build the skillset and
-                mindset for financial freedom.
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-blue-100/90 sm:text-base md:text-lg">
+                Browse structured courses, follow guided paths, and track progress without the noise. Built for learners who
+                want clarity, consistency, and real results.
               </p>
-              <div className="flex w-full flex-wrap justify-center gap-3 sm:gap-4 lg:justify-start">
+
+              <div className="mt-7 flex flex-wrap items-center gap-3">
                 <a
                   href="#courses"
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-7 py-3 text-sm font-semibold text-blue-900 shadow-lg shadow-blue-950/30 transition hover:bg-blue-50 sm:px-10 sm:text-base"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-blue-950 transition hover:bg-blue-50"
                 >
                   View courses
                 </a>
                 <a
                   href="#courses"
-                  className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/35 bg-white/10 px-7 py-3 text-sm font-semibold text-white backdrop-blur-sm transition hover:border-white/50 hover:bg-white/15 sm:px-10 sm:text-base"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   Explore now
                 </a>
               </div>
             </div>
-            <div className="min-w-0 w-full max-w-full lg:col-span-5">
-              <figure className="mx-auto flex w-full max-w-[min(100%,20rem)] justify-center lg:max-w-none">
-                <img
-                  src="./images/school-pic.png"
-                  alt=""
-                  className="h-auto w-full max-w-full object-contain [filter:drop-shadow(0_12px_28px_rgba(0,0,0,0.2))]"
-                />
-              </figure>
+
+            {/* Right side — clean product preview (no illustration image) */}
+            <div className="min-w-0 lg:col-span-5">
+              <div className="relative mx-auto w-full max-w-md">
+                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100/80">Course preview</p>
+                    <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200 ring-1 ring-emerald-400/20">
+                      Live
+                    </span>
+                  </div>
+
+                  <div className="mt-4 space-y-3">
+                    {[
+                      { title: 'Forex fundamentals', meta: 'Beginner • 12 lessons' },
+                      { title: 'Crypto essentials', meta: 'Intermediate • 9 lessons' },
+                      { title: 'Web dev starter', meta: 'Beginner • 14 lessons' },
+                    ].map((c) => (
+                      <div
+                        key={c.title}
+                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
+                      >
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-semibold text-white">{c.title}</p>
+                          <p className="mt-0.5 truncate text-xs text-blue-100/70">{c.meta}</p>
+                        </div>
+                        <div className="h-2 w-20 overflow-hidden rounded-full bg-white/10">
+                          <div className="h-full w-2/3 rounded-full bg-white/70" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="pointer-events-none absolute -bottom-8 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" aria-hidden />
+              </div>
             </div>
           </div>
         </div>

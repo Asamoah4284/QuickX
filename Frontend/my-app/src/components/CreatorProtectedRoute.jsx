@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import Loader from './Loader';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -53,14 +54,7 @@ export default function CreatorProtectedRoute({ children }) {
   }, []);
 
   if (isChecking) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="text-center">
-          <div className="mx-auto h-10 w-10 rounded-full border-4 border-blue-600 border-t-transparent animate-spin" />
-          <p className="mt-3 text-sm text-slate-500">Checking creator access...</p>
-        </div>
-      </div>
-    );
+    return <Loader label="Checking creator access…" sublabel="Making sure your creator tools are ready." />;
   }
 
   if (access === 'unauthenticated') {

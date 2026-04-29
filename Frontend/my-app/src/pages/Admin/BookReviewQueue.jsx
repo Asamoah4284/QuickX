@@ -89,10 +89,10 @@ export default function BookReviewQueue() {
                     <img
                       src={book.thumbnail}
                       alt=""
-                      className="h-16 w-12 rounded-lg border border-slate-200 object-cover"
+                      className="-mt-1 h-14 w-10 rounded-lg border border-slate-200 object-cover"
                     />
                   ) : (
-                    <div className="h-16 w-12 rounded-lg border border-dashed border-slate-200 bg-slate-50" />
+                    <div className="-mt-1 h-14 w-10 rounded-lg border border-dashed border-slate-200 bg-slate-50" />
                   )}
 
                   <div>
