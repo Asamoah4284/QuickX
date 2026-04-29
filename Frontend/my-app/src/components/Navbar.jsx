@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { FiUser, FiLogOut, FiBook } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
+import { FiBook, FiMenu, FiX } from 'react-icons/fi';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
-  const [isWhatsappHovered, setIsWhatsappHovered] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
 
@@ -99,6 +98,10 @@ const Navbar = () => {
     };
   }, []);
 
+  useEffect(() => {
+    setIsMobileMenuOpen(false);
+  }, [pathname]);
+
   const handleLogout = () => {
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
@@ -112,18 +115,9 @@ const Navbar = () => {
     navigate('/');
   };
 
-  // WhatsApp contact function
-  const handleWhatsappClick = () => {
-    // Replace with your actual WhatsApp number
-    const phoneNumber = '1234567890';
-    const message = 'Hello! I would like to get in touch with you.';
-    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 translate-y-0 opacity-100 pointer-events-auto transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 opacity-100 pointer-events-auto transition-all duration-300 ${
         navSolid ? 'bg-[#1B5EF5] text-white shadow-md' : 'bg-transparent'
       }`}
     >
@@ -185,7 +179,118 @@ const Navbar = () => {
             </div>
           </div>
 
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <button
+              type="button"
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              className="inline-flex items-center justify-center rounded-md p-2 text-white hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+            >
+              {isMobileMenuOpen ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
+            </button>
+          </div>
         </div>
+      </div>
+
+      {/* Mobile Menu Drawer */}
+      <div
+        className={`md:hidden fixed inset-0 z-[9999] transition ${
+          isMobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
+        }`}
+        aria-hidden={!isMobileMenuOpen}
+      >
+        {/* Solid backdrop to fully cover underlying UI */}
+        <div
+          className={`absolute inset-0 bg-white transition-opacity duration-200 ${
+            isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
+          }`}
+        />
+
+        {/* Full-screen drawer panel */}
+        <aside
+          className={`absolute right-0 top-0 h-full w-screen bg-white shadow-2xl transition-transform duration-200 ease-out ${
+            isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+          }`}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+            <span className="text-gray-900 font-semibold">Menu</span>
+            <button
+              type="button"
+              aria-label="Close menu"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="inline-flex items-center justify-center rounded-md p-2 text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-300"
+              tabIndex={isMobileMenuOpen ? 0 : -1}
+            >
+              <FiX className="h-6 w-6" />
+            </button>
+          </div>
+
+          <div className="px-4 py-4 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
+            <Link
+              to="/courses"
+              className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+            >
+              Courses
+            </Link>
+            <Link
+              to="/store"
+              className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+            >
+              Books
+            </Link>
+            <Link
+              to="/creator/onboarding"
+              className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+            >
+              Creator programs
+            </Link>
+
+            <div className="pt-3 mt-3 border-t border-gray-200">
+              {isLoggedIn ? (
+                <div className="space-y-1">
+                  <Link
+                    to="/membership"
+                    className="flex items-center rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                  >
+                    <FiBook className="mr-2" /> My Courses
+                  </Link>
+                  <Link
+                    to={creatorDestination}
+                    className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                  >
+                    {creatorLabel}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    className="w-full text-left rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <Link
+                    to="/login"
+                    className="text-center bg-blue-500 text-white hover:bg-blue-600 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Log In
+                  </Link>
+                  <Link
+                    to="/register"
+                    className="text-center bg-white text-blue-600 hover:bg-blue-50 border border-gray-200 px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
+                    Sign Up
+                  </Link>
+                </div>
+              )}
+            </div>
+          </div>
+        </aside>
       </div>
     </nav>
   );
