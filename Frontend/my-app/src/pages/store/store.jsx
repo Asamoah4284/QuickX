@@ -1,9 +1,9 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { FiShoppingCart, FiBook, FiArrowRight, FiX, FiPackage, FiChevronLeft, FiChevronRight, FiCheck } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
@@ -28,12 +28,36 @@ const Store = () => {
   const [justAddedId, setJustAddedId] = useState('');
   const navigate = useNavigate();
 
-  /** Hero carousel slides — book-style covers; images keep natural aspect inside frame (no stretch). */
-  const heroSlides = [
-    { url: '/images/bk-1.jpg', alt: 'Featured digital book — The Wise Scholar', tag: 'Spotlight' },
-    { url: '/images/bk-3.jpg', alt: 'Reading collection highlight', tag: 'Trending' },
-    { url: '/images/bk-5.jpg', alt: 'New in the library', tag: 'New' }
-  ];
+  const fallbackHeroSlides = useMemo(
+    () => [
+      { id: 'fb-1', url: '/images/bk-1.jpg', alt: 'Featured digital book — The Wise Scholar', tag: 'Spotlight' },
+      { id: 'fb-2', url: '/images/bk-3.jpg', alt: 'Reading collection highlight', tag: 'Trending' },
+      { id: 'fb-3', url: '/images/bk-5.jpg', alt: 'New in the library', tag: 'New' },
+    ],
+    []
+  );
+
+  /** Prefer live book covers when the API returns titles; fall back to static art. */
+  const heroSlides = useMemo(() => {
+    const tags = ['Spotlight', 'Trending', 'New'];
+    const fromApi = books
+      .filter((b) => b?.thumbnail || b?.title)
+      .slice(0, 8)
+      .map((b, i) => ({
+        id: `book-${b._id}`,
+        url: b.thumbnail || DEFAULT_BOOK_COVER,
+        alt: b.title || 'Book cover',
+        tag: tags[i % tags.length],
+        bookId: String(b._id),
+        title: b.title,
+        author: b.author,
+      }));
+    if (fromApi.length) return fromApi;
+    return fallbackHeroSlides;
+  }, [books, fallbackHeroSlides]);
+
+  const currentHero = heroSlides[currentImageIndex] ?? heroSlides[0];
+  const heroBookId = currentHero?.bookId;
 
   // Fetch books from API
   useEffect(() => {
@@ -74,11 +98,16 @@ const Store = () => {
   }, []);
 
   useEffect(() => {
+    setCurrentImageIndex((i) => Math.min(i, Math.max(0, heroSlides.length - 1)));
+  }, [heroSlides.length]);
+
+  useEffect(() => {
+    if (heroSlides.length <= 1) return undefined;
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % heroSlides.length);
-    }, 6000);
+    }, 5500);
     return () => clearInterval(interval);
-  }, []);
+  }, [heroSlides]);
 
   const goHeroSlide = (dir) => {
     setCurrentImageIndex((prev) => {
@@ -163,7 +192,7 @@ const Store = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Featured Book */}
-      <div className="relative min-h-[34vh] overflow-hidden text-white sm:min-h-[38vh] lg:min-h-[44vh]">
+      <div className="relative min-h-[38vh] overflow-hidden text-white sm:min-h-[42vh] lg:min-h-[min(52vh,560px)]">
         {/* Hero-style layered background (matches main hero vibe) */}
         <div className="absolute inset-0 z-0" aria-hidden>
           {/* Solid brand base (slightly darker for a calmer, premium look) */}
@@ -185,59 +214,82 @@ const Store = () => {
         </div>
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-          <div className="grid min-w-0 grid-cols-1 items-start gap-8 lg:grid-cols-2 lg:items-center lg:gap-10">
-            <div className="min-w-0 space-y-3 text-white sm:space-y-4">
-              <div className="inline-block rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
-                Featured Book
+          <div className="grid min-w-0 grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
+            <div className="min-w-0 space-y-4 text-white sm:space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" aria-hidden />
+                {currentHero?.tag ?? 'Featured'}
               </div>
-              <h1 className="text-2xl font-bold leading-snug tracking-tight sm:text-3xl sm:leading-tight md:text-4xl lg:text-4xl">
-                Discover Your Next Digital Adventure
+              <h1 className="line-clamp-4 text-balance text-3xl font-bold leading-tight tracking-tight sm:line-clamp-none sm:text-4xl sm:leading-tight md:text-5xl lg:text-[2.75rem] lg:leading-[1.1]">
+                {heroBookId && currentHero?.title
+                  ? currentHero.title
+                  : 'Discover Your Next Digital Adventure'}
               </h1>
-              <p className="max-w-lg text-sm leading-relaxed text-blue-100/95 sm:text-base md:text-lg">
-                Explore our curated collection of digital books and expand your knowledge
+              <p className="max-w-lg text-pretty text-sm leading-relaxed text-blue-100/95 sm:text-base md:text-lg">
+                {heroBookId && currentHero?.author
+                  ? `${currentHero.author} — browse the marketplace for more titles and instant checkout.`
+                  : 'Explore our curated collection of digital books and expand your knowledge.'}
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
                 <a
                   href="#store-books"
-                  className="w-full rounded-lg bg-white px-5 py-2.5 text-center text-sm font-semibold text-blue-900 transition-colors duration-300 hover:bg-blue-50 sm:w-auto sm:px-6 sm:py-3 sm:text-base"
+                  className="inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-center text-sm font-semibold text-blue-900 shadow-lg shadow-blue-950/20 transition-colors duration-300 hover:bg-blue-50 sm:w-auto sm:px-6 sm:text-base"
                 >
-                  Browse Collection
+                  Browse collection
                 </a>
-                <a
-                  href="#store-books"
-                  className="inline-flex items-center justify-center gap-2 text-sm font-medium text-white/95 transition-colors hover:text-blue-200 sm:text-base"
-                >
-                  <span>Learn More</span>
-                  <FiArrowRight className="h-4 w-4" />
-                </a>
+                {heroBookId ? (
+                  <Link
+                    to={`/store/${heroBookId}`}
+                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/95 underline-offset-4 transition-colors hover:text-blue-100 hover:underline sm:text-base"
+                  >
+                    <span>Open this book</span>
+                    <FiArrowRight className="h-4 w-4" />
+                  </Link>
+                ) : (
+                  <a
+                    href="#store-books"
+                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/95 underline-offset-4 transition-colors hover:text-blue-100 hover:underline sm:text-base"
+                  >
+                    <span>Learn more</span>
+                    <FiArrowRight className="h-4 w-4" />
+                  </a>
+                )}
               </div>
             </div>
 
-            {/* Hero carousel — sits on hero background (no card frame); crossfade; arrows + dots */}
+            {/* Hero carousel — crossfade covers + arrows + dots */}
             <div className="relative min-w-0 w-full justify-self-center lg:justify-self-end">
-              <div className="relative mx-auto w-full max-w-[min(100%,300px)] sm:max-w-sm lg:max-w-[280px]">
+              <div className="relative mx-auto w-full max-w-[min(100%,320px)] sm:max-w-md lg:max-w-[320px]">
                 <div
                   className="relative aspect-[4/3] w-full sm:aspect-[3/4]"
                   role="region"
                   aria-roledescription="carousel"
                   aria-label="Featured books and promotions"
                 >
+                  {/* Soft shelf / glow behind covers */}
+                  <div
+                    className="pointer-events-none absolute inset-x-[8%] bottom-[6%] top-[18%] rounded-[2rem] bg-gradient-to-b from-white/20 to-transparent blur-2xl"
+                    aria-hidden
+                  />
                   {heroSlides.map((slide, i) => (
                     <img
-                      key={slide.url}
+                      key={slide.id}
                       src={slide.url}
                       alt={slide.alt}
-                      className={`absolute inset-0 m-auto max-h-full max-w-full object-contain p-3 transition-opacity duration-700 ease-out sm:p-3 ${
+                      className={`absolute inset-0 m-auto max-h-[92%] max-w-[92%] object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.35)] transition-opacity duration-700 ease-out ${
                         i === currentImageIndex ? 'z-10 opacity-100' : 'z-0 opacity-0'
                       }`}
                       draggable={false}
+                      onError={(e) => {
+                        e.target.onerror = null;
+                        e.target.src = DEFAULT_BOOK_COVER;
+                      }}
                     />
                   ))}
-                  {/* Removed slide tag + dots to save vertical space */}
                   <button
                     type="button"
                     onClick={() => goHeroSlide(-1)}
-                    className="absolute left-1 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+                    className="absolute left-0 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white shadow-md backdrop-blur-sm transition hover:bg-white/25 sm:left-1"
                     aria-label="Previous slide"
                   >
                     <FiChevronLeft className="h-5 w-5" />
@@ -245,14 +297,30 @@ const Store = () => {
                   <button
                     type="button"
                     onClick={() => goHeroSlide(1)}
-                    className="absolute right-1 top-1/2 z-30 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-white/20 bg-white/10 text-white transition hover:bg-white/20"
+                    className="absolute right-0 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white shadow-md backdrop-blur-sm transition hover:bg-white/25 sm:right-1"
                     aria-label="Next slide"
                   >
                     <FiChevronRight className="h-5 w-5" />
                   </button>
                 </div>
 
-                {/* Slide indicators removed */}
+                {heroSlides.length > 1 ? (
+                  <div className="mt-4 flex justify-center gap-2" role="tablist" aria-label="Choose slide">
+                    {heroSlides.map((slide, i) => (
+                      <button
+                        key={slide.id}
+                        type="button"
+                        role="tab"
+                        aria-selected={i === currentImageIndex}
+                        aria-label={`Show slide ${i + 1}`}
+                        onClick={() => setCurrentImageIndex(i)}
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          i === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           </div>
@@ -335,39 +403,48 @@ const Store = () => {
                 {books.map((book) => (
                   <div
                     key={book._id}
-                    className="group flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-slate-300"
+                    className="group/card flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-slate-300"
                   >
-                    <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10] lg:aspect-[16/9]">
-                      <img 
-                        src={book.thumbnail}
-                        alt={book.title} 
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        onLoad={() => console.log('Book image loaded:', book.title, book.thumbnail)}
-                        onError={(e) => {
-                          console.error('Book image failed to load:', book.title, book.thumbnail);
-                          e.target.onerror = null; // Prevent infinite loop
-                          e.target.src = DEFAULT_BOOK_COVER;
-                        }}
-                      />
-                      <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
-                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:px-2.5 sm:py-1 sm:text-[11px] ${
-                          book.type === 'ebook'
-                            ? 'bg-indigo-600 text-white'
-                            : 'bg-emerald-600 text-white'
-                        }`}>
-                          {book.type === 'ebook' ? 'E-book' : 'Hardcopy'}
-                        </span>
+                    <Link
+                      to={`/store/${book._id}`}
+                      className="block shrink-0 text-left text-inherit no-underline outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ring-offset-white"
+                      aria-label={`View ${book.title}`}
+                    >
+                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10] lg:aspect-[16/9]">
+                        <img
+                          src={book.thumbnail}
+                          alt={book.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
+                          onError={(e) => {
+                            console.error('Book image failed to load:', book.title, book.thumbnail);
+                            e.target.onerror = null; // Prevent infinite loop
+                            e.target.src = DEFAULT_BOOK_COVER;
+                          }}
+                        />
+                        <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
+                          <span
+                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:px-2.5 sm:py-1 sm:text-[11px] ${
+                              book.type === 'ebook'
+                                ? 'bg-indigo-600 text-white'
+                                : 'bg-emerald-600 text-white'
+                            }`}
+                          >
+                            {book.type === 'ebook' ? 'E-book' : 'Hardcopy'}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                    <div className="flex flex-1 flex-col p-3 sm:p-4 lg:p-4">
-                      <div className="min-w-0">
-                        <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 sm:text-lg lg:text-lg">
-                          {book.title}
-                        </h3>
-                        <p className="mt-1 line-clamp-1 text-[11px] text-slate-600 sm:text-sm lg:text-[13px]">
-                          {book.author}
-                        </p>
+                      <div className="p-3 sm:p-4 lg:p-4">
+                        <div className="min-w-0">
+                          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 transition-colors group-hover/card:text-indigo-700 sm:text-lg lg:text-lg">
+                            {book.title}
+                          </h3>
+                          <p className="mt-1 line-clamp-1 text-[11px] text-slate-600 sm:text-sm lg:text-[13px]">
+                            {book.author}
+                          </p>
+                        </div>
                       </div>
+                    </Link>
+                    <div className="mt-auto flex flex-1 flex-col justify-end px-3 pb-3 sm:px-4 sm:pb-4 lg:px-4 lg:pb-4">
                       {/* <div className="flex items-center text-amber-400 mb-3">
                         <FiStar className="fill-current" />
                         <FiStar className="fill-current" />
@@ -378,45 +455,43 @@ const Store = () => {
                           ({book.reviews?.length || 0} reviews)
                         </span>
                       </div> */}
-                      <div className="mt-auto pt-3">
-                        <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
-                          <span className="text-sm font-bold text-slate-900 sm:text-base lg:text-base">
-                            {formatGhs(book.price)}
-                          </span>
-                          <div className="flex items-center gap-2">
-                            {book.type === 'ebook' ? (
-                              <button
-                                type="button"
-                                className={`inline-flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${
-                                  justAddedId === String(book._id)
-                                    ? 'bg-emerald-600'
-                                    : 'bg-indigo-600 hover:bg-indigo-700'
-                                }`}
-                                onClick={() => handleAddBookToCart(book)}
-                              >
-                                {justAddedId === String(book._id) ? (
-                                  <>
-                                    <FiCheck className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Added</span>
-                                  </>
-                                ) : (
-                                  <>
-                                    <FiShoppingCart className="h-4 w-4" />
-                                    <span className="hidden sm:inline">Add</span>
-                                  </>
-                                )}
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
-                                onClick={() => handleHardcopyRequest(book)}
-                              >
-                                <FiPackage className="h-4 w-4" />
-                                <span className="hidden sm:inline">Request</span>
-                              </button>
-                            )}
-                          </div>
+                      <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
+                        <span className="text-sm font-bold text-slate-900 sm:text-base lg:text-base">
+                          {formatGhs(book.price)}
+                        </span>
+                        <div className="flex items-center gap-2">
+                          {book.type === 'ebook' ? (
+                            <button
+                              type="button"
+                              className={`inline-flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold text-white transition sm:px-4 sm:text-sm ${
+                                justAddedId === String(book._id)
+                                  ? 'bg-emerald-600'
+                                  : 'bg-indigo-600 hover:bg-indigo-700'
+                              }`}
+                              onClick={() => handleAddBookToCart(book)}
+                            >
+                              {justAddedId === String(book._id) ? (
+                                <>
+                                  <FiCheck className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Added</span>
+                                </>
+                              ) : (
+                                <>
+                                  <FiShoppingCart className="h-4 w-4" />
+                                  <span className="hidden sm:inline">Add</span>
+                                </>
+                              )}
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
+                              onClick={() => handleHardcopyRequest(book)}
+                            >
+                              <FiPackage className="h-4 w-4" />
+                              <span className="hidden sm:inline">Request</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                       {book.type === 'hardcopy' && book.stock < 1 ? (

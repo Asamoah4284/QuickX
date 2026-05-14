@@ -6,14 +6,20 @@ import { Helmet } from 'react-helmet-async';
 import { Analytics } from '@vercel/analytics/react';
 
 
+/** Book profile at /store/:bookId — hide site chrome for a focused layout */
+function isStoreBookDetailPath(pathname) {
+  return /^\/store\/[^/]+$/.test(pathname);
+}
+
 function RootLayout() {
   const { pathname } = useLocation();
-  
+  const hideNavOnBookDetail = isStoreBookDetailPath(pathname);
+
   // Scroll to top whenever the route changes
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [pathname]);
-  
+
   return (
     <>
      <Helmet>
@@ -25,11 +31,11 @@ function RootLayout() {
         <meta property="og:type" content="website" />
       </Helmet>
     <div className="root-layout overflow-x-hidden w-full">
-      <Navbar />
+      {!hideNavOnBookDetail ? <Navbar /> : null}
       <main>
         <Outlet />
       </main>
-      <Footer/>
+      <Footer />
     </div>
     <Analytics />
     </>
