@@ -115,8 +115,48 @@ db.on('error', (err) => {
     console.error('MongoDB connection error:', err);
 });
 const { seedPrograms } = require('./scripts/seedPrograms');
+const Book = require('./models/Book');
+const BookOfferGroup = require('./models/BookOfferGroup');
+const {
+    ensureOfferGroupPlanBooksEmbeds,
+    migrateMarketplaceListings,
+} = require('./utils/bookOfferHelpers');
 db.once('open', async () => {
     console.log('Connected to MongoDB');
+    try {
+        const legacy = await Book.updateMany(
+            { listingStatus: 'approved' },
+            { $set: { listingStatus: 'published' } }
+        );
+        if (legacy.modifiedCount > 0) {
+            console.log(`Migrated ${legacy.modifiedCount} book(s) listingStatus approved → published`);
+        }
+    } catch (e) {
+        console.error('book listingStatus migration:', e.message);
+    }
+    try {
+        const groups = await BookOfferGroup.find({});
+        let filled = 0;
+        for (const group of groups) {
+            const before = JSON.stringify(group.options?.map((o) => o.planBooks));
+            const updated = await ensureOfferGroupPlanBooksEmbeds(group);
+            const after = JSON.stringify(updated.options?.map((o) => o.planBooks));
+            if (before !== after) filled += 1;
+        }
+        if (filled > 0) {
+            console.log(`Backfilled planBooks (PDF URLs) on ${filled} offer group(s)`);
+        }
+    } catch (e) {
+        console.error('offer group planBooks migration:', e.message);
+    }
+    try {
+        const listingFix = await migrateMarketplaceListings();
+        if (listingFix > 0) {
+            console.log(`Marketplace listings: synced storefront for ${listingFix} offer group(s)`);
+        }
+    } catch (e) {
+        console.error('marketplace listing migration:', e.message);
+    }
     try {
         await seedPrograms();
     } catch (e) {
@@ -136,6 +176,7 @@ app.use('/api/mentorships', require('./routes/mentorshipRoutes'));
 app.use('/api/programs', require('./routes/programRoutes'));
 app.use('/api/instructor/courses', require('./routes/instructorCourseRoutes'));
 app.use('/api/instructor/books', require('./routes/instructorBookRoutes'));
+app.use('/api/instructor/book-offers', require('./routes/instructorOfferGroupRoutes'));
 app.use('/api', require('./routes/referralRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
 app.use('/', require('./routes/advertisementRoutes'));

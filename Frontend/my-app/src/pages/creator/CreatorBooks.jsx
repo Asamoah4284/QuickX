@@ -55,7 +55,9 @@ function BookRowActions({ book, navigate, runAction }) {
         Edit
       </button>
 
-      {book.type === 'ebook' && book.listingStatus === 'published' && book.fileUrl && (
+      {book.type === 'ebook' &&
+        ['published', 'approved'].includes(book.listingStatus) &&
+        book.fileUrl && (
         <a
           href={book.fileUrl}
           target="_blank"

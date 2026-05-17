@@ -197,13 +197,18 @@ function Membership() {
     if (!uniqueIds.length) return;
 
     let cancelled = false;
+    const token = localStorage.getItem('authToken');
     Promise.all(
-      uniqueIds.map((id) =>
-        axios
-          .get(`${API_URL}/api/books/${id}/preview`)
+      uniqueIds.map((id) => {
+        const url = token
+          ? `${API_URL}/api/books/${id}/content`
+          : `${API_URL}/api/books/${id}/preview`;
+        const config = token ? { headers: { Authorization: `Bearer ${token}` } } : {};
+        return axios
+          .get(url, config)
           .then(({ data }) => ({ id, data }))
-          .catch(() => null)
-      )
+          .catch(() => null);
+      })
     ).then((results) => {
       if (cancelled) return;
       const updates = results.filter(Boolean);

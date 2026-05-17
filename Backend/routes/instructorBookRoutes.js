@@ -4,6 +4,17 @@ const Book = require('../models/Book');
 const auth = require('../middleware/auth');
 const requireApprovedCreator = require('../middleware/requireApprovedCreator');
 
+function normalizeStringArray(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) {
+        return value.map((item) => String(item || '').trim()).filter(Boolean);
+    }
+    return String(value)
+        .split(/\r?\n|,/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
 /** Helper: confirm the requesting user owns this book */
 function canEdit(book, userId) {
     return (
@@ -33,7 +44,8 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
         const {
             title, author, description, type, price,
             fileUrl, stock, thumbnail, isbn,
-            deliveryFee, watermarkTemplate, category
+            deliveryFee, watermarkTemplate, category,
+            whatYoullLearn, afterReadingOutcomes
         } = req.body;
 
         if (!title || !author || !description || !type) {
@@ -41,9 +53,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
                 message: 'title, author, description and type are required'
             });
         }
-        if (type === 'ebook' && !fileUrl) {
-            return res.status(400).json({ message: 'fileUrl is required for ebooks' });
-        }
+        const ebookFileUrl = type === 'ebook' ? String(fileUrl || '').trim() : '';
 
         const book = new Book({
             title: String(title).trim(),
@@ -52,7 +62,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             type,
             price: Number(price) || 0,
             category: category || 'general',
-            fileUrl: type === 'ebook' ? String(fileUrl || '').trim() : undefined,
+            fileUrl: ebookFileUrl || undefined,
             stock: type === 'hardcopy' ? (parseInt(stock) || 0) : undefined,
             thumbnail: String(thumbnail || '').trim() || undefined,
             isbn: String(isbn || '').trim() || undefined,
@@ -62,7 +72,9 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             createdBy: req.user._id,
             source: 'instructor',
             listingStatus: 'draft',
-            rejectionReason: ''
+            rejectionReason: '',
+            whatYoullLearn: normalizeStringArray(whatYoullLearn),
+            afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes)
         });
 
         await book.save();
@@ -98,11 +110,24 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
         const allowed = [
             'title', 'author', 'description', 'type', 'price',
             'fileUrl', 'stock', 'thumbnail', 'isbn',
-            'deliveryFee', 'watermarkTemplate', 'category'
+            'deliveryFee', 'watermarkTemplate', 'category',
+            'whatYoullLearn', 'afterReadingOutcomes'
         ];
         allowed.forEach((key) => {
-            if (req.body[key] !== undefined) book[key] = req.body[key];
+            if (req.body[key] === undefined) return;
+            if (key === 'whatYoullLearn' || key === 'afterReadingOutcomes') {
+                book[key] = normalizeStringArray(req.body[key]);
+                return;
+            }
+            book[key] = req.body[key];
         });
+
+        if (book.type === 'ebook') {
+            book.stock = undefined;
+            book.deliveryFee = undefined;
+        } else {
+            book.fileUrl = undefined;
+        }
 
         // Re-opening a rejected book as draft
         if (book.listingStatus === 'rejected') {
@@ -113,7 +138,11 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
         await book.save();
         res.json(book);
     } catch (err) {
-        res.status(500).json({ message: 'Server error', error: err.message });
+        console.error('instructor patch book:', err);
+        res.status(500).json({
+            message: err.message || 'Server error',
+            error: err.message,
+        });
     }
 });
 

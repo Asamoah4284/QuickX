@@ -12,6 +12,7 @@ import Community from "./pages/Community";
 import Profile from "./pages/Profile";
 import BookDetails from "./pages/BookDetails";
 import Checkout from "./pages/Checkout";
+import BookGuestDownload from "./pages/BookGuestDownload";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -127,6 +128,10 @@ const router = createBrowserRouter([
       {
         path: "checkout",
         element: <Checkout />
+      },
+      {
+        path: "download/book",
+        element: <BookGuestDownload />
       },
       {
         path: "membership",

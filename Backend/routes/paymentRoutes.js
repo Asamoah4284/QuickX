@@ -1,4 +1,5 @@
 const express = require('express');
+const axios = require('axios');
 const router = express.Router();
 const Payment = require('../models/Payment');
 const Course = require('../models/Course');
@@ -10,6 +11,44 @@ const Program = require('../models/Program');
 const { body, validationResult } = require('express-validator');
 const { createEnrollmentFromPayment } = require('../services/programEnrollmentService');
 const { getCreatorSubscriptionPlanPrice } = require('../constants/creatorSubscriptionPlans');
+const { validateOfferPaymentAmount } = require('../utils/bookOfferHelpers');
+
+const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+
+async function verifyPaystackTransaction(transactionId) {
+    if (!paystackSecretKey || !/^sk_(test|live)_/.test(paystackSecretKey)) {
+        console.warn('PAYSTACK_SECRET_KEY missing or invalid — skipping Paystack verification');
+        return true;
+    }
+    const response = await axios.get(
+        `https://api.paystack.co/transaction/verify/${encodeURIComponent(transactionId)}`,
+        {
+            headers: {
+                Authorization: `Bearer ${paystackSecretKey}`,
+                'Content-Type': 'application/json',
+            },
+            timeout: 15000,
+        }
+    );
+    return Boolean(response.data?.status && response.data?.data?.status === 'success');
+}
+
+/** Same trust model as POST /initialize: client succeeded via Paystack; verify only when secret key is valid. */
+async function verifyPaystackIfConfigured(transactionId) {
+    if (!paystackSecretKey || !/^sk_(test|live)_/.test(paystackSecretKey)) {
+        return true;
+    }
+    try {
+        return await verifyPaystackTransaction(transactionId);
+    } catch (err) {
+        const status = err.response?.status;
+        console.warn('Paystack verify skipped after error:', status || err.message);
+        if (process.env.NODE_ENV === 'production' && status === 401) {
+            return false;
+        }
+        return true;
+    }
+}
 
 // Validation middleware for payment initialization
 const validatePayment = [
@@ -18,13 +57,17 @@ const validatePayment = [
         .withMessage('Amount must be greater than 0')
         .toFloat(),
     body('itemType')
-        .isIn(['course', 'book', 'book_cart'])
+        .isIn(['course', 'book', 'book_cart', 'book_offer'])
         .withMessage('Invalid item type'),
     // itemId is required for single-item purchases only
     body('itemId')
-        .if(body('itemType').isIn(['course', 'book']))
+        .if(body('itemType').isIn(['course', 'book', 'book_offer']))
         .isMongoId()
         .withMessage('Invalid item ID'),
+    body('offerOptionId')
+        .if(body('itemType').equals('book_offer'))
+        .isMongoId()
+        .withMessage('Invalid offer option ID'),
     // For cart purchases, validate items[] ids
     body('items')
         .if(body('itemType').equals('book_cart'))
@@ -370,8 +413,22 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                     difference: diff
                 });
             }
-            // keep for payment record
             purchaseItem = books;
+        } else if (itemType === 'book_offer') {
+            const { offerOptionId } = req.body;
+            const validation = await validateOfferPaymentAmount(
+                itemId,
+                offerOptionId,
+                finalAmount
+            );
+            if (!validation.ok) {
+                return res.status(400).json({
+                    message: validation.message,
+                    expected: validation.expected,
+                    received: validation.received,
+                });
+            }
+            purchaseItem = validation.books;
         }
 
         // Process referral if code provided
@@ -417,11 +474,22 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
         }
 
         // Create payment record with commission details
+        const offerBookIds =
+            itemType === 'book_offer' && Array.isArray(purchaseItem)
+                ? purchaseItem.map((b) => b._id)
+                : [];
+
         const paymentRecord = {
             userId: req.user._id,
             itemType,
             itemId: itemType === 'book_cart' ? null : itemId,
-            cartItemIds: itemType === 'book_cart' ? (Array.isArray(items) ? items : []) : [],
+            offerOptionId: itemType === 'book_offer' ? req.body.offerOptionId : null,
+            cartItemIds:
+                itemType === 'book_cart'
+                    ? (Array.isArray(items) ? items : [])
+                    : itemType === 'book_offer'
+                      ? offerBookIds
+                      : [],
             originalAmount: Number(amount),
             finalAmount: finalAmount,
             commissionAmount: commissionAmount,
@@ -438,6 +506,26 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
         // Save payment record to database
         const payment = new Payment(paymentRecord);
         await payment.save();
+
+        if (itemType === 'book' || itemType === 'book_cart' || itemType === 'book_offer') {
+            const buyer = await User.findById(req.user._id);
+            if (buyer?.purchasedBooks) {
+                const addBookId = (bookId) => {
+                    if (!bookId) return;
+                    const exists = buyer.purchasedBooks.some((b) => String(b) === String(bookId));
+                    if (!exists) buyer.purchasedBooks.push(bookId);
+                };
+                if (itemType === 'book') {
+                    addBookId(itemId);
+                } else if (itemType === 'book_offer') {
+                    offerBookIds.forEach(addBookId);
+                } else {
+                    const ids = Array.isArray(items) ? items : [];
+                    ids.forEach(addBookId);
+                }
+                await buyer.save();
+            }
+        }
 
         console.log('Payment record:', {
             ...paymentRecord,
@@ -466,6 +554,214 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             message: 'Failed to process payment', 
             error: error.message 
         });
+    }
+});
+
+/** Guest ebook checkout (no account) — books only */
+router.post('/initialize-guest', validatePayment, handleValidationErrors, async (req, res) => {
+    try {
+        const {
+            itemType,
+            itemId,
+            amount,
+            transactionId,
+            paymentMethod,
+            momoNumber,
+            shippingAddress,
+            items,
+        } = req.body;
+
+        if (!['book', 'book_cart', 'book_offer'].includes(itemType)) {
+            return res.status(400).json({ message: 'Guest checkout is only available for ebook purchases' });
+        }
+
+        const guestEmail = String(shippingAddress?.email || '').trim().toLowerCase();
+        if (!guestEmail) {
+            return res.status(400).json({ message: 'Email is required for guest checkout' });
+        }
+
+        const existing = await Payment.findOne({ transactionId, status: 'completed' });
+        if (existing) {
+            return res.json({
+                success: true,
+                message: 'Payment already recorded',
+                payment: { transactionId: existing.transactionId, itemType: existing.itemType },
+            });
+        }
+
+        const paystackOk = await verifyPaystackIfConfigured(transactionId);
+        if (!paystackOk) {
+            return res.status(400).json({ message: 'Payment was not successful' });
+        }
+
+        let purchaseItem;
+        const finalAmount = Number(amount);
+
+        if (itemType === 'book') {
+            purchaseItem = await Book.findById(itemId);
+            if (!purchaseItem) {
+                return res.status(404).json({ message: 'Book not found' });
+            }
+            if (purchaseItem.type !== 'ebook') {
+                return res.status(400).json({ message: 'Guest checkout is only for digital ebooks' });
+            }
+            const priceDiff = Math.abs(purchaseItem.price - finalAmount);
+            if (priceDiff > 0.01) {
+                return res.status(400).json({
+                    message: 'Invalid amount. Price mismatch detected.',
+                    expected: purchaseItem.price,
+                    received: finalAmount,
+                });
+            }
+        } else if (itemType === 'book_cart') {
+            const ids = Array.isArray(items) ? items : [];
+            const books = await Book.find({ _id: { $in: ids } });
+            if (books.length !== ids.length) {
+                return res.status(404).json({ message: 'One or more books not found' });
+            }
+            if (books.some((b) => b.type !== 'ebook')) {
+                return res.status(400).json({ message: 'Guest checkout is only for digital ebooks' });
+            }
+            const total = books.reduce((sum, b) => sum + Number(b.price || 0), 0);
+            if (Math.abs(total - finalAmount) > 0.02) {
+                return res.status(400).json({
+                    message: 'Invalid amount. Cart total mismatch.',
+                    expected: total,
+                    received: finalAmount,
+                });
+            }
+            purchaseItem = books;
+        } else {
+            const { offerOptionId } = req.body;
+            const validation = await validateOfferPaymentAmount(
+                itemId,
+                offerOptionId,
+                finalAmount
+            );
+            if (!validation.ok) {
+                return res.status(400).json({
+                    message: validation.message,
+                    expected: validation.expected,
+                    received: validation.received,
+                });
+            }
+            purchaseItem = validation.books;
+        }
+
+        const guestCartIds =
+            itemType === 'book'
+                ? []
+                : Array.isArray(purchaseItem)
+                  ? purchaseItem.map((b) => b._id)
+                  : [];
+
+        const paymentRecord = {
+            guestEmail,
+            itemType,
+            itemId: itemType === 'book_cart' ? null : itemId,
+            offerOptionId: itemType === 'book_offer' ? req.body.offerOptionId : null,
+            cartItemIds:
+                itemType === 'book_cart'
+                    ? (Array.isArray(items) ? items : [])
+                    : itemType === 'book_offer'
+                      ? guestCartIds
+                      : [],
+            originalAmount: finalAmount,
+            finalAmount,
+            commissionAmount: 0,
+            transactionId,
+            paymentMethod,
+            momoNumber,
+            shippingAddress,
+            referralCode: '',
+            status: 'completed',
+            createdAt: new Date(),
+        };
+
+        const payment = await Payment.create(paymentRecord);
+
+        res.json({
+            success: true,
+            message: 'Guest payment recorded',
+            payment: {
+                transactionId: payment.transactionId,
+                itemType: payment.itemType,
+                guestEmail: payment.guestEmail,
+            },
+        });
+    } catch (error) {
+        console.error('initialize-guest error:', error);
+        res.status(500).json({ message: 'Failed to process guest payment', error: error.message });
+    }
+});
+
+/** Retrieve download links for a completed guest ebook purchase */
+router.get('/guest-download/:transactionId', async (req, res) => {
+    try {
+        const transactionId = String(req.params.transactionId || '').trim();
+        const email = String(req.query.email || '').trim().toLowerCase();
+
+        if (!transactionId) {
+            return res.status(400).json({ message: 'Payment reference is required' });
+        }
+
+        const payment = await Payment.findOne({
+            transactionId,
+            status: 'completed',
+            itemType: { $in: ['book', 'book_cart', 'book_offer'] },
+        });
+
+        if (!payment) {
+            return res.status(404).json({ message: 'Purchase not found or payment incomplete' });
+        }
+
+        const paymentEmail = String(payment.guestEmail || payment.shippingAddress?.email || '')
+            .trim()
+            .toLowerCase();
+        if (paymentEmail && email && paymentEmail !== email) {
+            return res.status(403).json({ message: 'Email does not match this purchase' });
+        }
+
+        let bookIds = [];
+        if (payment.itemType === 'book' && payment.itemId) {
+            bookIds = [payment.itemId];
+        } else if (payment.itemType === 'book_cart' || payment.itemType === 'book_offer') {
+            bookIds = Array.isArray(payment.cartItemIds) ? payment.cartItemIds : [];
+        }
+
+        if (!bookIds.length) {
+            return res.status(404).json({ message: 'No books found for this purchase' });
+        }
+
+        const books = await Book.find({ _id: { $in: bookIds } }).select(
+            'title author thumbnail fileUrl type'
+        );
+
+        const downloadable = books
+            .filter((b) => b.type === 'ebook' && b.fileUrl)
+            .map((b) => ({
+                id: b._id,
+                title: b.title,
+                author: b.author,
+                thumbnail: b.thumbnail,
+                fileUrl: b.fileUrl,
+            }));
+
+        if (!downloadable.length) {
+            return res.status(404).json({
+                message: 'Download file is not available yet. Please contact support.',
+            });
+        }
+
+        res.json({
+            success: true,
+            transactionId: payment.transactionId,
+            email: paymentEmail || email,
+            books: downloadable,
+        });
+    } catch (error) {
+        console.error('guest-download error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 
@@ -514,7 +810,7 @@ router.post('/webhook', async (req, res) => {
                     transactionId: transactionId || payment.transactionId,
                     paymentId: payment._id
                 });
-            } else {
+            } else if (payment.userId) {
                 const user = await User.findById(payment.userId);
                 if (!user) {
                     return res.status(404).json({ message: 'User not found' });
@@ -538,7 +834,11 @@ router.post('/webhook', async (req, res) => {
                     }
                 } else if (payment.itemType === 'book' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
                     user.purchasedBooks.push(payment.itemId);
-                } else if (payment.itemType === 'book_cart' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
+                } else if (
+                    (payment.itemType === 'book_cart' || payment.itemType === 'book_offer') &&
+                    user.purchasedBooks &&
+                    Array.isArray(user.purchasedBooks)
+                ) {
                     const ids = Array.isArray(payment.cartItemIds) ? payment.cartItemIds : [];
                     for (const id of ids) {
                         if (!user.purchasedBooks.some((b) => String(b) === String(id))) {

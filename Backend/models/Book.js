@@ -13,6 +13,14 @@ const bookSchema = new mongoose.Schema({
         type: String,
         required: true
     },
+    whatYoullLearn: [{
+        type: String,
+        trim: true
+    }],
+    afterReadingOutcomes: [{
+        type: String,
+        trim: true
+    }],
     type: {
         type: String,
         enum: ['ebook', 'hardcopy'],
@@ -29,10 +37,14 @@ const bookSchema = new mongoose.Schema({
     },
     fileUrl: {
         type: String,
-        // Required only for ebooks
+        // Ebook PDF required except instructor drafts (PDFs live on plan rows)
         required: function() {
-            return this.type === 'ebook';
-        }
+            if (this.type !== 'ebook') return false;
+            if (this.source === 'instructor' && this.listingStatus === 'draft') {
+                return false;
+            }
+            return true;
+        },
     },
     stock: {
         type: Number,
@@ -76,9 +88,28 @@ const bookSchema = new mongoose.Schema({
     rejectionReason: {
         type: String,
         default: ''
-    }
+    },
+    /** Shared purchase plans (singles + bundles) shown on the store page. */
+    offerGroupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'BookOfferGroup',
+        default: null,
+    },
+    /** PDF-only row for a plan (Book 2, etc.) — hidden from marketplace grid. */
+    isPlanDeliverable: {
+        type: Boolean,
+        default: false,
+    },
 }, {
     timestamps: true
+});
+
+/** Legacy value stored on some books — normalize before enum validation. */
+bookSchema.pre('validate', function normalizeListingStatus(next) {
+    if (this.listingStatus === 'approved') {
+        this.listingStatus = 'published';
+    }
+    next();
 });
 
 const Book = mongoose.model('Book', bookSchema);

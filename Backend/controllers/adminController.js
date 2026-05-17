@@ -229,8 +229,21 @@ exports.createBook = async (req, res) => {
             deliveryFee, 
             watermarkTemplate,
             thumbnail,
-            published
+            published,
+            whatYoullLearn,
+            afterReadingOutcomes
         } = req.body;
+
+        const normalizeStringArray = (value) => {
+            if (!value) return [];
+            if (Array.isArray(value)) {
+                return value.map((item) => String(item || '').trim()).filter(Boolean);
+            }
+            return String(value)
+                .split(/\r?\n|,/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+        };
 
         // Validate required fields
         if (!title || !author || !description) {
@@ -264,7 +277,9 @@ exports.createBook = async (req, res) => {
             isbn,
             deliveryFee: type === 'hardcopy' ? (parseFloat(deliveryFee) || 0) : undefined,
             watermarkTemplate,
-            published: published || new Date()
+            published: published || new Date(),
+            whatYoullLearn: normalizeStringArray(whatYoullLearn),
+            afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes)
         });
 
         await newBook.save();
@@ -298,8 +313,21 @@ exports.updateBook = async (req, res) => {
             deliveryFee, 
             watermarkTemplate,
             thumbnail, // Get thumbnail directly from request body
-            published
+            published,
+            whatYoullLearn,
+            afterReadingOutcomes
         } = req.body;
+
+        const normalizeStringArray = (value) => {
+            if (!value) return [];
+            if (Array.isArray(value)) {
+                return value.map((item) => String(item || '').trim()).filter(Boolean);
+            }
+            return String(value)
+                .split(/\r?\n|,/)
+                .map((item) => item.trim())
+                .filter(Boolean);
+        };
         
         // Find book
         let book = await Book.findById(req.params.id);
@@ -320,6 +348,10 @@ exports.updateBook = async (req, res) => {
         if (watermarkTemplate) book.watermarkTemplate = watermarkTemplate;
         if (thumbnail) book.thumbnail = thumbnail; // Update with new thumbnail URL
         if (published) book.published = published;
+        if (whatYoullLearn !== undefined) book.whatYoullLearn = normalizeStringArray(whatYoullLearn);
+        if (afterReadingOutcomes !== undefined) {
+            book.afterReadingOutcomes = normalizeStringArray(afterReadingOutcomes);
+        }
         
         await book.save();
         

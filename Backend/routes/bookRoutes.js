@@ -1,8 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const Book = require('../models/Book');
+const BookOfferGroup = require('../models/BookOfferGroup');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const {
+    serializePublicOfferGroup,
+    ensureOfferGroupPlanBooksEmbeds,
+} = require('../utils/bookOfferHelpers');
 
 // Get all books (public)
 router.get('/', async (req, res) => {
@@ -18,10 +23,58 @@ router.get('/', async (req, res) => {
             query.title = { $regex: search, $options: 'i' };
         }
 
-        const books = await Book.find(query)
-            .select('title author price type stock thumbnail description reviews fileUrl'); // Include fileUrl for downloads
+        const books = await Book.find({
+            ...query,
+            isPlanDeliverable: { $ne: true },
+            $or: [
+                { source: { $ne: 'instructor' } },
+                { listingStatus: 'published' },
+            ],
+        })
+            .select('title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes offerGroupId');
             
         res.json(books);
+    } catch (error) {
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// Purchase plans (singles + bundles) for a book page
+router.get('/:id/offers', async (req, res) => {
+    try {
+        const book = await Book.findById(req.params.id).select('offerGroupId type');
+        if (!book) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
+        if (!book.offerGroupId) {
+            return res.json({ offerGroup: null });
+        }
+
+        let group = await BookOfferGroup.findById(book.offerGroupId);
+        if (!group || group.listingStatus !== 'published') {
+            return res.json({ offerGroup: null });
+        }
+
+        group = await ensureOfferGroupPlanBooksEmbeds(group);
+
+        const allIds = [];
+        for (const opt of group.options || []) {
+            for (const id of opt.bookIds || []) {
+                allIds.push(id);
+            }
+        }
+
+        const books = await Book.find({ _id: { $in: allIds } }).select(
+            'title author price thumbnail type fileUrl whatYoullLearn listingStatus'
+        );
+        const booksById = new Map(books.map((b) => [String(b._id), b]));
+
+        const payload = serializePublicOfferGroup(group, booksById);
+        if (!payload.options.length) {
+            return res.json({ offerGroup: null });
+        }
+
+        res.json({ offerGroup: payload });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }
@@ -30,13 +83,23 @@ router.get('/', async (req, res) => {
 // Get single book details (public preview)
 router.get('/:id/preview', async (req, res) => {
     try {
-        const book = await Book.findById(req.params.id)
-            .select('title author price type stock thumbnail description reviews fileUrl'); // Include fileUrl for downloads
-            
+        const book = await Book.findById(req.params.id).select(
+            'title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes isPlanDeliverable offerGroupId'
+        );
+
         if (!book) {
             return res.status(404).json({ message: 'Book not found' });
         }
-        
+
+        if (book.isPlanDeliverable) {
+            const group = await BookOfferGroup.findOne({
+                'options.bookIds': book._id,
+            }).select('storefrontBookId');
+            if (group?.storefrontBookId) {
+                return res.json({ redirectTo: String(group.storefrontBookId) });
+            }
+        }
+
         res.json(book);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });

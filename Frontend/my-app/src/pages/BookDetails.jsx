@@ -1,27 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiCheck, FiMinus, FiPlus, FiShoppingCart, FiPackage } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiShoppingCart, FiPackage, FiStar } from 'react-icons/fi';
+import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
+import MetaPixelNoscript from '../components/MetaPixelNoscript';
+import BookOfferPicker from '../components/BookOfferPicker';
+import { isMetaPixelEnabledForBook, trackMetaInitiateCheckout } from '../utils/metaPixel';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const API_FALLBACK = 'http://localhost:5000';
-
-/** Mock curriculum — replace with API fields when available */
-const MOCK_WHAT_YOULL_LEARN = [
-  'The basics of currency pairs',
-  'Who uses the currency pairs',
-  'Currencies available in the currency pairs',
-  'Why trade currency pairs at Deriv',
-  'Currency pairs available for trading at Deriv',
-  'Currency pairs in more detail',
-];
-
-const MOCK_AFTER_READING = [
-  'Understand fundamental concepts of the currency pairs',
-  'Apply basic trading strategies, techniques, and risk management principles',
-  'Analyse chart patterns to anticipate potential price movements',
-  'Apply informed trading strategies in various market conditions',
-];
 
 const MOCK_BOOK_TESTIMONIALS = [
   {
@@ -44,10 +31,17 @@ const MOCK_BOOK_TESTIMONIALS = [
   },
 ];
 
-function BookLearnSectionMock() {
+function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
+  const learnItems = Array.isArray(whatYoullLearn) ? whatYoullLearn.filter(Boolean) : [];
+  const outcomeItems = Array.isArray(afterReadingOutcomes) ? afterReadingOutcomes.filter(Boolean) : [];
+
+  if (learnItems.length === 0 && outcomeItems.length === 0) {
+    return null;
+  }
+
   return (
     <section className="mt-20 border-t border-slate-100 pt-16 sm:mt-24 sm:pt-20 lg:mt-28 lg:pt-24" aria-labelledby="what-youll-learn-heading">
-      <h2 id="what-youll-learn-heading" className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
+      <h2 id="what-youll-learn-heading" className="text-center text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
         What you&apos;ll learn
       </h2>
 
@@ -63,32 +57,38 @@ function BookLearnSectionMock() {
             aria-hidden
           />
           <div className="relative rounded-sm border border-slate-200 bg-white p-5 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] sm:p-7 sm:shadow-xl">
-            <p className="text-center text-base font-bold uppercase tracking-[0.12em] text-[#c4122e] sm:text-lg">Introduction</p>
-            <div className="mt-5 columns-2 gap-x-4 text-[11px] leading-relaxed text-slate-600 sm:text-xs">
-              <p>
-                Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
+            <p className="text-center text-lg font-bold uppercase tracking-[0.12em] text-[#c4122e] sm:text-xl">
+              After reading
+            </p>
+            {outcomeItems.length > 0 ? (
+              <>
+                {outcomeItems.length > 1 ? (
+                  <div className="mt-5 columns-2 gap-x-4 text-xs leading-[1.65] text-slate-600 sm:text-sm sm:leading-[1.7]">
+                    {outcomeItems.slice(1).map((item) => (
+                      <p key={item} className="break-inside-avoid">
+                        {item}
+                      </p>
+                    ))}
+                  </div>
+                ) : null}
+                <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50/90 px-3 py-3.5 text-xs leading-[1.65] text-slate-700 sm:text-sm sm:leading-[1.7]">
+                  {outcomeItems[0]}
+                </div>
+              </>
+            ) : (
+              <p className="mt-5 text-center text-sm leading-[1.65] text-slate-500 sm:text-base sm:leading-relaxed">
+                After-reading outcomes will appear here once the author adds them.
               </p>
-              <p className="mt-0 break-inside-avoid">
-                Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-              </p>
-              <p className="break-inside-avoid">
-                Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-              </p>
-              <p className="break-inside-avoid">
-                Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
-              </p>
-            </div>
-            <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50/90 px-3 py-3 text-[11px] leading-snug text-slate-700 sm:text-xs">
-              This chapter sets the foundation for everything that follows — key definitions, context, and how to read the examples in this book.
-            </div>
+            )}
           </div>
         </div>
 
         <div className="min-w-0 space-y-10 lg:space-y-12">
+          {learnItems.length > 0 ? (
           <div>
-            <h3 className="text-lg font-bold text-slate-900 sm:text-xl">What you&apos;ll learn</h3>
+            <h3 className="text-lg font-black text-slate-950 sm:text-xl">What you&apos;ll learn</h3>
             <ul className="mt-5 space-y-3.5 sm:space-y-4">
-              {MOCK_WHAT_YOULL_LEARN.map((item) => (
+              {learnItems.map((item) => (
                 <li key={item} className="flex gap-3 text-sm leading-relaxed text-slate-800 sm:text-base">
                   <FiCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-900" strokeWidth={2.5} aria-hidden />
                   <span>{item}</span>
@@ -96,44 +96,83 @@ function BookLearnSectionMock() {
               ))}
             </ul>
           </div>
+          ) : null}
 
-          <div>
-            <h3 className="text-lg font-bold text-slate-900 sm:text-xl">After reading, you&apos;ll be able to</h3>
-            <ul className="mt-5 space-y-3.5 sm:space-y-4">
-              {MOCK_AFTER_READING.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-relaxed text-slate-800 sm:text-base">
-                  <FiCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-900" strokeWidth={2.5} aria-hidden />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
       </div>
     </section>
   );
 }
 
+function readerInitials(name) {
+  return name
+    .replace(/\./g, '')
+    .split(' ')
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function StarRating() {
+  return (
+    <div className="flex gap-0.5" aria-label="5 out of 5 stars">
+      {Array.from({ length: 5 }, (_, i) => (
+        <FiStar key={i} className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden />
+      ))}
+    </div>
+  );
+}
+
 function BookTestimonialsSectionMock() {
   return (
-    <section className="mt-20 border-t border-slate-100 pt-16 sm:mt-24 sm:pt-20 lg:mt-28 lg:pt-24" aria-labelledby="book-testimonials-heading">
-      <h2 id="book-testimonials-heading" className="text-center text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl lg:text-4xl">
-        What readers say
-      </h2>
-      <p className="mx-auto mt-3 max-w-2xl text-center text-sm text-slate-600 sm:text-base">
-        Real feedback from people who bought and read titles on QuickX. (Sample quotes for layout — connect to reviews later.)
-      </p>
+    <section
+      className="mt-20 rounded-3xl bg-slate-50/80 px-4 py-14 sm:mt-24 sm:px-8 sm:py-16 lg:mt-28 lg:py-20"
+      aria-labelledby="book-testimonials-heading"
+    >
+      <div className="mx-auto max-w-2xl text-center">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Reader reviews</p>
+        <h2
+          id="book-testimonials-heading"
+          className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl"
+        >
+          What readers say
+        </h2>
+        <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+          Honest feedback from learners who purchased books on QuickX.
+        </p>
+      </div>
 
-      <ul className="mt-12 grid gap-6 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-8">
+      <ul className="mx-auto mt-10 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-7">
         {MOCK_BOOK_TESTIMONIALS.map((t) => (
           <li
             key={t.name}
-            className="flex flex-col rounded-2xl border border-slate-200/80 bg-slate-50/60 p-6 shadow-sm transition hover:border-slate-300 hover:shadow-md sm:p-7"
+            className="flex flex-col rounded-2xl border border-slate-200/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04] transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-7"
           >
-            <blockquote className="flex-1 text-sm leading-relaxed text-slate-800 sm:text-[15px]">&ldquo;{t.quote}&rdquo;</blockquote>
-            <footer className="mt-6 border-t border-slate-200/80 pt-4">
-              <p className="font-semibold text-slate-900">{t.name}</p>
-              <p className="text-xs text-slate-500 sm:text-sm">{t.role}</p>
+            <StarRating />
+            <blockquote className="relative mt-5 flex-1">
+              <span
+                className="pointer-events-none absolute -left-1 -top-3 font-serif text-5xl leading-none text-slate-200"
+                aria-hidden
+              >
+                &ldquo;
+              </span>
+              <p className="relative text-[15px] leading-[1.7] text-slate-700 sm:text-base sm:leading-[1.75]">
+                {t.quote}
+              </p>
+            </blockquote>
+            <footer className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
+              <span
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-600 text-sm font-semibold text-white"
+                aria-hidden
+              >
+                {readerInitials(t.name)}
+              </span>
+              <div className="min-w-0">
+                <p className="font-semibold text-slate-900">{t.name}</p>
+                <p className="text-sm text-slate-500">{t.role}</p>
+              </div>
             </footer>
           </li>
         ))}
@@ -142,71 +181,20 @@ function BookTestimonialsSectionMock() {
   );
 }
 
-/** Bottom banner — same purchase actions as hero */
-function BookFinalCta({ book, priceLabel, onGetEbook, onRequestHardcopy }) {
-  const isEbook = book.type === 'ebook';
-
-  return (
-    <section
-      className="mt-20 rounded-3xl border border-slate-200/90 bg-gradient-to-br from-slate-900 via-slate-900 to-indigo-950 px-6 py-12 text-center shadow-xl sm:mt-24 sm:px-10 sm:py-14 lg:mt-28 lg:px-12 lg:py-16"
-      aria-labelledby="book-final-cta-heading"
-    >
-      <h2 id="book-final-cta-heading" className="text-2xl font-bold tracking-tight text-white sm:text-3xl lg:text-4xl">
-        {isEbook ? 'Get your copy today' : 'Request your hardcopy'}
-      </h2>
-      <p className="mx-auto mt-3 max-w-xl text-pretty text-sm leading-relaxed text-slate-300 sm:text-base">
-        {isEbook
-          ? 'Add this ebook to your cart and check out securely. You’ll get digital access after payment is confirmed.'
-          : 'We’ll open WhatsApp with your book details so our team can confirm delivery and payment.'}
-      </p>
-      <p className="mt-6 text-xl font-bold text-white sm:text-2xl">{priceLabel}</p>
-      <p className="mt-1 text-sm text-slate-400">{book.title}</p>
-
-      <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
-        {isEbook ? (
-          <button
-            type="button"
-            onClick={onGetEbook}
-            className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[220px]"
-          >
-            <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
-            Get ebook
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={onRequestHardcopy}
-            className="inline-flex w-full max-w-xs items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-black/20 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[240px]"
-          >
-            <FiPackage className="h-5 w-5 shrink-0" aria-hidden />
-            Request hardcopy
-          </button>
-        )}
-        <Link
-          to="/store"
-          className="text-sm font-medium text-slate-300 underline-offset-4 transition hover:text-white hover:underline"
-        >
-          Browse more books
-        </Link>
-      </div>
-      <p className="mt-4 text-xs text-slate-500">Checkout required · Secure payment</p>
-    </section>
-  );
+/** First N outcome bullets for the hero column. */
+function heroOutcomes(book, limit = 3) {
+  const items = Array.isArray(book?.afterReadingOutcomes)
+    ? book.afterReadingOutcomes.map((s) => String(s).trim()).filter(Boolean)
+    : [];
+  return items.slice(0, limit);
 }
 
-function formatGhs(value) {
-  const n = Number(value || 0);
-  return `GH₵${n.toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
-/** Short subtitle from description (hero style). */
-function heroSubtitle(book) {
+function heroDescription(book) {
   const d = (book?.description || '').trim();
-  if (!d) {
-    return `By ${book?.author || 'the author'} — ${book?.type === 'ebook' ? 'digital edition with instant access after checkout.' : 'request a printed copy and we will follow up with delivery details.'}`;
-  }
-  if (d.length <= 220) return d;
-  return `${d.slice(0, 217).trim()}…`;
+  if (d) return d;
+  return book?.type === 'ebook'
+    ? 'Digital edition with instant access after checkout.'
+    : 'Request a printed copy and our team will follow up with delivery details.';
 }
 
 function BookDetails() {
@@ -215,20 +203,26 @@ function BookDetails() {
   const API_URL = import.meta.env.VITE_API_URL || API_FALLBACK;
 
   const [book, setBook] = useState(null);
+  const [offerGroup, setOfferGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [qty, setQty] = useState(1);
-
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError('');
 
-    axios
-      .get(`${API_URL}/api/books/${bookId}/preview`)
-      .then(({ data }) => {
+    Promise.all([
+      axios.get(`${API_URL}/api/books/${bookId}/preview`),
+      axios.get(`${API_URL}/api/books/${bookId}/offers`).catch(() => ({ data: { offerGroup: null } })),
+    ])
+      .then(([previewRes, offersRes]) => {
         if (cancelled) return;
-        setBook(data);
+        if (previewRes.data?.redirectTo) {
+          navigate(`/store/${previewRes.data.redirectTo}`, { replace: true });
+          return;
+        }
+        setBook(previewRes.data);
+        setOfferGroup(offersRes.data?.offerGroup || null);
       })
       .catch((e) => {
         if (cancelled) return;
@@ -243,57 +237,67 @@ function BookDetails() {
     };
   }, [API_URL, bookId]);
 
-  const safeQty = useMemo(() => Math.max(1, Math.min(99, Number(qty) || 1)), [qty]);
+  const heroOutcomePoints = useMemo(
+    () => (book ? heroOutcomes(book, 3) : []),
+    [book]
+  );
+
+  useMetaPixelBookPage(book, bookId);
+
+  const goToCheckout = (item) => {
+    if (isMetaPixelEnabledForBook(bookId)) {
+      trackMetaInitiateCheckout(book);
+    }
+    navigate('/checkout', {
+      state: {
+        item,
+        returnPath: `/store/${book._id}`,
+        guestEbook: true,
+      },
+    });
+  };
 
   const addEbookToCart = () => {
     if (!book?._id) return;
-    try {
-      const raw = JSON.parse(localStorage.getItem('bookCart') || '[]');
-      const cart = Array.isArray(raw) ? raw : [];
-      const existingIndex = cart.findIndex((i) => String(i?.id) === String(book._id));
-      if (existingIndex >= 0) {
-        cart[existingIndex] = {
-          ...cart[existingIndex],
-          qty: Math.max(1, Number(cart[existingIndex]?.qty || 1)) + safeQty,
-        };
-      } else {
-        cart.push({
-          id: book._id,
-          type: 'book',
-          title: book.title,
-          price: Number(book.price || 0),
-          image: book.thumbnail,
-          author: book.author,
-          qty: safeQty,
-        });
-      }
-      localStorage.setItem('bookCart', JSON.stringify(cart));
-      navigate('/checkout', {
-        state: {
-          item: {
-            type: 'book_cart',
-            title: 'Book cart',
-            items: cart,
-            price: cart.reduce((sum, it) => sum + Number(it?.price || 0) * Math.max(1, Number(it?.qty || 1)), 0),
-            image: cart[0]?.image,
-          },
-          returnPath: '/store',
-        },
-      });
-    } catch {
-      // ignore
-    }
+    goToCheckout({
+      type: 'book',
+      id: book._id,
+      _id: book._id,
+      title: book.title,
+      price: Number(book.price || 0),
+      thumbnail: book.thumbnail,
+      image: book.thumbnail,
+      author: book.author,
+    });
+  };
+
+  const selectOfferOption = (option) => {
+    if (!offerGroup?.id || !option?.id) return;
+    goToCheckout({
+      type: 'book_offer',
+      id: offerGroup.id,
+      offerGroupId: offerGroup.id,
+      offerOptionId: option.id,
+      title: option.cardTitle || option.headline || book.title,
+      price: Number(option.price || 0),
+      thumbnail: option.thumbnail,
+      image: option.thumbnail,
+      author: book.author,
+      books: option.books,
+      bookIds: option.bookIds,
+    });
   };
 
   const requestHardcopy = () => {
     if (!book) return;
-    const message = `New Hardcopy Request:\n\nBook: ${book.title}\nQty: ${safeQty}\nPrice: GHS${book.price}\n\nPlease contact me to complete delivery.`;
+    const message = `New Hardcopy Request:\n\nBook: ${book.title}\nQty: 1\nPrice: GHS${book.price}\n\nPlease contact me to complete delivery.`;
     const whatsappUrl = `https://wa.me/233542343069?text=${encodeURIComponent(message)}`;
     window.open(whatsappUrl, '_blank');
   };
 
   return (
     <div className="min-h-screen bg-white text-slate-900">
+      <MetaPixelNoscript />
       <header className="border-b border-slate-100/80">
         <div className="mx-auto flex max-w-6xl items-center px-4 py-5 sm:px-6 lg:px-8">
           <Link
@@ -336,75 +340,71 @@ function BookDetails() {
           </div>
         ) : (
           <>
-          <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-20">
-            {/* Left: marketing-style copy */}
-            <div className="order-2 min-w-0 lg:order-1">
-              <p className="text-sm font-semibold uppercase tracking-wider text-slate-400">About this book</p>
-              <h1 className="mt-3 text-pretty text-3xl font-bold leading-[1.15] tracking-tight text-slate-900 sm:text-4xl lg:text-[2.65rem] lg:leading-[1.1]">
-                {book.title}
-              </h1>
-              <p className="mt-2 text-base font-medium text-slate-500">By {book.author}</p>
-
-              <p className="mt-6 max-w-xl text-pretty text-base leading-relaxed text-slate-600 sm:text-lg">
-                {heroSubtitle(book)}
-              </p>
-
-              <p className="mt-8 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">{formatGhs(book.price)}</p>
-
-              <div className="mt-6 flex flex-wrap items-center gap-3">
-                <span className="text-sm font-semibold text-slate-700">Quantity</span>
-                <div className="inline-flex items-center overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => setQty((q) => Math.max(1, Number(q || 1) - 1))}
-                    className="px-3 py-2.5 text-slate-600 transition hover:bg-slate-50"
-                    aria-label="Decrease quantity"
-                  >
-                    <FiMinus className="h-4 w-4" />
-                  </button>
-                  <input
-                    value={safeQty}
-                    onChange={(e) => setQty(e.target.value)}
-                    inputMode="numeric"
-                    className="w-14 border-x border-slate-200 bg-white py-2.5 text-center text-sm font-semibold text-slate-900 outline-none"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setQty((q) => Math.min(99, Number(q || 1) + 1))}
-                    className="px-3 py-2.5 text-slate-600 transition hover:bg-slate-50"
-                    aria-label="Increase quantity"
-                  >
-                    <FiPlus className="h-4 w-4" />
-                  </button>
+          <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
+            <div className="order-1 flex min-w-0 flex-col gap-8 lg:order-1 lg:max-w-xl">
+              <div className="space-y-4">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                  About this book
+                </p>
+                <div className="space-y-2">
+                  <h1 className="text-pretty text-3xl font-bold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-[2.5rem]">
+                    {book.title}
+                  </h1>
+                  <p className="text-base font-medium text-slate-500">By {book.author}</p>
                 </div>
+                <p className="text-pretty text-base leading-relaxed text-slate-600 line-clamp-5 sm:text-[1.05rem]">
+                  {heroDescription(book)}
+                </p>
               </div>
 
-              <div className="mt-8 flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
-                {book.type === 'ebook' ? (
+              {heroOutcomePoints.length > 0 ? (
+                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-5 py-5 sm:px-6">
+                  <p className="text-sm font-bold text-slate-900 sm:text-base">You will be able to</p>
+                  <ul className="mt-4 space-y-3">
+                    {heroOutcomePoints.map((item) => (
+                      <li key={item} className="flex gap-3 text-sm leading-snug text-slate-700 sm:text-[15px]">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                          <FiCheck className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
+                        </span>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              {book.type === 'ebook' && !offerGroup?.options?.length ? (
+                <div className="space-y-2">
                   <button
                     type="button"
                     onClick={addEbookToCart}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[200px]"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[240px]"
                   >
-                    <FiShoppingCart className="h-5 w-5" aria-hidden />
-                    Get ebook
+                    <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
+                    Buy now — instant download
                   </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={requestHardcopy}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[220px]"
-                  >
-                    <FiPackage className="h-5 w-5" aria-hidden />
-                    Request hardcopy
-                  </button>
-                )}
-                <p className="text-sm text-slate-400">Checkout required</p>
-              </div>
+                  <p className="text-sm text-slate-500">
+                    No account needed · Pay with Mobile Money · Download right after payment
+                  </p>
+                </div>
+              ) : book.type === 'ebook' && offerGroup?.options?.length ? (
+                <p className="text-sm text-slate-500">
+                  Choose a plan below — singles or bundle. No account needed · MoMo checkout.
+                </p>
+              ) : book.type !== 'ebook' ? (
+                <button
+                  type="button"
+                  onClick={requestHardcopy}
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-rose-500/20 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[220px]"
+                >
+                  <FiPackage className="h-5 w-5 shrink-0" aria-hidden />
+                  Request hardcopy
+                </button>
+              ) : null}
             </div>
 
-            {/* Right: cover only — no dark frame (artwork fills the visual) */}
-            <div className="order-1 flex justify-center lg:order-2 lg:justify-end lg:pl-4">
+            {/* Right: cover */}
+            <div className="order-2 flex justify-center lg:order-2 lg:justify-end lg:pl-4">
               <figure className="relative w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[380px]">
                 <div className="overflow-hidden rounded-2xl bg-white shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] ring-1 ring-slate-200/90">
                   <img
@@ -421,16 +421,20 @@ function BookDetails() {
             </div>
           </div>
 
-          <BookLearnSectionMock />
+          {offerGroup?.options?.length ? (
+            <BookOfferPicker
+              offerGroup={offerGroup}
+              apiUrl={API_URL}
+              onSelectOption={selectOfferOption}
+            />
+          ) : null}
+
+          <BookLearnSection
+            whatYoullLearn={book.whatYoullLearn}
+            afterReadingOutcomes={book.afterReadingOutcomes}
+          />
 
           <BookTestimonialsSectionMock />
-
-          <BookFinalCta
-            book={book}
-            priceLabel={formatGhs(book.price)}
-            onGetEbook={addEbookToCart}
-            onRequestHardcopy={requestHardcopy}
-          />
           </>
         )}
       </div>

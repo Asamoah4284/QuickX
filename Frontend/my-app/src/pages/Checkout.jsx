@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiCreditCard, FiLock, FiArrowLeft, FiCheck, FiShoppingBag, FiCalendar, FiPhone, FiChevronDown } from 'react-icons/fi';
 import { SiVisa, SiMastercard } from 'react-icons/si';
 import { PaystackButton } from 'react-paystack';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import GuestEbookCheckoutView from '../components/GuestEbookCheckoutView';
 
 /** Same rules as CoursePublicDetail / store: absolute URL or `${apiUrl}${path}`. */
 function resolveCheckoutItemImageUrl(item, apiUrl) {
@@ -16,6 +17,23 @@ function resolveCheckoutItemImageUrl(item, apiUrl) {
   if (s.startsWith('http')) return publicAssetUrl(s);
   if (!apiUrl) return null;
   return publicAssetUrl(`${apiUrl}${s}`);
+}
+
+/** Matches Navbar: both token and user profile must exist. */
+function isUserLoggedIn() {
+  const token = localStorage.getItem('authToken')?.trim();
+  const userRaw = localStorage.getItem('user')?.trim();
+  if (!token || !userRaw) return false;
+  try {
+    JSON.parse(userRaw);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function isBookCheckoutItem(item) {
+  return item?.type === 'book' || item?.type === 'book_cart' || item?.type === 'book_offer';
 }
 
 function Checkout() {
@@ -35,6 +53,7 @@ function Checkout() {
   const [errors, setErrors] = useState({});
   const [isProcessing, setIsProcessing] = useState(false);
   const [checkoutItem, setCheckoutItem] = useState(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(true);
   const [returnInfo, setReturnInfo] = useState({ path: '/membership', state: null });
   const [paymentMethod, setPaymentMethod] = useState('momo'); // Default to mobile money
   // Add coupon state variables
@@ -51,23 +70,58 @@ function Checkout() {
   // Paystack public key
   const paystackPublicKey = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
 
-  // Load checkout item from location state
+  // Load checkout item from navigation state or ?book= id (for ad / direct links)
   useEffect(() => {
-    if (location.state?.item) {
-      setCheckoutItem(location.state.item);
-      
-      // Set return path and state information for after purchase
-      if (location.state.returnPath) {
-        setReturnInfo({
-          path: location.state.returnPath || '/membership',
-          state: location.state.returnTabState || null
-        });
+    let cancelled = false;
+
+    async function loadCheckoutItem() {
+      if (location.state?.item) {
+        setCheckoutItem(location.state.item);
+        if (location.state.returnPath) {
+          setReturnInfo({
+            path: location.state.returnPath || '/membership',
+            state: location.state.returnTabState || null,
+          });
+        }
+        if (!cancelled) setCheckoutLoading(false);
+        return;
       }
-    } else {
-      // If no item provided, redirect to home
-      navigate('/');
+
+      const bookIdFromQuery = new URLSearchParams(location.search).get('book');
+      if (bookIdFromQuery && API_URL) {
+        try {
+          const { data } = await axios.get(`${API_URL}/api/books/${bookIdFromQuery}/preview`);
+          if (cancelled) return;
+          setCheckoutItem({
+            type: 'book',
+            id: data._id,
+            _id: data._id,
+            title: data.title,
+            price: Number(data.price || 0),
+            thumbnail: data.thumbnail,
+            image: data.thumbnail,
+            author: data.author,
+          });
+          setReturnInfo({ path: `/store/${data._id}`, state: null });
+        } catch {
+          if (!cancelled) navigate('/store');
+        } finally {
+          if (!cancelled) setCheckoutLoading(false);
+        }
+        return;
+      }
+
+      if (!cancelled) {
+        setCheckoutLoading(false);
+        navigate('/');
+      }
     }
-  }, [location, navigate]);
+
+    loadCheckoutItem();
+    return () => {
+      cancelled = true;
+    };
+  }, [location, navigate, API_URL]);
 
   const isBookCart = checkoutItem?.type === 'book_cart';
   const bookCartItems = useMemo(() => {
@@ -247,9 +301,14 @@ function Checkout() {
     setIsProcessing(true);
     
     try {
-      const authToken = localStorage.getItem('authToken');
-      if (!authToken) {
-        throw new Error('Authentication token not found');
+      const loggedIn = isUserLoggedIn();
+      const authToken = loggedIn ? localStorage.getItem('authToken') : null;
+      const isGuestBookCheckout = isBookCheckoutItem(checkoutItem) && !loggedIn;
+
+      if (!loggedIn && !isGuestBookCheckout) {
+        throw new Error(
+          'Please sign in to complete this purchase, or buy an ebook from the store without an account.'
+        );
       }
 
       // Extract reference string if it's an object
@@ -271,6 +330,118 @@ function Checkout() {
         discount: discount,
         final: finalPrice
       });
+
+      const guestDownloadPath = (ref) => {
+        const params = new URLSearchParams({ reference: ref });
+        const email = String(formData.email || '').trim();
+        if (email) params.set('email', email);
+        return `/download/book?${params.toString()}`;
+      };
+
+      const saveGuestPurchaseLocally = (ref) => {
+        try {
+          const key = 'guestBookPurchases';
+          const existing = JSON.parse(localStorage.getItem(key) || '[]');
+          const entry = {
+            reference: ref,
+            email: formData.email || '',
+            purchasedAt: new Date().toISOString(),
+            type: checkoutItem?.type,
+            itemId:
+              checkoutItem?.type === 'book'
+                ? String(itemId)
+                : checkoutItem?.type === 'book_offer'
+                  ? String(checkoutItem.offerGroupId || itemId)
+                  : null,
+            items:
+              checkoutItem?.type === 'book_cart'
+                ? (checkoutItem.items || []).map((i) => String(i?.id ?? i?._id ?? ''))
+                : checkoutItem?.type === 'book_offer'
+                  ? (checkoutItem.bookIds || []).map((id) => String(id))
+                  : [],
+          };
+          if (!existing.some((p) => p.reference === ref)) {
+            existing.push(entry);
+            localStorage.setItem(key, JSON.stringify(existing));
+          }
+        } catch {
+          /* ignore */
+        }
+      };
+
+      const buildBookPaymentData = () => ({
+        itemType: checkoutItem.type,
+        ...(checkoutItem?.type === 'book_cart'
+          ? { items: (checkoutItem?.items || []).map((i) => String(i?.id || i?._id || i)) }
+          : checkoutItem?.type === 'book_offer'
+            ? {
+                itemId: String(checkoutItem.offerGroupId || itemId),
+                offerOptionId: String(checkoutItem.offerOptionId || ''),
+              }
+            : { itemId: String(itemId) }),
+        paymentMethod:
+          formData.provider === 'mtn'
+            ? 'MTN'
+            : formData.provider === 'vodafone'
+              ? 'Vodafone'
+              : formData.provider === 'airtel'
+                ? 'AirtelTigo'
+                : 'MTN',
+        momoNumber: formData.phoneNumber,
+        shippingAddress: {
+          fullName: formData.email.split('@')[0] || 'Customer',
+          phone: formData.phoneNumber || '',
+          email: formData.email || '',
+        },
+        transactionId: referenceString,
+        status: 'completed',
+        amount: finalPrice,
+        currency: 'GHS',
+        referralCode: '',
+      });
+
+      // Guest ebook checkout — no account required; go straight to download page
+      if (isGuestBookCheckout) {
+        const paymentData = buildBookPaymentData();
+        if (
+          !paymentData.momoNumber ||
+          paymentData.amount == null ||
+          (paymentData.itemType === 'book_cart'
+            ? !Array.isArray(paymentData.items) || paymentData.items.length === 0
+            : paymentData.itemType === 'book_offer'
+              ? !paymentData.itemId || !paymentData.offerOptionId
+              : !paymentData.itemId)
+        ) {
+          throw new Error('Missing required payment details. Check your email and phone number.');
+        }
+        if (!paymentData.shippingAddress.email?.trim()) {
+          throw new Error('Email is required to receive your download link.');
+        }
+
+        const paymentResponse = await axios.post(
+          `${API_URL}/api/payments/initialize-guest`,
+          paymentData,
+          { headers: { 'Content-Type': 'application/json' } }
+        );
+
+        if (!paymentResponse.data?.success) {
+          throw new Error(
+            paymentResponse.data?.message ||
+              'Could not confirm your payment. Please contact support with your Paystack reference.'
+          );
+        }
+
+        saveGuestPurchaseLocally(referenceString);
+        if (checkoutItem?.type === 'book_cart') {
+          localStorage.removeItem('bookCart');
+        } else {
+          localStorage.removeItem('pendingBookPurchase');
+        }
+
+        setIsProcessing(false);
+        navigate(guestDownloadPath(referenceString), { replace: true });
+        return;
+      }
       
       // Program enrollment uses dedicated endpoint (idempotent enrollment on transactionId)
       if (checkoutItem?.type === 'program' && itemId) {
@@ -372,7 +543,12 @@ function Checkout() {
         itemType: checkoutItem.type,
         ...(checkoutItem?.type === 'book_cart'
           ? { items: (checkoutItem?.items || []).map((i) => String(i?.id || i?._id || i)) }
-          : { itemId: String(itemId) }),
+          : checkoutItem?.type === 'book_offer'
+            ? {
+                itemId: String(checkoutItem.offerGroupId || itemId),
+                offerOptionId: String(checkoutItem.offerOptionId || ''),
+              }
+            : { itemId: String(itemId) }),
         paymentMethod: formData.provider === 'mtn' ? 'MTN' : 
                       formData.provider === 'vodafone' ? 'Vodafone' : 
                       formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
@@ -395,7 +571,11 @@ function Checkout() {
       // Validate required fields before sending
       if (
         !paymentData.itemType ||
-        (paymentData.itemType === 'book_cart' ? !Array.isArray(paymentData.items) || paymentData.items.length === 0 : !paymentData.itemId) ||
+        (paymentData.itemType === 'book_cart'
+          ? !Array.isArray(paymentData.items) || paymentData.items.length === 0
+          : paymentData.itemType === 'book_offer'
+            ? !paymentData.itemId || !paymentData.offerOptionId
+            : !paymentData.itemId) ||
         !paymentData.momoNumber ||
         paymentData.amount == null
       ) {
@@ -406,13 +586,15 @@ function Checkout() {
       const apiUrl = API_URL;
       console.log('Using API URL:', apiUrl);
 
-      // Initialize payment and get course access
+      const membershipBooksState = { activeTab: 'myBooks', bookPurchaseSuccess: true };
+
+      // Initialize payment and get course access (logged-in users only; guests return earlier)
       try {
         const paymentResponse = await axios.post(`${apiUrl}/api/payments/initialize`, paymentData, {
-          headers: { 
-            'Authorization': `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+            'Content-Type': 'application/json',
+          },
         });
 
         console.log('Payment initialization response:', paymentResponse.data);
@@ -454,8 +636,8 @@ function Checkout() {
             });
           } 
           else if (checkoutItem?.type === 'book_cart') {
-            const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
             const items = Array.isArray(checkoutItem.items) ? checkoutItem.items : [];
+            const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
             const next = [...purchasedBooks];
             const nowIso = new Date().toISOString();
 
@@ -476,21 +658,48 @@ function Checkout() {
             localStorage.removeItem('bookCart');
             setPaymentSuccessModal({
               title: 'Payment successful',
-              description: `Your purchase is complete. ${items.length} book(s) added to your dashboard.`,
-              ctaLabel: 'Go to dashboard',
-              navigateTo: '/dashboard',
-              navigateState: undefined,
+              description: `Your purchase is complete. ${items.length} book(s) are in your library.`,
+              ctaLabel: 'View my books',
+              navigateTo: '/membership',
+              navigateState: membershipBooksState,
+            });
+          }
+          else if (checkoutItem?.type === 'book_offer') {
+            const books = Array.isArray(checkoutItem.books) ? checkoutItem.books : [];
+            const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
+            const next = [...purchasedBooks];
+            const nowIso = new Date().toISOString();
+
+            books.forEach((it) => {
+              const id = it?.id ?? it?._id;
+              if (!id) return;
+              const idStr = String(id);
+              if (next.some((b) => String(b?.id ?? '') === idStr)) return;
+              next.push({
+                ...it,
+                id: idStr,
+                purchaseDate: nowIso,
+                status: 'purchased',
+              });
+            });
+
+            localStorage.setItem('purchasedBooks', JSON.stringify(next));
+            setPaymentSuccessModal({
+              title: 'Payment successful',
+              description: `Your purchase is complete. ${books.length || 1} book(s) are ready to download.`,
+              ctaLabel: 'View my books',
+              navigateTo: '/membership',
+              navigateState: membershipBooksState,
             });
           }
           else if (checkoutItem?.type === 'book' && itemId) {
-            // Update localStorage for book
             const purchasedBooks = JSON.parse(localStorage.getItem('purchasedBooks') || '[]');
             if (!purchasedBooks.some(book => book.id === itemId || book.id === String(itemId))) {
               purchasedBooks.push({
                 ...checkoutItem,
                 id: itemId,
                 purchaseDate: new Date().toISOString(),
-                status: 'purchased'
+                status: 'purchased',
               });
               localStorage.setItem('purchasedBooks', JSON.stringify(purchasedBooks));
             }
@@ -498,9 +707,9 @@ function Checkout() {
             setPaymentSuccessModal({
               title: 'Payment successful',
               description: `Your purchase of ${checkoutItem.title} is complete.`,
-              ctaLabel: 'Go to dashboard',
-              navigateTo: '/dashboard',
-              navigateState: undefined
+              ctaLabel: 'View my books',
+              navigateTo: '/membership',
+              navigateState: membershipBooksState,
             });
           } else {
             setPaymentSuccessModal({
@@ -516,16 +725,32 @@ function Checkout() {
           throw new Error('Payment initialization failed');
         }
       } catch (error) {
+        const status = error.response?.status;
+        const authFailed = status === 401 || status === 403;
+        if (authFailed && isBookCheckoutItem(checkoutItem)) {
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('user');
+          window.dispatchEvent(new Event('auth-change'));
+          try {
+            const paymentData = buildBookPaymentData();
+            const retry = await axios.post(`${API_URL}/api/payments/initialize-guest`, paymentData, {
+              headers: { 'Content-Type': 'application/json' },
+            });
+            if (retry.data?.success) {
+              saveGuestPurchaseLocally(referenceString);
+              if (checkoutItem?.type === 'book_cart') localStorage.removeItem('bookCart');
+              else localStorage.removeItem('pendingBookPurchase');
+              setIsProcessing(false);
+              navigate(guestDownloadPath(referenceString), { replace: true });
+              return;
+            }
+          } catch (guestErr) {
+            console.error('Guest payment retry failed:', guestErr);
+          }
+        }
         console.error('Payment initialization error details:', {
           status: error.response?.status,
           data: error.response?.data,
-          headers: error.response?.headers,
-          config: {
-            url: error.config?.url,
-            method: error.config?.method,
-            headers: error.config?.headers,
-            data: error.config?.data
-          }
         });
         throw error;
       }
@@ -541,6 +766,24 @@ function Checkout() {
         data?.error ||
         validationMsgs ||
         error.message;
+
+      const paymentRef =
+        typeof reference === 'object' ? reference?.reference : reference;
+
+      if (
+        isBookCheckoutItem(checkoutItem) &&
+        !isUserLoggedIn() &&
+        paymentRef &&
+        /already recorded|duplicate/i.test(String(errorMessage))
+      ) {
+        setIsProcessing(false);
+        const params = new URLSearchParams({ reference: String(paymentRef) });
+        const email = String(formData.email || '').trim();
+        if (email) params.set('email', email);
+        navigate(`/download/book?${params.toString()}`, { replace: true });
+        return;
+      }
+
       alert(`Error processing payment: ${errorMessage}`);
       setIsProcessing(false);
     }
@@ -715,6 +958,17 @@ function Checkout() {
     [checkoutItem]
   );
 
+  const isGuestEbookCheckout =
+    Boolean(checkoutItem) &&
+    !isUserLoggedIn() &&
+    (checkoutItem.type === 'book' || checkoutItem.type === 'book_offer');
+
+  const guestMoMoReady =
+    formData.email &&
+    formData.phoneNumber &&
+    formData.phoneNumber.length === 10 &&
+    /\S+@\S+\.\S+/.test(formData.email);
+
   const completeSuccessAndNavigate = () => {
     setPaymentSuccessModal((current) => {
       if (!current) return null;
@@ -741,14 +995,37 @@ function Checkout() {
     };
   }, [paymentSuccessModal, navigate]);
 
-  if (!checkoutItem) {
+  if (checkoutLoading || !checkoutItem) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <motion.div className="flex min-h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading checkout...</p>
+          <div className="mx-auto h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600" />
+          <p className="mt-4 text-sm text-slate-600">Loading checkout…</p>
         </div>
-      </div>
+      </motion.div>
+    );
+  }
+
+  if (isGuestEbookCheckout) {
+    return (
+      <GuestEbookCheckoutView
+        checkoutItem={checkoutItem}
+        checkoutItemImageSrc={checkoutItemImageSrc}
+        total={calculateFinalPrice()}
+        formData={formData}
+        errors={errors}
+        guestMoMoReady={guestMoMoReady}
+        isProcessing={isProcessing}
+        handleBack={handleBack}
+        handleChange={handleChange}
+        formatPhoneNumber={formatPhoneNumber}
+        setFormData={setFormData}
+        setErrors={setErrors}
+        handleSubmit={handleSubmit}
+        getPaystackConfig={getPaystackConfig}
+        paymentSuccessModal={paymentSuccessModal}
+        completeSuccessAndNavigate={completeSuccessAndNavigate}
+      />
     );
   }
 
@@ -788,30 +1065,59 @@ function Checkout() {
               </h2>
               
               <div className="mb-6">
-                <div className="flex items-start">
-                  <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-gray-100 shadow-sm sm:h-24 sm:w-32">
-                    {checkoutItemImageSrc ? (
-                      <img
-                        src={checkoutItemImageSrc}
-                        alt=""
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-full min-h-[5rem] w-full items-center justify-center text-gray-400" aria-hidden>
-                        <FiShoppingBag className="h-8 w-8" />
-                      </div>
-                    )}
+                {checkoutItem.type === 'book' ? (
+                  <div className="flex flex-col">
+                    <figure className="mb-4 w-full max-w-[180px] overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200/80">
+                      {checkoutItemImageSrc ? (
+                        <img
+                          src={checkoutItemImageSrc}
+                          alt={checkoutItem.title}
+                          className="aspect-[3/4] w-full object-contain"
+                        />
+                      ) : (
+                        <div
+                          className="flex aspect-[3/4] w-full items-center justify-center bg-gray-100 text-gray-400"
+                          aria-hidden
+                        >
+                          <FiShoppingBag className="h-10 w-10" />
+                        </div>
+                      )}
+                    </figure>
+                    <div>
+                      <h3 className="font-semibold text-gray-900">{checkoutItem.title}</h3>
+                      <p className="mt-1 text-sm text-gray-500">Digital Book</p>
+                      {checkoutItem.author ? (
+                        <p className="text-sm text-gray-500">By {checkoutItem.author}</p>
+                      ) : null}
+                      <p className="mt-2 text-xl font-bold text-blue-600">GH₵{checkoutItem.price}</p>
+                    </div>
                   </div>
-                  <div className="ml-4">
-                    <h3 className="font-medium text-gray-900">{checkoutItem.title}</h3>
+                ) : (
+                  <div className="flex items-start">
+                    <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-gray-100 shadow-sm sm:h-24 sm:w-32">
+                      {checkoutItemImageSrc ? (
+                        <img
+                          src={checkoutItemImageSrc}
+                          alt=""
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div
+                          className="flex h-full min-h-[5rem] w-full items-center justify-center text-gray-400"
+                          aria-hidden
+                        >
+                          <FiShoppingBag className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                    <div className="ml-4 min-w-0">
+                      <h3 className="font-medium text-gray-900">{checkoutItem.title}</h3>
                     {checkoutItem.type === 'creator_subscription' && checkoutItem.description ? (
                       <p className="text-sm text-gray-500">{checkoutItem.description}</p>
                     ) : null}
                     <p className="text-sm text-gray-500">
-                      {checkoutItem.type === 'book'
-                        ? 'Digital Book'
-                        : checkoutItem.type === 'book_cart'
-                          ? `${bookCartItems.length} digital book(s)`
+                      {checkoutItem.type === 'book_cart'
+                        ? `${bookCartItems.length} digital book(s)`
                         : checkoutItem.type === 'course'
                           ? 'Online Course'
                           : checkoutItem.type === 'creator_subscription'
@@ -830,9 +1136,10 @@ function Checkout() {
                         ) : null}
                       </div>
                     ) : null}
-                    <p className="text-blue-600 font-bold mt-1">GH₵{checkoutItem.price}</p>
+                    <p className="mt-1 font-bold text-blue-600">GH₵{checkoutItem.price}</p>
                   </div>
                 </div>
+                )}
               </div>
               
               {/* Coupon Code Section */}

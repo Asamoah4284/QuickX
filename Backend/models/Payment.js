@@ -4,12 +4,17 @@ const paymentSchema = new mongoose.Schema({
     userId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
-        required: true
+        default: null
+    },
+    /** Set for purchases completed without a logged-in account. */
+    guestEmail: {
+        type: String,
+        default: ''
     },
     itemType: {
         type: String,
         required: true,
-        enum: ['course', 'book', 'book_cart', 'program', 'creator_subscription']
+        enum: ['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription']
     },
     /** Set when itemType is creator_subscription (plan id: 1m, 2m, 3m, 1y). */
     subscriptionPlanId: {
@@ -19,11 +24,16 @@ const paymentSchema = new mongoose.Schema({
     itemId: {
         type: mongoose.Schema.Types.ObjectId,
         required: function () {
-            return this.itemType !== 'book_cart';
+            return !['book_cart', 'book_offer'].includes(this.itemType);
         },
         default: null
     },
-    /** For book cart purchases (multiple ebook items). */
+    /** For book_offer purchases — subdocument id on BookOfferGroup.options. */
+    offerOptionId: {
+        type: mongoose.Schema.Types.ObjectId,
+        default: null,
+    },
+    /** For book cart / bundle purchases (multiple ebook items). */
     cartItemIds: {
         type: [mongoose.Schema.Types.ObjectId],
         default: []
