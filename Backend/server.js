@@ -15,25 +15,13 @@ const { securityHeaders, requestSizeLimiter, preventParamPollution } = require('
 const app = express();
 
 // CORS must run before rate limiting / routes so every response (incl. 429 & OPTIONS preflight) gets CORS headers
-const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    'https://www.quickxlearn.com',
-    'https://quickxlearn.com'
-];
 const corsOptions = {
-    origin: function (origin, callback) {
-        if (!origin || allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true,
     preflightContinue: false,
-    optionsSuccessStatus: 204
+    optionsSuccessStatus: 204,
 };
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
