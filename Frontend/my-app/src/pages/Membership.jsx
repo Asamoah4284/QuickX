@@ -190,7 +190,12 @@ function Membership() {
   // Hydrate purchased books with missing fileUrl/thumbnail (older purchases/cart items).
   useEffect(() => {
     const missing = purchasedBooks
-      .filter((b) => b && (b.fileUrl == null || String(b.fileUrl).trim() === ''))
+      .filter((b) => {
+        if (!b) return false;
+        const noFile = b.fileUrl == null || String(b.fileUrl).trim() === '';
+        const noThumb = !(b.thumbnail || b.image);
+        return noFile || noThumb;
+      })
       .map((b) => String(b.id || b._id || ''))
       .filter(Boolean);
     const uniqueIds = Array.from(new Set(missing));

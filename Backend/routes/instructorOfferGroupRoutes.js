@@ -105,12 +105,9 @@ router.post('/series-book', auth, requireApprovedCreator, async (req, res) => {
             category: anchor.category || 'general',
             createdBy: req.user._id,
             source: 'instructor',
-            listingStatus:
-                anchor.listingStatus === 'published' || anchor.listingStatus === 'approved'
-                    ? 'published'
-                    : 'draft',
-            isPlanDeliverable: true,
             listingStatus: 'draft',
+            isPlanDeliverable: true,
+            thumbnail: String(anchor.thumbnail || '').trim() || undefined,
             offerGroupId: null,
             fileUrl: pdfUrl,
         });

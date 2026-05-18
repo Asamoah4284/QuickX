@@ -108,6 +108,7 @@ const BookOfferGroup = require('./models/BookOfferGroup');
 const {
     ensureOfferGroupPlanBooksEmbeds,
     migrateMarketplaceListings,
+    enrichDeliverableBookThumbnails,
 } = require('./utils/bookOfferHelpers');
 db.once('open', async () => {
     console.log('Connected to MongoDB');
@@ -144,6 +145,14 @@ db.once('open', async () => {
         }
     } catch (e) {
         console.error('marketplace listing migration:', e.message);
+    }
+    try {
+        const thumbs = await enrichDeliverableBookThumbnails();
+        if (thumbs > 0) {
+            console.log(`Copied storefront thumbnails onto ${thumbs} plan deliverable book(s)`);
+        }
+    } catch (e) {
+        console.error('deliverable thumbnail migration:', e.message);
     }
     try {
         await seedPrograms();

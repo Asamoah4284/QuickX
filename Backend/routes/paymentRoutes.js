@@ -733,19 +733,20 @@ router.get('/guest-download/:transactionId', async (req, res) => {
             return res.status(404).json({ message: 'No books found for this purchase' });
         }
 
+        const { resolveDownloadThumbnails } = require('../utils/bookOfferHelpers');
+
         const books = await Book.find({ _id: { $in: bookIds } }).select(
-            'title author thumbnail fileUrl type'
+            'title author thumbnail fileUrl type offerGroupId'
         );
 
-        const downloadable = books
-            .filter((b) => b.type === 'ebook' && b.fileUrl)
-            .map((b) => ({
-                id: b._id,
-                title: b.title,
-                author: b.author,
-                thumbnail: b.thumbnail,
-                fileUrl: b.fileUrl,
-            }));
+        const downloadable = await resolveDownloadThumbnails(
+            books.filter((b) => b.type === 'ebook' && b.fileUrl),
+            {
+                offerGroupId:
+                    payment.itemType === 'book_offer' ? payment.itemId : null,
+                offerOptionId: payment.offerOptionId || null,
+            }
+        );
 
         if (!downloadable.length) {
             return res.status(404).json({

@@ -18,11 +18,19 @@ function formatCompareLine(option) {
   return `GH₵${Number(option.compareAtPrice)}`;
 }
 
-/** Build unique cover images: plan upload first, then each book in the plan. */
+/** Cover images for a plan card — one image for singles, one per book for bundles. */
 function getPlanCovers(option, apiUrl) {
+  const books = option.books || [];
+
+  if (option.type === 'single' || books.length <= 1) {
+    const raw = option.thumbnail || books[0]?.thumbnail || '';
+    const src = resolveThumb(raw, apiUrl);
+    if (!src) return [];
+    return [{ src, title: option.cardTitle || books[0]?.title || '' }];
+  }
+
   const seen = new Set();
   const covers = [];
-
   const add = (raw, title) => {
     const src = resolveThumb(raw, apiUrl);
     if (!src || seen.has(src)) return;
@@ -30,9 +38,11 @@ function getPlanCovers(option, apiUrl) {
     covers.push({ src, title: title || '' });
   };
 
-  add(option.thumbnail, option.cardTitle);
-  for (const book of option.books || []) {
+  for (const book of books) {
     add(book.thumbnail, book.title);
+  }
+  if (!covers.length) {
+    add(option.thumbnail, option.cardTitle);
   }
 
   return covers;

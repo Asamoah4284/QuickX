@@ -127,6 +127,7 @@ async function upsertPlanBooksForOption(anchorBook, planBooks, userId) {
             throw missingPdfError(title);
         }
 
+        const siblingThumb = String(anchorBook.thumbnail || '').trim();
         book = new Book({
             title,
             author: String(anchorBook.author || '').trim() || 'Author',
@@ -135,6 +136,7 @@ async function upsertPlanBooksForOption(anchorBook, planBooks, userId) {
             price: Number(anchorBook.price) || 0,
             category: anchorBook.category || 'general',
             fileUrl,
+            thumbnail: siblingThumb || undefined,
             createdBy: userId,
             source: 'instructor',
             listingStatus: 'draft',
@@ -310,6 +312,88 @@ async function migrateMarketplaceListings() {
     return updated;
 }
 
+/** Fill missing thumbnails for plan PDF rows (Book 2, etc.) on download/library UIs. */
+async function resolveDownloadThumbnails(books, hints = {}) {
+    if (!books?.length) return [];
+
+    const plain = books.map((b) => (b.toObject ? b.toObject() : { ...b }));
+    const ids = plain.map((b) => b._id).filter(Boolean);
+
+    let group = null;
+    if (hints.offerGroupId && mongoose.Types.ObjectId.isValid(String(hints.offerGroupId))) {
+        group = await BookOfferGroup.findById(hints.offerGroupId).lean();
+    }
+    if (!group) {
+        const linked = plain.find((b) => b.offerGroupId);
+        if (linked?.offerGroupId) {
+            group = await BookOfferGroup.findById(linked.offerGroupId).lean();
+        }
+    }
+    if (!group) {
+        group = await BookOfferGroup.findOne({ 'options.bookIds': { $in: ids } }).lean();
+    }
+
+    let purchasedOptionThumb = '';
+    if (group && hints.offerOptionId) {
+        const purchased = (group.options || []).find(
+            (opt) => String(opt._id) === String(hints.offerOptionId)
+        );
+        purchasedOptionThumb = String(purchased?.thumbnail || '').trim();
+    }
+
+    let storefrontThumb = '';
+    if (group?.storefrontBookId) {
+        const sf = await Book.findById(group.storefrontBookId).select('thumbnail').lean();
+        storefrontThumb = String(sf?.thumbnail || '').trim();
+    }
+
+    const peerThumb = String(plain.find((b) => b.thumbnail)?.thumbnail || '').trim();
+
+    const optionThumbForBook = (bookId) => {
+        if (!group) return '';
+        const opt = (group.options || []).find((o) =>
+            (o.bookIds || []).some((id) => String(id) === String(bookId))
+        );
+        return String(opt?.thumbnail || '').trim();
+    };
+
+    return plain.map((b) => {
+        const own = String(b.thumbnail || '').trim();
+        const thumb =
+            own ||
+            optionThumbForBook(b._id) ||
+            purchasedOptionThumb ||
+            storefrontThumb ||
+            peerThumb;
+        return {
+            id: b._id,
+            title: b.title,
+            author: b.author,
+            thumbnail: thumb,
+            fileUrl: b.fileUrl,
+        };
+    });
+}
+
+async function enrichDeliverableBookThumbnails() {
+    const deliverables = await Book.find({
+        isPlanDeliverable: true,
+        $or: [{ thumbnail: { $exists: false } }, { thumbnail: '' }, { thumbnail: null }],
+    }).select('_id');
+
+    let updated = 0;
+    for (const d of deliverables) {
+        const group = await BookOfferGroup.findOne({ 'options.bookIds': d._id });
+        if (!group?.storefrontBookId) continue;
+        const sf = await Book.findById(group.storefrontBookId).select('thumbnail');
+        const thumb = String(sf?.thumbnail || '').trim();
+        if (!thumb) continue;
+        await Book.updateOne({ _id: d._id }, { $set: { thumbnail: thumb } });
+        updated += 1;
+    }
+    return updated;
+}
+
 async function syncBooksToOfferGroup(offerGroupId, bookIds, storefrontBookId) {
     const unique = parseBookObjectIds(bookIds);
     const storefront = parseBookObjectIds(
@@ -470,6 +554,8 @@ module.exports = {
     assertBooksOwnedByCreator,
     syncBooksToOfferGroup,
     migrateMarketplaceListings,
+    enrichDeliverableBookThumbnails,
+    resolveDownloadThumbnails,
     resolveOfferOptionsWithPlanBooks,
     ensureOfferGroupPlanBooksEmbeds,
     resolvePublishedOfferOption,

@@ -13,20 +13,33 @@ function resolveAssetUrl(raw, apiUrl) {
   return publicAssetUrl(s);
 }
 
-function BookDownloadRow({ book, apiUrl }) {
+function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
   const fileHref = resolveAssetUrl(book.fileUrl, apiUrl);
-  const thumbHref = resolveAssetUrl(book.thumbnail, apiUrl);
+  const thumbHref = resolveAssetUrl(book.thumbnail || fallbackThumbnail, apiUrl);
 
   return (
     <article className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm">
       <div className="flex gap-5">
         <div className="shrink-0">
           {thumbHref ? (
-            <img
-              src={thumbHref}
-              alt=""
-              className="h-[7.5rem] w-[5.5rem] rounded-xl object-contain bg-slate-50 ring-1 ring-slate-100"
-            />
+            <>
+              <img
+                src={thumbHref}
+                alt={book.title ? `Cover: ${book.title}` : 'Book cover'}
+                className="h-[7.5rem] w-[5.5rem] rounded-xl object-cover bg-slate-50 ring-1 ring-slate-100"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  const fallback = e.currentTarget.nextElementSibling;
+                  if (fallback) fallback.style.display = 'flex';
+                }}
+              />
+              <div
+                className="hidden h-[7.5rem] w-[5.5rem] items-center justify-center rounded-xl bg-slate-50 text-slate-300 ring-1 ring-slate-100"
+                aria-hidden
+              >
+                <FiBookOpen className="h-9 w-9" />
+              </div>
+            </>
           ) : (
             <div
               className="flex h-[7.5rem] w-[5.5rem] items-center justify-center rounded-xl bg-slate-50 text-slate-300 ring-1 ring-slate-100"
@@ -169,11 +182,19 @@ export default function BookGuestDownload() {
 
             {!loading && !error && books.length > 0 ? (
               <ul className="space-y-4">
-                {books.map((book) => (
-                  <li key={String(book.id)}>
-                    <BookDownloadRow book={book} apiUrl={API_URL} />
-                  </li>
-                ))}
+                {books.map((book) => {
+                  const fallbackThumbnail =
+                    books.find((b) => String(b.thumbnail || '').trim())?.thumbnail || '';
+                  return (
+                    <li key={String(book.id)}>
+                      <BookDownloadRow
+                        book={book}
+                        apiUrl={API_URL}
+                        fallbackThumbnail={fallbackThumbnail}
+                      />
+                    </li>
+                  );
+                })}
               </ul>
             ) : null}
 
