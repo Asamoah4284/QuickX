@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowLeft, FiCheck, FiShoppingCart, FiPackage, FiStar } from 'react-icons/fi';
@@ -46,7 +46,7 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
       </h2>
 
       <div className="mt-12 grid items-start gap-12 lg:mt-16 lg:grid-cols-2 lg:gap-16 xl:gap-20">
-        {/* Stacked “pages” preview (decorative) */}
+        {/* Stacked â€œpagesâ€ preview (decorative) */}
         <div className="relative mx-auto w-full max-w-md justify-self-center lg:justify-self-start">
           <div
             className="absolute left-3 top-6 hidden h-[min(100%,320px)] w-[88%] rotate-[-3deg] rounded-sm border border-slate-200/90 bg-white shadow-md sm:block"
@@ -242,6 +242,16 @@ function BookDetails() {
     [book]
   );
 
+  const bundleOfferOption = useMemo(() => {
+    const options = offerGroup?.options || [];
+    if (!options.length) return null;
+    return (
+      options.find((o) => o.type === 'bundle') ||
+      options.find((o) => o.highlighted) ||
+      null
+    );
+  }, [offerGroup]);
+
   useMetaPixelBookPage(book, bookId);
 
   const goToCheckout = (item) => {
@@ -315,7 +325,7 @@ function BookDetails() {
           <div className="flex min-h-[40vh] items-center justify-center text-slate-500">
             <div className="flex flex-col items-center gap-4">
               <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-rose-500" />
-              <p className="text-sm font-medium">Loading book…</p>
+              <p className="text-sm font-medium">Loading bookâ€¦</p>
             </div>
           </div>
         ) : error ? (
@@ -381,15 +391,31 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[240px]"
                   >
                     <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
-                    Buy now — instant download
+                    Buy now â€” instant download
                   </button>
                   <p className="text-sm text-slate-500">
-                    No account needed · Pay with Mobile Money · Download right after payment
+                    No account needed Â· Pay with Mobile Money Â· Download right after payment
+                  </p>
+                </div>
+              ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
+                <div className="w-full max-w-md space-y-2">
+                  <div className="rounded-2xl bg-[#0c2340] p-2.5 shadow-lg shadow-[#0c2340]/20 sm:p-3">
+                    <button
+                      type="button"
+                      onClick={() => selectOfferOption(bundleOfferOption)}
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-[#0c2340] shadow-sm transition hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
+                    >
+                      <span aria-hidden>🚀</span>
+                      Get Instant Access — Bundle GH₵{Number(bundleOfferOption.price || 0)}
+                    </button>
+                  </div>
+                  <p className="text-sm text-slate-500">
+                    Secure · MoMo · Instant PDF · Compare all plans below
                   </p>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
                 <p className="text-sm text-slate-500">
-                  Choose a plan below — singles or bundle. No account needed · MoMo checkout.
+                  Choose a plan below. No account needed · MoMo checkout.
                 </p>
               ) : book.type !== 'ebook' ? (
                 <button

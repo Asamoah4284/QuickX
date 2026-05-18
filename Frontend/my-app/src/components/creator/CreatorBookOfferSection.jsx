@@ -314,15 +314,90 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
           }),
         ],
         cardTitle: 'Complete bundle',
-        headline: 'ALL BOOKS',
+        headline: 'Course 1 + Course 2',
+        label: 'COMPLETE BUNDLE',
         price: Math.round(Number(currentBook?.price || 0) * 1.4) || 0,
         compareAtPrice: Number(currentBook?.price || 0) * 2,
-        badge: 'BEST VALUE — SAVE 30%',
+        badge: 'MOST POPULAR — BEST VALUE',
         highlighted: true,
-        features: 'Everything in the series\nInstant PDF delivery for each book',
+        features: 'Everything in Course 1\nFull advanced strategy system\nInstant PDF for both books',
         sortOrder: prev.length,
       },
     ]);
+  };
+
+  /** Starter + bundle + advanced — matches the public three-column plan layout. */
+  const seedThreeTierTemplate = () => {
+    const book1Price = Number(currentBook?.price) || 149;
+    const book2Price = Math.round(book1Price * 1.67) || 249;
+    const bundlePrice = Math.round(book1Price + book2Price - 50) || 299;
+
+    setOptions([
+      {
+        ...emptyOption(bookId ? String(bookId) : null, 'single'),
+        label: 'STARTER',
+        headline: 'Course 1 Only',
+        cardTitle: currentBook?.title || 'Course 1',
+        price: book1Price,
+        compareAtPrice: '',
+        badge: '',
+        highlighted: false,
+        footnote: '',
+        features:
+          'Full foundation module\nCandlesticks, patterns & trend lines\nSupply, demand & order blocks\nRisk management basics\nPersonal trading plan framework',
+        sortOrder: 0,
+        planBooks: [
+          newPlanBook({
+            bookId: bookId || CURRENT_BOOK_SENTINEL,
+            title: currentBook?.title || 'Course 1',
+            fileUrl: currentBook?.fileUrl || '',
+          }),
+        ],
+        bookIds: bookId ? [String(bookId)] : [],
+      },
+      {
+        ...emptyOption(null, 'bundle'),
+        label: 'COMPLETE BUNDLE',
+        headline: 'Course 1 + Course 2',
+        cardTitle: 'Both courses',
+        price: bundlePrice,
+        compareAtPrice: book1Price + book2Price,
+        badge: 'MOST POPULAR — BEST VALUE',
+        highlighted: true,
+        footnote: '',
+        features:
+          'Everything in Course 1\nTriple X Strategy — full system\nX Hack Up & X Hack Down entries\nFTR, FTB & Break & Close methods\nLiquidity zones & order flow\nAdvanced risk-to-reward optimization\nPsychology of a winning trader',
+        sortOrder: 1,
+        planBooks: [
+          newPlanBook({
+            bookId: bookId || CURRENT_BOOK_SENTINEL,
+            title: currentBook?.title ? `${currentBook.title} — Course 1` : 'Course 1',
+            fileUrl: currentBook?.fileUrl || '',
+          }),
+          newPlanBook({
+            title: currentBook?.title ? `${currentBook.title} — Course 2` : 'Course 2',
+          }),
+        ],
+        bookIds: bookId ? [String(bookId)] : [],
+      },
+      {
+        ...emptyOption(null, 'single'),
+        label: 'ADVANCED',
+        headline: 'Course 2 Only',
+        cardTitle: 'Course 2',
+        price: book2Price,
+        compareAtPrice: '',
+        badge: '',
+        highlighted: false,
+        footnote: 'Recommended after Course 1',
+        features:
+          'Triple X Strategy — full system\nTop-down & multi-timeframe analysis\nX Hack Up & X Hack Down entries\nLiquidity zones & order flow\nAdvanced psychology & discipline',
+        sortOrder: 2,
+        planBooks: [newPlanBook({ title: 'Course 2' })],
+        bookIds: [],
+      },
+    ]);
+    setEnabled(true);
   };
 
   const removeOption = (index) => {
@@ -767,6 +842,13 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
             >
               <FiPlus className="h-4 w-4" />
               Add bundle plan
+            </button>
+            <button
+              type="button"
+              onClick={seedThreeTierTemplate}
+              className="inline-flex items-center gap-1 rounded-xl border border-[#0c2340]/20 bg-[#0c2340] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a1c33]"
+            >
+              Use 3-tier layout
             </button>
           </div>
         </>
