@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiCheck, FiShoppingCart, FiPackage, FiStar } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiShoppingCart, FiPackage, FiStar, FiZap } from 'react-icons/fi';
+import { formatGhs } from '../utils/formatGhs';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
 import MetaPixelNoscript from '../components/MetaPixelNoscript';
 import BookOfferPicker from '../components/BookOfferPicker';
@@ -146,7 +147,7 @@ function StarRating() {
 function BookTestimonialsSectionMock() {
   return (
     <section
-      className="mt-20 rounded-3xl bg-slate-50/80 px-4 py-14 sm:mt-24 sm:px-8 sm:py-16 lg:mt-28 lg:py-20"
+      className="mt-12 rounded-3xl bg-slate-50/80 px-4 py-14 sm:mt-16 sm:px-8 sm:py-16 lg:mt-20 lg:py-20"
       aria-labelledby="book-testimonials-heading"
     >
       <div className="mx-auto max-w-2xl text-center">
@@ -224,6 +225,19 @@ function heroDescription(book) {
     : 'Request a printed copy and our team will follow up with delivery details.';
 }
 
+/**
+ * Reader reviews only on the FOREX TRADING storefront book (single id).
+ * Override with VITE_TESTIMONIAL_BOOK_ID in .env if the id changes.
+ */
+const TESTIMONIAL_BOOK_ID =
+  import.meta.env.VITE_TESTIMONIAL_BOOK_ID?.trim() || '6a06f1085ae8b7541db685e2';
+
+function isTestimonialBook(book, routeBookId) {
+  if (!book || !TESTIMONIAL_BOOK_ID) return false;
+  const ids = [routeBookId, book._id, book.id].filter(Boolean).map(String);
+  return ids.includes(TESTIMONIAL_BOOK_ID);
+}
+
 function BookDetails() {
   const { bookId } = useParams();
   const navigate = useNavigate();
@@ -279,6 +293,11 @@ function BookDetails() {
       null
     );
   }, [offerGroup]);
+
+  const showTestimonials = useMemo(
+    () => isTestimonialBook(book, bookId),
+    [book, bookId]
+  );
 
   useMetaPixelBookPage(book, bookId);
 
@@ -439,8 +458,8 @@ function BookDetails() {
                       onClick={() => selectOfferOption(bundleOfferOption)}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-[#0c2340] shadow-sm transition hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
                     >
-                      <span aria-hidden>??</span>
-                      Get Instant Access ? Bundle GH?{Number(bundleOfferOption.price || 0)}
+                      <FiZap className="h-5 w-5 shrink-0" aria-hidden />
+                      Get Instant Access — Bundle {formatGhs(bundleOfferOption.price)}
                     </button>
                   </div>
                   <p className="text-sm text-slate-500">
@@ -452,7 +471,7 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
                   >
                     <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Prefer printed? Request hardcopy
+                    Prefer printed? Request hardcopy after payment
                   </button>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
@@ -512,12 +531,12 @@ function BookDetails() {
             />
           ) : null}
 
+          {showTestimonials ? <BookTestimonialsSectionMock /> : null}
+
           <BookLearnSection
             whatYoullLearn={book.whatYoullLearn}
             afterReadingOutcomes={book.afterReadingOutcomes}
           />
-
-          <BookTestimonialsSectionMock />
 
           <HardcopyRequestModal
             book={book}

@@ -1,4 +1,18 @@
+import { useMemo } from 'react';
 import { FiCheck, FiLock, FiStar } from 'react-icons/fi';
+
+/** Starter | Bundle (center) | Advanced — bundle always in the middle when there are 3 tiers. */
+function orderOptionsForDisplay(options) {
+  const list = [...(options || [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+  if (list.length !== 3) return list;
+
+  const bundleIndex = list.findIndex((o) => o.type === 'bundle' || o.highlighted);
+  if (bundleIndex < 0) return list;
+
+  const bundle = list[bundleIndex];
+  const others = list.filter((_, i) => i !== bundleIndex);
+  return [others[0], bundle, others[1]].filter(Boolean);
+}
 
 /** Sum individual plan tiers (starter + advanced) for bundle compare-at pricing. */
 function getBundleCompareFromPlans(bundleOption, allOptions) {
@@ -93,7 +107,7 @@ function TopBadge({ children, highlighted }) {
 }
 
 function PlanCard({ option, allOptions, onSelect }) {
-  const highlighted = Boolean(option.highlighted);
+  const highlighted = Boolean(option.highlighted) || option.type === 'bundle';
   const compareLine = formatCompareLine(option, allOptions);
   const savings = formatSavings(option, allOptions);
   const promoPill = getPromoPill(option, savings);
@@ -225,7 +239,12 @@ function PlanCard({ option, allOptions, onSelect }) {
 export default function BookOfferPicker({ offerGroup, onSelectOption }) {
   if (!offerGroup?.options?.length) return null;
 
-  const count = offerGroup.options.length;
+  const displayOptions = useMemo(
+    () => orderOptionsForDisplay(offerGroup.options),
+    [offerGroup.options]
+  );
+
+  const count = displayOptions.length;
   const gridClass =
     count === 1
       ? 'mx-auto max-w-md'
@@ -252,12 +271,12 @@ export default function BookOfferPicker({ offerGroup, onSelectOption }) {
         ) : null}
       </div>
 
-      <div className={`mt-10 grid gap-6 sm:gap-7 lg:items-stretch ${gridClass}`}>
-        {offerGroup.options.map((option) => (
+      <div className={`mt-10 grid gap-6 sm:gap-7 lg:items-center ${gridClass}`}>
+        {displayOptions.map((option) => (
           <PlanCard
             key={option.id}
             option={option}
-            allOptions={offerGroup.options}
+            allOptions={displayOptions}
             onSelect={onSelectOption}
           />
         ))}
