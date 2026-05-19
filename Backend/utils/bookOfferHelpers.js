@@ -480,6 +480,15 @@ async function validateOfferPaymentAmount(offerGroupId, offerOptionId, amount) {
     return { ok: true, ...resolved };
 }
 
+function bundleCompareFromPlanTiers(bundleOpt, allOptions) {
+    const singles = (allOptions || [])
+        .filter((o) => String(o._id) !== String(bundleOpt._id) && o.type !== 'bundle')
+        .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    if (singles.length < 2) return null;
+    const total = singles.reduce((sum, o) => sum + Number(o.price || 0), 0);
+    return total > Number(bundleOpt.price || 0) ? total : null;
+}
+
 function serializePublicOfferGroup(group, booksById) {
     const options = (group.options || [])
         .map((opt) => {
@@ -489,12 +498,15 @@ function serializePublicOfferGroup(group, booksById) {
             if (!books.length) return null;
 
             const sumPrice = books.reduce((s, b) => s + Number(b.price || 0), 0);
+            const planTierCompare =
+                opt.type === 'bundle' ? bundleCompareFromPlanTiers(opt, group.options) : null;
             const compareAt =
-                opt.compareAtPrice != null && opt.compareAtPrice > 0
+                planTierCompare ??
+                (opt.compareAtPrice != null && opt.compareAtPrice > 0
                     ? opt.compareAtPrice
                     : opt.type === 'bundle'
                       ? sumPrice
-                      : null;
+                      : null);
 
             return {
                 id: opt._id,
@@ -548,7 +560,55 @@ function serializePublicOfferGroup(group, booksById) {
     };
 }
 
+/**
+ * Validate book_cart `items` (array of book ids, duplicates allowed for quantity).
+ * @param {string[]} itemIds
+ * @param {number} finalAmount
+ * @param {{ requireEbook?: boolean }} [opts]
+ */
+async function validateBookCartPayment(itemIds, finalAmount, opts = {}) {
+    const ids = (Array.isArray(itemIds) ? itemIds : []).map((id) => String(id)).filter(Boolean);
+    if (!ids.length) {
+        return { ok: false, message: 'Cart is empty', expected: 0, received: finalAmount };
+    }
+
+    const uniqueIds = [...new Set(ids)];
+    const books = await Book.find({ _id: { $in: uniqueIds } });
+    const bookMap = new Map(books.map((b) => [String(b._id), b]));
+
+    let total = 0;
+    for (const id of ids) {
+        const book = bookMap.get(id);
+        if (!book) {
+            return { ok: false, message: 'One or more books not found', expected: null, received: finalAmount };
+        }
+        if (opts.requireEbook && book.type !== 'ebook') {
+            return {
+                ok: false,
+                message: 'Guest checkout is only for digital ebooks',
+                expected: null,
+                received: finalAmount,
+            };
+        }
+        total += Number(book.price || 0);
+    }
+
+    const diff = Math.abs(total - Number(finalAmount));
+    if (diff > 0.02) {
+        return {
+            ok: false,
+            message: 'Invalid amount. Cart total mismatch.',
+            expected: total,
+            received: finalAmount,
+            difference: diff,
+        };
+    }
+
+    return { ok: true, books, uniqueIds, total };
+}
+
 module.exports = {
+    validateBookCartPayment,
     normalizeStringArray,
     normalizeOfferOptions,
     assertBooksOwnedByCreator,

@@ -1,29 +1,33 @@
 import React, { useMemo, useState, useEffect } from 'react';
-import { FiShoppingCart, FiBook, FiArrowRight, FiX, FiPackage, FiChevronLeft, FiChevronRight, FiCheck } from 'react-icons/fi';
+import {
+  FiShoppingCart,
+  FiBook,
+  FiArrowRight,
+  FiChevronLeft,
+  FiChevronRight,
+  FiX,
+  FiMinus,
+  FiPlus,
+} from 'react-icons/fi';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import HardcopyRequestModal from '../../components/HardcopyRequestModal';
+import BookMarketplaceCard from '../../components/BookMarketplaceCard';
+import { normalizeCart, getCartSubtotal, getCartItemCount } from '../../utils/bookCart';
+import { formatGhs } from '../../utils/formatGhs';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 
-function formatGhs(value) {
-  const n = Number(value || 0);
-  return `GH₵${n.toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
-}
-
 const Store = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [cartCount, setCartCount] = useState(0);
-  const [cartIds, setCartIds] = useState(() => new Set());
+  const [cartItems, setCartItems] = useState([]);
   const [showCartModal, setShowCartModal] = useState(false);
-  const [hardcopyRequest, setHardcopyRequest] = useState({
-    name: '',
-    location: ''
-  });
   const [books, setBooks] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -32,7 +36,7 @@ const Store = () => {
 
   const fallbackHeroSlides = useMemo(
     () => [
-      { id: 'fb-1', url: '/images/bk-1.jpg', alt: 'Featured digital book — The Wise Scholar', tag: 'Spotlight' },
+      { id: 'fb-1', url: '/images/bk-1.jpg', alt: 'Featured digital book â€” The Wise Scholar', tag: 'Spotlight' },
       { id: 'fb-2', url: '/images/bk-3.jpg', alt: 'Reading collection highlight', tag: 'Trending' },
       { id: 'fb-3', url: '/images/bk-5.jpg', alt: 'New in the library', tag: 'New' },
     ],
@@ -105,24 +109,33 @@ const Store = () => {
   const getCart = () => {
     try {
       const raw = JSON.parse(localStorage.getItem('bookCart') || '[]');
-      return Array.isArray(raw) ? raw : [];
+      return normalizeCart(Array.isArray(raw) ? raw : []);
     } catch {
       return [];
     }
   };
 
   const setCart = (next) => {
-    localStorage.setItem('bookCart', JSON.stringify(next));
-    setCartCount(next.length);
-    setCartIds(new Set(next.map((item) => String(item.id))));
+    const normalized = normalizeCart(next);
+    localStorage.setItem('bookCart', JSON.stringify(normalized));
+    setCartItems(normalized);
+    setCartCount(getCartItemCount(normalized));
   };
 
   const syncCartState = () => {
     const items = getCart();
-    setCartCount(items.length);
-    setCartIds(new Set(items.map((item) => String(item.id))));
+    setCartItems(items);
+    setCartCount(getCartItemCount(items));
     return items;
   };
+
+  const cartQuantityById = useMemo(() => {
+    const map = new Map();
+    for (const item of cartItems) {
+      map.set(String(item.id), item.quantity || 1);
+    }
+    return map;
+  }, [cartItems]);
 
   useEffect(() => {
     syncCartState();
@@ -133,44 +146,60 @@ const Store = () => {
     return () => window.removeEventListener('storage', onStorage);
   }, []);
 
-  const isInCart = (bookId) => cartIds.has(String(bookId));
-
   // Add e-book to cart (marketplace flow)
   const handleAddBookToCart = (book) => {
     const existing = getCart();
     const id = String(book._id);
-    if (existing.some((b) => String(b?.id) === id)) {
-      return;
+    const index = existing.findIndex((b) => String(b?.id) === id);
+    if (index >= 0) {
+      const next = [...existing];
+      next[index] = {
+        ...next[index],
+        quantity: Math.min(99, (next[index].quantity || 1) + 1),
+      };
+      setCart(next);
+    } else {
+      setCart([
+        ...existing,
+        {
+          id: book._id,
+          type: 'book',
+          title: book.title,
+          price: Number(book.price || 0),
+          image: book.thumbnail,
+          thumbnail: book.thumbnail,
+          fileUrl: book.fileUrl,
+          author: book.author,
+          quantity: 1,
+        },
+      ]);
     }
-    setCart([
-      ...existing,
-      {
-        id: book._id,
-        type: 'book',
-        title: book.title,
-        price: Number(book.price || 0),
-        image: book.thumbnail,
-        thumbnail: book.thumbnail,
-        fileUrl: book.fileUrl,
-        author: book.author,
-      },
-    ]);
     setJustAddedId(id);
     window.setTimeout(() => setJustAddedId(''), 1200);
+  };
+
+  const handleUpdateCartQuantity = (bookId, delta) => {
+    const id = String(bookId);
+    const existing = getCart();
+    const index = existing.findIndex((item) => String(item?.id) === id);
+    if (index < 0) return;
+
+    const current = existing[index].quantity || 1;
+    const nextQty = current + delta;
+    if (nextQty < 1) {
+      handleRemoveBookFromCart(bookId);
+      return;
+    }
+
+    const next = [...existing];
+    next[index] = { ...next[index], quantity: Math.min(99, nextQty) };
+    setCart(next);
   };
 
   const handleRemoveBookFromCart = (bookId) => {
     const id = String(bookId);
     setCart(getCart().filter((item) => String(item?.id) !== id));
     if (justAddedId === id) setJustAddedId('');
-  };
-
-  const handleToggleBookCart = (book) => {
-    if (isInCart(book._id)) {
-      handleRemoveBookFromCart(book._id);
-    } else {
-      handleAddBookToCart(book);
-    }
   };
 
   const handleOpenCart = () => {
@@ -180,7 +209,7 @@ const Store = () => {
 
   const handleGoToCheckout = () => {
     const items = getCart();
-    const total = items.reduce((sum, item) => sum + Number(item?.price || 0), 0);
+    const total = getCartSubtotal(items);
     if (!items.length) return;
     setShowCartModal(false);
     navigate('/checkout', {
@@ -201,16 +230,6 @@ const Store = () => {
   const handleHardcopyRequest = (book) => {
     setSelectedBook(book);
     setShowHardcopyModal(true);
-  };
-
-  // Handle hardcopy form submission
-  const handleHardcopySubmit = (e) => {
-    e.preventDefault();
-    const message = `New Hardcopy Request:\n\nBook: ${selectedBook.title}\nPrice: GHS${selectedBook.price}\nName: ${hardcopyRequest.name}\nLocation: ${hardcopyRequest.location}`;
-    const whatsappUrl = `https://wa.me/233542343069?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-    setShowHardcopyModal(false);
-    setHardcopyRequest({ name: '', location: '' });
   };
 
   return (
@@ -251,7 +270,7 @@ const Store = () => {
               </h1>
               <p className="max-w-lg text-pretty text-sm leading-relaxed text-blue-100/95 sm:text-base md:text-lg">
                 {heroBookId && currentHero?.author
-                  ? `${currentHero.author} — browse the marketplace for more titles and instant checkout.`
+                  ? `${currentHero.author} â€” browse the marketplace for more titles and instant checkout.`
                   : 'Explore our curated collection of digital books and expand your knowledge.'}
               </p>
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
@@ -281,7 +300,7 @@ const Store = () => {
               </div>
             </div>
 
-            {/* Hero carousel — crossfade covers + arrows + dots */}
+            {/* Hero carousel â€” crossfade covers + arrows + dots */}
             <div className="relative min-w-0 w-full justify-self-center lg:justify-self-end">
               <div className="relative mx-auto w-full max-w-[min(100%,320px)] sm:max-w-md lg:max-w-[320px]">
                 <div
@@ -352,7 +371,7 @@ const Store = () => {
       </div>
 
       {/* Main content */}
-      <main id="store-books" className="max-w-6xl mx-auto scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
+      <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
         <div>
           <div>
             <div className="mb-6 sm:mb-8">
@@ -423,119 +442,21 @@ const Store = () => {
 
             {/* Books grid */}
             {!isLoading && !error && (
-              <div className="grid grid-cols-2 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5 xl:grid-cols-4 xl:gap-5">
+              <div className="grid grid-cols-1 gap-4 justify-items-center sm:grid-cols-2 sm:justify-items-stretch sm:gap-5 lg:grid-cols-3 lg:gap-5">
                 {books.map((book) => (
-                  <div
+                  <BookMarketplaceCard
                     key={book._id}
-                    className="group/card flex w-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-0.5 hover:border-slate-300"
-                  >
-                    <Link
-                      to={`/store/${book._id}`}
-                      className="block shrink-0 text-left text-inherit no-underline outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ring-offset-white"
-                      aria-label={`View ${book.title}`}
-                    >
-                      <div className="relative aspect-[4/3] overflow-hidden bg-slate-50 sm:aspect-[16/10] lg:aspect-[16/9]">
-                        <img
-                          src={book.thumbnail}
-                          alt={book.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover/card:scale-105"
-                          onError={(e) => {
-                            console.error('Book image failed to load:', book.title, book.thumbnail);
-                            e.target.onerror = null; // Prevent infinite loop
-                            e.target.src = DEFAULT_BOOK_COVER;
-                          }}
-                        />
-                        <div className="absolute left-2 top-2 sm:left-3 sm:top-3">
-                          <span
-                            className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold sm:px-2.5 sm:py-1 sm:text-[11px] ${
-                              book.type === 'ebook'
-                                ? 'bg-indigo-600 text-white'
-                                : 'bg-emerald-600 text-white'
-                            }`}
-                          >
-                            {book.type === 'ebook' ? 'E-book' : 'Hardcopy'}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="p-3 sm:p-4 lg:p-4">
-                        <div className="min-w-0">
-                          <h3 className="line-clamp-2 text-[13px] font-semibold leading-snug text-slate-900 transition-colors group-hover/card:text-indigo-700 sm:text-lg lg:text-lg">
-                            {book.title}
-                          </h3>
-                          <p className="mt-1 line-clamp-1 text-[11px] text-slate-600 sm:text-sm lg:text-[13px]">
-                            {book.author}
-                          </p>
-                        </div>
-                      </div>
-                    </Link>
-                    <div className="mt-auto flex flex-1 flex-col justify-end px-3 pb-3 sm:px-4 sm:pb-4 lg:px-4 lg:pb-4">
-                      {/* <div className="flex items-center text-amber-400 mb-3">
-                        <FiStar className="fill-current" />
-                        <FiStar className="fill-current" />
-                        <FiStar className="fill-current" />
-                        <FiStar className="fill-current" />
-                        <FiStar />
-                        <span className="text-gray-500 text-sm ml-2">
-                          ({book.reviews?.length || 0} reviews)
-                        </span>
-                      </div> */}
-                      <div className="flex items-center justify-between gap-2 border-t border-slate-200 pt-3">
-                        <span className="text-sm font-bold text-slate-900 sm:text-base lg:text-base">
-                          {formatGhs(book.price)}
-                        </span>
-                        <div className="flex items-center gap-2">
-                          {book.type === 'ebook' ? (
-                            <button
-                              type="button"
-                              className={`inline-flex items-center justify-center gap-2 rounded-xl px-2.5 py-2 text-xs font-semibold transition sm:px-4 sm:text-sm ${
-                                isInCart(book._id)
-                                  ? 'border border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100'
-                                  : justAddedId === String(book._id)
-                                    ? 'bg-emerald-600 text-white'
-                                    : 'bg-indigo-600 text-white hover:bg-indigo-700'
-                              }`}
-                              onClick={() => handleToggleBookCart(book)}
-                              aria-label={isInCart(book._id) ? `Remove ${book.title} from cart` : `Add ${book.title} to cart`}
-                            >
-                              {isInCart(book._id) ? (
-                                <>
-                                  <FiX className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Remove</span>
-                                </>
-                              ) : justAddedId === String(book._id) ? (
-                                <>
-                                  <FiCheck className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Added</span>
-                                </>
-                              ) : (
-                                <>
-                                  <FiShoppingCart className="h-4 w-4" />
-                                  <span className="hidden sm:inline">Add</span>
-                                </>
-                              )}
-                            </button>
-                          ) : (
-                            <button
-                              type="button"
-                              className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-2.5 py-2 text-xs font-semibold text-white transition hover:bg-emerald-700 sm:px-4 sm:text-sm"
-                              onClick={() => handleHardcopyRequest(book)}
-                            >
-                              <FiPackage className="h-4 w-4" />
-                              <span className="hidden sm:inline">Request</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {book.type === 'hardcopy' && book.stock < 1 ? (
-                        <div className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-                          Out of stock
-                        </div>
-                      ) : null}
-                    </div>
-                  </div>
+                    book={book}
+                    cartQuantity={cartQuantityById.get(String(book._id)) || 0}
+                    justAdded={justAddedId === String(book._id)}
+                    onAddToCart={handleAddBookToCart}
+                    onUpdateQuantity={handleUpdateCartQuantity}
+                    onHardcopyRequest={handleHardcopyRequest}
+                  />
                 ))}
               </div>
             )}
+
 
             {/* Empty state */}
             {!isLoading && !error && books.length === 0 && (
@@ -561,7 +482,7 @@ const Store = () => {
           onClick={() => setShowCartModal(false)}
         >
           <div
-            className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
@@ -605,7 +526,40 @@ const Store = () => {
                       {item.author ? (
                         <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{item.author}</p>
                       ) : null}
-                      <p className="mt-1 text-sm font-bold text-slate-900">{formatGhs(item.price)}</p>
+                      <p className="mt-1 text-sm font-bold text-slate-900">
+                        {formatGhs(item.price)}
+                        {(item.quantity || 1) > 1 ? (
+                          <span className="ml-1 text-xs font-medium text-slate-500">
+                            × {item.quantity} = {formatGhs(Number(item.price || 0) * (item.quantity || 1))}
+                          </span>
+                        ) : null}
+                      </p>
+                      <div
+                        className="mt-2 inline-flex items-center rounded-lg border border-slate-200 bg-slate-50"
+                        role="group"
+                        aria-label={`Quantity for ${item.title}`}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCartQuantity(item.id, -1)}
+                          className="rounded-l-lg p-2 text-slate-600 transition hover:bg-slate-100"
+                          aria-label="Decrease quantity"
+                        >
+                          <FiMinus className="h-4 w-4" aria-hidden />
+                        </button>
+                        <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-slate-900">
+                          {item.quantity || 1}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => handleUpdateCartQuantity(item.id, 1)}
+                          disabled={(item.quantity || 1) >= 99}
+                          className="rounded-r-lg p-2 text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+                          aria-label="Increase quantity"
+                        >
+                          <FiPlus className="h-4 w-4" aria-hidden />
+                        </button>
+                      </div>
                     </div>
                     <button
                       type="button"
@@ -623,7 +577,7 @@ const Store = () => {
               <div className="mb-3 flex items-center justify-between text-sm">
                 <span className="text-slate-600">Subtotal</span>
                 <span className="font-bold text-slate-900">
-                  {formatGhs(getCart().reduce((sum, item) => sum + Number(item?.price || 0), 0))}
+                  {formatGhs(getCartSubtotal(getCart()))}
                 </span>
               </div>
               <button
@@ -639,88 +593,12 @@ const Store = () => {
         </div>
       ) : null}
 
-      {/* Hardcopy Request Modal */}
-      {showHardcopyModal && selectedBook && (
-        <div className="fixed inset-0 bg-gray-900/70 flex items-center justify-center z-50 p-4">
-          <div className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white animate-fadeIn">
-            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-              <div>
-                <h3 className="text-lg font-semibold tracking-tight text-slate-950">Request hardcopy</h3>
-                <p className="mt-0.5 text-sm text-slate-500">Tell us where to deliver it.</p>
-              </div>
-              <button 
-                type="button"
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
-                onClick={() => setShowHardcopyModal(false)}
-              >
-                <FiX size={20} />
-              </button>
-            </div>
-            
-            <form onSubmit={handleHardcopySubmit} className="p-6">
-              <div className="flex items-start gap-4 mb-5">
-                <img 
-                  src={selectedBook.thumbnail || DEFAULT_BOOK_COVER}
-                  alt={selectedBook.title} 
-                  className="h-20 w-16 flex-none rounded-xl border border-slate-200 object-cover"
-                  onError={(e) => {
-                    e.target.onerror = null;
-                    e.target.src = DEFAULT_BOOK_COVER;
-                  }}
-                />
-                <div>
-                  <h4 className="text-base font-semibold text-slate-950">{selectedBook.title}</h4>
-                  <p className="mt-0.5 text-sm text-slate-600">{selectedBook.author}</p>
-                  <p className="mt-1 text-sm font-semibold text-blue-700">GHS{selectedBook.price}</p>
-                </div>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="name" className="block text-sm font-semibold text-slate-800">Your name</label>
-                  <input
-                    type="text"
-                    id="name"
-                    required
-                    value={hardcopyRequest.name}
-                    onChange={(e) => setHardcopyRequest({ ...hardcopyRequest, name: e.target.value })}
-                    placeholder="e.g. Asamoah Richard"
-                    className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="location" className="block text-sm font-semibold text-slate-800">Your location</label>
-                  <input
-                    type="text"
-                    id="location"
-                    required
-                    value={hardcopyRequest.location}
-                    onChange={(e) => setHardcopyRequest({ ...hardcopyRequest, location: e.target.value })}
-                    placeholder="e.g. Accra, East Legon"
-                    className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none"
-                  />
-                </div>
-              </div>
-              
-              <div className="mt-6 flex justify-end gap-3">
-                <button 
-                  type="button"
-                  className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-                  onClick={() => setShowHardcopyModal(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit"
-                  className="rounded-xl bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-emerald-700"
-                >
-                  Submit Request
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+
+      <HardcopyRequestModal
+        book={selectedBook}
+        open={showHardcopyModal && Boolean(selectedBook)}
+        onClose={() => setShowHardcopyModal(false)}
+      />
     </div>
   );
 };

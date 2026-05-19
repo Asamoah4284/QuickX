@@ -1,10 +1,11 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowLeft, FiCheck, FiShoppingCart, FiPackage, FiStar } from 'react-icons/fi';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
 import MetaPixelNoscript from '../components/MetaPixelNoscript';
 import BookOfferPicker from '../components/BookOfferPicker';
+import HardcopyRequestModal from '../components/HardcopyRequestModal';
 import { isMetaPixelEnabledForBook, trackMetaInitiateCheckout } from '../utils/metaPixel';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
@@ -12,22 +13,39 @@ const API_FALLBACK = 'http://localhost:5000';
 
 const MOCK_BOOK_TESTIMONIALS = [
   {
+    tagline: 'The Beginner Who Almost Quit',
     quote:
-      'Clear structure and practical examples. I finished feeling confident to apply what I read on a demo account the same week.',
-    name: 'Kojo A.',
-    role: 'Retail trader, Accra',
+      "I lost GH?8000 in my first two months of trading. I was following signals, copying people, doing everything wrong. I almost gave up completely. A friend sent me the Quick X Trading Course and honestly I was sceptical ? I had wasted money before. But within the first few chapters I realised something. I wasn't stupid. I was just untaught. Maxwell breaks everything down in a way that finally made sense to me. I understand charts now. I understand why I was losing. I haven't blown an account since. This book didn't just teach me forex ? it gave me my confidence back.",
+    name: 'Kwame A.',
+    role: 'Kumasi',
   },
   {
+    tagline: 'The Signal Buyer Who Found His Own Edge',
     quote:
-      'Finally a book that does not skip risk management. The pacing is perfect for evenings after work.',
-    name: 'Ama Serwaa',
-    role: 'Part-time learner',
+      "I used to pay GH?150 every month for signals. Sometimes they worked. Most times they didn't. And even when they did, I didn't understand why ? so I couldn't learn from it. Course 2 changed everything. The Triple X Strategy is real. It's not a gimmick. It's a structured way of reading the market that I now use every single week. I stopped paying for signals the day I finished this course. The money I used to spend on signals every month now goes into my trading account. Best investment I have made in a long time.",
+    name: 'Fiifi M.',
+    role: 'Accra',
   },
   {
+    tagline: 'The Father Trading for His Family',
     quote:
-      'Worth every cedi. Highlights and summaries at the end of each section made revision easy.',
-    name: 'Emmanuel T.',
-    role: 'Marketplace buyer',
+      "I am a father of three. I don't have money to waste. When I saw this course I sat with it for two weeks before buying because I needed to be sure. I bought Course 1 first. I read it slowly, took notes, went back and re-read chapters. Three months later I bought Course 2. I am not a millionaire. But I am consistently profitable now ? small and steady. My wife has seen the difference. I trade with a plan, I manage my risk, and I sleep at night knowing I didn't gamble. Maxwell wrote this for real people with real responsibilities. I felt that in every page.",
+    name: 'Emmanuel D.',
+    role: 'Takoradi',
+  },
+  {
+    tagline: 'The Young Person Who Stopped Looking for Shortcuts',
+    quote:
+      "I am 22. Everyone my age is looking for the fast way ? signals, tips, copy trading. I was the same. After reading Quick X Course 1 I realised I was approaching forex like a gambler, not a trader. The section on risk management alone was worth everything. I now know how much to risk per trade, how to set my stop loss properly, and how to walk away when the setup isn't there. I feel like an adult in the market for the first time. If you are young and serious about building something real ? this is where you start. Not with signals. Here.",
+    name: 'Abena S.',
+    role: 'Tema',
+  },
+  {
+    tagline: 'The Person Who Tried Everything Else First',
+    quote:
+      "YouTube videos. Free PDFs. Telegram groups. I tried all of it for over a year and I was still confused. What made this course different is that it is written by someone who understands where we are coming from. Maxwell doesn't talk down to you. He doesn't make you feel like forex is for special people. He makes you feel like ? with the right knowledge ? this is possible for you. And he's right. I bought the bundle and went through both courses back to back. It took me five weeks. By week six I placed my first trade with a real strategy and real confidence. Not hope. Confidence. That difference is everything.",
+    name: 'Nana K.',
+    role: 'Accra',
   },
 ];
 
@@ -46,7 +64,7 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
       </h2>
 
       <div className="mt-12 grid items-start gap-12 lg:mt-16 lg:grid-cols-2 lg:gap-16 xl:gap-20">
-        {/* Stacked â€œpagesâ€ preview (decorative) */}
+        {/* Stacked ?pages? preview (decorative) */}
         <div className="relative mx-auto w-full max-w-md justify-self-center lg:justify-self-start">
           <div
             className="absolute left-3 top-6 hidden h-[min(100%,320px)] w-[88%] rotate-[-3deg] rounded-sm border border-slate-200/90 bg-white shadow-md sm:block"
@@ -140,18 +158,27 @@ function BookTestimonialsSectionMock() {
           What readers say
         </h2>
         <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
-          Honest feedback from learners who purchased books on QuickX.
+          Real stories from Ghanaian traders who started where you are now.
         </p>
       </div>
 
-      <ul className="mx-auto mt-10 grid max-w-6xl gap-6 sm:grid-cols-2 lg:mt-12 lg:grid-cols-3 lg:gap-7">
-        {MOCK_BOOK_TESTIMONIALS.map((t) => (
+      <ul className="mx-auto mt-10 grid max-w-7xl gap-8 md:grid-cols-2 lg:mt-12">
+        {MOCK_BOOK_TESTIMONIALS.map((t, index) => (
           <li
-            key={t.name}
-            className="flex flex-col rounded-2xl border border-slate-200/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04] transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-7"
+            key={t.tagline}
+            className={`flex flex-col rounded-2xl border border-slate-200/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04] transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-8 ${
+              index === MOCK_BOOK_TESTIMONIALS.length - 1 && MOCK_BOOK_TESTIMONIALS.length % 2 === 1
+                ? 'md:col-span-2 md:mx-auto md:max-w-3xl'
+                : ''
+            }`}
           >
             <StarRating />
-            <blockquote className="relative mt-5 flex-1">
+            {t.tagline ? (
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#0c2340]/70">
+                {t.tagline}
+              </p>
+            ) : null}
+            <blockquote className="relative mt-4 flex-1">
               <span
                 className="pointer-events-none absolute -left-1 -top-3 font-serif text-5xl leading-none text-slate-200"
                 aria-hidden
@@ -206,6 +233,7 @@ function BookDetails() {
   const [offerGroup, setOfferGroup] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
@@ -298,11 +326,9 @@ function BookDetails() {
     });
   };
 
-  const requestHardcopy = () => {
+  const openHardcopyModal = () => {
     if (!book) return;
-    const message = `New Hardcopy Request:\n\nBook: ${book.title}\nQty: 1\nPrice: GHS${book.price}\n\nPlease contact me to complete delivery.`;
-    const whatsappUrl = `https://wa.me/233542343069?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
+    setShowHardcopyModal(true);
   };
 
   return (
@@ -325,7 +351,7 @@ function BookDetails() {
           <div className="flex min-h-[40vh] items-center justify-center text-slate-500">
             <div className="flex flex-col items-center gap-4">
               <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-rose-500" />
-              <p className="text-sm font-medium">Loading bookâ€¦</p>
+              <p className="text-sm font-medium">Loading book?</p>
             </div>
           </div>
         ) : error ? (
@@ -391,11 +417,19 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[240px]"
                   >
                     <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
-                    Buy now â€” instant download
+                    Buy now ? instant download
                   </button>
                   <p className="text-sm text-slate-500">
-                    No account needed Â· Pay with Mobile Money Â· Download right after payment
+                    No account needed ? Pay with Mobile Money ? Download right after payment
                   </p>
+                  <button
+                    type="button"
+                    onClick={openHardcopyModal}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:w-auto"
+                  >
+                    <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
+                    Prefer printed? Request hardcopy
+                  </button>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
                 <div className="w-full max-w-md space-y-2">
@@ -405,27 +439,50 @@ function BookDetails() {
                       onClick={() => selectOfferOption(bundleOfferOption)}
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-[#0c2340] shadow-sm transition hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
                     >
-                      <span aria-hidden>🚀</span>
-                      Get Instant Access — Bundle GH₵{Number(bundleOfferOption.price || 0)}
+                      <span aria-hidden>??</span>
+                      Get Instant Access ? Bundle GH?{Number(bundleOfferOption.price || 0)}
                     </button>
                   </div>
                   <p className="text-sm text-slate-500">
-                    Secure · MoMo · Instant PDF · Compare all plans below
+                    Secure ? MoMo ? Instant PDF ? Compare all plans below
                   </p>
+                  <button
+                    type="button"
+                    onClick={openHardcopyModal}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
+                  >
+                    <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
+                    Prefer printed? Request hardcopy
+                  </button>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
-                <p className="text-sm text-slate-500">
-                  Choose a plan below. No account needed · MoMo checkout.
-                </p>
+                <div className="space-y-3">
+                  <p className="text-sm text-slate-500">
+                    Choose a plan below. No account needed ? MoMo checkout.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={openHardcopyModal}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:w-auto"
+                  >
+                    <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
+                    Prefer printed? Request hardcopy
+                  </button>
+                </div>
               ) : book.type !== 'ebook' ? (
-                <button
-                  type="button"
-                  onClick={requestHardcopy}
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-rose-500/20 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[220px]"
-                >
-                  <FiPackage className="h-5 w-5 shrink-0" aria-hidden />
-                  Request hardcopy
-                </button>
+                <div className="space-y-2">
+                  <button
+                    type="button"
+                    onClick={openHardcopyModal}
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-rose-500/20 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[220px]"
+                  >
+                    <FiPackage className="h-5 w-5 shrink-0" aria-hidden />
+                    Request hardcopy
+                  </button>
+                  <p className="text-sm text-slate-500">
+                    Fill in your details ? we&apos;ll confirm delivery on WhatsApp.
+                  </p>
+                </div>
               ) : null}
             </div>
 
@@ -461,6 +518,12 @@ function BookDetails() {
           />
 
           <BookTestimonialsSectionMock />
+
+          <HardcopyRequestModal
+            book={book}
+            open={showHardcopyModal}
+            onClose={() => setShowHardcopyModal(false)}
+          />
           </>
         )}
       </div>

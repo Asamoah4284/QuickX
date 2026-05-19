@@ -7,6 +7,13 @@ import { PaystackButton } from 'react-paystack';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import GuestEbookCheckoutView from '../components/GuestEbookCheckoutView';
+import {
+  normalizeCart,
+  getCartSubtotal,
+  getCartLineTotal,
+  getCartItemCount,
+  expandCartItemsForPayment,
+} from '../utils/bookCart';
 
 /** Same rules as CoursePublicDetail / store: absolute URL or `${apiUrl}${path}`. */
 function resolveCheckoutItemImageUrl(item, apiUrl) {
@@ -34,6 +41,33 @@ function isUserLoggedIn() {
 
 function isBookCheckoutItem(item) {
   return item?.type === 'book' || item?.type === 'book_cart' || item?.type === 'book_offer';
+}
+
+/** Full cover art in order summary (no cropping). */
+function CheckoutBookCover({ item, apiUrl, className = 'mb-4 w-full max-w-[220px]' }) {
+  const src = resolveCheckoutItemImageUrl(item, apiUrl);
+  const alt = item?.title ? `Cover: ${item.title}` : 'Book cover';
+
+  return (
+    <figure
+      className={`overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200/80 ${className}`}
+    >
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          className="aspect-[3/4] w-full bg-slate-50 object-contain object-center"
+        />
+      ) : (
+        <div
+          className="flex aspect-[3/4] w-full items-center justify-center bg-gray-100 text-gray-400"
+          aria-hidden
+        >
+          <FiShoppingBag className="h-10 w-10" />
+        </div>
+      )}
+    </figure>
+  );
 }
 
 function Checkout() {
@@ -126,8 +160,31 @@ function Checkout() {
   const isBookCart = checkoutItem?.type === 'book_cart';
   const bookCartItems = useMemo(() => {
     if (!isBookCart) return [];
-    return Array.isArray(checkoutItem?.items) ? checkoutItem.items : [];
+    return normalizeCart(Array.isArray(checkoutItem?.items) ? checkoutItem.items : []);
   }, [checkoutItem, isBookCart]);
+
+  const bookCartSubtotal = useMemo(() => {
+    if (!isBookCart) return Number(checkoutItem?.price || 0);
+    return getCartSubtotal(bookCartItems);
+  }, [isBookCart, bookCartItems, checkoutItem?.price]);
+
+  const bookCartUnitCount = useMemo(() => {
+    if (!isBookCart) return 0;
+    return getCartItemCount(bookCartItems);
+  }, [isBookCart, bookCartItems]);
+
+  const orderSummaryBookLine = useMemo(() => {
+    if (!checkoutItem) return null;
+    if (checkoutItem.type === 'book_cart' && bookCartItems[0]) return bookCartItems[0];
+    if (
+      checkoutItem.type === 'book' ||
+      checkoutItem.type === 'book_offer' ||
+      checkoutItem.type === 'book_cart'
+    ) {
+      return checkoutItem;
+    }
+    return null;
+  }, [checkoutItem, bookCartItems]);
 
   /** If course thumbnail wasn’t in navigation state, load it from the preview API. */
   useEffect(() => {
@@ -355,7 +412,7 @@ function Checkout() {
                   : null,
             items:
               checkoutItem?.type === 'book_cart'
-                ? (checkoutItem.items || []).map((i) => String(i?.id ?? i?._id ?? ''))
+                ? expandCartItemsForPayment(checkoutItem.items || [])
                 : checkoutItem?.type === 'book_offer'
                   ? (checkoutItem.bookIds || []).map((id) => String(id))
                   : [],
@@ -372,7 +429,7 @@ function Checkout() {
       const buildBookPaymentData = () => ({
         itemType: checkoutItem.type,
         ...(checkoutItem?.type === 'book_cart'
-          ? { items: (checkoutItem?.items || []).map((i) => String(i?.id || i?._id || i)) }
+          ? { items: expandCartItemsForPayment(checkoutItem?.items || []) }
           : checkoutItem?.type === 'book_offer'
             ? {
                 itemId: String(checkoutItem.offerGroupId || itemId),
@@ -542,7 +599,7 @@ function Checkout() {
       const paymentData = {
         itemType: checkoutItem.type,
         ...(checkoutItem?.type === 'book_cart'
-          ? { items: (checkoutItem?.items || []).map((i) => String(i?.id || i?._id || i)) }
+          ? { items: expandCartItemsForPayment(checkoutItem?.items || []) }
           : checkoutItem?.type === 'book_offer'
             ? {
                 itemId: String(checkoutItem.offerGroupId || itemId),
@@ -945,7 +1002,7 @@ function Checkout() {
 
   // Calculate final price with discount
   const calculateFinalPrice = () => {
-    const subtotal = Number(checkoutItem?.price || 0);
+    const subtotal = isBookCart ? bookCartSubtotal : Number(checkoutItem?.price || 0);
     if (couponApplied && discount > 0) {
         const discountAmount = Number((subtotal * discount / 100).toFixed(2));
         return Number((subtotal - discountAmount).toFixed(2));
@@ -1065,33 +1122,59 @@ function Checkout() {
               </h2>
               
               <div className="mb-6">
-                {checkoutItem.type === 'book' ? (
-                  <div className="flex flex-col">
-                    <figure className="mb-4 w-full max-w-[180px] overflow-hidden rounded-xl bg-white shadow-md ring-1 ring-slate-200/80">
-                      {checkoutItemImageSrc ? (
-                        <img
-                          src={checkoutItemImageSrc}
-                          alt={checkoutItem.title}
-                          className="aspect-[3/4] w-full object-contain"
-                        />
-                      ) : (
-                        <div
-                          className="flex aspect-[3/4] w-full items-center justify-center bg-gray-100 text-gray-400"
-                          aria-hidden
+                {orderSummaryBookLine ? (
+                  checkoutItem.type === 'book_cart' && bookCartItems.length > 0 ? (
+                    <ul className="space-y-5">
+                      {bookCartItems.map((it) => (
+                        <li
+                          key={String(it?.id ?? it?.title)}
+                          className="flex flex-col border-b border-blue-100/80 pb-5 last:border-0 last:pb-0"
                         >
-                          <FiShoppingBag className="h-10 w-10" />
-                        </div>
-                      )}
-                    </figure>
+                          <CheckoutBookCover item={it} apiUrl={API_URL} className="mb-3 w-full max-w-[220px]" />
+                          <h3 className="font-semibold text-gray-900">{it.title}</h3>
+                          {it.author ? (
+                            <p className="mt-0.5 text-sm text-gray-500">By {it.author}</p>
+                          ) : null}
+                          <p className="mt-1 text-sm text-gray-500">
+                            Digital book
+                            {(it.quantity || 1) > 1 ? ` · Qty ${it.quantity}` : ''}
+                          </p>
+                          <p className="mt-2 text-lg font-bold text-blue-600">
+                            GH₵{getCartLineTotal(it).toFixed(2)}
+                            {(it.quantity || 1) > 1 ? (
+                              <span className="ml-1 text-sm font-normal text-gray-500">
+                                ({it.quantity} × GH₵{Number(it.price || 0)})
+                              </span>
+                            ) : null}
+                          </p>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                  <div className="flex flex-col">
+                    <CheckoutBookCover item={orderSummaryBookLine} apiUrl={API_URL} />
                     <div>
-                      <h3 className="font-semibold text-gray-900">{checkoutItem.title}</h3>
-                      <p className="mt-1 text-sm text-gray-500">Digital Book</p>
-                      {checkoutItem.author ? (
-                        <p className="text-sm text-gray-500">By {checkoutItem.author}</p>
+                      <h3 className="font-semibold text-gray-900">{orderSummaryBookLine.title}</h3>
+                      <p className="mt-1 text-sm text-gray-500">
+                        {checkoutItem.type === 'book_offer' ? 'Book bundle / plan' : 'Digital book'}
+                      </p>
+                      {orderSummaryBookLine.author ? (
+                        <p className="text-sm text-gray-500">By {orderSummaryBookLine.author}</p>
                       ) : null}
-                      <p className="mt-2 text-xl font-bold text-blue-600">GH₵{checkoutItem.price}</p>
+                      <p className="mt-2 text-xl font-bold text-blue-600">
+                        GH₵
+                        {checkoutItem.type === 'book_cart'
+                          ? getCartLineTotal(orderSummaryBookLine).toFixed(2)
+                          : Number(checkoutItem.price || 0)}
+                      </p>
+                      {checkoutItem.type === 'book_cart' && (orderSummaryBookLine.quantity || 1) > 1 ? (
+                        <p className="text-sm text-gray-500">
+                          Qty {orderSummaryBookLine.quantity} × GH₵{Number(orderSummaryBookLine.price || 0)}
+                        </p>
+                      ) : null}
                     </div>
                   </div>
+                  )
                 ) : (
                   <div className="flex items-start">
                     <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-gray-100 shadow-sm sm:h-24 sm:w-32">
@@ -1117,7 +1200,7 @@ function Checkout() {
                     ) : null}
                     <p className="text-sm text-gray-500">
                       {checkoutItem.type === 'book_cart'
-                        ? `${bookCartItems.length} digital book(s)`
+                        ? `${bookCartUnitCount} item${bookCartUnitCount === 1 ? '' : 's'} (${bookCartItems.length} title${bookCartItems.length === 1 ? '' : 's'})`
                         : checkoutItem.type === 'course'
                           ? 'Online Course'
                           : checkoutItem.type === 'creator_subscription'
@@ -1129,6 +1212,7 @@ function Checkout() {
                         {bookCartItems.slice(0, 4).map((it) => (
                           <p key={String(it?.id ?? it?.title)} className="text-xs text-gray-600 line-clamp-1">
                             • {it?.title}
+                            {(it.quantity || 1) > 1 ? ` (×${it.quantity})` : ''}
                           </p>
                         ))}
                         {bookCartItems.length > 4 ? (
@@ -1136,7 +1220,9 @@ function Checkout() {
                         ) : null}
                       </div>
                     ) : null}
-                    <p className="mt-1 font-bold text-blue-600">GH₵{checkoutItem.price}</p>
+                    <p className="mt-1 font-bold text-blue-600">
+                      GH₵{isBookCart ? bookCartSubtotal.toFixed(2) : checkoutItem.price}
+                    </p>
                   </div>
                 </div>
                 )}

@@ -11,7 +11,10 @@ const Program = require('../models/Program');
 const { body, validationResult } = require('express-validator');
 const { createEnrollmentFromPayment } = require('../services/programEnrollmentService');
 const { getCreatorSubscriptionPlanPrice } = require('../constants/creatorSubscriptionPlans');
-const { validateOfferPaymentAmount } = require('../utils/bookOfferHelpers');
+const {
+    validateOfferPaymentAmount,
+    validateBookCartPayment,
+} = require('../utils/bookOfferHelpers');
 
 const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
 
@@ -398,22 +401,17 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                 });
             }
         } else if (itemType === 'book_cart') {
-            const ids = Array.isArray(items) ? items : [];
-            const books = await Book.find({ _id: { $in: ids } });
-            if (books.length !== ids.length) {
-                return res.status(400).json({ message: 'One or more books not found' });
-            }
-            const total = books.reduce((sum, b) => sum + Number(b.price || 0), 0);
-            const diff = Math.abs(total - finalAmount);
-            if (diff > 0.02) {
+            const cartValidation = await validateBookCartPayment(items, finalAmount);
+            if (!cartValidation.ok) {
                 return res.status(400).json({
-                    message: 'Invalid amount. Cart total mismatch.',
-                    expected: total,
-                    received: finalAmount,
-                    difference: diff
+                    message: cartValidation.message,
+                    expected: cartValidation.expected,
+                    received: cartValidation.received,
+                    difference: cartValidation.difference,
                 });
             }
-            purchaseItem = books;
+            purchaseItem = cartValidation.books;
+            req._bookCartUniqueIds = cartValidation.uniqueIds;
         } else if (itemType === 'book_offer') {
             const { offerOptionId } = req.body;
             const validation = await validateOfferPaymentAmount(
@@ -486,7 +484,7 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             offerOptionId: itemType === 'book_offer' ? req.body.offerOptionId : null,
             cartItemIds:
                 itemType === 'book_cart'
-                    ? (Array.isArray(items) ? items : [])
+                    ? req._bookCartUniqueIds || [...new Set((Array.isArray(items) ? items : []).map(String))]
                     : itemType === 'book_offer'
                       ? offerBookIds
                       : [],
@@ -614,23 +612,18 @@ router.post('/initialize-guest', validatePayment, handleValidationErrors, async 
                 });
             }
         } else if (itemType === 'book_cart') {
-            const ids = Array.isArray(items) ? items : [];
-            const books = await Book.find({ _id: { $in: ids } });
-            if (books.length !== ids.length) {
-                return res.status(404).json({ message: 'One or more books not found' });
-            }
-            if (books.some((b) => b.type !== 'ebook')) {
-                return res.status(400).json({ message: 'Guest checkout is only for digital ebooks' });
-            }
-            const total = books.reduce((sum, b) => sum + Number(b.price || 0), 0);
-            if (Math.abs(total - finalAmount) > 0.02) {
-                return res.status(400).json({
-                    message: 'Invalid amount. Cart total mismatch.',
-                    expected: total,
-                    received: finalAmount,
+            const cartValidation = await validateBookCartPayment(items, finalAmount, {
+                requireEbook: true,
+            });
+            if (!cartValidation.ok) {
+                return res.status(cartValidation.message.includes('not found') ? 404 : 400).json({
+                    message: cartValidation.message,
+                    expected: cartValidation.expected,
+                    received: cartValidation.received,
                 });
             }
-            purchaseItem = books;
+            purchaseItem = cartValidation.books;
+            req._bookCartUniqueIds = cartValidation.uniqueIds;
         } else {
             const { offerOptionId } = req.body;
             const validation = await validateOfferPaymentAmount(
@@ -662,7 +655,7 @@ router.post('/initialize-guest', validatePayment, handleValidationErrors, async 
             offerOptionId: itemType === 'book_offer' ? req.body.offerOptionId : null,
             cartItemIds:
                 itemType === 'book_cart'
-                    ? (Array.isArray(items) ? items : [])
+                    ? req._bookCartUniqueIds || [...new Set((Array.isArray(items) ? items : []).map(String))]
                     : itemType === 'book_offer'
                       ? guestCartIds
                       : [],

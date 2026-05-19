@@ -1,6 +1,29 @@
 import { FiCheck, FiLock, FiStar } from 'react-icons/fi';
 
-function formatCompareLine(option) {
+/** Sum individual plan tiers (starter + advanced) for bundle compare-at pricing. */
+function getBundleCompareFromPlans(bundleOption, allOptions) {
+  const singles = (allOptions || [])
+    .filter((o) => o.id !== bundleOption.id && o.type !== 'bundle')
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  if (singles.length < 2) return null;
+
+  const parts = singles.map((o) => Number(o.price || 0));
+  const total = parts.reduce((sum, price) => sum + price, 0);
+  if (total <= Number(bundleOption.price || 0)) return null;
+
+  return { parts, total };
+}
+
+function formatCompareLine(option, allOptions) {
+  if (option.type === 'bundle') {
+    const fromPlans = getBundleCompareFromPlans(option, allOptions);
+    if (fromPlans) {
+      const priceParts = fromPlans.parts.map((price) => `GH₵${price}`);
+      return `${priceParts.join(' + ')} = GH₵${fromPlans.total}`;
+    }
+  }
+
   if (!option.compareAtPrice || option.compareAtPrice <= option.price) return null;
   if (option.type === 'bundle' && option.books?.length > 1) {
     const parts = option.books.map((b) => `GH₵${Number(b.price || 0)}`);
@@ -9,8 +32,10 @@ function formatCompareLine(option) {
   return `GH₵${Number(option.compareAtPrice)}`;
 }
 
-function formatSavings(option) {
-  const compare = Number(option.compareAtPrice || 0);
+function formatSavings(option, allOptions) {
+  const fromPlans =
+    option.type === 'bundle' ? getBundleCompareFromPlans(option, allOptions) : null;
+  const compare = fromPlans?.total ?? Number(option.compareAtPrice || 0);
   const price = Number(option.price || 0);
   if (compare > price) return compare - price;
   return 0;
@@ -67,10 +92,10 @@ function TopBadge({ children, highlighted }) {
   );
 }
 
-function PlanCard({ option, onSelect }) {
+function PlanCard({ option, allOptions, onSelect }) {
   const highlighted = Boolean(option.highlighted);
-  const compareLine = formatCompareLine(option);
-  const savings = formatSavings(option);
+  const compareLine = formatCompareLine(option, allOptions);
+  const savings = formatSavings(option, allOptions);
   const promoPill = getPromoPill(option, savings);
   const ctaLabel = getCtaLabel(option);
   const deliveryLine = getDeliveryLine(option, highlighted);
@@ -229,7 +254,12 @@ export default function BookOfferPicker({ offerGroup, onSelectOption }) {
 
       <div className={`mt-10 grid gap-6 sm:gap-7 lg:items-stretch ${gridClass}`}>
         {offerGroup.options.map((option) => (
-          <PlanCard key={option.id} option={option} onSelect={onSelectOption} />
+          <PlanCard
+            key={option.id}
+            option={option}
+            allOptions={offerGroup.options}
+            onSelect={onSelectOption}
+          />
         ))}
       </div>
     </section>
