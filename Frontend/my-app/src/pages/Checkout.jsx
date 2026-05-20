@@ -14,6 +14,7 @@ import {
   getCartItemCount,
   expandCartItemsForPayment,
 } from '../utils/bookCart';
+import { ensureMetaPixel, trackMetaEvent } from '../utils/metaPixel';
 
 /** Same rules as CoursePublicDetail / store: absolute URL or `${apiUrl}${path}`. */
 function resolveCheckoutItemImageUrl(item, apiUrl) {
@@ -1064,6 +1065,18 @@ function Checkout() {
     }
     return Number(subtotal.toFixed(2));
   };
+
+  /** SPA: Pixel Helper on /checkout only sees events fired on this route (not book-page clicks). */
+  useEffect(() => {
+    if (checkoutLoading || !checkoutItem) return;
+    const payload = getMetaPixelPurchasePayloadForTrackedBook(
+      checkoutItem,
+      calculateFinalPrice()
+    );
+    if (!payload) return;
+    ensureMetaPixel();
+    trackMetaEvent('InitiateCheckout', { ...payload, num_items: 1 });
+  }, [checkoutLoading, checkoutItem, couponApplied, discount, bookCartSubtotal]);
 
   const checkoutItemImageSrc = useMemo(
     () => resolveCheckoutItemImageUrl(checkoutItem, API_URL),
