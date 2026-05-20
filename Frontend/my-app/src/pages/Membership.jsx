@@ -7,6 +7,41 @@ import Loader from '../components/Loader';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
+/** Build My Books list from GET /api/users/me (populated) or legacy id-only array. */
+function normalizePurchasedBooksFromUser(purchasedBooks) {
+  if (!Array.isArray(purchasedBooks) || purchasedBooks.length === 0) return [];
+  return purchasedBooks
+    .filter(Boolean)
+    .map((b) => {
+      if (typeof b === 'string') {
+        return {
+          id: b,
+          _id: b,
+          title: '',
+          author: '',
+          description: '',
+          thumbnail: null,
+          image: null,
+          fileUrl: null,
+        };
+      }
+      if (typeof b === 'object' && b._id) {
+        return {
+          id: String(b._id),
+          _id: b._id,
+          title: b.title || 'Book',
+          author: b.author || '',
+          description: b.description || '',
+          thumbnail: b.thumbnail,
+          image: b.thumbnail,
+          fileUrl: b.fileUrl,
+        };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
 /** Same rule as Navbar: treat as signed-in only when both token and cached user exist. */
 function readCachedUser() {
   try {
@@ -155,15 +190,33 @@ function Membership() {
             localStorage.setItem('user', JSON.stringify(userResponse.data));
             setUser(userResponse.data);
           }
+
+          // Purchased ebooks: source of truth is the server (Paystack updates User.purchasedBooks).
+          const fromServer = normalizePurchasedBooksFromUser(
+            userResponse.data?.purchasedBooks
+          );
+          if (fromServer.length > 0) {
+            setPurchasedBooks(fromServer);
+            try {
+              localStorage.setItem('purchasedBooks', JSON.stringify(fromServer));
+            } catch {
+              // ignore quota / private mode
+            }
+          } else {
+            const localBooks = localStorage.getItem('purchasedBooks');
+            if (localBooks) {
+              try {
+                setPurchasedBooks(JSON.parse(localBooks));
+              } catch {
+                setPurchasedBooks([]);
+              }
+            } else {
+              setPurchasedBooks([]);
+            }
+          }
           
           // Fetch purchased courses from backend
           await refreshCourses();
-            
-          // Check localStorage for books
-          const localBooks = localStorage.getItem('purchasedBooks');
-          if (localBooks) {
-            setPurchasedBooks(JSON.parse(localBooks));
-          }
           
           // Dispatch auth-change event
           window.dispatchEvent(new Event('auth-change'));
@@ -997,9 +1050,9 @@ function Membership() {
                 
                 {purchasedBooks.length > 0 ? (
                   <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
-                    {purchasedBooks.map(book => (
+                    {purchasedBooks.map((book) => (
                       <div
-                        key={book.id}
+                        key={String(book.id || book._id || book.title)}
                         className="group overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:border-slate-300"
                       >
                         <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">

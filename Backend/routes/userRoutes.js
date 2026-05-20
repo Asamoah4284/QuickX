@@ -476,10 +476,19 @@ router.get('/me', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
             .select('-password') // Exclude password
+            .populate(
+                'purchasedBooks',
+                'title author description thumbnail fileUrl type price'
+            )
             .lean(); // Convert to plain JavaScript object
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Drop null refs (deleted books) after populate
+        if (Array.isArray(user.purchasedBooks)) {
+            user.purchasedBooks = user.purchasedBooks.filter(Boolean);
         }
 
         // Ensure referral fields are properly formatted
