@@ -58,16 +58,16 @@ function formatSavings(option, allOptions) {
 function getCtaLabel(option) {
   if (option.ctaLabel) return option.ctaLabel;
   if (option.type === 'bundle') {
-    return `Get Both Courses — GH₵${Number(option.price || 0)}`;
+    return `Buy Both Courses — GH₵${Number(option.price || 0)}`;
   }
   const headline = option.headline || option.cardTitle || '';
   const courseMatch = headline.match(/course\s*(\d+)/i);
-  if (courseMatch) return `Get Course ${courseMatch[1]}`;
+  if (courseMatch) return `Buy Course ${courseMatch[1]}`;
   if (option.label) {
     const label = option.label.replace(/\s*only$/i, '').trim();
-    if (label) return `Get ${label}`;
+    if (label) return `Buy ${label}`;
   }
-  return option.cardTitle ? `Get ${option.cardTitle}` : 'Get this book';
+  return option.cardTitle ? `Buy ${option.cardTitle}` : 'Buy this book';
 }
 
 function getDeliveryLine(option, highlighted) {

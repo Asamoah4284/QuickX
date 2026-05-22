@@ -459,7 +459,7 @@ function BookDetails() {
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-[#0c2340] shadow-sm transition hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
                     >
                       <FiZap className="h-5 w-5 shrink-0" aria-hidden />
-                      Get Instant Access — Bundle {formatGhs(bundleOfferOption.price)}
+                      Buy Now — Bundle {formatGhs(bundleOfferOption.price)}
                     </button>
                   </div>
                   <p className="text-sm text-slate-500">
