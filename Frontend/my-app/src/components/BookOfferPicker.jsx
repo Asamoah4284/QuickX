@@ -58,11 +58,11 @@ function formatSavings(option, allOptions) {
 function getCtaLabel(option) {
   if (option.ctaLabel) return option.ctaLabel;
   if (option.type === 'bundle') {
-    return `Buy Both Courses — GH₵${Number(option.price || 0)}`;
+    return `Buy Now — GH₵${Number(option.price || 0)}`;
   }
   const headline = option.headline || option.cardTitle || '';
   const courseMatch = headline.match(/course\s*(\d+)/i);
-  if (courseMatch) return `Buy Course ${courseMatch[1]}`;
+  if (courseMatch) return `Buy Now ${courseMatch[1]}`;
   if (option.label) {
     const label = option.label.replace(/\s*only$/i, '').trim();
     if (label) return `Buy ${label}`;
