@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiSave, FiSend } from 'react-icons/fi';
+import { FiArrowLeft, FiPlus, FiSave, FiSend, FiTrash2 } from 'react-icons/fi';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
 import CreatorBookOfferSection from '../../components/creator/CreatorBookOfferSection';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+const EMPTY_TESTIMONIAL = { tagline: '', quote: '', name: '', role: '' };
 
 const EMPTY_FORM = {
   title: '',
@@ -13,6 +15,7 @@ const EMPTY_FORM = {
   description: '',
   whatYoullLearn: '',
   afterReadingOutcomes: '',
+  testimonials: [],
   type: 'ebook',
   price: 0,
   category: 'general',
@@ -35,12 +38,26 @@ function listToText(value) {
   return value.filter(Boolean).join('\n');
 }
 
+function normalizeTestimonialsForSave(items) {
+  if (!Array.isArray(items)) return [];
+  return items
+    .map((t) => ({
+      tagline: String(t?.tagline || '').trim(),
+      quote: String(t?.quote || '').trim(),
+      name: String(t?.name || '').trim(),
+      role: String(t?.role || '').trim(),
+    }))
+    .filter((t) => t.quote);
+}
+
 function buildBookPayload(form) {
-  const { whatYoullLearn, afterReadingOutcomes, fileUrl, stock, deliveryFee, ...rest } = form;
+  const { whatYoullLearn, afterReadingOutcomes, testimonials, fileUrl, stock, deliveryFee, ...rest } =
+    form;
   const payload = {
     ...rest,
     whatYoullLearn: textToList(whatYoullLearn),
     afterReadingOutcomes: textToList(afterReadingOutcomes),
+    testimonials: normalizeTestimonialsForSave(testimonials),
   };
   if (form.type === 'ebook') {
     if (fileUrl) payload.fileUrl = fileUrl;
@@ -96,6 +113,14 @@ export default function CreatorBookWizard() {
           description: data.description || '',
           whatYoullLearn: listToText(data.whatYoullLearn),
           afterReadingOutcomes: listToText(data.afterReadingOutcomes),
+          testimonials: Array.isArray(data.testimonials)
+            ? data.testimonials.map((t) => ({
+                tagline: t.tagline || '',
+                quote: t.quote || '',
+                name: t.name || '',
+                role: t.role || '',
+              }))
+            : [],
           type: data.type || 'ebook',
           price: data.price ?? 0,
           category: data.category || 'general',
@@ -145,6 +170,28 @@ export default function CreatorBookWizard() {
     setForm((prev) => ({
       ...prev,
       [name]: inputType === 'number' ? Number(value) : value,
+    }));
+  };
+
+  const addTestimonial = () => {
+    setForm((prev) => ({
+      ...prev,
+      testimonials: [...(prev.testimonials || []), { ...EMPTY_TESTIMONIAL }],
+    }));
+  };
+
+  const updateTestimonial = (index, field, value) => {
+    setForm((prev) => {
+      const list = [...(prev.testimonials || [])];
+      list[index] = { ...list[index], [field]: value };
+      return { ...prev, testimonials: list };
+    });
+  };
+
+  const removeTestimonial = (index) => {
+    setForm((prev) => ({
+      ...prev,
+      testimonials: (prev.testimonials || []).filter((_, i) => i !== index),
     }));
   };
 
@@ -290,6 +337,94 @@ export default function CreatorBookWizard() {
               />
             </div>
           </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">Reader testimonials</h3>
+              <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+                Optional quotes shown on your book&apos;s store page. Add one card per reader review.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={addTestimonial}
+              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              <FiPlus className="h-4 w-4" aria-hidden />
+              Add testimonial
+            </button>
+          </div>
+
+          {(form.testimonials || []).length === 0 ? (
+            <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-500">
+              No testimonials yet. Click &quot;Add testimonial&quot; to add a reader quote.
+            </p>
+          ) : (
+            <ul className="space-y-4">
+              {(form.testimonials || []).map((t, index) => (
+                <li
+                  key={`testimonial-${index}`}
+                  className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5"
+                >
+                  <div className="mb-3 flex items-center justify-between gap-2">
+                    <p className="text-sm font-semibold text-slate-800">Testimonial {index + 1}</p>
+                    <button
+                      type="button"
+                      onClick={() => removeTestimonial(index)}
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                      aria-label={`Remove testimonial ${index + 1}`}
+                    >
+                      <FiTrash2 className="h-3.5 w-3.5" aria-hidden />
+                      Remove
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>Headline (optional)</label>
+                      <input
+                        value={t.tagline}
+                        onChange={(e) => updateTestimonial(index, 'tagline', e.target.value)}
+                        className={inputCls}
+                        placeholder="e.g. The Beginner Who Almost Quit"
+                      />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>
+                        Quote <span className="text-rose-500">*</span>
+                      </label>
+                      <textarea
+                        value={t.quote}
+                        onChange={(e) => updateTestimonial(index, 'quote', e.target.value)}
+                        rows={4}
+                        className={inputCls}
+                        placeholder="What did the reader say about your book?"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Reader name</label>
+                      <input
+                        value={t.name}
+                        onChange={(e) => updateTestimonial(index, 'name', e.target.value)}
+                        className={inputCls}
+                        placeholder="e.g. Kwame A."
+                      />
+                    </div>
+                    <div>
+                      <label className={labelCls}>Location or role</label>
+                      <input
+                        value={t.role}
+                        onChange={(e) => updateTestimonial(index, 'role', e.target.value)}
+                        className={inputCls}
+                        placeholder="e.g. Kumasi"
+                      />
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">

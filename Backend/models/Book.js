@@ -21,6 +21,12 @@ const bookSchema = new mongoose.Schema({
         type: String,
         trim: true
     }],
+    testimonials: [{
+        tagline: { type: String, trim: true, default: '' },
+        quote: { type: String, trim: true, required: true },
+        name: { type: String, trim: true, default: '' },
+        role: { type: String, trim: true, default: '' },
+    }],
     type: {
         type: String,
         enum: ['ebook', 'hardcopy'],

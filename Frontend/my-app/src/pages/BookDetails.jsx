@@ -12,44 +12,6 @@ import { isMetaPixelEnabledForBook, trackMetaInitiateCheckout } from '../utils/m
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const API_FALLBACK = 'http://localhost:5000';
 
-const MOCK_BOOK_TESTIMONIALS = [
-  {
-    tagline: 'The Beginner Who Almost Quit',
-    quote:
-      "I lost GH?8000 in my first two months of trading. I was following signals, copying people, doing everything wrong. I almost gave up completely. A friend sent me the Quick X Trading Course and honestly I was sceptical ? I had wasted money before. But within the first few chapters I realised something. I wasn't stupid. I was just untaught. Maxwell breaks everything down in a way that finally made sense to me. I understand charts now. I understand why I was losing. I haven't blown an account since. This book didn't just teach me forex ? it gave me my confidence back.",
-    name: 'Kwame A.',
-    role: 'Kumasi',
-  },
-  {
-    tagline: 'The Signal Buyer Who Found His Own Edge',
-    quote:
-      "I used to pay GH?150 every month for signals. Sometimes they worked. Most times they didn't. And even when they did, I didn't understand why ? so I couldn't learn from it. Course 2 changed everything. The Triple X Strategy is real. It's not a gimmick. It's a structured way of reading the market that I now use every single week. I stopped paying for signals the day I finished this course. The money I used to spend on signals every month now goes into my trading account. Best investment I have made in a long time.",
-    name: 'Fiifi M.',
-    role: 'Accra',
-  },
-  {
-    tagline: 'The Father Trading for His Family',
-    quote:
-      "I am a father of three. I don't have money to waste. When I saw this course I sat with it for two weeks before buying because I needed to be sure. I bought Course 1 first. I read it slowly, took notes, went back and re-read chapters. Three months later I bought Course 2. I am not a millionaire. But I am consistently profitable now ? small and steady. My wife has seen the difference. I trade with a plan, I manage my risk, and I sleep at night knowing I didn't gamble. Maxwell wrote this for real people with real responsibilities. I felt that in every page.",
-    name: 'Emmanuel D.',
-    role: 'Takoradi',
-  },
-  {
-    tagline: 'The Young Person Who Stopped Looking for Shortcuts',
-    quote:
-      "I am 22. Everyone my age is looking for the fast way ? signals, tips, copy trading. I was the same. After reading Quick X Course 1 I realised I was approaching forex like a gambler, not a trader. The section on risk management alone was worth everything. I now know how much to risk per trade, how to set my stop loss properly, and how to walk away when the setup isn't there. I feel like an adult in the market for the first time. If you are young and serious about building something real ? this is where you start. Not with signals. Here.",
-    name: 'Abena S.',
-    role: 'Tema',
-  },
-  {
-    tagline: 'The Person Who Tried Everything Else First',
-    quote:
-      "YouTube videos. Free PDFs. Telegram groups. I tried all of it for over a year and I was still confused. What made this course different is that it is written by someone who understands where we are coming from. Maxwell doesn't talk down to you. He doesn't make you feel like forex is for special people. He makes you feel like ? with the right knowledge ? this is possible for you. And he's right. I bought the bundle and went through both courses back to back. It took me five weeks. By week six I placed my first trade with a real strategy and real confidence. Not hope. Confidence. That difference is everything.",
-    name: 'Nana K.',
-    role: 'Accra',
-  },
-];
-
 function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
   const learnItems = Array.isArray(whatYoullLearn) ? whatYoullLearn.filter(Boolean) : [];
   const outcomeItems = Array.isArray(afterReadingOutcomes) ? afterReadingOutcomes.filter(Boolean) : [];
@@ -124,10 +86,12 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
 }
 
 function readerInitials(name) {
-  return name
+  const parts = String(name || '')
     .replace(/\./g, '')
     .split(' ')
-    .filter(Boolean)
+    .filter(Boolean);
+  if (!parts.length) return '?';
+  return parts
     .map((part) => part[0])
     .join('')
     .slice(0, 2)
@@ -144,7 +108,9 @@ function StarRating() {
   );
 }
 
-function BookTestimonialsSectionMock() {
+function BookTestimonialsSection({ testimonials = [] }) {
+  if (!testimonials.length) return null;
+
   return (
     <section
       className="mt-12 rounded-3xl bg-slate-50/80 px-4 py-14 sm:mt-16 sm:px-8 sm:py-16 lg:mt-20 lg:py-20"
@@ -164,11 +130,11 @@ function BookTestimonialsSectionMock() {
       </div>
 
       <ul className="mx-auto mt-10 grid max-w-7xl gap-8 md:grid-cols-2 lg:mt-12">
-        {MOCK_BOOK_TESTIMONIALS.map((t, index) => (
+        {testimonials.map((t, index) => (
           <li
-            key={t.tagline}
+            key={`${t.tagline}-${t.name}-${index}`}
             className={`flex flex-col rounded-2xl border border-slate-200/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04] transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-8 ${
-              index === MOCK_BOOK_TESTIMONIALS.length - 1 && MOCK_BOOK_TESTIMONIALS.length % 2 === 1
+              index === testimonials.length - 1 && testimonials.length % 2 === 1
                 ? 'md:col-span-2 md:mx-auto md:max-w-3xl'
                 : ''
             }`}
@@ -190,18 +156,22 @@ function BookTestimonialsSectionMock() {
                 {t.quote}
               </p>
             </blockquote>
+            {(t.name || t.role) ? (
             <footer className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
-              <span
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-600 text-sm font-semibold text-white"
-                aria-hidden
-              >
-                {readerInitials(t.name)}
-              </span>
+              {t.name ? (
+                <span
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-600 text-sm font-semibold text-white"
+                  aria-hidden
+                >
+                  {readerInitials(t.name)}
+                </span>
+              ) : null}
               <div className="min-w-0">
-                <p className="font-semibold text-slate-900">{t.name}</p>
-                <p className="text-sm text-slate-500">{t.role}</p>
+                {t.name ? <p className="font-semibold text-slate-900">{t.name}</p> : null}
+                {t.role ? <p className="text-sm text-slate-500">{t.role}</p> : null}
               </div>
             </footer>
+            ) : null}
           </li>
         ))}
       </ul>
@@ -223,19 +193,6 @@ function heroDescription(book) {
   return book?.type === 'ebook'
     ? 'Digital edition with instant access after checkout.'
     : 'Request a printed copy and our team will follow up with delivery details.';
-}
-
-/**
- * Reader reviews only on the FOREX TRADING storefront book (single id).
- * Override with VITE_TESTIMONIAL_BOOK_ID in .env if the id changes.
- */
-const TESTIMONIAL_BOOK_ID =
-  import.meta.env.VITE_TESTIMONIAL_BOOK_ID?.trim() || '6a06f1085ae8b7541db685e2';
-
-function isTestimonialBook(book, routeBookId) {
-  if (!book || !TESTIMONIAL_BOOK_ID) return false;
-  const ids = [routeBookId, book._id, book.id].filter(Boolean).map(String);
-  return ids.includes(TESTIMONIAL_BOOK_ID);
 }
 
 function BookDetails() {
@@ -294,10 +251,10 @@ function BookDetails() {
     );
   }, [offerGroup]);
 
-  const showTestimonials = useMemo(
-    () => isTestimonialBook(book, bookId),
-    [book, bookId]
-  );
+  const activeTestimonials = useMemo(() => {
+    if (!Array.isArray(book?.testimonials)) return [];
+    return book.testimonials.filter((t) => String(t?.quote || '').trim());
+  }, [book?.testimonials]);
 
   useMetaPixelBookPage(book, bookId);
 
@@ -531,7 +488,9 @@ function BookDetails() {
             />
           ) : null}
 
-          {showTestimonials ? <BookTestimonialsSectionMock /> : null}
+          {activeTestimonials.length > 0 ? (
+            <BookTestimonialsSection testimonials={activeTestimonials} />
+          ) : null}
 
           <BookLearnSection
             whatYoullLearn={book.whatYoullLearn}

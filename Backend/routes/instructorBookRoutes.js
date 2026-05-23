@@ -15,6 +15,19 @@ function normalizeStringArray(value) {
         .filter(Boolean);
 }
 
+function normalizeTestimonials(value) {
+    if (!value) return [];
+    if (!Array.isArray(value)) return [];
+    return value
+        .map((item) => ({
+            tagline: String(item?.tagline || '').trim(),
+            quote: String(item?.quote || '').trim(),
+            name: String(item?.name || '').trim(),
+            role: String(item?.role || '').trim(),
+        }))
+        .filter((item) => item.quote);
+}
+
 /** Helper: confirm the requesting user owns this book */
 function canEdit(book, userId) {
     return (
@@ -74,7 +87,8 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             listingStatus: 'draft',
             rejectionReason: '',
             whatYoullLearn: normalizeStringArray(whatYoullLearn),
-            afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes)
+            afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes),
+            testimonials: normalizeTestimonials(testimonials),
         });
 
         await book.save();
@@ -111,12 +125,16 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
             'title', 'author', 'description', 'type', 'price',
             'fileUrl', 'stock', 'thumbnail', 'isbn',
             'deliveryFee', 'watermarkTemplate', 'category',
-            'whatYoullLearn', 'afterReadingOutcomes'
+            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials'
         ];
         allowed.forEach((key) => {
             if (req.body[key] === undefined) return;
             if (key === 'whatYoullLearn' || key === 'afterReadingOutcomes') {
                 book[key] = normalizeStringArray(req.body[key]);
+                return;
+            }
+            if (key === 'testimonials') {
+                book[key] = normalizeTestimonials(req.body[key]);
                 return;
             }
             book[key] = req.body[key];

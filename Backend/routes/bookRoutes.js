@@ -31,7 +31,7 @@ router.get('/', async (req, res) => {
                 { listingStatus: 'published' },
             ],
         })
-            .select('title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes offerGroupId');
+            .select('title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials offerGroupId');
             
         res.json(books);
     } catch (error) {
@@ -84,7 +84,7 @@ router.get('/:id/offers', async (req, res) => {
 router.get('/:id/preview', async (req, res) => {
     try {
         const book = await Book.findById(req.params.id).select(
-            'title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes isPlanDeliverable offerGroupId'
+            'title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials isPlanDeliverable offerGroupId'
         );
 
         if (!book) {
