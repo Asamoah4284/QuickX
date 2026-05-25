@@ -440,8 +440,8 @@ function Checkout() {
       });
 
       const metaPurchasePayload = getMetaPixelPurchasePayloadForTrackedBook(checkoutItem, finalPrice);
-      if (metaPurchasePayload && window.fbq) {
-        window.fbq('track', 'Purchase', metaPurchasePayload);
+      if (metaPurchasePayload) {
+        trackMetaEvent('Purchase', metaPurchasePayload);
       }
 
       const guestDownloadPath = (ref) => {

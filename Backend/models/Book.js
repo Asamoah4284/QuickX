@@ -26,6 +26,7 @@ const bookSchema = new mongoose.Schema({
         quote: { type: String, trim: true, required: true },
         name: { type: String, trim: true, default: '' },
         role: { type: String, trim: true, default: '' },
+        image: { type: String, trim: true, default: '' },
     }],
     type: {
         type: String,

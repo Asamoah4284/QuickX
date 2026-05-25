@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiPlus, FiSave, FiSend, FiTrash2 } from 'react-icons/fi';
+import { FiArrowLeft, FiImage, FiPlus, FiSave, FiSend, FiTrash2, FiX } from 'react-icons/fi';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
 import CreatorBookOfferSection from '../../components/creator/CreatorBookOfferSection';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const EMPTY_TESTIMONIAL = { tagline: '', quote: '', name: '', role: '' };
+const EMPTY_TESTIMONIAL = { tagline: '', quote: '', name: '', role: '', image: '' };
 
 const EMPTY_FORM = {
   title: '',
@@ -46,6 +46,7 @@ function normalizeTestimonialsForSave(items) {
       quote: String(t?.quote || '').trim(),
       name: String(t?.name || '').trim(),
       role: String(t?.role || '').trim(),
+      image: String(t?.image || '').trim(),
     }))
     .filter((t) => t.quote);
 }
@@ -95,7 +96,9 @@ export default function CreatorBookWizard() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0 });
+  const [testimonialUploads, setTestimonialUploads] = useState({});
   const thumbnailInputRef = useRef(null);
+  const testimonialInputRefs = useRef({});
   const offerSectionRef = useRef(null);
 
   // Load existing book if editing
@@ -119,6 +122,7 @@ export default function CreatorBookWizard() {
                 quote: t.quote || '',
                 name: t.name || '',
                 role: t.role || '',
+                image: t.image || '',
               }))
             : [],
           type: data.type || 'ebook',
@@ -193,6 +197,35 @@ export default function CreatorBookWizard() {
       ...prev,
       testimonials: (prev.testimonials || []).filter((_, i) => i !== index),
     }));
+    setTestimonialUploads((prev) => {
+      const next = { ...prev };
+      delete next[index];
+      return next;
+    });
+  };
+
+  const handleTestimonialImageUpload = async (index, file) => {
+    if (!file) return;
+    setError('');
+    setSuccess('');
+    try {
+      const url = await uploadFileToS3({
+        file,
+        token,
+        type: 'image',
+        onProgress: (pct) =>
+          setTestimonialUploads((prev) => ({ ...prev, [index]: pct })),
+      });
+      updateTestimonial(index, 'image', url);
+    } catch (e) {
+      setError(e.response?.data?.message || e.message);
+    } finally {
+      setTestimonialUploads((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+    }
   };
 
   const handleSave = async (e) => {
@@ -419,6 +452,57 @@ export default function CreatorBookWizard() {
                         className={inputCls}
                         placeholder="e.g. Kumasi"
                       />
+                    </div>
+                    <div className="sm:col-span-2">
+                      <label className={labelCls}>Reader photo (optional)</label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={(el) => {
+                          testimonialInputRefs.current[index] = el;
+                        }}
+                        onChange={(e) =>
+                          handleTestimonialImageUpload(index, e.target.files?.[0])
+                        }
+                        className="sr-only"
+                      />
+                      <div className="mt-1 flex flex-wrap items-center gap-3">
+                        {t.image ? (
+                          <img
+                            src={t.image}
+                            alt={t.name ? `${t.name} avatar` : 'Reader avatar'}
+                            className="h-14 w-14 rounded-full border border-slate-200 object-cover"
+                            onError={(e) => (e.currentTarget.style.display = 'none')}
+                          />
+                        ) : (
+                          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 bg-slate-100 text-slate-400">
+                            <FiImage className="h-5 w-5" aria-hidden />
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => testimonialInputRefs.current[index]?.click()}
+                          disabled={Boolean(testimonialUploads[index])}
+                          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                        >
+                          {t.image ? 'Replace photo' : 'Upload photo'}
+                        </button>
+                        {t.image ? (
+                          <button
+                            type="button"
+                            onClick={() => updateTestimonial(index, 'image', '')}
+                            className="inline-flex items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                          >
+                            <FiX className="h-3.5 w-3.5" aria-hidden />
+                            Remove
+                          </button>
+                        ) : null}
+                        {testimonialUploads[index] ? (
+                          <span className="text-xs font-medium text-slate-600">
+                            Uploading… {testimonialUploads[index]}%
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </li>

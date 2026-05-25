@@ -2,10 +2,14 @@
  * Meta (Facebook) Pixel — official loader + fbq API.
  * Default pixel: 1187997587726082 (override with VITE_META_PIXEL_ID).
  * Book pages: optional allowlist via VITE_META_PIXEL_BOOK_IDS (comma-separated Mongo ids).
+ * Test mode: set VITE_META_TEST_EVENT_CODE to route events to Events Manager → Test Events.
  */
 
 const PIXEL_ID =
   import.meta.env.VITE_META_PIXEL_ID?.trim() || '1187997587726082';
+
+const TEST_EVENT_CODE =
+  import.meta.env.VITE_META_TEST_EVENT_CODE?.trim() || '';
 
 let scriptInjected = false;
 let pixelInitialized = false;
@@ -16,6 +20,15 @@ export function getMetaPixelId() {
 
 export function isMetaPixelConfigured() {
   return Boolean(PIXEL_ID);
+}
+
+export function getMetaTestEventCode() {
+  return TEST_EVENT_CODE;
+}
+
+function withTestEventCode(params) {
+  if (!TEST_EVENT_CODE) return params;
+  return { ...(params || {}), test_event_code: TEST_EVENT_CODE };
 }
 
 /** When VITE_META_PIXEL_BOOK_IDS is empty, all /store/:bookId pages fire the pixel. */
@@ -67,10 +80,18 @@ export function ensureMetaPixel() {
 
 export function trackMetaEvent(eventName, params) {
   if (!ensureMetaPixel()) return;
-  if (params != null) {
-    window.fbq('track', eventName, params);
+  const finalParams = withTestEventCode(params);
+  if (finalParams != null) {
+    window.fbq('track', eventName, finalParams);
   } else {
     window.fbq('track', eventName);
+  }
+  if (TEST_EVENT_CODE) {
+    // eslint-disable-next-line no-console
+    console.log(
+      `[Meta Pixel · TEST ${TEST_EVENT_CODE}] ${eventName}`,
+      finalParams || {}
+    );
   }
 }
 

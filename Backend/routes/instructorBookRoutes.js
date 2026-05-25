@@ -24,6 +24,7 @@ function normalizeTestimonials(value) {
             quote: String(item?.quote || '').trim(),
             name: String(item?.name || '').trim(),
             role: String(item?.role || '').trim(),
+            image: String(item?.image || '').trim(),
         }))
         .filter((item) => item.quote);
 }
