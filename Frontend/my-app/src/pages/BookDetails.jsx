@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiX, FiZap } from 'react-icons/fi';
+import { FiArrowLeft, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
 import MetaPixelNoscript from '../components/MetaPixelNoscript';
@@ -197,21 +197,6 @@ function BookTestimonialsSection({ testimonials = [] }) {
           >
             <div className="flex items-start justify-between gap-3">
               <StarRating />
-              {t.image ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    openPreview(
-                      t.image,
-                      t.tagline || (t.name ? `${t.name} testimonial` : 'Reader testimonial')
-                    )
-                  }
-                  className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-[#0c2340] hover:bg-slate-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0c2340] sm:text-xs"
-                >
-                  <FiImage className="h-3.5 w-3.5" aria-hidden />
-                  Click to view image
-                </button>
-              ) : null}
             </div>
             {t.tagline ? (
               <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#0c2340]/70">
@@ -229,6 +214,32 @@ function BookTestimonialsSection({ testimonials = [] }) {
                 {t.quote}
               </p>
             </blockquote>
+            {t.image ? (
+              <div
+                className="mt-5 relative group overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 cursor-pointer flex items-center justify-center transition-all duration-300 hover:border-[#0c2340]/40 hover:bg-slate-50"
+                onClick={() =>
+                  openPreview(
+                    t.image,
+                    t.tagline || (t.name ? `${t.name} testimonial` : 'Reader testimonial')
+                  )
+                }
+              >
+                <div className="relative w-full max-h-64 overflow-hidden rounded-lg bg-white shadow-sm flex items-center justify-center">
+                  <img
+                    src={t.image}
+                    alt={t.tagline || 'Reader testimonial'}
+                    className="max-h-60 w-auto object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                  {/* Hover Overlay */}
+                  <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/20 transition-colors duration-300 flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/95 text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                      <FiZoomIn className="h-3.5 w-3.5" />
+                      Zoom proof image
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {(t.name || t.role) ? (
             <footer className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
               {t.name ? (
