@@ -59,7 +59,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             title, author, description, type, price,
             fileUrl, stock, thumbnail, isbn,
             deliveryFee, watermarkTemplate, category,
-            whatYoullLearn, afterReadingOutcomes
+            whatYoullLearn, afterReadingOutcomes, testimonials
         } = req.body;
 
         if (!title || !author || !description || !type) {
