@@ -1,9 +1,42 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { FiBook } from 'react-icons/fi';
 import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
 import StatusBadge from '../../components/creator/StatusBadge';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+function resolveBookThumbnailUrl(thumbnail) {
+  if (!thumbnail) return '';
+  const raw = typeof thumbnail === 'string' ? thumbnail.trim() : String(thumbnail).trim();
+  if (!raw) return '';
+  if (raw.startsWith('http')) return publicAssetUrl(raw);
+  if (raw.startsWith('/') && API_URL) return publicAssetUrl(`${API_URL}${raw}`);
+  return publicAssetUrl(raw);
+}
+
+function BookReviewThumb({ thumbnail, title }) {
+  const [failed, setFailed] = useState(false);
+  const src = resolveBookThumbnailUrl(thumbnail);
+
+  if (!src || failed) {
+    return (
+      <div className="-mt-1 flex h-14 w-10 items-center justify-center rounded-lg border border-dashed border-slate-200 bg-slate-50 text-slate-400">
+        <FiBook className="h-4 w-4" aria-hidden />
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src}
+      alt={title ? `Cover: ${title}` : 'Book cover'}
+      className="-mt-1 h-14 w-10 rounded-lg border border-slate-200 object-cover bg-slate-50"
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export default function BookReviewQueue() {
   const adminToken = localStorage.getItem('adminToken');
@@ -85,20 +118,17 @@ export default function BookReviewQueue() {
             <div key={book._id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="flex items-start gap-4">
-                  {book.thumbnail ? (
-                    <img
-                      src={book.thumbnail}
-                      alt=""
-                      className="-mt-1 h-14 w-10 rounded-lg border border-slate-200 object-cover"
-                    />
-                  ) : (
-                    <div className="-mt-1 h-14 w-10 rounded-lg border border-dashed border-slate-200 bg-slate-50" />
-                  )}
+                  <BookReviewThumb thumbnail={book.thumbnail} title={book.title} />
 
                   <div>
                     <p className="text-lg font-semibold text-gray-900">{book.title}</p>
                     <p className="mt-1 text-sm text-slate-500">
                       {book.author} · {book.type} · {book.category || 'general'}
+                      {' · '}
+                      GH₵{Number(book.price || 0).toLocaleString()}
+                      {book.type === 'ebook' && book.hardcopyPrice != null && book.hardcopyPrice !== ''
+                        ? ` · Hardcopy GH₵${Number(book.hardcopyPrice).toLocaleString()}`
+                        : ''}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       Submitted by {book.createdBy?.fullName || 'Creator'} ({book.createdBy?.email || '—'})

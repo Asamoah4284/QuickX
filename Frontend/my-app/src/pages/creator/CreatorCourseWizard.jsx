@@ -327,7 +327,7 @@ export default function CreatorCourseWizard() {
   );
 
   const completedChecklistCount = checklist.filter((item) => item.done).length;
-  const readyToSubmit = checklist.every((item) => item.done);
+  const readyToSubmit = Boolean(form.title.trim());
 
   const buildPayload = () => ({
     title: form.title,
@@ -671,18 +671,33 @@ export default function CreatorCourseWizard() {
             title="Course description"
             description="Explain the teaching style, journey, and why students should trust this course."
           >
-            <label className="space-y-2 text-sm text-slate-600">
-              <span>Full description</span>
-              <textarea
-                value={form.description}
-                onChange={(event) =>
-                  setForm((current) => ({ ...current, description: event.target.value }))
-                }
-                rows={8}
-                placeholder="Explain the teaching style, journey, and why students should trust this course."
-                className="w-full rounded-2xl border border-slate-200 px-4 py-3"
-              />
-            </label>
+            <div className="space-y-4">
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Short description <span className="text-slate-400">(shown in search results &amp; cards)</span></span>
+                <textarea
+                  value={form.shortDescription}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, shortDescription: event.target.value }))
+                  }
+                  rows={2}
+                  maxLength={250}
+                  placeholder="One or two sentences that hook potential students — keep it punchy."
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                />
+              </label>
+              <label className="space-y-2 text-sm text-slate-600">
+                <span>Full description</span>
+                <textarea
+                  value={form.description}
+                  onChange={(event) =>
+                    setForm((current) => ({ ...current, description: event.target.value }))
+                  }
+                  rows={8}
+                  placeholder="Explain the teaching style, journey, and why students should trust this course."
+                  className="w-full rounded-2xl border border-slate-200 px-4 py-3"
+                />
+              </label>
+            </div>
           </StudioPanel>
         </div>
       );
@@ -1027,7 +1042,7 @@ export default function CreatorCourseWizard() {
               <button
                 type="button"
                 onClick={() => submitForReview('submit')}
-                disabled={submitting || !readyToSubmit}
+                disabled={submitting || !form.title.trim()}
                 className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
               >
                 {submitting ? 'Processing...' : 'Submit for review'}
@@ -1036,7 +1051,7 @@ export default function CreatorCourseWizard() {
                 <button
                   type="button"
                   onClick={() => submitForReview('publish')}
-                  disabled={submitting || !readyToSubmit}
+                  disabled={submitting || !form.title.trim()}
                   className="rounded-2xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1552D6] disabled:opacity-50"
                 >
                   Publish now

@@ -90,7 +90,11 @@ function BookRowActions({ book, navigate, runAction }) {
             type="button"
             className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
             onClick={() => {
-              if (window.confirm('Delete this book permanently? This cannot be undone.')) {
+              const isLive = ['published', 'approved'].includes(book.listingStatus);
+              const prompt = isLive
+                ? 'This book is live in the store. Delete it permanently? This cannot be undone.'
+                : 'Delete this book permanently? This cannot be undone.';
+              if (window.confirm(prompt)) {
                 runAction(book._id, 'delete');
               }
             }}
@@ -102,6 +106,13 @@ function BookRowActions({ book, navigate, runAction }) {
       </details>
     </div>
   );
+}
+
+function formatBookPrices(book) {
+  const ebookPrice = `GH₵${Number(book.price || 0).toLocaleString()}`;
+  if (book.type !== 'ebook') return ebookPrice;
+  if (book.hardcopyPrice == null || book.hardcopyPrice === '') return ebookPrice;
+  return `${ebookPrice} · Hardcopy GH₵${Number(book.hardcopyPrice).toLocaleString()}`;
 }
 
 export default function CreatorBooks() {
@@ -225,7 +236,7 @@ export default function CreatorBooks() {
                       <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600">
                         <div>
                           <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Price</dt>
-                          <dd className="font-medium text-slate-800">GH₵{Number(book.price || 0).toLocaleString()}</dd>
+                          <dd className="font-medium text-slate-800">{formatBookPrices(book)}</dd>
                         </div>
                         <div>
                           <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Category</dt>
@@ -279,7 +290,7 @@ export default function CreatorBooks() {
                       <td className="px-3 py-4 text-xs capitalize text-slate-600">{book.type}</td>
                       <td className="px-3 py-4"><StatusBadge status={book.listingStatus} /></td>
                       <td className="px-3 py-4 text-right tabular-nums font-medium text-slate-800">
-                        GH₵{Number(book.price || 0).toLocaleString()}
+                        {formatBookPrices(book)}
                       </td>
                       <td className="px-3 py-4 capitalize text-slate-600">{book.category || '—'}</td>
                       <td className="py-4 pr-5 pl-2">

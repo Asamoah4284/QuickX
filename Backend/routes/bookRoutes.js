@@ -12,7 +12,7 @@ const {
 // Get all books (public)
 router.get('/', async (req, res) => {
     try {
-        const { type, search } = req.query;
+        const { type, search, author, exclude } = req.query;
         let query = {};
         
         if (type) {
@@ -23,6 +23,15 @@ router.get('/', async (req, res) => {
             query.title = { $regex: search, $options: 'i' };
         }
 
+        if (author) {
+            const escaped = String(author).trim().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            query.author = { $regex: `^${escaped}$`, $options: 'i' };
+        }
+
+        if (exclude) {
+            query._id = { $ne: exclude };
+        }
+
         const books = await Book.find({
             ...query,
             isPlanDeliverable: { $ne: true },
@@ -31,7 +40,7 @@ router.get('/', async (req, res) => {
                 { listingStatus: 'published' },
             ],
         })
-            .select('title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials offerGroupId');
+            .select('title author price hardcopyPrice type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials offerGroupId');
             
         res.json(books);
     } catch (error) {
@@ -84,7 +93,7 @@ router.get('/:id/offers', async (req, res) => {
 router.get('/:id/preview', async (req, res) => {
     try {
         const book = await Book.findById(req.params.id).select(
-            'title author price type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials isPlanDeliverable offerGroupId'
+            'title author price hardcopyPrice type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials isPlanDeliverable offerGroupId'
         );
 
         if (!book) {

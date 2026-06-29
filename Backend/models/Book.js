@@ -42,6 +42,11 @@ const bookSchema = new mongoose.Schema({
         type: Number,
         required: true
     },
+    /** Optional printed-book price when type is ebook (digital price is `price`). */
+    hardcopyPrice: {
+        type: Number,
+        default: null,
+    },
     fileUrl: {
         type: String,
         // Ebook PDF required except instructor drafts (PDFs live on plan rows)

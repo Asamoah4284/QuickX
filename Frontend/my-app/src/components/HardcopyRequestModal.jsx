@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FiX } from 'react-icons/fi';
+import { formatGhs } from '../utils/formatGhs';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const WHATSAPP_NUMBER = '233542343069';
@@ -21,6 +22,11 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
 
   if (!open || !book) return null;
 
+  const hardcopyAmount =
+    book.hardcopyPrice != null && book.hardcopyPrice !== ''
+      ? Number(book.hardcopyPrice)
+      : Number(book.price ?? 0);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     const lines = [
@@ -28,7 +34,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
       '',
       `Book: ${book.title}`,
       book.author ? `Author: ${book.author}` : null,
-      `Price: GHS${book.price ?? ''}`,
+      `Price: GHS${hardcopyAmount}`,
       'Qty: 1',
       `Name: ${name.trim()}`,
       phone.trim() ? `Phone: ${phone.trim()}` : null,
@@ -85,7 +91,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
             <div>
               <h4 className="text-base font-semibold text-slate-950">{book.title}</h4>
               {book.author ? <p className="mt-0.5 text-sm text-slate-600">{book.author}</p> : null}
-              <p className="mt-1 text-sm font-semibold text-blue-700">GHS{book.price}</p>
+              <p className="mt-1 text-sm font-semibold text-blue-700">{formatGhs(hardcopyAmount)}</p>
             </div>
           </div>
 

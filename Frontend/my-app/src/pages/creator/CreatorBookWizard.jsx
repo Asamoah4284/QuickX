@@ -18,6 +18,7 @@ const EMPTY_FORM = {
   testimonials: [],
   type: 'ebook',
   price: 0,
+  hardcopyPrice: '',
   category: 'general',
   fileUrl: '',
   thumbnail: '',
@@ -52,8 +53,16 @@ function normalizeTestimonialsForSave(items) {
 }
 
 function buildBookPayload(form) {
-  const { whatYoullLearn, afterReadingOutcomes, testimonials, fileUrl, stock, deliveryFee, ...rest } =
-    form;
+  const {
+    whatYoullLearn,
+    afterReadingOutcomes,
+    testimonials,
+    hardcopyPrice,
+    fileUrl,
+    stock,
+    deliveryFee,
+    ...rest
+  } = form;
   const payload = {
     ...rest,
     whatYoullLearn: textToList(whatYoullLearn),
@@ -62,6 +71,8 @@ function buildBookPayload(form) {
   };
   if (form.type === 'ebook') {
     if (fileUrl) payload.fileUrl = fileUrl;
+    const hc = String(hardcopyPrice ?? '').trim();
+    payload.hardcopyPrice = hc === '' ? null : Number(hardcopyPrice);
   } else {
     payload.stock = stock;
     payload.deliveryFee = deliveryFee;
@@ -127,6 +138,7 @@ export default function CreatorBookWizard() {
             : [],
           type: data.type || 'ebook',
           price: data.price ?? 0,
+          hardcopyPrice: data.hardcopyPrice ?? '',
           category: data.category || 'general',
           fileUrl: data.fileUrl || '',
           thumbnail: data.thumbnail || '',
@@ -173,7 +185,12 @@ export default function CreatorBookWizard() {
     const { name, value, type: inputType } = e.target;
     setForm((prev) => ({
       ...prev,
-      [name]: inputType === 'number' ? Number(value) : value,
+      [name]:
+        inputType === 'number'
+          ? value === '' && name === 'hardcopyPrice'
+            ? ''
+            : Number(value)
+          : value,
     }));
   };
 
@@ -543,7 +560,12 @@ export default function CreatorBookWizard() {
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Pricing & Type</h3>
+          <h3 className="mb-1 text-base font-semibold text-slate-900">Pricing & Type</h3>
+          {form.type === 'ebook' ? (
+            <p className="mb-4 text-xs text-slate-500 sm:text-sm">
+              Set your digital price and an optional separate price for printed copies.
+            </p>
+          ) : null}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
               <label className={labelCls}>Book Type <span className="text-rose-500">*</span></label>
@@ -553,17 +575,46 @@ export default function CreatorBookWizard() {
               </select>
             </div>
             <div>
-              <label className={labelCls}>Price (GHS) <span className="text-rose-500">*</span></label>
+              <label className={labelCls}>
+                {form.type === 'ebook' ? 'E-book price (GHS)' : 'Hardcopy price (GHS)'}{' '}
+                <span className="text-rose-500">*</span>
+              </label>
               <input type="number" name="price" min={0} step={0.01} value={form.price} onChange={handleChange} className={inputCls} />
             </div>
-            <div>
-              <label className={labelCls}>Category</label>
-              <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
-                <option value="general">General</option>
-                <option value="forex">Forex</option>
-                <option value="crypto">Crypto</option>
-              </select>
-            </div>
+            {form.type === 'ebook' ? (
+              <div>
+                <label className={labelCls}>Hardcopy price (GHS)</label>
+                <input
+                  type="number"
+                  name="hardcopyPrice"
+                  min={0}
+                  step={0.01}
+                  value={form.hardcopyPrice}
+                  onChange={handleChange}
+                  className={inputCls}
+                  placeholder="Optional — printed book"
+                />
+              </div>
+            ) : (
+              <div>
+                <label className={labelCls}>Category</label>
+                <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
+                  <option value="general">General</option>
+                  <option value="forex">Forex</option>
+                  <option value="crypto">Crypto</option>
+                </select>
+              </div>
+            )}
+            {form.type === 'ebook' ? (
+              <div>
+                <label className={labelCls}>Category</label>
+                <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
+                  <option value="general">General</option>
+                  <option value="forex">Forex</option>
+                  <option value="crypto">Crypto</option>
+                </select>
+              </div>
+            ) : null}
 
             {form.type === 'hardcopy' && (
               <>

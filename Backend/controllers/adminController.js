@@ -11,6 +11,7 @@ const Review = require('../models/Review');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { serializeUser } = require('../utils/serializeUser');
+const { enrichAdminBookThumbnails } = require('../utils/bookOfferHelpers');
 
 // Admin Login
 exports.login = async (req, res) => {
@@ -231,7 +232,8 @@ exports.createBook = async (req, res) => {
             thumbnail,
             published,
             whatYoullLearn,
-            afterReadingOutcomes
+            afterReadingOutcomes,
+            hardcopyPrice
         } = req.body;
 
         const normalizeStringArray = (value) => {
@@ -279,7 +281,11 @@ exports.createBook = async (req, res) => {
             watermarkTemplate,
             published: published || new Date(),
             whatYoullLearn: normalizeStringArray(whatYoullLearn),
-            afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes)
+            afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes),
+            hardcopyPrice:
+                (type || 'ebook') === 'ebook' && hardcopyPrice != null && hardcopyPrice !== ''
+                    ? Number(hardcopyPrice)
+                    : undefined,
         });
 
         await newBook.save();
@@ -315,7 +321,8 @@ exports.updateBook = async (req, res) => {
             thumbnail, // Get thumbnail directly from request body
             published,
             whatYoullLearn,
-            afterReadingOutcomes
+            afterReadingOutcomes,
+            hardcopyPrice
         } = req.body;
 
         const normalizeStringArray = (value) => {
@@ -352,6 +359,13 @@ exports.updateBook = async (req, res) => {
         if (afterReadingOutcomes !== undefined) {
             book.afterReadingOutcomes = normalizeStringArray(afterReadingOutcomes);
         }
+        if (hardcopyPrice !== undefined) {
+            book.hardcopyPrice =
+                hardcopyPrice === '' || hardcopyPrice == null ? null : Number(hardcopyPrice);
+        }
+        if (book.type === 'hardcopy') {
+            book.hardcopyPrice = null;
+        }
         
         await book.save();
         
@@ -385,7 +399,8 @@ exports.deleteBook = async (req, res) => {
 exports.getAllBooks = async (req, res) => {
     try {
         const books = await Book.find().sort({ createdAt: -1 });
-        res.json(books);
+        const enriched = await enrichAdminBookThumbnails(books);
+        res.json(enriched);
     } catch (error) {
         console.error('Get all books error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
@@ -416,7 +431,8 @@ exports.getBookReviewQueue = async (req, res) => {
         })
             .populate('createdBy', 'fullName email avatar profilePicture')
             .sort({ updatedAt: -1 });
-        res.json(books);
+        const enriched = await enrichAdminBookThumbnails(books);
+        res.json(enriched);
     } catch (error) {
         console.error('getBookReviewQueue:', error);
         res.status(500).json({ message: 'Server error', error: error.message });

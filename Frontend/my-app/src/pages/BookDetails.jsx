@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
 import MetaPixelNoscript from '../components/MetaPixelNoscript';
@@ -285,6 +285,154 @@ function heroDescription(book) {
     : 'Request a printed copy and our team will follow up with delivery details.';
 }
 
+function SameAuthorBooksSection({ author, books = [] }) {
+  const items = books.slice(0, 6);
+  if (!items.length) return null;
+  const hasMultiple = items.length > 1;
+
+  return (
+    <section
+      className="relative -mx-4 mt-12 overflow-hidden rounded-none bg-[#0c2340] py-8 sm:-mx-6 sm:mt-20 sm:rounded-[2rem] sm:py-14 lg:mx-0 lg:mt-24 lg:rounded-[2rem] lg:px-10 lg:py-16"
+      aria-labelledby="same-author-heading"
+    >
+      <div
+        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sky-400/10 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute -bottom-20 -left-20 h-64 w-64 rounded-full bg-amber-300/10 blur-3xl"
+        aria-hidden
+      />
+      <div
+        className="pointer-events-none absolute inset-0 opacity-[0.035]"
+        style={{
+          backgroundImage:
+            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E\")",
+        }}
+        aria-hidden
+      />
+
+      <div className="relative sm:px-8 lg:px-0">
+        <div className="px-4 sm:px-0">
+          <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-400/90 sm:text-[11px] sm:tracking-[0.28em]">
+                Curated collection
+              </p>
+              <h2
+                id="same-author-heading"
+                className="mt-1.5 text-xl font-black leading-tight tracking-tight text-white sm:mt-2 sm:text-3xl lg:text-[2rem]"
+              >
+                More from {author}
+              </h2>
+            </div>
+            <p className="hidden max-w-md text-sm leading-relaxed text-slate-400 sm:block lg:text-right">
+              Hand-picked titles from the same author — expand your library with their full body of work.
+            </p>
+          </div>
+
+          {hasMultiple ? (
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500 sm:hidden">
+              Swipe to explore more
+              <FiArrowRight className="h-3.5 w-3.5" aria-hidden />
+            </p>
+          ) : null}
+        </div>
+
+        <ul
+          className="mt-6 flex gap-3 overflow-x-auto scroll-smooth pb-1 snap-x snap-mandatory [scrollbar-width:none] [-ms-overflow-style:none] sm:mt-12 sm:gap-6 sm:pb-2 [&::-webkit-scrollbar]:hidden"
+        >
+          {items.map((item, index) => {
+            const isEbook = item.type === 'ebook';
+            const hardcopyLabel =
+              isEbook && item.hardcopyPrice != null && item.hardcopyPrice !== ''
+                ? formatGhs(item.hardcopyPrice)
+                : null;
+
+            return (
+              <li
+                key={item._id}
+                className="w-[min(88vw,20rem)] shrink-0 snap-start sm:w-[19rem]"
+              >
+                <Link
+                  to={`/store/${item._id}`}
+                  className="group block h-full"
+                >
+                  <article className="relative flex h-full flex-row items-stretch gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm transition-all duration-500 sm:flex-col sm:rounded-2xl sm:p-6 sm:hover:border-amber-400/25 sm:hover:from-white/[0.11] sm:hover:to-white/[0.04] sm:hover:shadow-[0_28px_56px_-16px_rgba(0,0,0,0.55)]">
+                    <span
+                      className="pointer-events-none absolute right-3 top-2 hidden select-none font-serif text-5xl font-light leading-none text-white/[0.07] sm:block"
+                      aria-hidden
+                    >
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+
+                    <div className="relative w-[5.5rem] shrink-0 self-center sm:mx-auto sm:w-[9.5rem]">
+                      <div
+                        className="absolute inset-x-2 top-2 hidden aspect-[2/3] rounded-lg bg-white/[0.04] shadow-lg sm:block"
+                        aria-hidden
+                      />
+                      <div
+                        className="absolute inset-x-1 top-1 hidden aspect-[2/3] rounded-lg bg-white/[0.07] sm:block"
+                        aria-hidden
+                      />
+                      <div className="relative aspect-[2/3] overflow-hidden rounded-lg shadow-[0_12px_28px_-8px_rgba(0,0,0,0.55)] ring-1 ring-white/15 sm:shadow-[0_22px_44px_-10px_rgba(0,0,0,0.65)] sm:transition sm:duration-500 sm:ease-out sm:group-hover:-translate-y-2 sm:group-hover:rotate-[-2deg] sm:group-hover:shadow-[0_28px_50px_-8px_rgba(0,0,0,0.7)]">
+                        <img
+                          src={item.thumbnail || DEFAULT_BOOK_COVER}
+                          alt=""
+                          className="h-full w-full object-cover sm:transition sm:duration-700 sm:group-hover:scale-[1.04]"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = DEFAULT_BOOK_COVER;
+                          }}
+                        />
+                        <div className="absolute inset-0 hidden bg-gradient-to-t from-[#0c2340]/80 via-transparent to-transparent opacity-0 sm:block sm:transition-opacity sm:duration-500 sm:group-hover:opacity-100" />
+                      </div>
+                      <span
+                        className={`absolute -bottom-1.5 left-1/2 max-w-[calc(100%+0.5rem)] -translate-x-1/2 truncate rounded-full px-2 py-px text-[9px] font-bold uppercase tracking-wide shadow-md sm:-bottom-2 sm:px-2.5 sm:py-0.5 sm:text-[10px] sm:tracking-wider sm:shadow-lg ${
+                          isEbook
+                            ? 'bg-indigo-500 text-white ring-2 ring-[#0c2340]'
+                            : 'bg-emerald-500 text-white ring-2 ring-[#0c2340]'
+                        }`}
+                      >
+                        {isEbook ? 'Digital' : 'Print'}
+                      </span>
+                    </div>
+
+                    <div className="flex min-w-0 flex-1 flex-col justify-center py-1 text-left sm:mt-8 sm:py-0 sm:text-center">
+                      <h3 className="line-clamp-3 text-sm font-bold leading-snug text-white sm:line-clamp-2 sm:min-h-[2.75rem] sm:text-base">
+                        {item.title}
+                      </h3>
+
+                      <div className="mt-2 flex flex-col items-start gap-0.5 sm:mt-4 sm:items-center sm:gap-1">
+                        <p className="text-lg font-black tracking-tight text-amber-400 sm:text-2xl">
+                          {formatGhs(item.price)}
+                        </p>
+                        {hardcopyLabel ? (
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-[11px]">
+                            Hardcopy {hardcopyLabel}
+                          </p>
+                        ) : null}
+                      </div>
+
+                      <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white/75 sm:mt-auto sm:justify-center sm:pt-5 sm:text-sm sm:transition sm:group-hover:text-amber-300">
+                        Explore this title
+                        <FiArrowRight
+                          className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:transition sm:duration-300 sm:group-hover:translate-x-1"
+                          aria-hidden
+                        />
+                      </span>
+                    </div>
+                  </article>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function BookDetails() {
   const { bookId } = useParams();
   const navigate = useNavigate();
@@ -292,6 +440,7 @@ function BookDetails() {
 
   const [book, setBook] = useState(null);
   const [offerGroup, setOfferGroup] = useState(null);
+  const [sameAuthorBooks, setSameAuthorBooks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
@@ -324,7 +473,31 @@ function BookDetails() {
     return () => {
       cancelled = true;
     };
-  }, [API_URL, bookId]);
+  }, [API_URL, bookId, navigate]);
+
+  useEffect(() => {
+    if (!book?.author) {
+      setSameAuthorBooks([]);
+      return undefined;
+    }
+
+    let cancelled = false;
+
+    axios
+      .get(`${API_URL}/api/books`, {
+        params: { author: book.author, exclude: book._id },
+      })
+      .then((res) => {
+        if (!cancelled) setSameAuthorBooks(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(() => {
+        if (!cancelled) setSameAuthorBooks([]);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_URL, book?.author, book?._id]);
 
   const heroOutcomePoints = useMemo(
     () => (book ? heroOutcomes(book, 3) : []),
@@ -494,7 +667,7 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:w-auto"
                   >
                     <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Prefer printed? Request hardcopy
+                    Request Hard Copy Now? Request hardcopy
                   </button>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
@@ -518,7 +691,7 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
                   >
                     <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Prefer printed? Request hardcopy after payment
+                    Request Hard Copy Now? Request hardcopy after payment
                   </button>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
@@ -532,7 +705,7 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:w-auto"
                   >
                     <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Prefer printed? Request hardcopy
+                    Request Hard Copy Now? Request hardcopy
                   </button>
                 </div>
               ) : book.type !== 'ebook' ? (
@@ -577,6 +750,8 @@ function BookDetails() {
               onSelectOption={selectOfferOption}
             />
           ) : null}
+
+          <SameAuthorBooksSection author={book.author} books={sameAuthorBooks} />
 
           {activeTestimonials.length > 0 ? (
             <BookTestimonialsSection testimonials={activeTestimonials} />

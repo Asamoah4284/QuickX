@@ -607,6 +607,79 @@ async function validateBookCartPayment(itemIds, finalAmount, opts = {}) {
     return { ok: true, books, uniqueIds, total };
 }
 
+/** Resolve listing cover for admin/creator UIs when thumbnail lives on offer plans. */
+async function enrichAdminBookThumbnails(books) {
+    if (!books?.length) return [];
+
+    const plain = books.map((b) => (b.toObject ? b.toObject() : { ...b }));
+    const bookIds = plain.map((b) => b._id).filter(Boolean);
+    const offerGroupIds = plain.map((b) => b.offerGroupId).filter(Boolean);
+
+    const groups = await BookOfferGroup.find({
+        $or: [
+            { _id: { $in: offerGroupIds } },
+            { storefrontBookId: { $in: bookIds } },
+            { 'options.bookIds': { $in: bookIds } },
+        ],
+    }).lean();
+
+    const groupById = new Map(groups.map((g) => [String(g._id), g]));
+    const groupByBookId = new Map();
+
+    for (const group of groups) {
+        if (group.storefrontBookId) {
+            groupByBookId.set(String(group.storefrontBookId), group);
+        }
+        for (const opt of group.options || []) {
+            for (const id of opt.bookIds || []) {
+                if (!groupByBookId.has(String(id))) {
+                    groupByBookId.set(String(id), group);
+                }
+            }
+        }
+    }
+
+    const storefrontIds = [
+        ...new Set(groups.map((g) => g.storefrontBookId).filter(Boolean).map(String)),
+    ];
+    const storefrontBooks = storefrontIds.length
+        ? await Book.find({ _id: { $in: storefrontIds } }).select('_id thumbnail').lean()
+        : [];
+    const storefrontThumbById = new Map(
+        storefrontBooks.map((b) => [String(b._id), String(b.thumbnail || '').trim()])
+    );
+
+    const pickOptionThumbnail = (group, bookId) => {
+        if (!group?.options?.length) return '';
+        const sorted = [...group.options].sort(
+            (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
+        );
+        const matching = sorted.find((opt) =>
+            (opt.bookIds || []).some((id) => String(id) === String(bookId))
+        );
+        const preferred = matching || sorted.find((opt) => String(opt.thumbnail || '').trim());
+        return String(preferred?.thumbnail || sorted.find((opt) => opt.thumbnail)?.thumbnail || '').trim();
+    };
+
+    return plain.map((book) => {
+        const own = String(book.thumbnail || '').trim();
+        if (own) return book;
+
+        const group =
+            (book.offerGroupId && groupById.get(String(book.offerGroupId))) ||
+            groupByBookId.get(String(book._id));
+        if (!group) return book;
+
+        const fromOption = pickOptionThumbnail(group, book._id);
+        if (fromOption) return { ...book, thumbnail: fromOption };
+
+        const fromStorefront = storefrontThumbById.get(String(group.storefrontBookId));
+        if (fromStorefront) return { ...book, thumbnail: fromStorefront };
+
+        return book;
+    });
+}
+
 module.exports = {
     validateBookCartPayment,
     normalizeStringArray,
@@ -615,6 +688,7 @@ module.exports = {
     syncBooksToOfferGroup,
     migrateMarketplaceListings,
     enrichDeliverableBookThumbnails,
+    enrichAdminBookThumbnails,
     resolveDownloadThumbnails,
     resolveOfferOptionsWithPlanBooks,
     ensureOfferGroupPlanBooksEmbeds,

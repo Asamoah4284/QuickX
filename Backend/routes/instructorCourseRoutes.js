@@ -486,8 +486,8 @@ router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
         if (!canEdit(course, req.user._id)) {
             return res.status(403).json({ message: 'Access denied' });
         }
-        if (!course.title || !course.description || !course.shortDescription || !course.thumbnail) {
-            return res.status(400).json({ message: 'Complete the required course details before publishing' });
+        if (!course.title || course.title === 'Untitled course') {
+            return res.status(400).json({ message: 'Give your course a title before publishing' });
         }
         if (course.listingStatus !== 'draft' && course.listingStatus !== 'rejected' && course.listingStatus !== 'published') {
             return res.status(400).json({ message: 'Course cannot be submitted from current status' });

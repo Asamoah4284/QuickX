@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Book = require('../models/Book');
+const BookOfferGroup = require('../models/BookOfferGroup');
 const auth = require('../middleware/auth');
 const requireApprovedCreator = require('../middleware/requireApprovedCreator');
 
@@ -27,6 +28,16 @@ function normalizeTestimonials(value) {
             image: String(item?.image || '').trim(),
         }))
         .filter((item) => item.quote);
+}
+
+function collectBookIdsFromOptions(options) {
+    const ids = [];
+    for (const opt of options || []) {
+        for (const id of opt.bookIds || []) {
+            ids.push(String(id));
+        }
+    }
+    return ids;
 }
 
 /** Helper: confirm the requesting user owns this book */
@@ -59,7 +70,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             title, author, description, type, price,
             fileUrl, stock, thumbnail, isbn,
             deliveryFee, watermarkTemplate, category,
-            whatYoullLearn, afterReadingOutcomes, testimonials
+            whatYoullLearn, afterReadingOutcomes, testimonials, hardcopyPrice
         } = req.body;
 
         if (!title || !author || !description || !type) {
@@ -90,6 +101,10 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             whatYoullLearn: normalizeStringArray(whatYoullLearn),
             afterReadingOutcomes: normalizeStringArray(afterReadingOutcomes),
             testimonials: normalizeTestimonials(testimonials),
+            hardcopyPrice:
+                type === 'ebook' && hardcopyPrice != null && hardcopyPrice !== ''
+                    ? Number(hardcopyPrice)
+                    : undefined,
         });
 
         await book.save();
@@ -126,7 +141,7 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
             'title', 'author', 'description', 'type', 'price',
             'fileUrl', 'stock', 'thumbnail', 'isbn',
             'deliveryFee', 'watermarkTemplate', 'category',
-            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials'
+            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials', 'hardcopyPrice'
         ];
         allowed.forEach((key) => {
             if (req.body[key] === undefined) return;
@@ -138,6 +153,12 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
                 book[key] = normalizeTestimonials(req.body[key]);
                 return;
             }
+            if (key === 'hardcopyPrice') {
+                const v = req.body[key];
+                book.hardcopyPrice =
+                    v === '' || v == null ? null : Number(v);
+                return;
+            }
             book[key] = req.body[key];
         });
 
@@ -146,6 +167,7 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
             book.deliveryFee = undefined;
         } else {
             book.fileUrl = undefined;
+            book.hardcopyPrice = null;
         }
 
         // Re-opening a rejected book as draft
@@ -165,15 +187,49 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
     }
 });
 
-// ── Delete (draft / rejected only) ───────────────────────────────────────────
+// ── Delete (owner — any status) ───────────────────────────────────────────────
 router.delete('/:id', auth, requireApprovedCreator, async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
         if (!book) return res.status(404).json({ message: 'Book not found' });
         if (!canEdit(book, req.user._id)) return res.status(403).json({ message: 'Access denied' });
-        if (!['draft', 'rejected'].includes(book.listingStatus)) {
-            return res.status(400).json({ message: 'Only draft or rejected books can be deleted' });
+
+        if (book.offerGroupId) {
+            const group = await BookOfferGroup.findById(book.offerGroupId);
+            if (group) {
+                const bookId = String(book._id);
+                const isStorefront = String(group.storefrontBookId || '') === bookId;
+                const allIds = collectBookIdsFromOptions(group.options);
+
+                if (isStorefront) {
+                    const siblingIds = allIds.filter((id) => id !== bookId);
+                    if (siblingIds.length) {
+                        await Book.deleteMany({
+                            _id: { $in: siblingIds },
+                            createdBy: req.user._id,
+                            isPlanDeliverable: true,
+                        });
+                        await Book.updateMany(
+                            { _id: { $in: siblingIds } },
+                            { $set: { offerGroupId: null } }
+                        );
+                    }
+                    await BookOfferGroup.findByIdAndDelete(group._id);
+                } else {
+                    let changed = false;
+                    for (const opt of group.options || []) {
+                        const before = (opt.bookIds || []).length;
+                        opt.bookIds = (opt.bookIds || []).filter((id) => String(id) !== bookId);
+                        if (opt.bookIds.length !== before) changed = true;
+                        opt.planBooks = (opt.planBooks || []).filter(
+                            (pb) => String(pb.bookId) !== bookId
+                        );
+                    }
+                    if (changed) await group.save();
+                }
+            }
         }
+
         await Book.findByIdAndDelete(req.params.id);
         res.json({ message: 'Book deleted successfully' });
     } catch (err) {
