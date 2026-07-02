@@ -11,7 +11,7 @@ const Review = require('../models/Review');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { serializeUser } = require('../utils/serializeUser');
-const { enrichAdminBookThumbnails } = require('../utils/bookOfferHelpers');
+const { enrichAdminBookThumbnails, syncStorefrontBookPriceToOfferGroup } = require('../utils/bookOfferHelpers');
 
 // Admin Login
 exports.login = async (req, res) => {
@@ -368,6 +368,7 @@ exports.updateBook = async (req, res) => {
         }
         
         await book.save();
+        await syncStorefrontBookPriceToOfferGroup(book);
         
         res.json(book);
     } catch (error) {

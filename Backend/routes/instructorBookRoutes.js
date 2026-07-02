@@ -4,6 +4,7 @@ const Book = require('../models/Book');
 const BookOfferGroup = require('../models/BookOfferGroup');
 const auth = require('../middleware/auth');
 const requireApprovedCreator = require('../middleware/requireApprovedCreator');
+const { syncStorefrontBookPriceToOfferGroup } = require('../utils/bookOfferHelpers');
 
 function normalizeStringArray(value) {
     if (!value) return [];
@@ -159,6 +160,10 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
                     v === '' || v == null ? null : Number(v);
                 return;
             }
+            if (key === 'price') {
+                book.price = Number(req.body.price) || 0;
+                return;
+            }
             book[key] = req.body[key];
         });
 
@@ -177,6 +182,7 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
         }
 
         await book.save();
+        await syncStorefrontBookPriceToOfferGroup(book);
         res.json(book);
     } catch (err) {
         console.error('instructor patch book:', err);

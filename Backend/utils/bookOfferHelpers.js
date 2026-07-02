@@ -736,6 +736,31 @@ async function enrichPublicBookListingPrices(books) {
     });
 }
 
+async function syncStorefrontBookPriceToOfferGroup(book) {
+    if (!book?.offerGroupId) return;
+
+    const group = await BookOfferGroup.findById(book.offerGroupId);
+    if (!group?.options?.length) return;
+
+    const storefrontId = String(group.storefrontBookId || book._id);
+    let changed = false;
+
+    for (const opt of group.options) {
+        const ids = (opt.bookIds || []).map((id) => String(id));
+        const isStorefrontSingle =
+            opt.type === 'single' && ids.length === 1 && ids[0] === storefrontId;
+        if (isStorefrontSingle && Number(opt.price) !== Number(book.price)) {
+            opt.price = Number(book.price) || 0;
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        group.markModified('options');
+        await group.save();
+    }
+}
+
 module.exports = {
     validateBookCartPayment,
     normalizeStringArray,
@@ -746,6 +771,7 @@ module.exports = {
     enrichDeliverableBookThumbnails,
     enrichAdminBookThumbnails,
     enrichPublicBookListingPrices,
+    syncStorefrontBookPriceToOfferGroup,
     resolveDownloadThumbnails,
     resolveOfferOptionsWithPlanBooks,
     ensureOfferGroupPlanBooksEmbeds,

@@ -563,7 +563,9 @@ export default function CreatorBookWizard() {
           <h3 className="mb-1 text-base font-semibold text-slate-900">Pricing & Type</h3>
           {form.type === 'ebook' ? (
             <p className="mb-4 text-xs text-slate-500 sm:text-sm">
-              Set your digital price and an optional separate price for printed copies.
+              Set your single e-book price and an optional hardcopy price. If you use purchase plans below,
+              update bundle or extra tier prices there — then click <strong>Save</strong> at the bottom so
+              the store updates.
             </p>
           ) : null}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
