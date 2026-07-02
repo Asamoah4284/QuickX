@@ -7,6 +7,7 @@ const auth = require('../middleware/auth');
 const {
     serializePublicOfferGroup,
     ensureOfferGroupPlanBooksEmbeds,
+    enrichPublicBookListingPrices,
 } = require('../utils/bookOfferHelpers');
 
 // Get all books (public)
@@ -41,8 +42,9 @@ router.get('/', async (req, res) => {
             ],
         })
             .select('title author price hardcopyPrice type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials offerGroupId');
-            
-        res.json(books);
+
+        const payload = await enrichPublicBookListingPrices(books);
+        res.json(payload);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

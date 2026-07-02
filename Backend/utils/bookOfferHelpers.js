@@ -680,6 +680,62 @@ async function enrichAdminBookThumbnails(books) {
     });
 }
 
+function pickFeaturedOfferOption(options) {
+    if (!options?.length) return null;
+    const sorted = [...options].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+    return (
+        sorted.find((opt) => opt.type === 'bundle' || opt.highlighted) ||
+        sorted[0] ||
+        null
+    );
+}
+
+/** Attach storefront listing prices when a published offer group exists. */
+async function enrichPublicBookListingPrices(books) {
+    if (!books?.length) return [];
+
+    const plain = books.map((b) => (b.toObject ? b.toObject() : { ...b }));
+    const groupIds = [
+        ...new Set(plain.map((b) => b.offerGroupId).filter(Boolean).map(String)),
+    ];
+
+    const groups = groupIds.length
+        ? await BookOfferGroup.find({
+              _id: { $in: groupIds },
+              listingStatus: 'published',
+          }).lean()
+        : [];
+    const groupById = new Map(groups.map((g) => [String(g._id), g]));
+
+    return plain.map((book) => {
+        const group = book.offerGroupId && groupById.get(String(book.offerGroupId));
+        if (!group?.options?.length) {
+            return {
+                ...book,
+                displayPrice: Number(book.price || 0),
+                fromPrice: null,
+                featuredOfferPrice: null,
+                hasOfferPlans: false,
+            };
+        }
+
+        const prices = group.options
+            .map((opt) => Number(opt.price || 0))
+            .filter((price) => price >= 0);
+        const fromPrice = prices.length ? Math.min(...prices) : Number(book.price || 0);
+        const hasMultipleTiers = prices.length > 1 && new Set(prices).size > 1;
+        const featured = pickFeaturedOfferOption(group.options);
+
+        return {
+            ...book,
+            displayPrice: fromPrice,
+            fromPrice: hasMultipleTiers ? fromPrice : null,
+            featuredOfferPrice: featured ? Number(featured.price || 0) : null,
+            hasOfferPlans: true,
+        };
+    });
+}
+
 module.exports = {
     validateBookCartPayment,
     normalizeStringArray,
@@ -689,6 +745,7 @@ module.exports = {
     migrateMarketplaceListings,
     enrichDeliverableBookThumbnails,
     enrichAdminBookThumbnails,
+    enrichPublicBookListingPrices,
     resolveDownloadThumbnails,
     resolveOfferOptionsWithPlanBooks,
     ensureOfferGroupPlanBooksEmbeds,

@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowLeft, FiArrowRight, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
+import { formatBookListingPrice, getBookListingPrice } from '../utils/bookListingPrice';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
 import MetaPixelNoscript from '../components/MetaPixelNoscript';
 import BookOfferPicker from '../components/BookOfferPicker';
@@ -405,7 +406,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
 
                       <div className="mt-2 flex flex-col items-start gap-0.5 sm:mt-4 sm:items-center sm:gap-1">
                         <p className="text-lg font-black tracking-tight text-amber-400 sm:text-2xl">
-                          {formatGhs(item.price)}
+                          {formatBookListingPrice(item)}
                         </p>
                         {hardcopyLabel ? (
                           <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-[11px]">
@@ -513,6 +514,11 @@ function BookDetails() {
       null
     );
   }, [offerGroup]);
+
+  const listingPriceInfo = useMemo(
+    () => (book ? getBookListingPrice(book, offerGroup) : null),
+    [book, offerGroup]
+  );
 
   const activeTestimonials = useMemo(() => {
     if (!Array.isArray(book?.testimonials)) return [];
@@ -626,6 +632,12 @@ function BookDetails() {
                     {book.title}
                   </h1>
                   <p className="text-base font-medium text-slate-500">By {book.author}</p>
+                  {book.type === 'ebook' && listingPriceInfo ? (
+                    <p className="text-lg font-black tracking-tight text-[#0c2340]">
+                      {listingPriceInfo.showFromLabel ? 'From ' : ''}
+                      {formatGhs(listingPriceInfo.displayPrice)}
+                    </p>
+                  ) : null}
                 </div>
                 <p className="text-pretty text-base leading-relaxed text-slate-600 line-clamp-5 sm:text-[1.05rem]">
                   {heroDescription(book)}
@@ -682,9 +694,15 @@ function BookDetails() {
                       Buy Now — Bundle {formatGhs(bundleOfferOption.price)}
                     </button>
                   </div>
-                  <p className="text-sm text-slate-500">
-                    Secure ? MoMo ? Instant PDF ? Compare all plans below
-                  </p>
+                  {listingPriceInfo?.showFromLabel ? (
+                    <p className="text-xs text-slate-500">
+                      Single plans from {formatGhs(listingPriceInfo.displayPrice)} · compare all options below
+                    </p>
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      Secure ? MoMo ? Instant PDF ? Compare all plans below
+                    </p>
+                  )}
                   <button
                     type="button"
                     onClick={openHardcopyModal}

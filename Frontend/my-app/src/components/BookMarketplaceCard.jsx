@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { FiShoppingCart, FiPackage, FiMinus, FiPlus, FiCheck } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
+import { formatBookListingPrice } from '../utils/bookListingPrice';
 
 const DEFAULT_COVER = '/images/bk-1.jpg';
 
@@ -19,6 +20,7 @@ export default function BookMarketplaceCard({
   const inCart = cartQuantity > 0;
   const outOfStock = book.type === 'hardcopy' && Number(book.stock) < 1;
   const detailPath = `/store/${book._id}`;
+  const listingPrice = formatBookListingPrice(book);
 
   return (
     <article className="group/card mx-auto w-full max-w-[22rem] overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.03] transition hover:border-slate-300 hover:shadow-md">
@@ -72,7 +74,7 @@ export default function BookMarketplaceCard({
 
           <div className="mt-2 space-y-2">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="shrink-0 text-lg font-black text-[#0c2340]">{formatGhs(book.price)}</p>
+              <p className="shrink-0 text-lg font-black text-[#0c2340]">{listingPrice}</p>
 
               {isEbook ? (
                 inCart ? (
