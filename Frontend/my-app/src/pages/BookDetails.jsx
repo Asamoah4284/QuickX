@@ -286,6 +286,43 @@ function heroDescription(book) {
     : 'Request a printed copy and our team will follow up with delivery details.';
 }
 
+function HardcopyCtaButton({ onClick, variant = 'outline', className = '' }) {
+  const isPrimary = variant === 'primary';
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`flex w-full items-center justify-center gap-3 rounded-2xl px-6 py-3.5 text-center transition ${
+        isPrimary
+          ? 'bg-[#FF5A5F] text-base font-semibold text-white shadow-lg shadow-rose-500/20 hover:bg-[#E04E52] sm:min-w-[240px]'
+          : 'border-2 border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
+      } ${className}`}
+    >
+      <FiPackage
+        className={`h-5 w-5 shrink-0 ${isPrimary ? 'text-white' : 'text-emerald-700'}`}
+        aria-hidden
+      />
+      <span>
+        <span
+          className={`block text-sm font-semibold leading-snug ${
+            isPrimary ? 'text-white' : 'text-slate-800'
+          }`}
+        >
+          Prefer Hard Copy?
+        </span>
+        <span
+          className={`block text-sm leading-snug ${
+            isPrimary ? 'font-semibold text-white/95' : 'font-medium text-slate-600'
+          }`}
+        >
+          Request Here
+        </span>
+      </span>
+    </button>
+  );
+}
+
 function SameAuthorBooksSection({ author, books = [] }) {
   const items = books.slice(0, 6);
   if (!items.length) return null;
@@ -673,14 +710,7 @@ function BookDetails() {
                   <p className="text-sm text-slate-500">
                     No account needed ? Pay with Mobile Money ? Download right after payment
                   </p>
-                  <button
-                    type="button"
-                    onClick={openHardcopyModal}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:w-auto"
-                  >
-                    <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Request Hard Copy Now? Request hardcopy
-                  </button>
+                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:w-auto" />
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
                 <div className="w-full max-w-md space-y-2">
@@ -695,47 +725,26 @@ function BookDetails() {
                     </button>
                   </div>
                   {listingPriceInfo?.showFromLabel ? (
-                    <p className="text-xs text-slate-500">
+                    <p className="text-center text-xs text-slate-500">
                       Single plans from {formatGhs(listingPriceInfo.displayPrice)} · compare all options below
                     </p>
                   ) : (
-                    <p className="text-sm text-slate-500">
+                    <p className="text-center text-sm text-slate-500">
                       Secure ? MoMo ? Instant PDF ? Compare all plans below
                     </p>
                   )}
-                  <button
-                    type="button"
-                    onClick={openHardcopyModal}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50"
-                  >
-                    <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Request Hard Copy Now? Request hardcopy after payment
-                  </button>
+                  <HardcopyCtaButton onClick={openHardcopyModal} />
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
                 <div className="space-y-3">
                   <p className="text-sm text-slate-500">
                     Choose a plan below. No account needed ? MoMo checkout.
                   </p>
-                  <button
-                    type="button"
-                    onClick={openHardcopyModal}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-800 transition hover:border-emerald-300 hover:bg-emerald-50 sm:w-auto"
-                  >
-                    <FiPackage className="h-5 w-5 shrink-0 text-emerald-700" aria-hidden />
-                    Request Hard Copy Now? Request hardcopy
-                  </button>
+                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:w-auto" />
                 </div>
               ) : book.type !== 'ebook' ? (
                 <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={openHardcopyModal}
-                    className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-rose-500/20 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[220px]"
-                  >
-                    <FiPackage className="h-5 w-5 shrink-0" aria-hidden />
-                    Request hardcopy
-                  </button>
+                  <HardcopyCtaButton onClick={openHardcopyModal} variant="primary" className="sm:mx-auto sm:w-auto" />
                   <p className="text-sm text-slate-500">
                     Fill in your details ? we&apos;ll confirm delivery on WhatsApp.
                   </p>
