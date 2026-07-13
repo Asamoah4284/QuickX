@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 
@@ -537,12 +537,14 @@ function AvatarRing({ avatarSrc, displayName, size = 'lg', className = '' }) {
 export default function InstructorProfile() {
   const { userId } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
   const [subscriptionDrawerOpen, setSubscriptionDrawerOpen] = useState(false);
   const [selectedSubscriptionPlanId, setSelectedSubscriptionPlanId] = useState('1m');
+  const [communityAccess, setCommunityAccess] = useState({ subscribed: false, isTutor: false });
   const [profileVideoPreview, setProfileVideoPreview] = useState(null);
   const [videoDropdownOpen, setVideoDropdownOpen] = useState(false);
   const [videoSidebarOpen, setVideoSidebarOpen] = useState(false);
@@ -555,6 +557,32 @@ export default function InstructorProfile() {
   useEffect(() => {
     if (subscriptionDrawerOpen) setSelectedSubscriptionPlanId('1m');
   }, [subscriptionDrawerOpen]);
+
+  const loadCommunityAccess = useCallback(() => {
+    const token = localStorage.getItem('authToken');
+    if (!token || !userId) return undefined;
+    let cancelled = false;
+    axios
+      .get(`${API_URL}/api/instructors/${userId}/subscription/me`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(({ data: payload }) => {
+        if (!cancelled) {
+          setCommunityAccess({
+            subscribed: Boolean(payload.subscribed),
+            isTutor: Boolean(payload.isTutor),
+          });
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setCommunityAccess({ subscribed: false, isTutor: false });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
+
+  useEffect(() => loadCommunityAccess(), [loadCommunityAccess, location.key]);
 
   useEffect(() => {
     let cancelled = false;
@@ -906,6 +934,14 @@ export default function InstructorProfile() {
 
   const actionButtons = (
     <div className="flex w-full flex-col items-center gap-2 sm:items-start lg:items-end">
+      {communityAccess.subscribed || communityAccess.isTutor ? (
+        <Link
+          to={`/instructors/${userId}/community`}
+          className="inline-flex min-h-[2.75rem] min-w-[10.5rem] items-center justify-center rounded-full bg-emerald-600 px-6 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 sm:min-h-[3rem] sm:min-w-[11rem]"
+        >
+          {communityAccess.isTutor ? 'Open my community' : 'Join community'}
+        </Link>
+      ) : null}
       <button
         type="button"
         onClick={() => setSubscriptionDrawerOpen(true)}

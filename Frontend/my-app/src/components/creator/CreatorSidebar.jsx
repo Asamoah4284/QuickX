@@ -11,6 +11,7 @@ import {
   FiDollarSign,
   FiCreditCard,
   FiSettings,
+  FiMessageSquare,
 } from 'react-icons/fi';
 
 /** Rotating promo lines — same blue as the main nav (`bg-blue-900`). */
@@ -39,6 +40,7 @@ const items = [
   { to: '/creator/dashboard/books', label: 'My Books', icon: FiBook },
   { to: '/creator/dashboard/drafts', label: 'Drafts', icon: FiFileText },
   { to: '/creator/dashboard/students', label: 'Students', icon: FiUsers },
+  { to: '/creator/dashboard/community', label: 'Community', icon: FiMessageSquare },
   { to: '/creator/dashboard/reviews', label: 'Reviews', icon: FiStar },
   { to: '/creator/dashboard/earnings', label: 'Earnings', icon: FiDollarSign },
   { to: '/creator/dashboard/payouts', label: 'Payouts', icon: FiCreditCard },

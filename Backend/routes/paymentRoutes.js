@@ -255,6 +255,17 @@ router.post(
             const payment = new Payment(paymentRecord);
             await payment.save();
 
+            const {
+                createOrExtendFromPayment,
+            } = require('../services/tutorSubscriptionService');
+            const subscription = await createOrExtendFromPayment({
+                studentId: req.user._id,
+                tutorId: instructor._id,
+                planId,
+                paymentId: payment._id,
+                transactionId,
+            });
+
             res.json({
                 success: true,
                 message: 'Creator subscription payment recorded',
@@ -264,6 +275,13 @@ router.post(
                         id: instructor._id,
                         fullName: instructor.fullName,
                     },
+                },
+                subscription: {
+                    id: subscription._id,
+                    planId: subscription.planId,
+                    startsAt: subscription.startsAt,
+                    endsAt: subscription.endsAt,
+                    status: subscription.status,
                 },
             });
         } catch (error) {

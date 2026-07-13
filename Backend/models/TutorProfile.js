@@ -119,6 +119,14 @@ const tutorProfileSchema = new mongoose.Schema({
         type: subscriptionPricingSchema,
         default: () => ({})
     },
+    allowPeerMessaging: {
+        type: Boolean,
+        default: false,
+    },
+    communityGuidelines: {
+        type: String,
+        default: '',
+    },
     avatar: {
         type: String,
         default: ''

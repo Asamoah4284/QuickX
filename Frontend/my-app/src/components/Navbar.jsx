@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { FiBook, FiMenu, FiX } from 'react-icons/fi';
+import NotificationBell from './NotificationBell';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -16,7 +17,9 @@ const Navbar = () => {
     pathname.startsWith('/creator') ||
     pathname.startsWith('/store') ||
     pathname.startsWith('/admin') ||
-    pathname.startsWith('/checkout');
+    pathname.startsWith('/checkout') ||
+    pathname.startsWith('/community') ||
+    pathname.includes('/community');
 
   const navSolid = scrolled || alwaysVisible;
   const creatorDestination =
@@ -131,6 +134,9 @@ const Navbar = () => {
             <Link to="/store" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Books
             </Link>
+            <Link to="/community" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+              Community
+            </Link>
             <Link to="/creator/onboarding" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Creator programs
             </Link>
@@ -139,6 +145,7 @@ const Navbar = () => {
             <div className="flex items-center space-x-4 ml-4">
               {isLoggedIn ? (
                 <div className="flex items-center space-x-4">
+                  <NotificationBell />
                   <Link to="/membership" className={`flex items-center ${navSolid ? 'text-white-200 hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
                     <FiBook className="mr-1.5" /> My Courses
                   </Link>

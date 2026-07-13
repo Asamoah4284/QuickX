@@ -9,6 +9,7 @@ import Analysis from "./pages/Analysis";
 import PremiumAnalysis from "./pages/PremiumAnalysis";
 
 import Community from "./pages/Community";
+import CommunityHub from "./pages/CommunityHub";
 import Profile from "./pages/Profile";
 import BookDetails from "./pages/BookDetails";
 import Checkout from "./pages/Checkout";
@@ -47,6 +48,7 @@ import CreatorReviews from "./pages/creator/CreatorReviews";
 import CreatorEarnings from "./pages/creator/CreatorEarnings";
 import CreatorPayouts from "./pages/creator/CreatorPayouts";
 import CreatorProfileSettings from "./pages/creator/CreatorProfileSettings";
+import CreatorCommunity from "./pages/creator/CreatorCommunity";
 import CreatorApplications from "./pages/Admin/CreatorApplications";
 import CourseReviewQueue from "./pages/Admin/CourseReviewQueue";
 import CreatorSettings from "./pages/Admin/CreatorSettings";
@@ -150,6 +152,10 @@ const router = createBrowserRouter([
         element: <InstructorProfile />
       },
       {
+        path: "instructors/:tutorId/community",
+        element: <ProtectedRoute><CommunityHub /></ProtectedRoute>
+      },
+      {
         path: "programs",
         element: <Navigate to="/creator/onboarding" replace />
       },
@@ -191,6 +197,10 @@ const router = createBrowserRouter([
               {
                 path: "students",
                 element: <CreatorStudents />
+              },
+              {
+                path: "community",
+                element: <CreatorCommunity />
               },
               {
                 path: "reviews",
@@ -243,7 +253,7 @@ const router = createBrowserRouter([
       },
       {
         path: "community",
-        element: <Community />
+        element: <ProtectedRoute><Community /></ProtectedRoute>
       },
       {
         path: "login",
