@@ -56,6 +56,11 @@ router.patch('/courses/:id/listing-review', adminAuth, adminController.reviewUse
 
 router.get('/tutors/applications', adminAuth, adminController.getTutorApplications);
 router.patch('/tutors/applications/:id/review', adminAuth, adminController.reviewTutorApplication);
+router.patch(
+    '/tutors/applications/:id/subscription-pricing',
+    adminAuth,
+    adminController.updateTutorSubscriptionPricing
+);
 router.get('/platform/settings', adminAuth, adminController.getPlatformSettings);
 router.put('/platform/settings', adminAuth, adminController.updatePlatformSettings);
 router.get('/platform/categories', adminAuth, adminController.getCourseCategories);

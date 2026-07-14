@@ -4,8 +4,7 @@ const auth = require('../middleware/auth');
 const requireApprovedCreator = require('../middleware/requireApprovedCreator');
 const {
   getActiveSubscription,
-  hasCourseEnrollmentWithTutor,
-  listAccessibleTutorIdsForStudent,
+  listActiveSubscriptionsForStudent,
   listSubscribersForTutor,
 } = require('../services/tutorSubscriptionService');
 const User = require('../models/User');
@@ -24,11 +23,10 @@ router.get('/instructors/:tutorId/subscription/me', auth, async (req, res) => {
     }
 
     const sub = await getActiveSubscription(req.user._id, tutorId);
-    const enrolled = !sub && (await hasCourseEnrollmentWithTutor(req.user._id, tutorId));
     res.json({
-      subscribed: Boolean(sub) || enrolled,
+      subscribed: Boolean(sub),
       isTutor: false,
-      accessType: sub ? 'subscription' : enrolled ? 'course' : null,
+      accessType: sub ? 'subscription' : null,
       subscription: sub
         ? {
             planId: sub.planId,
@@ -92,17 +90,23 @@ router.get('/instructors/:tutorId/community/stats', async (req, res) => {
   }
 });
 
-/** Current user's tutor communities (subscription or course enrollment). */
+/** Current user's active tutor subscriptions (community access). */
 router.get('/me/subscriptions', auth, async (req, res) => {
   try {
-    const communities = await listAccessibleTutorIdsForStudent(req.user._id);
+    const rows = await listActiveSubscriptionsForStudent(req.user._id);
     res.json({
-      subscriptions: communities.map((entry) => ({
-        id: entry.tutorId,
-        planId: entry.accessType === 'subscription' ? 'subscription' : null,
-        endsAt: entry.endsAt,
-        accessType: entry.accessType,
-        tutor: entry.tutor,
+      subscriptions: rows.map((s) => ({
+        id: s._id,
+        planId: s.planId,
+        endsAt: s.endsAt,
+        accessType: 'subscription',
+        tutor: s.tutorId
+          ? {
+              id: s.tutorId._id,
+              fullName: s.tutorId.fullName,
+              profilePicture: s.tutorId.profilePicture,
+            }
+          : null,
       })),
     });
   } catch (err) {

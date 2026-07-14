@@ -1,4 +1,4 @@
-const { hasCommunityAccess } = require('../services/tutorSubscriptionService');
+const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
 
 /**
  * Requires auth. Resolves tutorId from req.params.tutorId | req.params.userId | req.body.tutorId.
@@ -34,11 +34,11 @@ async function requireTutorSubscriber(req, res, next) {
       return next();
     }
 
-    const ok = await hasCommunityAccess(req.user._id, tutorId);
+    const ok = await hasActiveSubscription(req.user._id, tutorId);
     if (!ok) {
       return res.status(403).json({
-        message: 'Subscribe or enroll in a course to access this community',
-        code: 'COMMUNITY_ACCESS_REQUIRED',
+        message: 'Active subscription required to access this community',
+        code: 'SUBSCRIPTION_REQUIRED',
       });
     }
 

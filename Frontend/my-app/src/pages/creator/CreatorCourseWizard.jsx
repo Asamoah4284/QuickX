@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowLeft, FiCheckCircle, FiChevronRight, FiUploadCloud } from 'react-icons/fi';
 import WizardStepper from '../../components/creator/WizardStepper';
@@ -12,6 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const steps = [
   { label: 'Basics', description: 'Title, cover, and description' },
+  { label: 'Pricing', description: '1 month, 3 months, and 1 year access' },
   { label: 'Curriculum', description: 'Modules and lessons' },
   { label: 'Review', description: 'Check and publish' },
 ];
@@ -132,6 +133,12 @@ export default function CreatorCourseWizard() {
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0 });
   const [thumbnailPreviewFailed, setThumbnailPreviewFailed] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
+  const [subscriptionPricing, setSubscriptionPricing] = useState({
+    month1: 49,
+    month3: 129,
+    year1: 399,
+  });
+  const [subscriptionPricingSaving, setSubscriptionPricingSaving] = useState(false);
   const hydratedRef = useRef(false);
 
   useEffect(() => {
@@ -153,6 +160,12 @@ export default function CreatorCourseWizard() {
         ]);
 
         setSettings(profileResponse.data.settings || { courseAutoApproval: false });
+        const sp = profileResponse.data?.tutorProfile?.subscriptionPricing;
+        setSubscriptionPricing({
+          month1: Number(sp?.month1 ?? 49) || 0,
+          month3: Number(sp?.month3 ?? sp?.month2 ?? 129) || 0,
+          year1: Number(sp?.year1 ?? 399) || 0,
+        });
 
         if (courseResponse.data) {
           const course = courseResponse.data;
@@ -290,6 +303,29 @@ export default function CreatorCourseWizard() {
       return null;
     } finally {
       setSaving(false);
+    }
+  };
+
+  const saveSubscriptionPricing = async (silent = true) => {
+    try {
+      setSubscriptionPricingSaving(true);
+      const payload = {
+        subscriptionPricing: {
+          month1: Math.max(0, Math.round(Number(subscriptionPricing.month1) || 0)),
+          month3: Math.max(0, Math.round(Number(subscriptionPricing.month3) || 0)),
+          year1: Math.max(0, Math.round(Number(subscriptionPricing.year1) || 0)),
+        },
+      };
+      await axios.put(`${API_URL}/api/users/creator/profile`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!silent) setMessage('Subscription pricing saved.');
+      return true;
+    } catch (e) {
+      if (!silent) setError(e.response?.data?.message || e.message);
+      return false;
+    } finally {
+      setSubscriptionPricingSaving(false);
     }
   };
 
@@ -503,15 +539,96 @@ export default function CreatorCourseWizard() {
         </div>
 
         <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          Subscription pricing for your whole catalog lives in{' '}
-          <Link to="/creator/dashboard/settings" className="font-semibold text-[#1B5EF5] hover:underline">
-            Creator settings
-          </Link>
-          — not per course.
+          Next you&apos;ll set <span className="font-semibold text-slate-800">1 month / 3 months / 1 year</span>{' '}
+          subscription prices for access to your courses.
         </p>
       </div>
     );
   } else if (currentStep === 2) {
+    stepContent = (
+      <div className="space-y-6">
+        <StudioPanel
+          title="Subscription access pricing"
+          description="Learners subscribe to you and unlock your full catalog for the selected length."
+        >
+          <div className="grid gap-4 sm:grid-cols-3">
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>1 month (GHS)</span>
+              <input
+                type="number"
+                min="0"
+                value={subscriptionPricing.month1}
+                onChange={(e) =>
+                  setSubscriptionPricing((cur) => ({ ...cur, month1: e.target.value }))
+                }
+                className={inputCls}
+              />
+            </label>
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>3 months (GHS)</span>
+              <input
+                type="number"
+                min="0"
+                value={subscriptionPricing.month3}
+                onChange={(e) =>
+                  setSubscriptionPricing((cur) => ({ ...cur, month3: e.target.value }))
+                }
+                className={inputCls}
+              />
+            </label>
+            <label className="space-y-2 text-sm text-slate-600">
+              <span>1 year (GHS)</span>
+              <input
+                type="number"
+                min="0"
+                value={subscriptionPricing.year1}
+                onChange={(e) =>
+                  setSubscriptionPricing((cur) => ({ ...cur, year1: e.target.value }))
+                }
+                className={inputCls}
+              />
+            </label>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
+            <p className="text-sm font-medium text-slate-700">Student preview</p>
+            <div className="mt-3 grid gap-3 sm:grid-cols-3">
+              {[
+                { label: '1 month', value: subscriptionPricing.month1 },
+                { label: '3 months', value: subscriptionPricing.month3 },
+                { label: '1 year', value: subscriptionPricing.year1 },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-xl font-semibold text-slate-950">
+                    GH₵
+                    {Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">Full course access</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-xs text-slate-500">
+              Saved to your creator profile and used at checkout and on your public page.
+            </p>
+            <button
+              type="button"
+              onClick={() => saveSubscriptionPricing(false)}
+              disabled={subscriptionPricingSaving}
+              className="rounded-xl bg-[#1B5EF5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1552D6] disabled:opacity-60"
+            >
+              {subscriptionPricingSaving ? 'Saving…' : 'Save prices'}
+            </button>
+          </div>
+        </StudioPanel>
+      </div>
+    );
+  } else if (currentStep === 3) {
     stepContent = (
       <div className="space-y-4">
         <p className="text-sm text-slate-500">
@@ -558,6 +675,21 @@ export default function CreatorCourseWizard() {
             <p className="text-sm leading-7 text-slate-600">
               {form.description || 'No description yet.'}
             </p>
+
+            <div className="grid gap-3 sm:grid-cols-3">
+              {[
+                { label: '1 month', value: subscriptionPricing.month1 },
+                { label: '3 months', value: subscriptionPricing.month3 },
+                { label: '1 year', value: subscriptionPricing.year1 },
+              ].map((item) => (
+                <div key={item.label} className="rounded-2xl border border-slate-200 p-4">
+                  <p className="text-sm text-slate-500">{item.label} access</p>
+                  <p className="mt-2 text-xl font-semibold text-slate-950">
+                    GH₵{Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
         </StudioPanel>
 
@@ -614,7 +746,7 @@ export default function CreatorCourseWizard() {
               {activeCourseId ? 'Edit course' : 'Create a course'}
             </h2>
             <p className="mt-2 text-sm text-blue-100/85">
-              Three steps: basics, curriculum, then publish.
+              Basics, pricing, curriculum, then publish.
             </p>
           </div>
 
@@ -684,7 +816,12 @@ export default function CreatorCourseWizard() {
               {currentStep < steps.length ? (
                 <button
                   type="button"
-                  onClick={() => setCurrentStep((step) => Math.min(step + 1, steps.length))}
+                  onClick={async () => {
+                    if (currentStep === 2) {
+                      await saveSubscriptionPricing(true);
+                    }
+                    setCurrentStep((step) => Math.min(step + 1, steps.length));
+                  }}
                   className="inline-flex items-center gap-2 rounded-2xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1552D6]"
                 >
                   Continue

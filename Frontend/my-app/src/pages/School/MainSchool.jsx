@@ -23,11 +23,6 @@ function courseThumbUrl(c) {
   return publicAssetUrl(raw) || FALLBACK_THUMB;
 }
 
-function formatCount(n) {
-  const x = Number(n) || 0;
-  return x.toLocaleString('en-US');
-}
-
 function StarRating({ rating }) {
   const r = Math.min(5, Math.max(0, Number(rating) || 0));
   return (
@@ -44,42 +39,6 @@ function StarRating({ rating }) {
       ))}
     </div>
   );
-}
-
-function getCourseBadges(course, popularitySorted) {
-  const badges = [];
-  const created = course.createdAt ? new Date(course.createdAt) : null;
-  if (created && Date.now() - created.getTime() < 45 * 86400000) {
-    badges.push({
-      key: 'hot',
-      label: 'Hot & new',
-      className: 'bg-rose-50 text-rose-800 ring-1 ring-rose-200/80'
-    });
-  }
-  const pos = popularitySorted.findIndex((c) => String(c._id) === String(course._id));
-  const students = Number(course.totalStudents) || 0;
-  if (pos >= 0 && pos < 3 && popularitySorted.length >= 2) {
-    badges.push({
-      key: 'bestseller',
-      label: 'Bestseller',
-      className: 'bg-cyan-50 text-cyan-900 ring-1 ring-cyan-200/80'
-    });
-  } else if (students >= 25) {
-    badges.push({
-      key: 'bestseller',
-      label: 'Bestseller',
-      className: 'bg-cyan-50 text-cyan-900 ring-1 ring-cyan-200/80'
-    });
-  }
-  if (course.certificateEnabled && badges.length < 2) {
-    badges.push({
-      key: 'premium',
-      label: 'Premium',
-      className: 'bg-purple-50 text-purple-900 ring-1 ring-purple-200/80',
-      icon: 'shield'
-    });
-  }
-  return badges.slice(0, 2);
 }
 
 function sortCourses(list, tab) {
@@ -101,7 +60,30 @@ function sortCourses(list, tab) {
   return copy;
 }
 
+function subscriptionFromPrice(subscriptionPricing) {
+  if (!subscriptionPricing || typeof subscriptionPricing !== 'object') return null;
+  const month1 = Number(subscriptionPricing.month1);
+  if (Number.isFinite(month1) && month1 > 0) return month1;
+  const month3 = Number(subscriptionPricing.month3 ?? subscriptionPricing.month2);
+  if (Number.isFinite(month3) && month3 > 0) return month3;
+  const year1 = Number(subscriptionPricing.year1);
+  if (Number.isFinite(year1) && year1 > 0) return year1;
+  return null;
+}
+
 function PriceLine({ course }) {
+  const fromSub = subscriptionFromPrice(course.subscriptionPricing);
+  if (fromSub != null) {
+    return (
+      <span className="flex flex-wrap items-baseline gap-1.5">
+        <span className="text-base sm:text-lg font-extrabold text-gray-900">
+          From GH₵{fromSub.toFixed(2)}
+        </span>
+        <span className="text-xs font-semibold text-gray-500">/mo</span>
+      </span>
+    );
+  }
+
   const free = Number(course.price) === 0;
   const current = Number(course.price);
   const compare = course.discountPrice != null ? Number(course.discountPrice) : null;
@@ -127,12 +109,6 @@ const MainSchool = () => {
   const [courseTab, setCourseTab] = useState('popular');
   const carouselRef = useRef(null);
   const [scrollState, setScrollState] = useState({ left: false, right: true });
-
-  const popularitySorted = useMemo(() => {
-    const copy = [...allCourses];
-    copy.sort((a, b) => (Number(b.totalStudents) || 0) - (Number(a.totalStudents) || 0));
-    return copy;
-  }, [allCourses]);
 
   const displayedCourses = useMemo(
     () => sortCourses(allCourses, courseTab).slice(0, 24),
@@ -224,70 +200,31 @@ const MainSchool = () => {
         <div className="pointer-events-none absolute -left-32 -bottom-32 h-96 w-96 rounded-full bg-sky-400/15 blur-3xl" aria-hidden />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-16 sm:px-6 sm:py-20 md:py-24">
-          <div className="grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:items-center lg:gap-10">
-            <div className="min-w-0 lg:col-span-7">
-              <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/90">
-                QuickX Learning Center
-              </div>
-              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
-                Learn practical skills with clear outcomes.
-              </h1>
-              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-blue-100/90 sm:text-base md:text-lg">
-                Browse structured courses, follow guided paths, and track progress without the noise. Built for learners who
-                want clarity, consistency, and real results.
-              </p>
-
-              <div className="mt-7 flex flex-wrap items-center gap-3">
-                <a
-                  href="#courses"
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-blue-950 transition hover:bg-blue-50"
-                >
-                  View courses
-                </a>
-                <a
-                  href="#courses"
-                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
-                >
-                  Explore now
-                </a>
-              </div>
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-blue-100/90">
+              QuickX Learning Center
             </div>
+            <h1 className="mt-5 text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl">
+              Learn practical skills with clear outcomes.
+            </h1>
+            <p className="mt-4 text-sm leading-relaxed text-blue-100/90 sm:text-base md:text-lg">
+              Browse structured courses, follow guided paths, and track progress without the noise. Built for learners who
+              want clarity, consistency, and real results.
+            </p>
 
-            {/* Right side — clean product preview (no illustration image) */}
-            <div className="min-w-0 lg:col-span-5">
-              <div className="relative mx-auto w-full max-w-md">
-                <div className="rounded-3xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-100/80">Course preview</p>
-                    <span className="rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-semibold text-emerald-200 ring-1 ring-emerald-400/20">
-                      Live
-                    </span>
-                  </div>
-
-                  <div className="mt-4 space-y-3">
-                    {[
-                      { title: 'Forex fundamentals', meta: 'Beginner • 12 lessons' },
-                      { title: 'Crypto essentials', meta: 'Intermediate • 9 lessons' },
-                      { title: 'Web dev starter', meta: 'Beginner • 14 lessons' },
-                    ].map((c) => (
-                      <div
-                        key={c.title}
-                        className="flex items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/10 px-4 py-3"
-                      >
-                        <div className="min-w-0">
-                          <p className="truncate text-sm font-semibold text-white">{c.title}</p>
-                          <p className="mt-0.5 truncate text-xs text-blue-100/70">{c.meta}</p>
-                        </div>
-                        <div className="h-2 w-20 overflow-hidden rounded-full bg-white/10">
-                          <div className="h-full w-2/3 rounded-full bg-white/70" />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="pointer-events-none absolute -bottom-8 -right-10 h-40 w-40 rounded-full bg-white/10 blur-3xl" aria-hidden />
-              </div>
+            <div className="mt-7 flex flex-wrap items-center gap-3">
+              <a
+                href="#courses"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-white px-6 py-2.5 text-sm font-semibold text-blue-950 transition hover:bg-blue-50"
+              >
+                View courses
+              </a>
+              <a
+                href="#courses"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/20 bg-transparent px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-white/10"
+              >
+                Explore now
+              </a>
             </div>
           </div>
         </div>
@@ -374,8 +311,6 @@ const MainSchool = () => {
                   const courseClickHref = instructorPathId ? `/instructors/${instructorPathId}` : `/courses/${c._id}`;
                   const rating = Number(c.averageRating) || 0;
                   const showRating = rating > 0;
-                  const students = Number(c.totalStudents) || 0;
-                  const badges = getCourseBadges(c, popularitySorted);
 
                   return (
                     <article
@@ -417,41 +352,16 @@ const MainSchool = () => {
                           )}
                         </p>
 
-                        <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
-                          {showRating ? (
-                            <>
-                              <span className="font-bold text-amber-700">{rating.toFixed(1)}</span>
-                              <StarRating rating={rating} />
-                              <span className="text-gray-500" title="Enrolled learners">
-                                ({formatCount(students)})
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-gray-600">{formatCount(students)} learners</span>
-                          )}
-                        </div>
+                        {showRating ? (
+                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
+                            <span className="font-bold text-amber-700">{rating.toFixed(1)}</span>
+                            <StarRating rating={rating} />
+                          </div>
+                        ) : null}
 
                         <div className="mt-2.5">
                           <PriceLine course={c} />
                         </div>
-
-                        {badges.length > 0 && (
-                          <div className="mt-3 flex flex-wrap gap-1.5">
-                            {badges.map((b) => (
-                              <span
-                                key={b.key}
-                                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] sm:text-xs font-bold uppercase tracking-wide ${b.className}`}
-                              >
-                                {b.icon === 'shield' && (
-                                  <svg className="h-3 w-3 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                                    <path fillRule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                  </svg>
-                                )}
-                                {b.label}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     </article>
                   );

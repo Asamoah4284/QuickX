@@ -21,7 +21,8 @@ const payoutDetailsSchema = new mongoose.Schema({
 
 const subscriptionPricingSchema = new mongoose.Schema({
     month1: { type: Number, default: 49, min: 0 },
-    month2: { type: Number, default: 89, min: 0 },
+    month2: { type: Number, default: 89, min: 0 }, // legacy 2-month
+    month3: { type: Number, default: 129, min: 0 },
     year1: { type: Number, default: 399, min: 0 }
 }, { _id: false });
 

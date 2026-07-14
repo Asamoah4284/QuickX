@@ -10,7 +10,7 @@ const User = require('../models/User');
 const Program = require('../models/Program');
 const { body, validationResult } = require('express-validator');
 const { createEnrollmentFromPayment } = require('../services/programEnrollmentService');
-const { getCreatorSubscriptionPlanPrice } = require('../constants/creatorSubscriptionPlans');
+const { getExpectedCreatorSubscriptionPrice } = require('../constants/creatorSubscriptionPlans');
 const {
     validateOfferPaymentAmount,
     validateBookCartPayment,
@@ -220,7 +220,7 @@ router.post(
                 return res.status(400).json({ message: 'This user is not a creator' });
             }
 
-            const expectedPrice = getCreatorSubscriptionPlanPrice(planId);
+            const expectedPrice = await getExpectedCreatorSubscriptionPrice(instructor._id, planId);
             if (expectedPrice == null) {
                 return res.status(400).json({ message: 'Unknown plan' });
             }

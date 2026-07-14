@@ -92,11 +92,9 @@ export default function Community() {
                 <p className="text-xs text-slate-500">
                   {c.isTutor
                     ? 'Your tutor community'
-                    : c.accessType === 'course'
-                      ? 'Access via enrolled course'
-                      : c.endsAt
-                        ? `Subscriber until ${new Date(c.endsAt).toLocaleDateString()}`
-                        : 'Subscriber access'}
+                    : c.endsAt
+                      ? `Subscriber until ${new Date(c.endsAt).toLocaleDateString()}`
+                      : 'Subscriber access'}
                 </p>
               </div>
             </Link>
@@ -106,11 +104,7 @@ export default function Community() {
 
       {!loading && !communities.length ? (
         <div className="mt-8 rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-8 text-center text-sm text-slate-600">
-          No communities yet. Browse instructors, subscribe, then return here — or open{' '}
-          <Link to="/courses" className="font-semibold text-blue-600 underline">
-            courses
-          </Link>{' '}
-          to find a tutor.
+          No communities yet. Subscribe to a tutor from their profile, then return here.
         </div>
       ) : null}
     </div>

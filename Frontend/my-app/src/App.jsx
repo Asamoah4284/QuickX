@@ -307,10 +307,7 @@ const router = createBrowserRouter([
       }
     ]
   }
-], {
-  // This ensures the page starts from the top when navigating
-  scrollBehavior: "auto"
-});
+], {});
 
 
 

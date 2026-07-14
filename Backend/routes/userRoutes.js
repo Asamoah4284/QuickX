@@ -58,8 +58,8 @@ function collectPublicPreviewLessons(courseDocs) {
                         courseThumbnail: c.thumbnail || '',
                         coursePromoVideo: c.promoVideo || '',
                         lessonTitle: String(les.title || 'Lesson').trim(),
-                        /** Public preview clip — same lesson field used on course page */
-                        previewVideoUrl: String(les.videoUrl || '').trim(),
+                        /** Public preview clip — prefer lesson video, then filePath */
+                        previewVideoUrl: String(les.videoUrl || les.filePath || '').trim(),
                         category: c.category || '',
                         courseType: c.courseType,
                         tags: Array.isArray(c.tags) ? c.tags : [],
@@ -158,7 +158,7 @@ const creatorProfileValidation = [
     body('subscriptionPricing').optional().custom((value) => {
         if (value == null || value === '') return true;
         if (typeof value !== 'object') return false;
-        const keys = ['month1', 'month2', 'year1'];
+        const keys = ['month1', 'month2', 'month3', 'year1'];
         for (const k of keys) {
             if (value[k] === undefined || value[k] === null || value[k] === '') continue;
             const n = Number(value[k]);
@@ -247,6 +247,12 @@ function sanitizeCreatorDraft(body = {}) {
         subscriptionPricing: {
             month1: clampPrice(pricing.month1, 49),
             month2: clampPrice(pricing.month2, 89),
+            month3: clampPrice(
+                pricing.month3 !== undefined && pricing.month3 !== null && pricing.month3 !== ''
+                    ? pricing.month3
+                    : pricing.month2,
+                129
+            ),
             year1: clampPrice(pricing.year1, 399)
         }
     };
@@ -583,6 +589,42 @@ router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) 
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({ errors: errors.array() });
+        }
+
+        const bodyKeys = Object.keys(req.body || {});
+        const pricingOnly =
+            bodyKeys.length > 0 &&
+            bodyKeys.every((key) => key === 'subscriptionPricing');
+
+        if (pricingOnly) {
+            const pricing = req.body.subscriptionPricing || {};
+            const tutorProfile = await TutorProfile.findOneAndUpdate(
+                { userId: req.user._id },
+                {
+                    $set: {
+                        userId: req.user._id,
+                        subscriptionPricing: {
+                            month1: clampPrice(pricing.month1, 49),
+                            month2: clampPrice(pricing.month2, 89),
+                            month3: clampPrice(
+                                pricing.month3 !== undefined &&
+                                    pricing.month3 !== null &&
+                                    pricing.month3 !== ''
+                                    ? pricing.month3
+                                    : pricing.month2,
+                                129
+                            ),
+                            year1: clampPrice(pricing.year1, 399),
+                        },
+                    },
+                },
+                { new: true, upsert: true, setDefaultsOnInsert: true }
+            );
+            const user = await User.findById(req.user._id);
+            return res.json({
+                user: serializeUser(user),
+                tutorProfile,
+            });
         }
 
         const payload = sanitizeCreatorDraft(req.body);

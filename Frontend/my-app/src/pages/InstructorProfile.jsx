@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
@@ -16,7 +16,9 @@ const TYPE_LABEL = {
 
 function buildSubscriptionPlans(subscriptionPricing) {
   const month1 = Number(subscriptionPricing?.month1 ?? 49);
-  const month2 = Number(subscriptionPricing?.month2 ?? 89);
+  const month3 = Number(
+    subscriptionPricing?.month3 ?? subscriptionPricing?.month2 ?? 129
+  );
   const year1 = Number(subscriptionPricing?.year1 ?? 399);
   return [
     {
@@ -25,16 +27,16 @@ function buildSubscriptionPlans(subscriptionPricing) {
       title: '1 month',
       price: Number.isFinite(month1) ? month1 : 49,
       compareAt: null,
-      periodNote: 'Monthly',
+      periodNote: 'Monthly access',
       badge: null,
     },
     {
-      id: '2m',
-      label: '2 mo',
-      title: '2 months',
-      price: Number.isFinite(month2) ? month2 : 89,
+      id: '3m',
+      label: '3 mo',
+      title: '3 months',
+      price: Number.isFinite(month3) ? month3 : 129,
       compareAt: null,
-      periodNote: '2-month bundle',
+      periodNote: 'Quarterly access',
       badge: null,
     },
     {
@@ -43,7 +45,7 @@ function buildSubscriptionPlans(subscriptionPricing) {
       title: '1 year',
       price: Number.isFinite(year1) ? year1 : 399,
       compareAt: null,
-      periodNote: 'Annual',
+      periodNote: 'Annual access',
       badge: 'Best value',
     },
   ];
@@ -177,9 +179,8 @@ const TIKTOK_PROFILE_GRID =
 const PREVIEW_STRIP_BLEED =
   '-mx-4 w-[calc(100%+2rem)] sm:-mx-6 sm:w-[calc(100%+3rem)] lg:-mx-10 lg:w-[calc(100%+5rem)]';
 
-/** Preview tiles: tall phone on small screens; shorter + capped on desktop */
-const PREVIEW_TILE_ASPECT =
-  'aspect-[9/16] lg:aspect-[4/5] xl:aspect-square';
+/** Preview tiles: compact on mobile (was tall 9:16); square on large screens */
+const PREVIEW_TILE_ASPECT = 'aspect-[4/5] sm:aspect-[3/4] lg:aspect-square';
 
 function formatCompact(n) {
   const x = Number(n) || 0;
@@ -211,8 +212,8 @@ function looksLikeVideoAsset(url) {
 }
 
 /**
- * Grid tiles must use a still image only — never the promo trailer URL.
- * Some courses store a video path in `thumbnail` or duplicate `promoVideo`; those would load heavy video in <img>.
+ * Still image for poster/fallback only.
+ * Some courses store a video path in `thumbnail` or duplicate `promoVideo`.
  */
 function courseGridPosterUrl(course) {
   if (!course) return FALLBACK_THUMB;
@@ -231,10 +232,77 @@ function courseGridPosterUrl(course) {
 function resolvePreviewLessonVideoSrc(raw) {
   if (!raw || !String(raw).trim()) return null;
   const v = String(raw).trim();
-  if (v.startsWith('http')) return publicAssetUrl(v) || v;
+  if (v.startsWith('http') || v.startsWith('blob:')) return publicAssetUrl(v) || v;
   const path = v.startsWith('/') ? v : `/${v}`;
   const full = `${API_URL}${path}`;
   return publicAssetUrl(full) || full;
+}
+
+function resolveCourseThumbVideoSrc(course) {
+  if (!course) return null;
+  if (course.promoVideo) return resolvePreviewLessonVideoSrc(course.promoVideo);
+  if (looksLikeVideoAsset(course.thumbnail)) return resolvePreviewLessonVideoSrc(course.thumbnail);
+  return null;
+}
+
+function resolvePreviewTileVideoSrc(preview) {
+  if (!preview) return null;
+  return (
+    resolvePreviewLessonVideoSrc(preview.previewVideoUrl) ||
+    resolvePreviewLessonVideoSrc(preview.coursePromoVideo) ||
+    null
+  );
+}
+
+/** Prefer live video frame — never cover with marketing poster art. */
+function MediaThumb({ videoSrc, posterSrc, className }) {
+  const videoRef = useRef(null);
+
+  useEffect(() => {
+    const el = videoRef.current;
+    if (!el || !videoSrc) return undefined;
+    el.muted = true;
+    const tryPlay = () => {
+      const p = el.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    };
+    tryPlay();
+    el.addEventListener('loadeddata', tryPlay);
+    el.addEventListener('canplay', tryPlay);
+    return () => {
+      el.removeEventListener('loadeddata', tryPlay);
+      el.removeEventListener('canplay', tryPlay);
+    };
+  }, [videoSrc]);
+
+  if (videoSrc) {
+    const srcWithFrame = videoSrc.includes('#') ? videoSrc : `${videoSrc}#t=0.1`;
+    return (
+      <video
+        ref={videoRef}
+        key={videoSrc}
+        src={srcWithFrame}
+        muted
+        playsInline
+        loop
+        autoPlay
+        preload="auto"
+        className={className}
+      />
+    );
+  }
+
+  return (
+    <img
+      src={posterSrc || FALLBACK_THUMB}
+      alt=""
+      className={className}
+      onError={(e) => {
+        e.currentTarget.onerror = null;
+        e.currentTarget.src = FALLBACK_THUMB;
+      }}
+    />
+  );
 }
 
 /** Desktop showcase for a single free-preview lesson — opens video when available, else course page. */
@@ -245,21 +313,17 @@ function SinglePreviewLessonDesktopShowcase({ preview, onOpenPreview }) {
   });
   const views = Number(preview.totalStudents) || 0;
   const typeLabel = TYPE_LABEL[preview.courseType];
-  const videoSrc = resolvePreviewLessonVideoSrc(preview.previewVideoUrl);
+  const videoSrc = resolvePreviewTileVideoSrc(preview);
   const showcaseClass =
     'group relative hidden overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-200/80 transition hover:ring-blue-300/50 lg:grid lg:min-h-[220px] lg:grid-cols-[1.15fr_1fr] lg:gap-0 lg:shadow-lg lg:shadow-zinc-900/5';
 
   const inner = (
     <>
       <div className="relative aspect-[16/10] max-h-[280px] overflow-hidden lg:aspect-auto lg:max-h-none lg:min-h-[220px]">
-        <img
-          src={thumb}
-          alt=""
+        <MediaThumb
+          videoSrc={videoSrc}
+          posterSrc={thumb}
           className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
-          onError={(e) => {
-            e.currentTarget.onerror = null;
-            e.currentTarget.src = FALLBACK_THUMB;
-          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-black/40" />
         <span className="absolute left-3 top-3 rounded-md bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
@@ -385,25 +449,21 @@ function PreviewLessonTile({ preview, onOpenPreview }) {
   });
   const views = Number(preview.totalStudents) || 0;
   const caption = (preview.lessonTitle || 'Lesson').trim();
-  const videoSrc = resolvePreviewLessonVideoSrc(preview.previewVideoUrl);
+  const videoSrc = resolvePreviewTileVideoSrc(preview);
   const tileClass = `group relative block w-full min-w-0 overflow-hidden bg-zinc-900 ${PREVIEW_TILE_ASPECT}`;
 
   const tileBody = (
     <>
-      <img
-        src={thumb}
-        alt=""
-        className="h-full w-full object-cover transition duration-300 group-active:scale-[0.98] sm:group-hover:scale-[1.03]"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = FALLBACK_THUMB;
-        }}
+      <MediaThumb
+        videoSrc={videoSrc}
+        posterSrc={thumb}
+        className="pointer-events-none h-full w-full object-cover transition duration-300 group-active:scale-[0.98] sm:group-hover:scale-[1.03]"
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65" />
       <span className="absolute left-1 top-1 z-10 rounded-[3px] bg-blue-600 px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm">
         Preview
       </span>
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-1.5 pb-1 pt-10">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-1.5 pb-1 pt-8">
         <p className="mb-0.5 line-clamp-1 text-left text-[10px] font-medium leading-tight text-white/80 sm:text-[11px]">
           {preview.courseTitle}
         </p>
@@ -454,9 +514,10 @@ function PreviewLessonTile({ preview, onOpenPreview }) {
   );
 }
 
-/** Single cell — TikTok profile grid: 9:16, pinned tag, caption, play + views bottom-left */
+/** Single cell — compact grid tile with video thumb when available */
 function TikTokVideoTile({ course, pinned }) {
   const thumb = courseGridPosterUrl(course);
+  const videoSrc = resolveCourseThumbVideoSrc(course);
   const views = Number(course.totalStudents) || 0;
   const caption = (course.title || 'Course').trim();
 
@@ -465,14 +526,10 @@ function TikTokVideoTile({ course, pinned }) {
       to={`/courses/${course._id}`}
       className={`group relative block w-full min-w-0 overflow-hidden bg-zinc-900 ${PREVIEW_TILE_ASPECT}`}
     >
-      <img
-        src={thumb}
-        alt=""
+      <MediaThumb
+        videoSrc={videoSrc}
+        posterSrc={thumb}
         className="h-full w-full object-cover transition duration-300 group-active:scale-[0.98] sm:group-hover:scale-[1.03]"
-        onError={(e) => {
-          e.currentTarget.onerror = null;
-          e.currentTarget.src = FALLBACK_THUMB;
-        }}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65" />
 
@@ -482,7 +539,7 @@ function TikTokVideoTile({ course, pinned }) {
         </span>
       ) : null}
 
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-1.5 pb-1 pt-10">
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-1.5 pb-1 pt-8">
         <p className="mb-1 line-clamp-2 text-left text-[11px] font-extrabold leading-snug tracking-tight text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] sm:text-xs">
           {caption}
         </p>
@@ -541,7 +598,6 @@ export default function InstructorProfile() {
   const [data, setData] = useState(null);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState('');
   const [subscriptionDrawerOpen, setSubscriptionDrawerOpen] = useState(false);
   const [selectedSubscriptionPlanId, setSelectedSubscriptionPlanId] = useState('1m');
   const [communityAccess, setCommunityAccess] = useState({ subscribed: false, isTutor: false });
@@ -603,12 +659,6 @@ export default function InstructorProfile() {
       cancelled = true;
     };
   }, [userId]);
-
-  useEffect(() => {
-    if (!toast) return undefined;
-    const t = setTimeout(() => setToast(''), 2200);
-    return () => clearTimeout(t);
-  }, [toast]);
 
   useEffect(() => {
     if (!subscriptionDrawerOpen) return undefined;
@@ -820,28 +870,6 @@ export default function InstructorProfile() {
     );
   }, [usePreviewLessonGrid, filteredPreviewLessons, filteredCourses, openProfileVideoPreview]);
 
-  const handleShare = useCallback(async () => {
-    const url = window.location.href;
-    try {
-      if (navigator.share) {
-        await navigator.share({
-          title: data?.user?.fullName || 'Instructor',
-          url,
-        });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setToast('Link copied');
-      }
-    } catch {
-      try {
-        await navigator.clipboard.writeText(url);
-        setToast('Link copied');
-      } catch {
-        /* ignore */
-      }
-    }
-  }, [data?.user?.fullName]);
-
   const avatarSrc = useMemo(() => {
     if (!data?.user) return null;
     const a = data.user.avatar || data.user.profilePicture;
@@ -1000,7 +1028,7 @@ export default function InstructorProfile() {
   );
 
   const librarySection = (
-    <div className="px-0 pt-0 pb-0 sm:py-4">
+    <div className="px-0 pt-0 pb-0">
       {/* Same horizontal strip as preview grid so “Videos” lines up with first tile (esp. desktop) */}
       <div className={PREVIEW_STRIP_BLEED}>
         {/* TikTok-style content tab: videos active */}
@@ -1026,7 +1054,7 @@ export default function InstructorProfile() {
 
         <div className="mt-2 sm:mt-3">
           {videoGridEmpty ? (
-            <div className="py-16 text-center">
+            <div className="py-10 text-center">
               <p className="text-sm text-zinc-500">Nothing here yet.</p>
               <Link to="/courses" className="mt-3 inline-block text-sm font-semibold text-blue-600 hover:underline">
                 Explore all courses
@@ -1041,63 +1069,9 @@ export default function InstructorProfile() {
   );
 
   return (
-    <div className="bg-white text-zinc-900">
-      {toast ? (
-        <div className="fixed bottom-24 left-1/2 z-50 -translate-x-1/2 rounded-full bg-zinc-900 px-5 py-2.5 text-sm font-medium text-white shadow-2xl">
-          {toast}
-        </div>
-      ) : null}
-
-      <header className="sticky top-0 z-40 border-b border-zinc-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-10">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="flex h-11 w-11 items-center justify-center rounded-2xl text-zinc-700 transition hover:bg-zinc-100"
-            aria-label="Go back"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <div className="text-center">
-            <span className="text-[10px] font-bold uppercase tracking-[0.35em] text-blue-600">QuickX</span>
-            <p className="text-sm font-semibold text-zinc-900">Creator</p>
-          </div>
-          <div className="flex gap-1">
-            <button
-              type="button"
-              className="flex h-11 w-11 items-center justify-center rounded-2xl text-zinc-600 transition hover:bg-zinc-100"
-              aria-label="Notifications"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
-              </svg>
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="flex h-11 w-11 items-center justify-center rounded-2xl text-zinc-600 transition hover:bg-zinc-100"
-              aria-label="Share profile"
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                />
-              </svg>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-7xl px-4 pb-0 pt-2 sm:px-6 sm:pb-24 sm:pt-6 lg:px-10 lg:pb-16 lg:pt-10">
-        <section className="px-0 pt-2 pb-0 sm:py-6 lg:py-8">
+    <div className="bg-white pt-20 text-zinc-900 sm:pt-24">
+      <main className="mx-auto max-w-7xl px-4 pb-4 pt-2 sm:px-6 sm:pt-4 lg:px-10 lg:pt-6">
+        <section className="px-0 pt-2 pb-0 sm:pt-4 sm:pb-0 lg:pt-6">
           <div className="flex flex-col gap-4 sm:gap-7 lg:flex-row lg:items-start lg:justify-between">
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-6 lg:gap-10">
               <AvatarRing
@@ -1218,7 +1192,7 @@ export default function InstructorProfile() {
           {hasBioContent ? <div className="mt-2 sm:hidden">{bioBlock}</div> : null}
         </section>
 
-        <div className="mt-0 sm:mt-8 lg:mt-10">{librarySection}</div>
+        <div className="mt-0 sm:mt-4 lg:mt-6">{librarySection}</div>
       </main>
 
       
@@ -1400,29 +1374,35 @@ export default function InstructorProfile() {
 
       {profileVideoPreview ? (
         <div
-          className="fixed inset-0 z-[105] flex items-center justify-center bg-black/60 p-4 backdrop-blur-[1px]"
+          className="fixed inset-0 z-[105] flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-preview-video-title"
           onClick={() => setProfileVideoPreview(null)}
         >
           <div
-            className="relative w-full max-w-3xl overflow-hidden rounded-lg bg-black shadow-2xl ring-1 ring-white/10"
+            className="relative w-full max-w-3xl overflow-hidden rounded-t-2xl bg-zinc-950 shadow-2xl ring-1 ring-white/10 sm:rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-3 bg-white px-4 py-3">
+            {/* Compact bar — title overlaid on video on mobile */}
+            <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 bg-gradient-to-b from-black/70 to-transparent px-3 pb-8 pt-3 sm:static sm:bg-white sm:bg-none sm:px-4 sm:pb-3 sm:pt-3">
               <div className="min-w-0">
-                <p id="profile-preview-video-title" className="text-sm font-semibold text-zinc-900">
+                <p
+                  id="profile-preview-video-title"
+                  className="truncate text-sm font-semibold text-white sm:text-zinc-900"
+                >
                   {profileVideoPreview.title}
                 </p>
                 {profileVideoPreview.courseTitle ? (
-                  <p className="mt-0.5 text-xs text-zinc-500">{profileVideoPreview.courseTitle}</p>
+                  <p className="mt-0.5 truncate text-[11px] text-white/75 sm:text-xs sm:text-zinc-500">
+                    {profileVideoPreview.courseTitle}
+                  </p>
                 ) : null}
               </div>
               <button
                 type="button"
                 onClick={() => setProfileVideoPreview(null)}
-                className="shrink-0 rounded p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                className="shrink-0 rounded-full bg-white/15 p-1.5 text-white backdrop-blur-sm hover:bg-white/25 sm:rounded sm:bg-transparent sm:p-1 sm:text-zinc-500 sm:hover:bg-zinc-100 sm:hover:text-zinc-800"
                 aria-label="Close preview"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1430,17 +1410,21 @@ export default function InstructorProfile() {
                 </svg>
               </button>
             </div>
+
             <video
               key={profileVideoPreview.src}
               src={profileVideoPreview.src}
               controls
               playsInline
-              className="aspect-video w-full bg-black object-contain"
+              autoPlay
+              muted
+              className="mx-auto max-h-[42vh] w-full bg-black object-contain sm:max-h-[min(70vh,28rem)] sm:aspect-video"
             />
-            <div className="border-t border-zinc-100 bg-white px-4 py-3 text-center">
+
+            <div className="border-t border-white/10 bg-zinc-950 px-4 py-2.5 text-center sm:border-zinc-100 sm:bg-white sm:py-3">
               <button
                 type="button"
-                className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline"
+                className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline sm:text-blue-600 sm:hover:text-blue-700"
                 onClick={() => {
                   setProfileVideoPreview(null);
                   setSubscriptionDrawerOpen(true);

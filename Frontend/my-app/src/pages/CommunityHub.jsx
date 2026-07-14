@@ -300,11 +300,11 @@ export default function CommunityHub() {
 
   if (!access.subscribed && !access.isTutor) {
     return (
-      <div className="mx-auto max-w-lg px-4 py-16 text-center">
+      <div className="mx-auto max-w-lg px-4 pb-16 pt-28 text-center sm:pt-32">
         <h1 className="text-2xl font-bold text-slate-900">Community locked</h1>
         <p className="mt-3 text-slate-600">
-          Subscribe to {stats?.tutor?.fullName || 'this tutor'}, or enroll in one of their courses,
-          to join discussions, Q&amp;A, live sessions, and shared resources.
+          Subscribe to {stats?.tutor?.fullName || 'this tutor'} to unlock discussions, Q&amp;A, live
+          sessions, and shared resources.
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">
           <Link

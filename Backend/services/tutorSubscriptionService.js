@@ -109,150 +109,21 @@ async function hasActiveSubscription(studentId, tutorId) {
   return Boolean(sub);
 }
 
-function courseTutorFilter(tutorId) {
-  return {
-    $or: [{ createdBy: tutorId }, { instructorModel: 'User', instructor: tutorId }],
-  };
-}
-
-/** Course ids the student owns via enrollment, purchase record, or profile. */
-async function getStudentCourseIds(studentId) {
-  const Enrollment = require('../models/Enrollment');
-  const Purchase = require('../models/Purchase');
-  const User = require('../models/User');
-  const ids = new Set();
-
-  const enrollments = await Enrollment.find({ studentId }).select('courseId').lean();
-  enrollments.forEach((row) => {
-    if (row.courseId) ids.add(String(row.courseId));
-  });
-
-  const purchases = await Purchase.find({
-    userId: studentId,
-    status: 'completed',
-    courseId: { $exists: true, $ne: null },
-  })
-    .select('courseId')
-    .lean();
-  purchases.forEach((row) => {
-    if (row.courseId) ids.add(String(row.courseId));
-  });
-
-  const user = await User.findById(studentId).select('purchasedCourses').lean();
-  (user?.purchasedCourses || []).forEach((courseId) => {
-    if (courseId) ids.add(String(courseId));
-  });
-
-  return [...ids];
-}
-
-/** True if the student is enrolled in any course owned by this tutor. */
-async function hasCourseEnrollmentWithTutor(studentId, tutorId) {
-  if (!studentId || !tutorId) return false;
-  const Course = require('../models/Course');
-
-  const courseIds = await getStudentCourseIds(studentId);
-  if (!courseIds.length) return false;
-
-  const match = await Course.findOne({
-    _id: { $in: courseIds },
-    ...courseTutorFilter(tutorId),
-  })
-    .select('_id')
-    .lean();
-
-  return Boolean(match);
-}
-
-/** Subscription, course enrollment, or tutor viewing their own community. */
-async function hasCommunityAccess(studentId, tutorId) {
-  if (!studentId || !tutorId) return false;
-  if (String(studentId) === String(tutorId)) return true;
-  if (await hasActiveSubscription(studentId, tutorId)) return true;
-  return hasCourseEnrollmentWithTutor(studentId, tutorId);
-}
-
-/** Tutor ids the student can access via subscription or course enrollment. */
-async function listAccessibleTutorIdsForStudent(studentId) {
-  const Course = require('../models/Course');
-  const User = require('../models/User');
+/** Active paid tutor subscriptions for a student (community access list). */
+async function listActiveSubscriptionsForStudent(studentId) {
   const now = new Date();
-  const tutorIds = new Set();
-
   await TutorSubscription.updateMany(
     { studentId, status: 'active', endsAt: { $lte: now } },
     { $set: { status: 'expired' } }
   );
 
-  const subs = await TutorSubscription.find({
+  return TutorSubscription.find({
     studentId,
     status: 'active',
     endsAt: { $gt: now },
   })
-    .populate('tutorId', 'fullName profilePicture role')
-    .sort({ endsAt: -1 })
-    .lean();
-
-  for (const sub of subs) {
-    if (sub.tutorId?._id) tutorIds.add(String(sub.tutorId._id));
-  }
-
-  const courseIds = await getStudentCourseIds(studentId);
-  if (courseIds.length) {
-    const courses = await Course.find({ _id: { $in: courseIds } })
-      .select('createdBy instructor instructorModel')
-      .lean();
-
-    for (const course of courses) {
-      const tid = course.createdBy || (course.instructorModel === 'User' ? course.instructor : null);
-      if (tid) tutorIds.add(String(tid));
-    }
-  }
-
-  const tutors = await User.find({
-    _id: { $in: [...tutorIds] },
-    role: 'tutor',
-  })
-    .select('fullName profilePicture')
-    .lean();
-
-  const tutorMap = new Map(tutors.map((t) => [String(t._id), t]));
-
-  const communities = [];
-  const seen = new Set();
-
-  for (const sub of subs) {
-    const tid = String(sub.tutorId?._id || '');
-    if (!tid || seen.has(tid) || !tutorMap.has(tid)) continue;
-    seen.add(tid);
-    communities.push({
-      tutorId: tid,
-      accessType: 'subscription',
-      endsAt: sub.endsAt,
-      tutor: {
-        id: tid,
-        fullName: tutorMap.get(tid).fullName,
-        profilePicture: tutorMap.get(tid).profilePicture,
-      },
-    });
-  }
-
-  for (const tid of tutorIds) {
-    if (seen.has(tid) || !tutorMap.has(tid)) continue;
-    seen.add(tid);
-    communities.push({
-      tutorId: tid,
-      accessType: 'course',
-      endsAt: null,
-      tutor: {
-        id: tid,
-        fullName: tutorMap.get(tid).fullName,
-        profilePicture: tutorMap.get(tid).profilePicture,
-      },
-    });
-  }
-
-  return communities;
+    .populate('tutorId', 'fullName profilePicture')
+    .sort({ endsAt: -1 });
 }
 
 async function listSubscribersForTutor(tutorId) {
@@ -277,9 +148,7 @@ module.exports = {
   createOrExtendFromPayment,
   getActiveSubscription,
   hasActiveSubscription,
-  hasCourseEnrollmentWithTutor,
-  hasCommunityAccess,
-  listAccessibleTutorIdsForStudent,
+  listActiveSubscriptionsForStudent,
   listSubscribersForTutor,
   expireIfNeeded,
 };

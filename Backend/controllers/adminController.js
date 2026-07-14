@@ -607,6 +607,47 @@ exports.reviewTutorApplication = async (req, res) => {
     }
 };
 
+exports.updateTutorSubscriptionPricing = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const pricing = req.body?.subscriptionPricing || {};
+
+        const profile = await TutorProfile.findById(id);
+        if (!profile) {
+            return res.status(404).json({ message: 'Tutor profile not found' });
+        }
+
+        const clamp = (value, fallback) => {
+            if (value === undefined || value === null || value === '') return fallback;
+            const n = Number(value);
+            if (!Number.isFinite(n)) return fallback;
+            return Math.max(0, Math.min(1_000_000, Math.round(n)));
+        };
+
+        const current = profile.subscriptionPricing || {};
+        profile.subscriptionPricing = {
+            month1: clamp(pricing.month1, current.month1 ?? 49),
+            month2: clamp(pricing.month2, current.month2 ?? 89),
+            month3: clamp(
+                pricing.month3 !== undefined && pricing.month3 !== null && pricing.month3 !== ''
+                    ? pricing.month3
+                    : pricing.month2,
+                current.month3 ?? current.month2 ?? 129
+            ),
+            year1: clamp(pricing.year1, current.year1 ?? 399),
+        };
+
+        await profile.save();
+        res.json({
+            message: 'Subscription pricing updated',
+            subscriptionPricing: profile.subscriptionPricing,
+        });
+    } catch (error) {
+        console.error('updateTutorSubscriptionPricing:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
 exports.getCourseReviewQueue = async (req, res) => {
     try {
         const courses = await Course.find({

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import axios from 'axios';
 import { FiBook, FiMenu, FiX } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
 
@@ -7,9 +8,12 @@ const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState(null);
+  const [showCommunityLink, setShowCommunityLink] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { pathname } = useLocation();
+
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   /** Navbar is scroll-only on marketing pages, always visible in app flows. */
   const alwaysVisible =
@@ -30,6 +34,7 @@ const Navbar = () => {
     user?.role === 'tutor' && user?.creatorStatus === 'approved'
       ? 'Creator studio'
       : 'Become a creator';
+  const isApprovedTutor = user?.role === 'tutor' && user?.creatorStatus === 'approved';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,6 +72,7 @@ const Navbar = () => {
           console.error('Error parsing user data:', error);
           setIsLoggedIn(false);
           setUser(null);
+          setShowCommunityLink(false);
           // Clear invalid data
           localStorage.removeItem('user');
         }
@@ -74,6 +80,7 @@ const Navbar = () => {
         console.log('User not authenticated');
         setIsLoggedIn(false);
         setUser(null);
+        setShowCommunityLink(false);
       }
     };
     
@@ -102,6 +109,37 @@ const Navbar = () => {
   }, []);
 
   useEffect(() => {
+    const token = localStorage.getItem('authToken');
+    if (!isLoggedIn || !token) {
+      setShowCommunityLink(false);
+      return undefined;
+    }
+
+    if (isApprovedTutor) {
+      setShowCommunityLink(true);
+      return undefined;
+    }
+
+    let cancelled = false;
+    axios
+      .get(`${API_URL}/api/me/subscriptions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .then(({ data }) => {
+        if (!cancelled) {
+          setShowCommunityLink(Boolean(data.subscriptions?.length));
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setShowCommunityLink(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [API_URL, isApprovedTutor, isLoggedIn, pathname]);
+
+  useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [pathname]);
 
@@ -110,6 +148,7 @@ const Navbar = () => {
     localStorage.removeItem('user');
     setIsLoggedIn(false);
     setUser(null);
+    setShowCommunityLink(false);
     
     // Dispatch custom event to ensure all components update
     window.dispatchEvent(new Event('auth-change'));
@@ -125,7 +164,19 @@ const Navbar = () => {
       }`}
     >
       <div className="md:max-w-6xl mx-auto md:py-2 md:px-4 sm:px-6 lg:px-8">
-        <div className="flex h-16 w-full items-center justify-end px-4 sm:px-0">
+        <div className="flex h-16 w-full items-center justify-between gap-3 px-4 sm:px-0">
+          <Link
+            to="/"
+            className="flex shrink-0 items-center rounded-lg bg-white/95 px-1.5 py-1 shadow-sm ring-1 ring-black/5 transition hover:bg-white"
+            aria-label="QuickX Learn home"
+          >
+            <img
+              src="/logo.jpg"
+              alt="QuickX Learn"
+              className="h-9 w-auto object-contain sm:h-10"
+            />
+          </Link>
+
           {/* Desktop Menu */}
           <div className="hidden md:flex md:items-center md:space-x-2">
             <Link to="/courses" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
@@ -134,9 +185,11 @@ const Navbar = () => {
             <Link to="/store" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Books
             </Link>
-            <Link to="/community" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
-              Community
-            </Link>
+            {showCommunityLink ? (
+              <Link to="/community" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
+                Community
+              </Link>
+            ) : null}
             <Link to="/creator/onboarding" className={`${navSolid ? 'text-white hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
               Creator programs
             </Link>
@@ -147,7 +200,7 @@ const Navbar = () => {
                 <div className="flex items-center space-x-4">
                   <NotificationBell />
                   <Link to="/membership" className={`flex items-center ${navSolid ? 'text-white-200 hover:text-white' : 'text-white hover:text-white-900'} px-3 py-2 text-sm font-medium`}>
-                    <FiBook className="mr-1.5" /> My Courses
+                    <FiBook className="mr-1.5" /> Dashboard
                   </Link>
                   <div className="relative group">
                     <button className="flex items-center space-x-1 bg-blue-50 text-blue-500 hover:bg-blue-100 px-3 py-2 rounded-md text-sm font-medium">
@@ -224,7 +277,9 @@ const Navbar = () => {
           aria-modal="true"
         >
           <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
-            <span className="text-gray-900 font-semibold">Menu</span>
+            <Link to="/" onClick={() => setIsMobileMenuOpen(false)} className="flex items-center">
+              <img src="/logo.jpg" alt="QuickX Learn" className="h-9 w-auto object-contain" />
+            </Link>
             <button
               type="button"
               aria-label="Close menu"
@@ -249,6 +304,14 @@ const Navbar = () => {
             >
               Books
             </Link>
+            {showCommunityLink ? (
+              <Link
+                to="/community"
+                className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
+              >
+                Community
+              </Link>
+            ) : null}
             <Link
               to="/creator/onboarding"
               className="block rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
@@ -263,7 +326,7 @@ const Navbar = () => {
                     to="/membership"
                     className="flex items-center rounded-md px-3 py-2 text-base font-medium text-gray-900 hover:bg-gray-100"
                   >
-                    <FiBook className="mr-2" /> My Courses
+                    <FiBook className="mr-2" /> Dashboard
                   </Link>
                   <Link
                     to={creatorDestination}

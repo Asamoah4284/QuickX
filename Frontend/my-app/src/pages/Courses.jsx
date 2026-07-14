@@ -178,7 +178,13 @@ export default function Courses() {
                       </p>
                       <div className="mt-4 flex items-center justify-between">
                         <span className="font-bold text-slate-900 dark:text-white">
-                          {Number(c.price) === 0 ? 'Free' : `GH₵${c.price}`}
+                          {(() => {
+                            const month1 = Number(c.subscriptionPricing?.month1);
+                            if (Number.isFinite(month1) && month1 > 0) {
+                              return `From GH₵${month1.toFixed(2)}/mo`;
+                            }
+                            return Number(c.price) === 0 ? 'Free' : `GH₵${c.price}`;
+                          })()}
                         </span>
                         <Link
                           to={courseClickHref}

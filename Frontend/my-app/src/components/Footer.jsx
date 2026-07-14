@@ -6,14 +6,14 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
   
   return (
-    <footer className="bg-gradient-to-r from-gray-900 to-gray-800 text-white pt-16 pb-8">
+    <footer className="bg-gradient-to-r from-gray-900 to-gray-800 text-white pt-10 pb-8">
       <div className="max-w-5xl mx-auto px-4 sm:px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Company Info */}
           <div className="space-y-4">
-            <h3 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-300 to-indigo-400">
-              Quick X
-            </h3>
+            <Link to="/" className="inline-flex rounded-lg bg-white px-2 py-1.5">
+              <img src="/logo.jpg" alt="QuickX Learn" className="h-10 w-auto object-contain" />
+            </Link>
             <p className="text-gray-300 mt-4 max-w-xs">
               Transforming ideas into exceptional digital experiences with innovative solutions.
             </p>

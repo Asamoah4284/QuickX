@@ -202,11 +202,41 @@ router.get('/', async (req, res) => {
             .select('-topics.videoUrl')
             .sort(sortSpec)
             .populate('instructor', 'fullName');
-        
-        console.log(`Found ${courses.length} courses matching query`);
-        console.log('Course types returned:', courses.map(c => c.courseType));
-            
-        res.json(courses);
+
+        const courseDocs = courses.map((c) => c.toObject());
+        const tutorIds = [
+            ...new Set(
+                courseDocs
+                    .map((c) => {
+                        const id = resolveCourseTutorId(c);
+                        return id ? String(id) : null;
+                    })
+                    .filter(Boolean)
+            ),
+        ];
+
+        let pricingByTutor = {};
+        if (tutorIds.length) {
+            const profiles = await TutorProfile.find({ userId: { $in: tutorIds } })
+                .select('userId subscriptionPricing')
+                .lean();
+            pricingByTutor = Object.fromEntries(
+                profiles.map((p) => [String(p.userId), p.subscriptionPricing || null])
+            );
+        }
+
+        const withSubscriptionPricing = courseDocs.map((c) => {
+            const tutorId = resolveCourseTutorId(c);
+            return {
+                ...c,
+                subscriptionPricing: tutorId ? pricingByTutor[String(tutorId)] || null : null,
+            };
+        });
+
+        console.log(`Found ${withSubscriptionPricing.length} courses matching query`);
+        console.log('Course types returned:', withSubscriptionPricing.map((c) => c.courseType));
+
+        res.json(withSubscriptionPricing);
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
     }

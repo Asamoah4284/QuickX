@@ -251,10 +251,10 @@ const Hero = () => {
                       </svg>
                     </Link>
                     <Link
-                      to="/school"
+                      to="/store"
                       className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/25 bg-white/5 px-6 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm transition hover:border-white/40 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950 sm:min-w-[200px] sm:px-7 sm:py-3.5 sm:text-sm"
                     >
-                      Learning hub
+                      Explore Books
                     </Link>
                   </div>
 
