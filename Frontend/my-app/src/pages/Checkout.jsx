@@ -7,6 +7,7 @@ import { PaystackButton } from 'react-paystack';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import GuestEbookCheckoutView from '../components/GuestEbookCheckoutView';
+import PaymentSuccessModal from '../components/PaymentSuccessModal';
 import {
   normalizeCart,
   getCartSubtotal,
@@ -15,6 +16,7 @@ import {
   expandCartItemsForPayment,
 } from '../utils/bookCart';
 import { ensureMetaPixel, trackMetaEvent } from '../utils/metaPixel';
+import { clearPendingCheckout, readPendingCheckout } from '../utils/pendingCheckout';
 
 /** Same rules as CoursePublicDetail / store: absolute URL or `${apiUrl}${path}`. */
 function resolveCheckoutItemImageUrl(item, apiUrl) {
@@ -168,6 +170,21 @@ function Checkout() {
             state: location.state.returnTabState || null,
           });
         }
+        clearPendingCheckout();
+        if (!cancelled) setCheckoutLoading(false);
+        return;
+      }
+
+      const pending = readPendingCheckout();
+      if (pending?.item) {
+        setCheckoutItem(pending.item);
+        if (pending.returnPath) {
+          setReturnInfo({
+            path: pending.returnPath || '/membership',
+            state: pending.returnTabState || null,
+          });
+        }
+        clearPendingCheckout();
         if (!cancelled) setCheckoutLoading(false);
         return;
       }
@@ -587,7 +604,9 @@ function Checkout() {
             description: `You're enrolled in ${checkoutItem.title}. You can start creating courses in this track.`,
             ctaLabel: 'Open creator studio',
             navigateTo: '/instructor',
-            navigateState: undefined
+            navigateState: undefined,
+            amount: finalPrice,
+            productLabel: checkoutItem.title,
           });
           setIsProcessing(false);
           return;
@@ -639,11 +658,14 @@ function Checkout() {
         if (subResponse.data.success) {
           const name = checkoutItem.instructorName || 'this creator';
           setPaymentSuccessModal({
-            title: 'Payment successful',
-            description: `Your subscription to ${name} is confirmed.`,
-            ctaLabel: 'Back to profile',
-            navigateTo: `/instructors/${instructorId}`,
-            navigateState: { subscriptionSuccess: true },
+            title: "You're subscribed",
+            description: `Access to ${name}'s courses is ready in your dashboard.`,
+            ctaLabel: 'Go to My Courses',
+            navigateTo: '/membership',
+            navigateState: { activeTab: 'myCourses', subscriptionSuccess: true },
+            amount: finalPrice,
+            meta: checkoutItem.description || checkoutItem.planLabel || 'Subscription',
+            productLabel: `Subscribe to ${name}`,
           });
           setIsProcessing(false);
           return;
@@ -745,7 +767,9 @@ function Checkout() {
               description: `You now have full access to ${checkoutItem.title}.`,
               ctaLabel: 'Start learning',
               navigateTo: `/school/course/${String(itemId)}`,
-              navigateState: { fromPurchase: true, courseId: String(itemId) }
+              navigateState: { fromPurchase: true, courseId: String(itemId) },
+              amount: finalPrice,
+              productLabel: checkoutItem.title,
             });
           } 
           else if (checkoutItem?.type === 'book_cart') {
@@ -775,6 +799,8 @@ function Checkout() {
               ctaLabel: 'View my books',
               navigateTo: '/membership',
               navigateState: membershipBooksState,
+              amount: finalPrice,
+              productLabel: `${items.length} book${items.length === 1 ? '' : 's'}`,
             });
           }
           else if (checkoutItem?.type === 'book_offer') {
@@ -803,6 +829,8 @@ function Checkout() {
               ctaLabel: 'View my books',
               navigateTo: '/membership',
               navigateState: membershipBooksState,
+              amount: finalPrice,
+              productLabel: checkoutItem.title,
             });
           }
           else if (checkoutItem?.type === 'book' && itemId) {
@@ -823,6 +851,8 @@ function Checkout() {
               ctaLabel: 'View my books',
               navigateTo: '/membership',
               navigateState: membershipBooksState,
+              amount: finalPrice,
+              productLabel: checkoutItem.title,
             });
           } else {
             setPaymentSuccessModal({
@@ -830,7 +860,8 @@ function Checkout() {
               description: 'Your purchase is complete.',
               ctaLabel: 'Continue',
               navigateTo: returnInfo.path,
-              navigateState: returnInfo.state
+              navigateState: returnInfo.state,
+              amount: finalPrice,
             });
           }
           setIsProcessing(false);
@@ -1155,41 +1186,42 @@ function Checkout() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pt-6 sm:pt-8">
-      <div className="max-w-5xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-2">
-          <button 
-            onClick={handleBack}
-            className="flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            <FiArrowLeft className="mr-2" />
-            Back to{' '}
-            {checkoutItem.type === 'book'
-              ? 'Library'
-              : checkoutItem.type === 'book_cart'
-                ? 'Store'
+    <div className="min-h-screen bg-[#F4F7FB] pt-6 sm:pt-8">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:py-10">
+        <button
+          type="button"
+          onClick={handleBack}
+          className="mb-6 inline-flex items-center text-sm font-medium text-slate-600 transition hover:text-[#1B5EF5]"
+        >
+          <FiArrowLeft className="mr-2 h-4 w-4" />
+          Back to{' '}
+          {checkoutItem.type === 'book'
+            ? 'Library'
+            : checkoutItem.type === 'book_cart'
+              ? 'Store'
               : checkoutItem.type === 'program'
                 ? 'Creator onboarding'
                 : checkoutItem.type === 'creator_subscription'
                   ? 'Instructor'
                   : 'Courses'}
-          </button>
-          
-         
-          
-          <div className="w-24"></div> {/* Empty div for flex spacing balance */}
+        </button>
+
+        <div className="mb-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#1B5EF5]">Checkout</p>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight text-slate-900 sm:text-3xl">
+            Complete your payment
+          </h1>
+          <p className="mt-1.5 text-sm text-slate-500">Secure checkout · Powered by Paystack</p>
         </div>
-        
-        <div className="bg-white rounded-xl shadow-md overflow-hidden">
-          <div className="grid grid-cols-1 md:grid-cols-3">
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-5 md:gap-6">
             {/* Order Summary */}
-            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-6 md:p-8">
-              <h2 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <FiShoppingBag className="mr-2 text-blue-600" />
-                Order Summary
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:col-span-2 md:p-7">
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                Order summary
               </h2>
               
-              <div className="mb-6">
+              <div className="mb-6 mt-4">
                 {orderSummaryBookLine ? (
                   checkoutItem.type === 'book_cart' && bookCartItems.length > 0 ? (
                     <ul className="space-y-5">
@@ -1288,7 +1320,7 @@ function Checkout() {
                         ) : null}
                       </div>
                     ) : null}
-                    <p className="mt-1 font-bold text-blue-600">
+                    <p className="mt-1 font-bold text-[#1B5EF5]">
                       GH₵{isBookCart ? bookCartSubtotal.toFixed(2) : checkoutItem.price}
                     </p>
                   </div>
@@ -1335,67 +1367,66 @@ function Checkout() {
                 </div>
               ) : null}
               
-              <div className="mt-6 border-t border-gray-200 pt-6">
-                <h3 className="text-lg font-medium text-gray-900">Order Summary</h3>
-                <div className="mt-4 space-y-4">
-                    <div className="flex justify-between">
-                        <p className="text-base text-gray-600">Subtotal</p>
-                        <p className="text-base font-medium text-gray-900">GH₵{checkoutItem?.price?.toFixed(2)}</p>
+              <div className="mt-6 border-t border-slate-100 pt-5">
+                <div className="space-y-3">
+                    <div className="flex justify-between text-sm">
+                        <p className="text-slate-500">Subtotal</p>
+                        <p className="font-medium text-slate-900">GH₵{checkoutItem?.price?.toFixed(2)}</p>
                     </div>
                     {couponApplied && (
-                        <div className="flex justify-between">
-                            <p className="text-base text-gray-600">Discount ({discount}%)</p>
-                            <p className="text-base font-medium text-green-600">
+                        <div className="flex justify-between text-sm">
+                            <p className="text-slate-500">Discount ({discount}%)</p>
+                            <p className="font-medium text-emerald-600">
                                 -GH₵{((checkoutItem?.price * discount) / 100).toFixed(2)}
                             </p>
                         </div>
                     )}
-                    <div className="flex justify-between border-t border-gray-200 pt-4">
-                        <p className="text-base font-medium text-gray-900">Total</p>
-                        <p className="text-base font-medium text-gray-900">GH₵{calculateFinalPrice().toFixed(2)}</p>
+                    <div className="flex justify-between border-t border-slate-100 pt-3">
+                        <p className="text-base font-semibold text-slate-900">Total</p>
+                        <p className="text-base font-semibold text-slate-900">GH₵{calculateFinalPrice().toFixed(2)}</p>
                     </div>
                 </div>
               </div>
               
-              <div className="mt-6 bg-blue-100 rounded-lg p-4 text-sm text-blue-700 flex items-start">
-                <FiLock className="mr-2 mt-0.5 flex-shrink-0" />
-                <p>Your payment information is secured using industry-standard encryption.</p>
+              <div className="mt-5 flex items-start gap-2.5 rounded-xl bg-slate-50 px-3.5 py-3 text-xs leading-relaxed text-slate-600 ring-1 ring-slate-200/80">
+                <FiLock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
+                <p>Payments are encrypted. Your details are never stored on QuickX servers.</p>
               </div>
             </div>
             
             {/* Payment Form */}
-            <div className="p-6 md:p-8 col-span-2">
-              <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <FiCreditCard className="mr-2 text-blue-600" />
-                Payment Information
+            <div className="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm md:col-span-3 md:p-8">
+              <h2 className="text-lg font-semibold tracking-tight text-slate-900">
+                Payment method
               </h2>
+              <p className="mt-1 text-sm text-slate-500">Choose how you want to pay</p>
               
               {/* Payment Method Selection */}
-              <div className="mb-6">
-                <div className="flex space-x-2 bg-gray-100 p-1 rounded-lg">
+              <div className="mb-6 mt-5">
+                <div className="flex gap-2 rounded-xl bg-slate-100 p-1">
                   <button
-                    className={`flex-1 py-2 rounded-md text-sm font-medium flex items-center justify-center transition-colors ${
+                    className={`flex flex-1 items-center justify-center rounded-lg py-2.5 text-sm font-semibold transition ${
                       paymentMethod === 'momo' 
-                        ? 'bg-white text-blue-600 shadow-sm' 
-                        : 'text-gray-600 hover:text-gray-800'
+                        ? 'bg-white text-[#1B5EF5] shadow-sm ring-1 ring-slate-200/80' 
+                        : 'text-slate-500 hover:text-slate-800'
                     }`}
                     onClick={() => togglePaymentMethod('momo')}
                     type="button"
                   >
-                    <FiPhone className="mr-2" />
+                    <FiPhone className="mr-2 h-4 w-4" />
                     Mobile Money
                   </button>
                   <button
-                    className={`flex-1 py-2 rounded-md text-sm font-medium flex items-center justify-center transition-colors ${
+                    className={`flex flex-1 items-center justify-center rounded-lg py-2.5 text-sm font-semibold transition ${
                       paymentMethod === 'card' 
-                        ? 'bg-white text-blue-600 shadow-sm' 
-                        : 'text-gray-600 hover:text-gray-800'
+                        ? 'bg-white text-[#1B5EF5] shadow-sm ring-1 ring-slate-200/80' 
+                        : 'text-slate-500 hover:text-slate-800'
                     }`}
                     onClick={() => togglePaymentMethod('card')}
                     type="button"
                   >
-                    <FiCreditCard className="mr-2" />
-                    Credit Card
+                    <FiCreditCard className="mr-2 h-4 w-4" />
+                    Card
                   </button>
                 </div>
               </div>
@@ -1602,33 +1633,33 @@ function Checkout() {
                        /\S+@\S+\.\S+/.test(formData.email) ? (
                         <PaystackButton
                           {...getPaystackConfig()}
-                          className={`flex-1 px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none flex items-center justify-center ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                          className={`flex flex-1 items-center justify-center rounded-xl bg-[#1B5EF5] px-5 py-3 font-semibold text-white shadow-[0_8px_24px_-10px_rgba(27,94,245,0.65)] transition hover:bg-[#1550d6] focus:outline-none ${isProcessing ? 'cursor-not-allowed opacity-70' : ''}`}
                           disabled={isProcessing}
                         />
                       ) : (
                         <button
                           type="button"
-                          className="flex-1 px-5 py-2 bg-blue-300 text-white rounded-lg font-medium cursor-not-allowed flex items-center justify-center"
+                          className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-slate-300 px-5 py-3 font-semibold text-white"
                           disabled={true}
                         >
-                          Complete Required Fields
+                          Complete required fields
                         </button>
                       )}
                     </>
                   ) : (
                     <button
                       type="submit"
-                      className={`flex-1 px-5 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:outline-none flex items-center justify-center ${isProcessing ? 'opacity-70 cursor-not-allowed' : ''}`}
+                      className={`flex flex-1 items-center justify-center rounded-xl bg-[#1B5EF5] px-5 py-3 font-semibold text-white shadow-[0_8px_24px_-10px_rgba(27,94,245,0.65)] transition hover:bg-[#1550d6] focus:outline-none ${isProcessing ? 'cursor-not-allowed opacity-70' : ''}`}
                       disabled={isProcessing}
                     >
                       {isProcessing ? (
                         <>
-                          <span className="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-white mr-2"></span>
+                          <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white"></span>
                           Processing...
                         </>
                       ) : (
                         <>
-                          Complete Purchase
+                          Complete purchase
                           <FiCheck className="ml-2" />
                         </> 
                       )}
@@ -1639,53 +1670,16 @@ function Checkout() {
             </div>
           </div>
         </div>
-      </div>
 
-      <AnimatePresence mode="wait">
-        {paymentSuccessModal ? (
-          <motion.div
-            key="payment-success-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="payment-success-title"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.22 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
-            onClick={completeSuccessAndNavigate}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 14 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 8 }}
-              transition={{ type: 'spring', damping: 26, stiffness: 340 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl ring-1 ring-black/5"
-            >
-              <div className="bg-gradient-to-br from-emerald-50 via-white to-blue-50 px-6 pb-6 pt-8 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white shadow-lg shadow-emerald-500/25">
-                  <FiCheck className="h-7 w-7 stroke-[3]" aria-hidden />
-                </div>
-                <h2 id="payment-success-title" className="text-xl font-bold tracking-tight text-gray-900">
-                  {paymentSuccessModal.title}
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">{paymentSuccessModal.description}</p>
-              </div>
-              <div className="border-t border-gray-100 bg-gray-50/90 px-6 py-4">
-                <button
-                  type="button"
-                  onClick={completeSuccessAndNavigate}
-                  className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                >
-                  {paymentSuccessModal.ctaLabel}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
-    </div>
+        <AnimatePresence mode="wait">
+          {paymentSuccessModal ? (
+            <PaymentSuccessModal
+              modal={paymentSuccessModal}
+              onContinue={completeSuccessAndNavigate}
+            />
+          ) : null}
+        </AnimatePresence>
+      </div>
   );
 }
 

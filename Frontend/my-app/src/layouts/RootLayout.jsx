@@ -10,6 +10,11 @@ function isStoreBookDetailPath(pathname) {
   return /^\/store\/[^/]+$/.test(pathname);
 }
 
+/** Course player — keep focus on the lesson; hide site footer */
+function isCoursePlayerPath(pathname) {
+  return /^\/school\/course\/[^/]+$/.test(pathname);
+}
+
 function scrollWindowToTop() {
   window.scrollTo(0, 0);
   document.documentElement.scrollTop = 0;
@@ -19,6 +24,7 @@ function scrollWindowToTop() {
 function RootLayout() {
   const { pathname, search, hash } = useLocation();
   const hideNavOnBookDetail = isStoreBookDetailPath(pathname);
+  const hideFooter = isCoursePlayerPath(pathname);
 
   useEffect(() => {
     if ('scrollRestoration' in window.history) {
@@ -65,7 +71,7 @@ function RootLayout() {
         <main>
           <Outlet />
         </main>
-        <Footer />
+        {!hideFooter ? <Footer /> : null}
       </div>
       <Analytics />
     </>

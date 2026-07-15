@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
@@ -169,11 +169,53 @@ const CourseDetail = () => {
   const [error, setError] = useState(null);
   const [videoError, setVideoError] = useState(null);
   const [isVideoLoading, setIsVideoLoading] = useState(false);
-  const [isVideoAccessible, setIsVideoAccessible] = useState(false);
   const [videoUrl, setVideoUrl] = useState(null);
   const [progressPercentage, setProgressPercentage] = useState(0);
   /** Mobile / tablet: curriculum opens in a slide-over (Udemy-style) instead of below the video. */
   const [mobileCurriculumOpen, setMobileCurriculumOpen] = useState(false);
+  /** After a lesson ends, autoplay the next one */
+  const [autoPlayLesson, setAutoPlayLesson] = useState(false);
+  const videoRef = useRef(null);
+  const shouldAutoPlayRef = useRef(false);
+
+  const tryPlayCurrentVideo = useCallback(() => {
+    const el = videoRef.current;
+    if (!el || !shouldAutoPlayRef.current) return;
+
+    const finish = () => {
+      shouldAutoPlayRef.current = false;
+      setAutoPlayLesson(false);
+      setIsVideoLoading(false);
+    };
+
+    const attempt = () => {
+      const p = el.play();
+      if (p && typeof p.then === 'function') {
+        p.then(finish).catch(() => {
+          // Browser autoplay policy — try muted, then restore sound
+          el.muted = true;
+          el.play()
+            .then(() => {
+              el.muted = false;
+              finish();
+            })
+            .catch(() => {
+              finish();
+            });
+        });
+      } else {
+        finish();
+      }
+    };
+
+    if (el.readyState >= 2) {
+      attempt();
+    } else {
+      el.addEventListener('canplay', attempt, { once: true });
+      el.addEventListener('loadeddata', attempt, { once: true });
+    }
+  }, []);
+
 
   // Add new function to update course progress
   const updateCourseProgress = async (moduleIndex, sectionIndex, lessonIndex) => {
@@ -271,6 +313,9 @@ const CourseDetail = () => {
 
   // Get current lesson
   const currentLesson = courseData?.modules[activeModule]?.sections[activeSection]?.lessons[activeLesson];
+  const currentLessonMediaUrl = String(
+    currentLesson?.videoUrl || currentLesson?.filePath || ''
+  ).trim();
 
   // Check if video URL is valid
   const checkVideoUrl = (url) => {
@@ -341,30 +386,6 @@ const CourseDetail = () => {
     }
   };
 
-  // Check if video is accessible
-  const checkVideoAccessibility = async (url) => {
-    if (!url) {
-      console.error('Cannot check accessibility of empty video URL');
-      return false;
-    }
-    
-    const formattedUrl = getFormattedVideoUrl(url);
-    console.log('Checking video accessibility for URL:', formattedUrl);
-    
-    try {
-      // Use HEAD request to check if the video is accessible
-      const response = await fetch(formattedUrl);
-      const isAccessible = response.ok;
-      console.log(`Video accessibility check for ${formattedUrl}: ${isAccessible}`);
-      setIsVideoAccessible(isAccessible);
-      return isAccessible;
-    } catch (error) {
-      console.error('Error checking video accessibility:', { url: formattedUrl, error: error.message });
-      setIsVideoAccessible(false);
-      return false;
-    }
-  };
-
   // Optimize video URL handling
   const getOptimizedVideoUrl = async (url) => {
     if (!url) return null;
@@ -404,30 +425,43 @@ const CourseDetail = () => {
     }
   };
 
-  // Update the useEffect that handles video URL
+  // Resolve playable URL — do not pre-fetch; CORS probes false-fail and block the player.
   useEffect(() => {
-    if (currentLesson?.videoUrl) {
-      const loadVideoUrl = async () => {
-        setIsVideoLoading(true);
-        try {
-          const optimizedUrl = await getOptimizedVideoUrl(currentLesson.videoUrl);
-          setVideoUrl(optimizedUrl);
-          // Only check accessibility for non-S3 URLs
-          if (!optimizedUrl?.includes('amazonaws.com')) {
-            await checkVideoAccessibility(optimizedUrl);
-          } else {
-            setIsVideoAccessible(true);
-          }
-        } catch (error) {
-          console.error('Error loading video:', error);
-          setVideoError('Failed to load video. Please try again.');
-        } finally {
-          setIsVideoLoading(false);
-        }
-      };
-      loadVideoUrl();
+    if (!currentLessonMediaUrl) {
+      setVideoUrl(null);
+      setIsVideoLoading(false);
+      setVideoError(null);
+      return undefined;
     }
-  }, [currentLesson]);
+
+    let cancelled = false;
+    const loadVideoUrl = async () => {
+      setIsVideoLoading(true);
+      setVideoError(null);
+      try {
+        const optimizedUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
+        if (!cancelled) setVideoUrl(optimizedUrl);
+      } catch (error) {
+        console.error('Error loading video:', error);
+        if (!cancelled) setVideoError('Failed to load video. Please try again.');
+      } finally {
+        if (!cancelled) setIsVideoLoading(false);
+      }
+    };
+    loadVideoUrl();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentLessonMediaUrl, courseId]);
+
+  // Reliably start next lesson after URL is ready (state autoPlay is easy for browsers to ignore)
+  useEffect(() => {
+    if (!videoUrl || !shouldAutoPlayRef.current) return undefined;
+    const id = window.requestAnimationFrame(() => {
+      tryPlayCurrentVideo();
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [videoUrl, tryPlayCurrentVideo]);
 
   // Calculate progress
   const totalLessons = courseData?.modules.reduce((acc, module) => 
@@ -443,7 +477,47 @@ const CourseDetail = () => {
     setActiveSection(sectionIndex);
     setActiveLesson(lessonIndex);
     setVideoError(null);
+    shouldAutoPlayRef.current = false;
+    setAutoPlayLesson(false);
   }, []);
+
+  const advanceToNextLesson = useCallback(() => {
+    if (!courseData?.modules?.length) return false;
+
+    const modules = courseData.modules;
+    let m = activeModule;
+    let s = activeSection;
+    let l = activeLesson + 1;
+
+    while (m < modules.length) {
+      const sections = modules[m]?.sections || [];
+      while (s < sections.length) {
+        const lessons = sections[s]?.lessons || [];
+        while (l < lessons.length) {
+          const lesson = lessons[l];
+          const hasVideo = Boolean(String(lesson?.videoUrl || lesson?.filePath || '').trim());
+          if (hasVideo) {
+            shouldAutoPlayRef.current = true;
+            setAutoPlayLesson(true);
+            setActiveModule(m);
+            setActiveSection(s);
+            setActiveLesson(l);
+            setVideoError(null);
+            return true;
+          }
+          l += 1;
+        }
+        s += 1;
+        l = 0;
+      }
+      m += 1;
+      s = 0;
+      l = 0;
+    }
+    shouldAutoPlayRef.current = false;
+    setAutoPlayLesson(false);
+    return false;
+  }, [courseData, activeModule, activeSection, activeLesson]);
 
   const handleLessonClickMobile = useCallback(
     (moduleIndex, sectionIndex, lessonIndex) => {
@@ -505,12 +579,72 @@ const CourseDetail = () => {
   const handleVideoCanPlay = () => {
     setIsVideoLoading(false);
     setVideoError(null);
+    if (shouldAutoPlayRef.current) {
+      tryPlayCurrentVideo();
+    }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-white">
-        <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#F4F7FB] pt-16 md:pt-20">
+        <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1920px] flex-col px-1.5 sm:px-3 xl:flex-row xl:px-6">
+          <aside className="hidden w-full shrink-0 border-r border-slate-200/80 bg-white xl:block xl:w-[360px]">
+            <div className="space-y-4 p-5">
+              <div className="h-4 w-28 animate-pulse rounded bg-slate-200" />
+              <div className="h-8 w-3/4 animate-pulse rounded-lg bg-slate-200" />
+              <div className="mt-6 space-y-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-8 w-8 shrink-0 animate-pulse rounded-full bg-slate-100" />
+                    <div className="h-3 flex-1 animate-pulse rounded bg-slate-100" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </aside>
+
+          <main className="min-w-0 flex-1 p-3 sm:p-5 xl:p-6">
+            <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-100 px-4 py-4 sm:px-6">
+                <div className="space-y-2">
+                  <div className="h-5 w-48 animate-pulse rounded bg-slate-200 sm:w-64" />
+                  <div className="h-3 w-36 animate-pulse rounded bg-slate-100" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="h-8 w-20 animate-pulse rounded-md bg-slate-100" />
+                  <div className="h-8 w-16 animate-pulse rounded-md bg-slate-200" />
+                </div>
+              </div>
+
+              <div className="relative aspect-video bg-slate-950">
+                <div
+                  className="absolute inset-0 opacity-40"
+                  style={{
+                    backgroundImage:
+                      'radial-gradient(circle at 20% 20%, rgba(27,94,245,0.35), transparent 45%), radial-gradient(circle at 80% 70%, rgba(14,165,233,0.2), transparent 40%)',
+                  }}
+                  aria-hidden
+                />
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm">
+                    <span className="absolute inset-0 animate-ping rounded-full bg-[#1B5EF5]/25" aria-hidden />
+                    <svg className="relative h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                      <path d="M8 5v14l11-7z" />
+                    </svg>
+                  </div>
+                  <p className="text-sm font-medium text-white/90">Preparing your lesson…</p>
+                  <p className="text-xs text-white/50">This usually takes a moment</p>
+                </div>
+              </div>
+
+              <div className="space-y-3 px-4 py-5 sm:px-6">
+                <div className="h-4 w-32 animate-pulse rounded bg-slate-200" />
+                <div className="h-3 w-full max-w-xl animate-pulse rounded bg-slate-100" />
+                <div className="h-3 w-2/3 max-w-md animate-pulse rounded bg-slate-100" />
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
     );
   }
@@ -569,22 +703,23 @@ const CourseDetail = () => {
 
   return (
     <div className="min-h-screen bg-white pt-16 md:pt-20">
-      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1920px] flex-col px-1.5 sm:px-3 xl:flex-row xl:px-6">
-        {/* Desktop: sticky left curriculum. On smaller screens it lives in the mobile drawer (see below). */}
-        <aside
-          className="hidden max-h-[calc(100vh-5rem)] w-full shrink-0 overflow-y-auto border-gray-200 bg-white [scrollbar-color:rgba(15,23,42,0.12)_transparent] [scrollbar-width:thin] xl:sticky xl:top-16 xl:block xl:min-h-[calc(100vh-5rem)] xl:w-[360px] xl:self-start xl:border-r [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/35 [&::-webkit-scrollbar-thumb]:hover:bg-slate-400/45 [&::-webkit-scrollbar-track]:bg-transparent"
-        >
-          <CourseCurriculumPanel
-            courseData={courseData}
-            activeModule={activeModule}
-            activeSection={activeSection}
-            activeLesson={activeLesson}
-            onLessonClick={handleLessonClick}
-            thumbSrc={thumbSrc}
-            schoolBack={schoolBack}
-          />
-        </aside>
+      {/* Desktop: fixed curriculum — stays put; scrolls inside itself */}
+      <aside
+        className="fixed bottom-0 left-0 top-16 z-30 hidden w-[360px] flex-col overflow-y-auto overscroll-contain border-r border-gray-200 bg-white [scrollbar-color:rgba(15,23,42,0.12)_transparent] [scrollbar-width:thin] md:top-20 xl:flex [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-slate-300/35 [&::-webkit-scrollbar-thumb]:hover:bg-slate-400/45 [&::-webkit-scrollbar-track]:bg-transparent"
+        aria-label="Course curriculum"
+      >
+        <CourseCurriculumPanel
+          courseData={courseData}
+          activeModule={activeModule}
+          activeSection={activeSection}
+          activeLesson={activeLesson}
+          onLessonClick={handleLessonClick}
+          thumbSrc={thumbSrc}
+          schoolBack={schoolBack}
+        />
+      </aside>
 
+      <div className="mx-auto flex min-h-[calc(100vh-4rem)] w-full max-w-[1920px] flex-col px-1.5 sm:px-3 xl:flex-row xl:pl-[360px] xl:pr-6">
         {/* Center: lesson */}
         <main className="order-first flex min-w-0 flex-1 px-0 pt-2 pb-2 sm:px-3 sm:py-4 md:p-6 xl:order-none xl:px-8 xl:py-8">
           <div className="overflow-hidden rounded-lg border border-gray-200 bg-white shadow-sm">
@@ -646,6 +781,8 @@ const CourseDetail = () => {
                       setActiveLesson(prevModule.sections[prevModule.sections.length - 1].lessons.length - 1);
                     }
                     setVideoError(null);
+                    setAutoPlayLesson(false);
+                    shouldAutoPlayRef.current = false;
                   }}
                 >
                   Previous
@@ -672,6 +809,8 @@ const CourseDetail = () => {
                       setActiveLesson(0);
                     }
                     setVideoError(null);
+                    shouldAutoPlayRef.current = true;
+                    setAutoPlayLesson(true);
                   }}
                 >
                   Next
@@ -701,30 +840,24 @@ const CourseDetail = () => {
                       </div>
                     )}
                     {isVideoLoading && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 z-10">
-                        <div className="w-12 h-12 border-4 border-blue-400 border-t-transparent rounded-full animate-spin"></div>
-                      </div>
-                    )}
-                    {!isVideoAccessible && !videoError && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-80 z-10">
-                        <div className="text-center p-4">
-                          <div className="text-yellow-500 text-xl mb-2">Video Not Accessible</div>
-                          <div className="text-white mb-4">The video may be processing or unavailable. Please try again later.</div>
-                          <button 
-                            onClick={() => checkVideoAccessibility(currentLesson.videoUrl)}
-                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
-                          >
-                            Check Again
-                          </button>
+                      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-slate-950/70">
+                        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+                          <span className="absolute inset-0 animate-ping rounded-full bg-[#1B5EF5]/30" aria-hidden />
+                          <svg className="relative h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                            <path d="M8 5v14l11-7z" />
+                          </svg>
                         </div>
+                        <p className="text-xs font-medium text-white/80">Loading video…</p>
                       </div>
                     )}
                     <video
+                      ref={videoRef}
                       key={videoUrl}
                       controls
                       className="w-full h-full"
-                      autoPlay={false}
-                      preload="metadata"
+                      autoPlay={autoPlayLesson}
+                      playsInline
+                      preload="auto"
                       controlsList="nodownload"
                       onError={async (e) => {
                         console.error('Video playback error:', {
@@ -733,22 +866,26 @@ const CourseDetail = () => {
                         });
                         handleVideoError(e);
                         // Try to refresh the URL on error
-                        const freshUrl = await getOptimizedVideoUrl(currentLesson.videoUrl);
-                        setVideoUrl(freshUrl);
+                        const freshUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
+                        if (freshUrl && freshUrl !== videoUrl) {
+                          setVideoUrl(freshUrl);
+                          setVideoError(null);
+                        }
                       }}
                       onLoadStart={handleVideoLoadStart}
+                      onLoadedData={() => {
+                        if (shouldAutoPlayRef.current) tryPlayCurrentVideo();
+                      }}
                       onCanPlay={handleVideoCanPlay}
                       onEnded={() => {
-                        console.log('Video ended');
                         const updatedModules = [...courseData.modules];
                         const currentModule = updatedModules[activeModule];
                         const currentSection = currentModule.sections[activeSection];
                         const lesson = currentSection.lessons[activeLesson];
-                        lesson.isCompleted = true;
+                        if (lesson) lesson.isCompleted = true;
                         setCourseData({ ...courseData, modules: updatedModules });
-                        
-                        // Call the new function to update progress in backend
                         updateCourseProgress(activeModule, activeSection, activeLesson);
+                        advanceToNextLesson();
                       }}
                     >
                       <source src={videoUrl} type="video/mp4" />

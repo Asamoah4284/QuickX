@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, Link, useLocation, useNavigate } from 'react-router-dom';
 import { FiCheck, FiLock, FiPlay, FiClock, FiDownload, FiStar, FiUsers, FiCalendar, FiBarChart2, FiBook } from 'react-icons/fi';
 import axios from 'axios';
+import { savePendingCheckout } from '../../utils/pendingCheckout';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -751,6 +752,17 @@ function Pricing() {
     setCustomerEmail('');
   }, []);
 
+  const goToCheckoutOrRegister = (checkoutState) => {
+    if (!isAuthenticated) {
+      savePendingCheckout(checkoutState);
+      navigate('/register', {
+        state: { from: '/checkout', checkout: checkoutState },
+      });
+      return;
+    }
+    navigate('/checkout', { state: checkoutState });
+  };
+
   // Handle module purchase
   const handlePurchaseModule = (moduleId) => {
     // Find selected module data
@@ -761,38 +773,32 @@ function Pricing() {
       return;
     }
     
-    // Navigate to checkout with module data
-    navigate('/checkout', {
-      state: {
-        item: {
-          id: moduleToPurchase.id,
-          title: moduleToPurchase.title,
-          price: moduleToPurchase.price,
-          type: 'course',
-          image: courseData.image
-        },
-        returnPath: `/school/course/${moduleId}`,
-        returnTabState: { tab: 'content' }
-      }
+    goToCheckoutOrRegister({
+      item: {
+        id: moduleToPurchase.id,
+        title: moduleToPurchase.title,
+        price: moduleToPurchase.price,
+        type: 'course',
+        image: courseData.image
+      },
+      returnPath: `/school/course/${moduleId}`,
+      returnTabState: { tab: 'content' }
     });
   };
 
   // Handle bundle purchase
   const handleBundlePurchase = () => {
-    // Navigate to checkout with bundle data
-    navigate('/checkout', {
-      state: {
-        item: {
-          id: 'bundle',
-          title: 'Complete Forex Trading Bundle',
-          price: bundlePrice,
-          type: 'course',
-          image: courseData.image,
-          description: 'Get access to all three levels of forex trading education'
-        },
-        returnPath: '/school',
-        returnTabState: null
-      }
+    goToCheckoutOrRegister({
+      item: {
+        id: 'bundle',
+        title: 'Complete Forex Trading Bundle',
+        price: bundlePrice,
+        type: 'course',
+        image: courseData.image,
+        description: 'Get access to all three levels of forex trading education'
+      },
+      returnPath: '/school',
+      returnTabState: null
     });
   };
 
@@ -891,8 +897,7 @@ function Pricing() {
   // Add a function to check authentication and redirect if needed
   const checkAuthAndProceed = (action) => {
     if (!isAuthenticated) {
-      // Redirect to login page
-      navigate('/login', { state: { from: location.pathname + location.search } });
+      navigate('/register', { state: { from: location.pathname + location.search } });
       return;
     }
     
@@ -1032,11 +1037,6 @@ function Pricing() {
     },
   ];
   const handlePrimaryPurchase = () => {
-    if (!isAuthenticated) {
-      navigate('/login', { state: { from: location.pathname + location.search } });
-      return;
-    }
-
     if (level) {
       handlePurchaseModule(courseData?.modules?.[0]?.id);
     } else {

@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { FiArrowLeft, FiCheck, FiChevronDown, FiLock, FiShoppingBag } from 'react-icons/fi';
+import { AnimatePresence } from 'framer-motion';
+import { FiArrowLeft, FiChevronDown, FiLock, FiShoppingBag } from 'react-icons/fi';
 import { PaystackButton } from 'react-paystack';
+import PaymentSuccessModal from './PaymentSuccessModal';
 
 /** Minimal guest checkout for a single ebook — email, MoMo, pay, instant download. */
 export default function GuestEbookCheckoutView({
@@ -181,44 +182,10 @@ export default function GuestEbookCheckoutView({
 
       <AnimatePresence mode="wait">
         {paymentSuccessModal ? (
-          <motion.div
-            key="payment-success-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="payment-success-title"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[200] flex items-center justify-center bg-black/50 p-4 backdrop-blur-[2px]"
-            onClick={completeSuccessAndNavigate}
-          >
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94, y: 14 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.97, y: 8 }}
-              onClick={(e) => e.stopPropagation()}
-              className="relative w-full max-w-md overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-2xl"
-            >
-              <div className="px-6 pb-6 pt-8 text-center">
-                <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-emerald-500 text-white">
-                  <FiCheck className="h-7 w-7 stroke-[3]" aria-hidden />
-                </div>
-                <h2 id="payment-success-title" className="text-xl font-bold text-gray-900">
-                  {paymentSuccessModal.title}
-                </h2>
-                <p className="mt-2 text-sm text-gray-600">{paymentSuccessModal.description}</p>
-              </div>
-              <div className="border-t border-gray-100 bg-gray-50 px-6 py-4">
-                <button
-                  type="button"
-                  onClick={completeSuccessAndNavigate}
-                  className="w-full rounded-lg bg-blue-600 py-3 text-sm font-semibold text-white hover:bg-blue-700"
-                >
-                  {paymentSuccessModal.ctaLabel}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
+          <PaymentSuccessModal
+            modal={paymentSuccessModal}
+            onContinue={completeSuccessAndNavigate}
+          />
         ) : null}
       </AnimatePresence>
     </div>

@@ -1,11 +1,22 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { FiUser, FiMail, FiLock, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '@/config/api';
+import { savePendingCheckout } from '@/utils/pendingCheckout';
 
 function Register() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const checkoutIntent = location.state?.checkout || null;
+  const returnFrom = location.state?.from || null;
+
+  useEffect(() => {
+    if (checkoutIntent?.item) {
+      savePendingCheckout(checkoutIntent);
+    }
+  }, [checkoutIntent]);
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -31,6 +42,10 @@ function Register() {
     setError('');
     
     try {
+      if (checkoutIntent?.item) {
+        savePendingCheckout(checkoutIntent);
+      }
+
       const response = await axios.post(`${API_URL}/api/users/register`, {
         fullName: formData.fullName,
         email: formData.email,
@@ -48,8 +63,16 @@ function Register() {
       // Dispatch custom event to notify Navbar component
       window.dispatchEvent(new Event('auth-change'));
       
-      // Redirect to verification page
-      navigate(`/verify-account?email=${encodeURIComponent(formData.email)}&phone=${encodeURIComponent(formData.phone)}`);
+      // Redirect to verification — preserve return / checkout intent
+      navigate(
+        `/verify-account?email=${encodeURIComponent(formData.email)}&phone=${encodeURIComponent(formData.phone)}`,
+        {
+          state: {
+            from: returnFrom,
+            checkout: checkoutIntent,
+          },
+        }
+      );
     } catch (err) {
       setError(
         err.response?.data?.message || 
@@ -113,11 +136,22 @@ function Register() {
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-bold text-gray-900">Create Account</h2>
               <div className="flex items-center text-sm">
-                <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 inline-flex items-center">
+                <Link
+                  to="/login"
+                  state={location.state || undefined}
+                  className="font-medium text-blue-600 hover:text-blue-500 inline-flex items-center"
+                >
                   Sign in <FiArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </div>
             </div>
+
+            {checkoutIntent?.item ? (
+              <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50 px-3 py-2.5 text-sm text-blue-800">
+                Create an account to finish paying for{' '}
+                <span className="font-semibold">{checkoutIntent.item.title || 'your purchase'}</span>.
+              </div>
+            ) : null}
             
             {error && (
               <div className="mb-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm">

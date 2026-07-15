@@ -20,11 +20,8 @@ const { sendOTP } = require('../services/sms');
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
 /**
- * Flatten curriculum lessons marked preview/free (same idea as public course preview).
- * Used for instructor profile TikTok grid — one tile per preview clip, not per course.
- */
-/**
- * Count curriculum lessons that include a video (published course content).
+ * Flatten curriculum lessons for the public instructor profile grid.
+ * Includes all video lessons; only preview/free lessons expose playable URLs.
  */
 function countLessonVideos(courseDocs) {
     let n = 0;
@@ -41,29 +38,34 @@ function countLessonVideos(courseDocs) {
     return n;
 }
 
-function collectPublicPreviewLessons(courseDocs) {
+function collectPublicProfileLessons(courseDocs) {
     const out = [];
     for (const c of courseDocs) {
         const modules = c.modules || [];
         modules.forEach((mod, mi) => {
             (mod.sections || []).forEach((sec, si) => {
                 (sec.lessons || []).forEach((les, li) => {
-                    const canPreview = les.isPreview === true || les.free === true;
-                    if (!canPreview) return;
+                    const isPreview = les.isPreview === true || les.free === true;
+                    const lessonType = String(les.lessonType || les.type || 'video').toLowerCase();
+                    if (lessonType !== 'video' && !isPreview) return;
+
                     const lessonKey = les._id != null ? String(les._id) : `m${mi}-s${si}-l${li}`;
+                    const videoUrl = String(les.videoUrl || les.filePath || '').trim();
                     out.push({
                         key: `${String(c._id)}-${lessonKey}`,
                         courseId: String(c._id),
                         courseTitle: String(c.title || '').trim(),
                         courseThumbnail: c.thumbnail || '',
-                        coursePromoVideo: c.promoVideo || '',
+                        coursePromoVideo: isPreview ? c.promoVideo || '' : '',
                         lessonTitle: String(les.title || 'Lesson').trim(),
-                        /** Public preview clip — prefer lesson video, then filePath */
-                        previewVideoUrl: String(les.videoUrl || les.filePath || '').trim(),
+                        /** Playable only for free-preview lessons — never leak locked URLs */
+                        previewVideoUrl: isPreview ? videoUrl : '',
+                        isPreview,
+                        isLocked: !isPreview,
                         category: c.category || '',
                         courseType: c.courseType,
                         tags: Array.isArray(c.tags) ? c.tags : [],
-                        totalStudents: Number(c.totalStudents) || 0
+                        totalStudents: Number(c.totalStudents) || 0,
                     });
                 });
             });
@@ -903,7 +905,8 @@ router.get('/public/:userId/instructor', async (req, res) => {
             .sort({ createdAt: -1 })
             .lean();
 
-        const previewLessons = collectPublicPreviewLessons(coursesWithModules);
+        const profileLessons = collectPublicProfileLessons(coursesWithModules);
+        const previewLessons = profileLessons.filter((l) => l.isPreview);
         const videoContent = collectInstructorVideoContent(coursesWithModules);
         const videoCount = countLessonVideos(coursesWithModules);
         const courses = coursesWithModules.map(({ modules, ...rest }) => rest);
@@ -954,6 +957,7 @@ router.get('/public/:userId/instructor', async (req, res) => {
                 avgRating: Math.round(avgRating * 10) / 10
             },
             categories: categoryList,
+            profileLessons,
             previewLessons,
             videoContent,
             courses

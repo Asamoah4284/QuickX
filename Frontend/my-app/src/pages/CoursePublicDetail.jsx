@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 're
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import { savePendingCheckout } from '../utils/pendingCheckout';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -217,8 +218,34 @@ export default function CoursePublicDetail() {
   const buy = async () => {
     if (!course) return;
     const token = localStorage.getItem('authToken');
+
+    const checkoutImageUrl = course.thumbnail
+      ? publicAssetUrl(
+          String(course.thumbnail).startsWith('http')
+            ? String(course.thumbnail)
+            : `${API_URL}${String(course.thumbnail)}`
+        )
+      : null;
+
+    const checkoutState = {
+      item: {
+        type: 'course',
+        id: course._id,
+        title: course.title,
+        price: course.price,
+        description: course.shortDescription || course.description,
+        thumbnail: course.thumbnail,
+        ...(checkoutImageUrl ? { image: checkoutImageUrl } : {}),
+      },
+      returnPath: `/courses/${courseId}`,
+      returnTabState: null,
+    };
+
     if (!token) {
-      navigate('/login', { state: { from: `/courses/${courseId}` } });
+      savePendingCheckout(checkoutState);
+      navigate('/register', {
+        state: { from: '/checkout', checkout: checkoutState },
+      });
       return;
     }
 
@@ -238,29 +265,7 @@ export default function CoursePublicDetail() {
       }
     }
 
-    const checkoutImageUrl = course.thumbnail
-      ? publicAssetUrl(
-          String(course.thumbnail).startsWith('http')
-            ? String(course.thumbnail)
-            : `${API_URL}${String(course.thumbnail)}`
-        )
-      : null;
-
-    navigate('/checkout', {
-      state: {
-        item: {
-          type: 'course',
-          id: course._id,
-          title: course.title,
-          price: course.price,
-          description: course.shortDescription || course.description,
-          thumbnail: course.thumbnail,
-          ...(checkoutImageUrl ? { image: checkoutImageUrl } : {}),
-        },
-        returnPath: '/courses',
-        returnTabState: null,
-      },
-    });
+    navigate('/checkout', { state: checkoutState });
   };
 
   if (loading) {

@@ -257,6 +257,7 @@ router.post(
 
             const {
                 createOrExtendFromPayment,
+                enrollStudentInTutorPublishedCourses,
             } = require('../services/tutorSubscriptionService');
             const subscription = await createOrExtendFromPayment({
                 studentId: req.user._id,
@@ -265,6 +266,8 @@ router.post(
                 paymentId: payment._id,
                 transactionId,
             });
+
+            await enrollStudentInTutorPublishedCourses(req.user._id, instructor._id);
 
             res.json({
                 success: true,

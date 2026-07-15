@@ -58,12 +58,29 @@ function readCachedUser() {
 
 function Membership() {
   const location = useLocation();
-  const [user, setUser] = useState(readCachedUser);
-  const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const cachedUser = readCachedUser();
+  const [user, setUser] = useState(cachedUser);
+  // Only block first paint when we have no cached session — never re-flash after checkout.
+  const [isLoading, setIsLoading] = useState(() => !cachedUser);
+  const [coursesLoading, setCoursesLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState(() => location.state?.activeTab || 'dashboard');
   const [purchasedCourses, setPurchasedCourses] = useState([]);
-  const [purchasedBooks, setPurchasedBooks] = useState([]);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
+  const [purchasedBooks, setPurchasedBooks] = useState(() => {
+    try {
+      const localBooks = localStorage.getItem('purchasedBooks');
+      return localBooks ? JSON.parse(localBooks) : [];
+    } catch {
+      return [];
+    }
+  });
+  const [showSuccessMessage, setShowSuccessMessage] = useState(
+    () =>
+      Boolean(
+        location.state?.activeTab === 'myCourses' ||
+          location.state?.activeTab === 'myBooks' ||
+          location.state?.bookPurchaseSuccess
+      )
+  );
   const [courseLoadError, setCourseLoadError] = useState(null);
   const [isWithdrawalModalOpen, setIsWithdrawalModalOpen] = useState(false);
   const [momoNumber, setMomoNumber] = useState('');
@@ -90,35 +107,40 @@ function Membership() {
   const refreshCourses = async () => {
     try {
       const authToken = localStorage.getItem('authToken');
-      if (!authToken) return;
+      if (!authToken) {
+        setCoursesLoading(false);
+        return;
+      }
 
+      setCoursesLoading(true);
       const coursesResponse = await axios.get(`${API_URL}/api/courses/user/purchased`, {
         headers: { 'Authorization': `Bearer ${authToken}` }
       });
 
-      if (coursesResponse.data && coursesResponse.data.length > 0) {
-        const formattedCourses = coursesResponse.data.map(course => {
-          const imagePath = course.thumbnail
-            ? publicAssetUrl(
-                course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`
-              )
-            : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
-          
-          return {
-            id: course._id || course.id,
-            title: course.title,
-            progress: course.progress || 0,
-            lastAccessed: course.lastAccessed || 'Recently',
-            image: imagePath
-          };
-        });
-        
-        setPurchasedCourses(formattedCourses);
-        setCourseLoadError(null);
-      }
+      const list = Array.isArray(coursesResponse.data) ? coursesResponse.data : [];
+      const formattedCourses = list.map(course => {
+        const imagePath = course.thumbnail
+          ? publicAssetUrl(
+              course.thumbnail.startsWith('http') ? course.thumbnail : `${API_URL}${course.thumbnail}`
+            )
+          : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
+
+        return {
+          id: course._id || course.id,
+          title: course.title,
+          progress: course.progress || 0,
+          lastAccessed: course.lastAccessed || 'Recently',
+          image: imagePath
+        };
+      });
+
+      setPurchasedCourses(formattedCourses);
+      setCourseLoadError(null);
     } catch (error) {
       console.error('Error refreshing courses:', error);
       setCourseLoadError('Failed to refresh courses. Please try again later.');
+    } finally {
+      setCoursesLoading(false);
     }
   };
 
@@ -144,57 +166,59 @@ function Membership() {
     };
   }, []);
 
+  // Apply tab / success toast from checkout navigation without refetching.
   useEffect(() => {
-    // Set active tab from location state if provided
-    if (location.state && location.state.activeTab) {
+    if (!location.state) return;
+
+    if (location.state.activeTab) {
       setActiveTab(location.state.activeTab);
-      
-      // Show success message if coming from purchase
-      if (location.state.activeTab === 'myCourses') {
-        setShowSuccessMessage(true);
-        
-        // Auto-hide the message after 5 seconds
-        const timer = setTimeout(() => {
-          setShowSuccessMessage(false);
-        }, 5000);
-        
-        return () => clearTimeout(timer);
-      }
-      
-      // Show success message for book purchases
-      if (location.state.activeTab === 'myBooks') {
-        setShowSuccessMessage(true);
-        
-        // Auto-hide the message after 5 seconds
-        const timer = setTimeout(() => {
-          setShowSuccessMessage(false);
-        }, 5000);
-        
-        return () => clearTimeout(timer);
-      }
     }
-    
+
+    const fromPurchase =
+      location.state.activeTab === 'myCourses' ||
+      location.state.activeTab === 'myBooks' ||
+      location.state.bookPurchaseSuccess;
+
+    if (!fromPurchase) return;
+
+    setShowSuccessMessage(true);
+    const timer = setTimeout(() => setShowSuccessMessage(false), 5000);
+    return () => clearTimeout(timer);
+  }, [location.state]);
+
+  useEffect(() => {
+    const authToken = localStorage.getItem('authToken');
+    if (!authToken) {
+      setIsLoading(false);
+      setCoursesLoading(false);
+      setUser(null);
+      return;
+    }
+
+    let cancelled = false;
+
     const fetchUserData = async () => {
       try {
-        setIsLoading(true);
-        const authToken = localStorage.getItem('authToken');
-        
-        if (authToken) {
-          // Fetch fresh user data from the server including referral info
-          const userResponse = await axios.get(`${API_URL}/api/users/me`, {
-            headers: { 'Authorization': `Bearer ${authToken}` }
-          });
-          
-          if (userResponse.data) {
-            // Update localStorage with fresh user data
-            localStorage.setItem('user', JSON.stringify(userResponse.data));
-            setUser(userResponse.data);
-          }
+        // Prefer instant paint with cache; only full-screen load when no user yet.
+        if (!readCachedUser()) setIsLoading(true);
 
-          // Purchased ebooks: source of truth is the server (Paystack updates User.purchasedBooks).
-          const fromServer = normalizePurchasedBooksFromUser(
-            userResponse.data?.purchasedBooks
-          );
+        const [userResult, coursesResult] = await Promise.allSettled([
+          axios.get(`${API_URL}/api/users/me`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+          axios.get(`${API_URL}/api/courses/user/purchased`, {
+            headers: { Authorization: `Bearer ${authToken}` },
+          }),
+        ]);
+
+        if (cancelled) return;
+
+        if (userResult.status === 'fulfilled' && userResult.value.data) {
+          const userData = userResult.value.data;
+          localStorage.setItem('user', JSON.stringify(userData));
+          setUser(userData);
+
+          const fromServer = normalizePurchasedBooksFromUser(userData?.purchasedBooks);
           if (fromServer.length > 0) {
             setPurchasedBooks(fromServer);
             try {
@@ -214,14 +238,48 @@ function Membership() {
               setPurchasedBooks([]);
             }
           }
-          
-          // Fetch purchased courses from backend
-          await refreshCourses();
-          
-          // Dispatch auth-change event
+
           window.dispatchEvent(new Event('auth-change'));
+        } else if (userResult.status === 'rejected') {
+          const status = userResult.reason?.response?.status;
+          if (status === 401) {
+            localStorage.removeItem('authToken');
+            localStorage.removeItem('user');
+            setUser(null);
+            window.dispatchEvent(new Event('auth-change'));
+            return;
+          }
+          setCourseLoadError('Failed to load your data. Please try again later.');
+        }
+
+        if (coursesResult.status === 'fulfilled') {
+          const list = Array.isArray(coursesResult.value.data) ? coursesResult.value.data : [];
+          setPurchasedCourses(
+            list.map((course) => {
+              const imagePath = course.thumbnail
+                ? publicAssetUrl(
+                    course.thumbnail.startsWith('http')
+                      ? course.thumbnail
+                      : `${API_URL}${course.thumbnail}`
+                  )
+                : 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=200&h=120&q=80';
+
+              return {
+                id: course._id || course.id,
+                title: course.title,
+                progress: course.progress || 0,
+                lastAccessed: course.lastAccessed || 'Recently',
+                image: imagePath,
+              };
+            })
+          );
+          setCourseLoadError(null);
+        } else if (coursesResult.status === 'rejected') {
+          console.error('Error refreshing courses:', coursesResult.reason);
+          setCourseLoadError('Failed to refresh courses. Please try again later.');
         }
       } catch (error) {
+        if (cancelled) return;
         console.error('Error fetching user data:', error);
         const status = error.response?.status;
         if (status === 401) {
@@ -233,12 +291,18 @@ function Membership() {
         }
         setCourseLoadError('Failed to load your data. Please try again later.');
       } finally {
-        setIsLoading(false);
+        if (!cancelled) {
+          setIsLoading(false);
+          setCoursesLoading(false);
+        }
       }
     };
-    
+
     fetchUserData();
-  }, [location.state]);
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   // Hydrate purchased books with missing fileUrl/thumbnail (older purchases/cart items).
   useEffect(() => {
@@ -309,6 +373,12 @@ function Membership() {
     // Determine message based on active tab
     const getSuccessMessage = () => {
       if (activeTab === 'myCourses') {
+        if (location.state?.subscriptionSuccess) {
+          return {
+            title: 'Subscription active!',
+            detail: 'Your courses are ready below — hit Continue to start watching.',
+          };
+        }
         return {
           title: 'Purchase successful!',
           detail: 'Your course is now available in "My Courses"'
@@ -930,6 +1000,10 @@ function Membership() {
                           </div>
                         </div>
                         ))
+                      ) : coursesLoading ? (
+                        <div className="text-center py-10 border border-gray-200 rounded-xl bg-gray-50">
+                          <Loader fullScreen={false} size="sm" label="Loading your courses…" />
+                        </div>
                       ) : (
                         <div className="text-center py-10 border border-gray-200 rounded-xl bg-gray-50">
                           <div className="bg-blue-100 text-blue-600 p-3 rounded-full inline-block mb-3">
@@ -1011,6 +1085,10 @@ function Membership() {
                         Browse Courses
                       </Link>
                     </div>
+                  </div>
+                ) : coursesLoading ? (
+                  <div className="text-center py-10">
+                    <Loader fullScreen={false} size="sm" label="Loading your courses…" />
                   </div>
                 ) : (
                   <div className="text-center py-10">

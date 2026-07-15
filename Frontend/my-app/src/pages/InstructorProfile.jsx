@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import { savePendingCheckout } from '../utils/pendingCheckout';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -171,9 +172,9 @@ function SubscriptionBenefitIcon({ name }) {
   }
 }
 
-/** TikTok profile grid: 3 columns, 1px gutters; full width on mobile, capped on large screens */
+/** Compact fixed-size tiles; columns grow past 3 on wider screens; left-aligned */
 const TIKTOK_PROFILE_GRID =
-  'grid w-full max-w-none lg:max-w-2xl grid-cols-3 gap-px bg-zinc-300/90 dark:bg-zinc-700/80';
+  'mr-auto grid w-full max-w-7xl grid-cols-3 gap-px bg-zinc-300/90 dark:bg-zinc-700/80 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8';
 
 /** Offsets parent `px-4 sm:px-6 lg:px-10` so preview strip is edge-to-edge on the screen */
 const PREVIEW_STRIP_BLEED =
@@ -441,28 +442,54 @@ function SingleCourseDesktopShowcase({ course }) {
   );
 }
 
-/** One tile per free-preview lesson (curriculum), not per course */
-function PreviewLessonTile({ preview, onOpenPreview }) {
+/** One tile per curriculum lesson — preview plays; locked shows a padlock; subscribers open the course */
+function PreviewLessonTile({ preview, onOpenPreview, onLockedClick, subscriberAccess }) {
+  const originallyLocked = Boolean(preview.isLocked) || preview.isPreview === false;
+  const locked = originallyLocked && !subscriberAccess;
   const thumb = courseGridPosterUrl({
     thumbnail: preview.courseThumbnail,
-    promoVideo: preview.coursePromoVideo,
+    promoVideo: locked ? '' : preview.coursePromoVideo,
   });
   const views = Number(preview.totalStudents) || 0;
   const caption = (preview.lessonTitle || 'Lesson').trim();
-  const videoSrc = resolvePreviewTileVideoSrc(preview);
+  const videoSrc = locked ? null : resolvePreviewTileVideoSrc(preview);
   const tileClass = `group relative block w-full min-w-0 overflow-hidden bg-zinc-900 ${PREVIEW_TILE_ASPECT}`;
 
   const tileBody = (
     <>
       <MediaThumb
-        videoSrc={videoSrc}
+        videoSrc={subscriberAccess ? null : videoSrc}
         posterSrc={thumb}
-        className="pointer-events-none h-full w-full object-cover transition duration-300 group-active:scale-[0.98] sm:group-hover:scale-[1.03]"
+        className={`pointer-events-none h-full w-full object-cover transition duration-300 group-active:scale-[0.98] sm:group-hover:scale-[1.03] ${
+          locked ? 'scale-105 blur-[2px] brightness-75' : ''
+        }`}
       />
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-black/65" />
-      <span className="absolute left-1 top-1 z-10 rounded-[3px] bg-blue-600 px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm">
-        Preview
-      </span>
+      {locked ? (
+        <span className="absolute left-1 top-1 z-10 inline-flex items-center gap-0.5 rounded-[3px] bg-zinc-950/80 px-1.5 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm ring-1 ring-white/20">
+          <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 5a3 3 0 116 0v3H9V6zm3 8a1.75 1.75 0 110 3.5A1.75 1.75 0 0112 14z" />
+          </svg>
+          Locked
+        </span>
+      ) : subscriberAccess ? (
+        <span className="absolute left-1 top-1 z-10 rounded-[3px] bg-emerald-600 px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm">
+          Watch
+        </span>
+      ) : (
+        <span className="absolute left-1 top-1 z-10 rounded-[3px] bg-blue-600 px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm">
+          Preview
+        </span>
+      )}
+      {locked ? (
+        <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center">
+          <span className="flex h-12 w-12 items-center justify-center rounded-full bg-black/55 text-white ring-1 ring-white/25 backdrop-blur-[2px] sm:h-14 sm:w-14">
+            <svg className="h-6 w-6 sm:h-7 sm:w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 5a3 3 0 116 0v3H9V6zm3 8a1.75 1.75 0 110 3.5A1.75 1.75 0 0112 14z" />
+            </svg>
+          </span>
+        </div>
+      ) : null}
       <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent px-1.5 pb-1 pt-8">
         <p className="mb-0.5 line-clamp-1 text-left text-[10px] font-medium leading-tight text-white/80 sm:text-[11px]">
           {preview.courseTitle}
@@ -471,21 +498,50 @@ function PreviewLessonTile({ preview, onOpenPreview }) {
           {caption}
         </p>
         <div className="flex items-center gap-1 text-white">
-          <svg
-            className="h-3.5 w-3.5 shrink-0 drop-shadow-md"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden
-          >
-            <path d="M8 5v14l11-7z" />
-          </svg>
+          {locked ? (
+            <svg className="h-3.5 w-3.5 shrink-0 drop-shadow-md" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+              <path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 5a3 3 0 116 0v3H9V6zm3 8a1.75 1.75 0 110 3.5A1.75 1.75 0 0112 14z" />
+            </svg>
+          ) : (
+            <svg
+              className="h-3.5 w-3.5 shrink-0 drop-shadow-md"
+              fill="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden
+            >
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          )}
           <span className="text-[11px] font-semibold tabular-nums tracking-tight drop-shadow-md sm:text-xs">
-            {formatCompact(views)}
+            {locked ? 'Subscribe' : subscriberAccess ? 'Open course' : formatCompact(views)}
           </span>
         </div>
       </div>
     </>
   );
+
+  if (subscriberAccess && preview.courseId) {
+    return (
+      <Link to={`/school/course/${preview.courseId}`} className={tileClass} aria-label={`Watch: ${caption}`}>
+        {tileBody}
+      </Link>
+    );
+  }
+
+  if (locked) {
+    return (
+      <button
+        type="button"
+        className={`${tileClass} cursor-pointer border-0 p-0`}
+        onClick={() => {
+          if (typeof onLockedClick === 'function') onLockedClick(preview);
+        }}
+        aria-label={`Locked lesson: ${caption}. Subscribe to unlock`}
+      >
+        {tileBody}
+      </button>
+    );
+  }
 
   if (videoSrc && typeof onOpenPreview === 'function') {
     return (
@@ -602,6 +658,7 @@ export default function InstructorProfile() {
   const [selectedSubscriptionPlanId, setSelectedSubscriptionPlanId] = useState('1m');
   const [communityAccess, setCommunityAccess] = useState({ subscribed: false, isTutor: false });
   const [profileVideoPreview, setProfileVideoPreview] = useState(null);
+  const profilePreviewVideoRef = useRef(null);
   const [videoDropdownOpen, setVideoDropdownOpen] = useState(false);
   const [videoSidebarOpen, setVideoSidebarOpen] = useState(false);
   const [videoSidebarRender, setVideoSidebarRender] = useState(false);
@@ -718,15 +775,28 @@ export default function InstructorProfile() {
     };
   }, [profileVideoPreview]);
 
+  // Preview plays with sound. Unmuted autoplay may be blocked on mobile — user tap Play still has audio.
+  useEffect(() => {
+    if (!profileVideoPreview) return undefined;
+    const el = profilePreviewVideoRef.current;
+    if (!el) return undefined;
+    el.muted = false;
+    el.defaultMuted = false;
+    el.volume = 1;
+    const tryPlay = () => {
+      const p = el.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    };
+    tryPlay();
+    el.addEventListener('loadeddata', tryPlay);
+    return () => el.removeEventListener('loadeddata', tryPlay);
+  }, [profileVideoPreview]);
+
   const goToSubscriptionCheckout = useCallback(
     (plan) => {
       if (!plan?.id) return;
       const token = localStorage.getItem('authToken');
       const from = `/instructors/${userId}`;
-      if (!token) {
-        navigate('/login', { state: { from } });
-        return;
-      }
       const u = data?.user;
       const display = u?.fullName || 'Instructor';
       let image = null;
@@ -737,23 +807,29 @@ export default function InstructorProfile() {
           image = publicAssetUrl(raw) || raw;
         }
       }
-      navigate('/checkout', {
-        state: {
-          item: {
-            type: 'creator_subscription',
-            id: userId,
-            instructorId: userId,
-            planId: plan.id,
-            title: `Subscribe to ${display}`,
-            description: `${plan.title} — ${plan.periodNote}`,
-            price: plan.price,
-            instructorName: display,
-            ...(image ? { image, thumbnail: image } : {}),
-          },
-          returnPath: from,
-          returnTabState: null,
+      const checkoutState = {
+        item: {
+          type: 'creator_subscription',
+          id: userId,
+          instructorId: userId,
+          planId: plan.id,
+          title: `Subscribe to ${display}`,
+          description: `${plan.title} — ${plan.periodNote}`,
+          price: plan.price,
+          instructorName: display,
+          ...(image ? { image, thumbnail: image } : {}),
         },
-      });
+        returnPath: from,
+        returnTabState: null,
+      };
+      if (!token) {
+        savePendingCheckout(checkoutState);
+        navigate('/register', {
+          state: { from: '/checkout', checkout: checkoutState },
+        });
+        return;
+      }
+      navigate('/checkout', { state: checkoutState });
     },
     [navigate, userId, data]
   );
@@ -779,13 +855,46 @@ export default function InstructorProfile() {
 
   const learningOutcomes = useMemo(() => collectLearningOutcomes(data?.courses, 12), [data?.courses]);
 
-  /** When the API returns preview lessons, grid = one tile per curriculum preview (not per course). */
-  const filteredPreviewLessons = useMemo(() => {
-    if (!data?.previewLessons?.length) return [];
-    return data.previewLessons;
+  /** Prefer full curriculum grid (preview + locked); fall back to preview-only list. */
+  const profileLessons = useMemo(() => {
+    if (Array.isArray(data?.profileLessons) && data.profileLessons.length > 0) {
+      return data.profileLessons;
+    }
+    if (Array.isArray(data?.previewLessons) && data.previewLessons.length > 0) {
+      return data.previewLessons.map((p) => ({ ...p, isPreview: true, isLocked: false }));
+    }
+    return [];
   }, [data]);
 
-  const usePreviewLessonGrid = Boolean(data?.previewLessons?.length);
+  const usePreviewLessonGrid = profileLessons.length > 0;
+
+  const canWatchAsSubscriber = Boolean(communityAccess.subscribed || communityAccess.isTutor);
+
+  const openLockedLesson = useCallback(() => {
+    setSubscriptionDrawerOpen(true);
+  }, []);
+
+  useEffect(() => {
+    if (loading) return undefined;
+    const shouldScroll =
+      location.hash === '#videos' ||
+      Boolean(location.state?.scrollToVideos) ||
+      Boolean(location.state?.subscriptionSuccess);
+    if (!shouldScroll) return undefined;
+
+    const t = window.setTimeout(() => {
+      document.getElementById('instructor-videos')?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }, 180);
+
+    if (location.state?.scrollToVideos || location.state?.subscriptionSuccess) {
+      navigate(`${location.pathname}#videos`, { replace: true, state: {} });
+    }
+
+    return () => window.clearTimeout(t);
+  }, [loading, location.hash, location.state, location.pathname, navigate]);
 
   const videoDropdownItems = useMemo(() => {
     if (Array.isArray(data?.videoContent) && data.videoContent.length > 0) {
@@ -794,19 +903,19 @@ export default function InstructorProfile() {
         title: v.lessonTitle || 'Lesson',
         subtitle: v.courseTitle || '',
         href: v.courseId ? `/school/course/${v.courseId}` : null,
-        isLocked: Boolean(v.isLocked),
+        isLocked: canWatchAsSubscriber ? false : Boolean(v.isLocked),
         isPreview: Boolean(v.isPreview),
         duration: v.duration || '',
       }));
     }
     if (usePreviewLessonGrid) {
-      return (filteredPreviewLessons || []).map((p) => ({
+      return profileLessons.map((p) => ({
         key: p.key,
-        title: p.lessonTitle || 'Preview lesson',
+        title: p.lessonTitle || 'Lesson',
         subtitle: p.courseTitle || '',
         href: p.courseId ? `/school/course/${p.courseId}` : null,
-        isLocked: false,
-        isPreview: true,
+        isLocked: canWatchAsSubscriber ? false : Boolean(p.isLocked) || p.isPreview === false,
+        isPreview: Boolean(p.isPreview),
         duration: '',
       }));
     }
@@ -819,29 +928,73 @@ export default function InstructorProfile() {
       isPreview: false,
       duration: '',
     }));
-  }, [data?.videoContent, filteredCourses, filteredPreviewLessons, usePreviewLessonGrid]);
+  }, [
+    data?.videoContent,
+    filteredCourses,
+    profileLessons,
+    usePreviewLessonGrid,
+    canWatchAsSubscriber,
+  ]);
 
   /** Must run before any conditional return (Rules of Hooks). */
   const videoGrid = useMemo(() => {
     if (usePreviewLessonGrid) {
-      if (filteredPreviewLessons.length === 0) return null;
-      if (filteredPreviewLessons.length === 1) {
-        const p = filteredPreviewLessons[0];
+      if (profileLessons.length === 0) return null;
+      if (profileLessons.length === 1) {
+        const p = profileLessons[0];
+        const locked = !canWatchAsSubscriber && (Boolean(p.isLocked) || p.isPreview === false);
         return (
           <>
             <div className="flex justify-center px-2 lg:hidden">
               <div className="w-full max-w-[220px]">
-                <PreviewLessonTile preview={p} onOpenPreview={openProfileVideoPreview} />
+                <PreviewLessonTile
+                  preview={p}
+                  onOpenPreview={openProfileVideoPreview}
+                  onLockedClick={openLockedLesson}
+                  subscriberAccess={canWatchAsSubscriber}
+                />
               </div>
             </div>
-            <SinglePreviewLessonDesktopShowcase preview={p} onOpenPreview={openProfileVideoPreview} />
+            {!locked ? (
+              canWatchAsSubscriber ? (
+                <div className="hidden lg:block">
+                  <div className="mx-auto max-w-sm">
+                    <PreviewLessonTile
+                      preview={p}
+                      onOpenPreview={openProfileVideoPreview}
+                      onLockedClick={openLockedLesson}
+                      subscriberAccess={canWatchAsSubscriber}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <SinglePreviewLessonDesktopShowcase preview={p} onOpenPreview={openProfileVideoPreview} />
+              )
+            ) : (
+              <div className="hidden lg:block">
+                <div className="mx-auto max-w-sm">
+                  <PreviewLessonTile
+                    preview={p}
+                    onOpenPreview={openProfileVideoPreview}
+                    onLockedClick={openLockedLesson}
+                    subscriberAccess={canWatchAsSubscriber}
+                  />
+                </div>
+              </div>
+            )}
           </>
         );
       }
       return (
         <div className={TIKTOK_PROFILE_GRID}>
-          {filteredPreviewLessons.map((p) => (
-            <PreviewLessonTile key={p.key} preview={p} onOpenPreview={openProfileVideoPreview} />
+          {profileLessons.map((p) => (
+            <PreviewLessonTile
+              key={p.key}
+              preview={p}
+              onOpenPreview={openProfileVideoPreview}
+              onLockedClick={openLockedLesson}
+              subscriberAccess={canWatchAsSubscriber}
+            />
           ))}
         </div>
       );
@@ -868,7 +1021,14 @@ export default function InstructorProfile() {
         ))}
       </div>
     );
-  }, [usePreviewLessonGrid, filteredPreviewLessons, filteredCourses, openProfileVideoPreview]);
+  }, [
+    usePreviewLessonGrid,
+    profileLessons,
+    filteredCourses,
+    openProfileVideoPreview,
+    openLockedLesson,
+    canWatchAsSubscriber,
+  ]);
 
   const avatarSrc = useMemo(() => {
     if (!data?.user) return null;
@@ -937,7 +1097,7 @@ export default function InstructorProfile() {
   const stats = data.stats || { courses: 0, videos: 0, learners: 0, avgRating: 0 };
 
   const videoGridCount = usePreviewLessonGrid
-    ? filteredPreviewLessons.length
+    ? profileLessons.length
     : filteredCourses.length;
   const videoGridEmpty = videoGridCount === 0;
 
@@ -947,7 +1107,7 @@ export default function InstructorProfile() {
       value:
         stats.videos != null
           ? formatCompact(stats.videos)
-          : formatCompact(usePreviewLessonGrid ? filteredPreviewLessons.length : filteredCourses.length),
+          : formatCompact(usePreviewLessonGrid ? profileLessons.length : filteredCourses.length),
     },
     { label: 'Learners', value: formatCompact(stats.learners) },
     {
@@ -1028,7 +1188,7 @@ export default function InstructorProfile() {
   );
 
   const librarySection = (
-    <div className="px-0 pt-0 pb-0">
+    <div id="instructor-videos" className="scroll-mt-24 px-0 pt-0 pb-0 sm:scroll-mt-28">
       {/* Same horizontal strip as preview grid so “Videos” lines up with first tile (esp. desktop) */}
       <div className={PREVIEW_STRIP_BLEED}>
         {/* TikTok-style content tab: videos active */}
@@ -1374,18 +1534,17 @@ export default function InstructorProfile() {
 
       {profileVideoPreview ? (
         <div
-          className="fixed inset-0 z-[105] flex items-end justify-center bg-black/70 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[105] flex items-center justify-center bg-black/85 sm:bg-black/70 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-preview-video-title"
           onClick={() => setProfileVideoPreview(null)}
         >
           <div
-            className="relative w-full max-w-3xl overflow-hidden rounded-t-2xl bg-zinc-950 shadow-2xl ring-1 ring-white/10 sm:rounded-xl"
+            className="relative flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-zinc-950 shadow-2xl ring-1 ring-white/10 sm:h-auto sm:max-h-[90vh] sm:rounded-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Compact bar — title overlaid on video on mobile */}
-            <div className="absolute inset-x-0 top-0 z-10 flex items-start justify-between gap-3 bg-gradient-to-b from-black/70 to-transparent px-3 pb-8 pt-3 sm:static sm:bg-white sm:bg-none sm:px-4 sm:pb-3 sm:pt-3">
+            <div className="flex shrink-0 items-start justify-between gap-3 bg-zinc-950 px-3 py-3 sm:bg-white sm:px-4">
               <div className="min-w-0">
                 <p
                   id="profile-preview-video-title"
@@ -1402,7 +1561,7 @@ export default function InstructorProfile() {
               <button
                 type="button"
                 onClick={() => setProfileVideoPreview(null)}
-                className="shrink-0 rounded-full bg-white/15 p-1.5 text-white backdrop-blur-sm hover:bg-white/25 sm:rounded sm:bg-transparent sm:p-1 sm:text-zinc-500 sm:hover:bg-zinc-100 sm:hover:text-zinc-800"
+                className="shrink-0 rounded-full bg-white/15 p-1.5 text-white hover:bg-white/25 sm:rounded sm:bg-transparent sm:p-1 sm:text-zinc-500 sm:hover:bg-zinc-100 sm:hover:text-zinc-800"
                 aria-label="Close preview"
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -1412,16 +1571,16 @@ export default function InstructorProfile() {
             </div>
 
             <video
+              ref={profilePreviewVideoRef}
               key={profileVideoPreview.src}
               src={profileVideoPreview.src}
               controls
               playsInline
               autoPlay
-              muted
-              className="mx-auto max-h-[42vh] w-full bg-black object-contain sm:max-h-[min(70vh,28rem)] sm:aspect-video"
+              className="min-h-0 w-full flex-1 bg-black object-contain sm:max-h-[min(70vh,28rem)] sm:flex-none sm:aspect-video"
             />
 
-            <div className="border-t border-white/10 bg-zinc-950 px-4 py-2.5 text-center sm:border-zinc-100 sm:bg-white sm:py-3">
+            <div className="shrink-0 border-t border-white/10 bg-zinc-950 px-4 py-3 text-center sm:border-zinc-100 sm:bg-white">
               <button
                 type="button"
                 className="text-sm font-semibold text-blue-400 hover:text-blue-300 hover:underline sm:text-blue-600 sm:hover:text-blue-700"

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FiUser, FiMail, FiLock, FiLogIn, FiArrowRight, FiEye, FiEyeOff } from 'react-icons/fi';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
+import { readPendingCheckout, savePendingCheckout } from '../../utils/pendingCheckout';
 // import { GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 // import { auth } from "../../components/firebase"; // <-- this is critical
 // import { onAuthStateChanged } from "firebase/auth";
@@ -31,6 +32,12 @@ function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
 
+  useEffect(() => {
+    if (location.state?.checkout?.item) {
+      savePendingCheckout(location.state.checkout);
+    }
+  }, [location.state]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);
@@ -51,6 +58,20 @@ function Login() {
       
       // Dispatch custom event to notify components of authentication
       window.dispatchEvent(new Event('auth-change'));
+
+      const pending = location.state?.checkout || readPendingCheckout();
+      if (pending?.item) {
+        // Keep sessionStorage until Checkout loads so refresh still resumes payment
+        navigate('/checkout', {
+          replace: true,
+          state: {
+            item: pending.item,
+            returnPath: pending.returnPath || null,
+            returnTabState: pending.returnTabState ?? null,
+          },
+        });
+        return;
+      }
       
       navigate(postLoginPath, { replace: true });
     } catch (err) {
@@ -125,7 +146,11 @@ function Login() {
               <h2 className="text-2xl font-bold text-gray-900">Sign In</h2>
               <div className="flex items-center text-sm">
                 <span className="text-gray-600 mr-2">New to our platform?</span>
-                <Link to="/register" className="font-medium text-blue-600 hover:text-blue-500 inline-flex items-center">
+                <Link
+                  to="/register"
+                  state={location.state || undefined}
+                  className="font-medium text-blue-600 hover:text-blue-500 inline-flex items-center"
+                >
                   Sign up <FiArrowRight className="ml-1 h-4 w-4" />
                 </Link>
               </div>

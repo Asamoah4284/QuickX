@@ -3,6 +3,7 @@ import { FiLock, FiArrowRight, FiRefreshCw } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { API_URL } from '@/config/api';
+import { readPendingCheckout, savePendingCheckout } from '@/utils/pendingCheckout';
 
 function VerifyAccount() {
   const navigate = useNavigate();
@@ -23,6 +24,12 @@ function VerifyAccount() {
       navigate('/register');
     }
   }, [email, navigate]);
+
+  useEffect(() => {
+    if (location.state?.checkout?.item) {
+      savePendingCheckout(location.state.checkout);
+    }
+  }, [location.state]);
 
   useEffect(() => {
     let interval;
@@ -52,6 +59,28 @@ function VerifyAccount() {
     }
   };
 
+  const continueAfterVerify = () => {
+    const pending = location.state?.checkout || readPendingCheckout();
+    if (pending?.item) {
+      // Keep sessionStorage until Checkout loads so refresh still resumes payment
+      navigate('/checkout', {
+        replace: true,
+        state: {
+          item: pending.item,
+          returnPath: pending.returnPath || null,
+          returnTabState: pending.returnTabState ?? null,
+        },
+      });
+      return;
+    }
+    const from = location.state?.from;
+    if (typeof from === 'string' && from) {
+      navigate(from, { replace: true });
+      return;
+    }
+    navigate('/', { replace: true });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const verificationCode = code.join('');
@@ -70,7 +99,11 @@ function VerifyAccount() {
         code: verificationCode
       });
       
-      setSuccess('Account verified successfully! Redirecting...');
+      setSuccess(
+        (location.state?.checkout || readPendingCheckout())?.item
+          ? 'Account verified! Returning you to checkout…'
+          : 'Account verified successfully! Redirecting...'
+      );
       
       // Store new token and user data
       localStorage.setItem('authToken', response.data.token);
@@ -78,8 +111,8 @@ function VerifyAccount() {
       window.dispatchEvent(new Event('auth-change'));
 
       setTimeout(() => {
-        navigate('/');
-      }, 2000);
+        continueAfterVerify();
+      }, 900);
     } catch (err) {
       setError(err.response?.data?.message || 'Verification failed. Please check the code.');
     } finally {

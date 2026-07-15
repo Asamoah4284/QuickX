@@ -109,6 +109,53 @@ async function hasActiveSubscription(studentId, tutorId) {
   return Boolean(sub);
 }
 
+/**
+ * Enroll a subscriber in every published course belonging to the tutor
+ * so courses appear in Dashboard → My Courses.
+ */
+async function enrollStudentInTutorPublishedCourses(studentId, tutorId) {
+  const Course = require('../models/Course');
+  const Enrollment = require('../models/Enrollment');
+  if (!studentId || !tutorId) return [];
+
+  const courses = await Course.find({
+    $and: [
+      { $or: [{ createdBy: tutorId }, { instructor: tutorId }] },
+      { $or: [{ source: { $ne: 'user' } }, { listingStatus: 'published' }] },
+    ],
+  }).select('_id');
+
+  if (!courses.length) return [];
+
+  const courseIds = courses.map((c) => c._id);
+  const existing = await Enrollment.find({
+    studentId,
+    courseId: { $in: courseIds },
+  }).select('courseId');
+
+  const have = new Set(existing.map((e) => String(e.courseId)));
+  const missing = courseIds.filter((id) => !have.has(String(id)));
+  if (!missing.length) return existing;
+
+  try {
+    await Enrollment.insertMany(
+      missing.map((courseId) => ({
+        studentId,
+        courseId,
+        enrolledAt: new Date(),
+        progressPercent: 0,
+        completedLessonIds: [],
+      })),
+      { ordered: false }
+    );
+  } catch (err) {
+    // Ignore duplicate-key races; other errors still bubble
+    if (err?.code !== 11000 && !err?.writeErrors) throw err;
+  }
+
+  return Enrollment.find({ studentId, courseId: { $in: courseIds } });
+}
+
 /** Active paid tutor subscriptions for a student (community access list). */
 async function listActiveSubscriptionsForStudent(studentId) {
   const now = new Date();
@@ -148,6 +195,7 @@ module.exports = {
   createOrExtendFromPayment,
   getActiveSubscription,
   hasActiveSubscription,
+  enrollStudentInTutorPublishedCourses,
   listActiveSubscriptionsForStudent,
   listSubscribersForTutor,
   expireIfNeeded,

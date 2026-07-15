@@ -49,8 +49,32 @@ function CourseThumb({ url }) {
 
 /** Actions shared by table row + mobile card */
 function CourseRowActions({ course, navigate, runAction }) {
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return undefined;
+    const onPointer = (e) => {
+      if (e.target?.closest?.(`[data-course-menu="${course._id}"]`)) return;
+      setMenuOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('pointerdown', onPointer);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [menuOpen, course._id]);
+
+  const closeAndRun = (action) => {
+    setMenuOpen(false);
+    runAction(course._id, action);
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-1.5 md:justify-end">
+    <div className="relative z-10 flex flex-wrap items-center gap-1.5 md:justify-end" data-course-menu={course._id}>
       <button
         type="button"
         onClick={() => navigate(`/creator/dashboard/courses/${course._id}/edit`)}
@@ -68,63 +92,81 @@ function CourseRowActions({ course, navigate, runAction }) {
         Preview
       </button>
 
-      <details className="group relative">
-        <summary className="flex cursor-pointer list-none items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+      <div className="relative">
+        <button
+          type="button"
+          aria-expanded={menuOpen}
+          aria-haspopup="menu"
+          onClick={() => setMenuOpen((open) => !open)}
+          className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:bg-slate-50"
+        >
           <FiMoreHorizontal className="h-4 w-4" aria-hidden />
           <span className="sr-only">More actions</span>
-        </summary>
-        <div className="absolute right-0 z-20 mt-1 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 ring-1 ring-slate-900/5 max-[480px]:left-0 max-[480px]:right-auto">
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            onClick={() => runAction(course._id, 'duplicate')}
+        </button>
+
+        {menuOpen ? (
+          <div
+            role="menu"
+            className="absolute bottom-full right-0 z-50 mb-1.5 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-slate-900/5 md:bottom-auto md:top-full md:mb-0 md:mt-1"
           >
-            <FiCopy className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-            Duplicate
-          </button>
-          {['draft', 'rejected', 'published'].includes(course.listingStatus) ? (
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-emerald-700 hover:bg-emerald-50"
-              onClick={() => runAction(course._id, 'submit')}
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+              onClick={() => closeAndRun('duplicate')}
             >
-              <FiSend className="h-4 w-4 shrink-0" aria-hidden />
-              Submit for review
+              <FiCopy className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+              Duplicate
             </button>
-          ) : null}
-          {course.listingStatus === 'published' ? (
+            {['draft', 'rejected', 'published'].includes(course.listingStatus) ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-emerald-700 hover:bg-emerald-50"
+                onClick={() => closeAndRun('submit')}
+              >
+                <FiSend className="h-4 w-4 shrink-0" aria-hidden />
+                Submit for review
+              </button>
+            ) : null}
+            {course.listingStatus === 'published' ? (
+              <button
+                type="button"
+                role="menuitem"
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-amber-800 hover:bg-amber-50"
+                onClick={() => closeAndRun('unpublish')}
+              >
+                <FiToggleLeft className="h-4 w-4 shrink-0" aria-hidden />
+                Unpublish
+              </button>
+            ) : null}
             <button
               type="button"
-              className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-amber-800 hover:bg-amber-50"
-              onClick={() => runAction(course._id, 'unpublish')}
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+              onClick={() => closeAndRun('archive')}
             >
-              <FiToggleLeft className="h-4 w-4 shrink-0" aria-hidden />
-              Unpublish
+              <FiArchive className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+              Archive
             </button>
-          ) : null}
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-50"
-            onClick={() => runAction(course._id, 'archive')}
-          >
-            <FiArchive className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
-            Archive
-          </button>
-          <div className="my-1 border-t border-slate-100" />
-          <button
-            type="button"
-            className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-rose-600 hover:bg-rose-50"
-            onClick={() => {
-              if (window.confirm('Delete this course permanently? This cannot be undone.')) {
-                runAction(course._id, 'delete');
-              }
-            }}
-          >
-            <FiTrash2 className="h-4 w-4 shrink-0" aria-hidden />
-            Delete
-          </button>
-        </div>
-      </details>
+            <div className="my-1 border-t border-slate-100" />
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50"
+              onClick={() => {
+                setMenuOpen(false);
+                if (window.confirm('Delete this course permanently? This cannot be undone.')) {
+                  runAction(course._id, 'delete');
+                }
+              }}
+            >
+              <FiTrash2 className="h-4 w-4 shrink-0" aria-hidden />
+              Delete
+            </button>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -238,7 +280,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
         ) : null}
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white sm:rounded-3xl">
+      <div className="rounded-2xl border border-slate-200/80 bg-white sm:rounded-3xl md:overflow-hidden">
         {loading ? (
           <div className="p-6 text-sm text-slate-500 sm:p-8">Loading courses…</div>
         ) : courses.length === 0 ? (
@@ -248,7 +290,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
         ) : (
           <>
             {/* Mobile / small tablet: stacked cards (no horizontal table scroll) */}
-            <div className="space-y-3 p-3 sm:space-y-4 sm:p-4 md:hidden">
+            <div className="space-y-3 overflow-visible p-3 sm:space-y-4 sm:p-4 md:hidden">
               {courses.map((course) => {
                 const thumb = courseThumbnailUrl(course);
                 const students = course.totalEnrollments ?? course.totalStudents ?? 0;
@@ -268,7 +310,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                 return (
                   <article
                     key={course._id}
-                    className="rounded-2xl border border-slate-200/90 bg-slate-50/40 p-3 sm:p-4"
+                    className="overflow-visible rounded-2xl border border-slate-200/90 bg-slate-50/40 p-3 sm:p-4"
                   >
                     <div className="flex gap-3">
                       <div className="relative h-16 w-[4.75rem] shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-[4.5rem] sm:w-[5.25rem]">

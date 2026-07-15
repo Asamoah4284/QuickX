@@ -81,55 +81,83 @@ router.get('/user/purchased', auth, async (req, res) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
-        const [purchases, enrollments] = await Promise.all([
-            Purchase.find({
-                userId: req.user._id,
-                status: 'completed'
-            }).populate({
-                path: 'courseId',
-                select: 'title description shortDescription thumbnail price instructor'
-            }),
-            Enrollment.find({ studentId: req.user._id }).populate({
-                path: 'courseId',
-                select: 'title description shortDescription thumbnail price instructor'
-            })
-        ]);
+        const {
+            listActiveSubscriptionsForStudent,
+            enrollStudentInTutorPublishedCourses,
+        } = require('../services/tutorSubscriptionService');
 
-        const courseMap = new Map();
+        const buildCourseList = async () => {
+            const [purchases, enrollments] = await Promise.all([
+                Purchase.find({
+                    userId: req.user._id,
+                    status: 'completed'
+                }).populate({
+                    path: 'courseId',
+                    select: 'title description shortDescription thumbnail price instructor'
+                }),
+                Enrollment.find({ studentId: req.user._id }).populate({
+                    path: 'courseId',
+                    select: 'title description shortDescription thumbnail price instructor'
+                })
+            ]);
 
-        purchases
-            .filter((purchase) => purchase.courseId)
-            .forEach((purchase) => {
-                courseMap.set(String(purchase.courseId._id), {
-                    id: purchase.courseId._id,
-                    title: purchase.courseId.title,
-                    description: purchase.courseId.shortDescription || purchase.courseId.description,
-                    thumbnail: purchase.courseId.thumbnail,
-                    price: purchase.courseId.price,
-                    instructor: purchase.courseId.instructor?.fullName || 'Unknown Instructor',
-                    purchaseDate: purchase.createdAt,
-                    progress: 0,
-                    lastAccessed: 'Recently'
+            const courseMap = new Map();
+
+            purchases
+                .filter((purchase) => purchase.courseId)
+                .forEach((purchase) => {
+                    courseMap.set(String(purchase.courseId._id), {
+                        id: purchase.courseId._id,
+                        title: purchase.courseId.title,
+                        description: purchase.courseId.shortDescription || purchase.courseId.description,
+                        thumbnail: purchase.courseId.thumbnail,
+                        price: purchase.courseId.price,
+                        instructor: purchase.courseId.instructor?.fullName || 'Unknown Instructor',
+                        purchaseDate: purchase.createdAt,
+                        progress: 0,
+                        lastAccessed: 'Recently'
+                    });
                 });
-            });
 
-        enrollments
-            .filter((enrollment) => enrollment.courseId)
-            .forEach((enrollment) => {
-                courseMap.set(String(enrollment.courseId._id), {
-                    id: enrollment.courseId._id,
-                    title: enrollment.courseId.title,
-                    description: enrollment.courseId.shortDescription || enrollment.courseId.description,
-                    thumbnail: enrollment.courseId.thumbnail,
-                    price: enrollment.courseId.price,
-                    instructor: enrollment.courseId.instructor?.fullName || 'Unknown Instructor',
-                    purchaseDate: enrollment.enrolledAt,
-                    progress: enrollment.progressPercent || 0,
-                    lastAccessed: enrollment.updatedAt ? new Date(enrollment.updatedAt).toLocaleDateString() : 'Recently'
+            enrollments
+                .filter((enrollment) => enrollment.courseId)
+                .forEach((enrollment) => {
+                    courseMap.set(String(enrollment.courseId._id), {
+                        id: enrollment.courseId._id,
+                        title: enrollment.courseId.title,
+                        description: enrollment.courseId.shortDescription || enrollment.courseId.description,
+                        thumbnail: enrollment.courseId.thumbnail,
+                        price: enrollment.courseId.price,
+                        instructor: enrollment.courseId.instructor?.fullName || 'Unknown Instructor',
+                        purchaseDate: enrollment.enrolledAt,
+                        progress: enrollment.progressPercent || 0,
+                        lastAccessed: enrollment.updatedAt ? new Date(enrollment.updatedAt).toLocaleDateString() : 'Recently'
+                    });
                 });
-            });
 
-        res.json(Array.from(courseMap.values()));
+            return Array.from(courseMap.values());
+        };
+
+        // Respond immediately with what we already have (enrollment happens at payment time).
+        const courses = await buildCourseList();
+        res.json(courses);
+
+        // Soft sync in the background so future visits stay consistent without blocking this request.
+        setImmediate(async () => {
+            try {
+                const subs = await listActiveSubscriptionsForStudent(req.user._id);
+                await Promise.all(
+                    subs.map((sub) => {
+                        const tutorId = sub.tutorId?._id || sub.tutorId;
+                        return tutorId
+                            ? enrollStudentInTutorPublishedCourses(req.user._id, tutorId)
+                            : Promise.resolve();
+                    })
+                );
+            } catch (syncErr) {
+                console.error('subscription course sync:', syncErr.message);
+            }
+        });
     } catch (error) {
         console.error('Error fetching purchased courses:', error);
         res.status(500).json({ 
@@ -314,14 +342,34 @@ router.get('/:id/full', auth, async (req, res) => {
                 courseId: course._id
             })
         ]);
-        
+
+        let accessEnrollment = enrollment;
         if (!purchase && !enrollment) {
-            return res.status(403).json({ message: 'Access denied. Please purchase this course.' });
+            const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
+            const tutorId = resolveCourseTutorId(course);
+            const subscribed = tutorId ? await hasActiveSubscription(user._id, tutorId) : false;
+            if (!subscribed) {
+                return res.status(403).json({ message: 'Access denied. Please purchase this course.' });
+            }
+            // Active creator subscription — ensure enrollment so progress tracking works
+            accessEnrollment = await Enrollment.findOneAndUpdate(
+                { studentId: user._id, courseId: course._id },
+                {
+                    $setOnInsert: {
+                        studentId: user._id,
+                        courseId: course._id,
+                        enrolledAt: new Date(),
+                        progressPercent: 0,
+                        completedLessonIds: [],
+                    },
+                },
+                { upsert: true, new: true }
+            );
         }
         
         res.json({
             ...course.toObject(),
-            enrollment
+            enrollment: accessEnrollment
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
