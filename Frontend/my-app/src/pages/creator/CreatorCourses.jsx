@@ -18,6 +18,18 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const filterOptions = ['all', 'published', 'draft', 'under_review', 'rejected', 'archived'];
 
+/** Creator catalog is subscription-based; course.price is usually 0. */
+function formatCreatorCoursePrice(course, subscriptionPricing) {
+  const month1 = Number(subscriptionPricing?.month1);
+  if (Number.isFinite(month1) && month1 > 0) {
+    return `From GH₵${month1.toLocaleString()}/mo`;
+  }
+  if (course.pricingType === 'free' || Number(course.price) === 0) {
+    return 'Free';
+  }
+  return `GH₵${Number(course.price).toLocaleString()}`;
+}
+
 function courseThumbnailUrl(course) {
   const t = course?.thumbnail;
   if (!t) return null;
@@ -176,6 +188,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
   const [courses, setCourses] = useState([]);
+  const [subscriptionPricing, setSubscriptionPricing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState(statusFilter);
@@ -194,13 +207,21 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
     }
     setLoading(true);
     setError('');
-    axios
-      .get(`${API_URL}/api/instructor/courses`, {
+    Promise.all([
+      axios.get(`${API_URL}/api/instructor/courses`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { status: activeFilter },
-      })
-      .then(({ data }) => {
-        setCourses(Array.isArray(data) ? data : []);
+      }),
+      axios
+        .get(`${API_URL}/api/users/creator/profile`, {
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        .catch(() => null),
+    ])
+      .then(([coursesResponse, profileResponse]) => {
+        setCourses(Array.isArray(coursesResponse.data) ? coursesResponse.data : []);
+        const sp = profileResponse?.data?.tutorProfile?.subscriptionPricing;
+        setSubscriptionPricing(sp || null);
       })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || requestError.message);
@@ -294,10 +315,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
               {courses.map((course) => {
                 const thumb = courseThumbnailUrl(course);
                 const students = course.totalEnrollments ?? course.totalStudents ?? 0;
-                const priceLabel =
-                  course.pricingType === 'free' || Number(course.price) === 0
-                    ? 'Free'
-                    : `GH₵${Number(course.price).toLocaleString()}`;
+                const priceLabel = formatCreatorCoursePrice(course, subscriptionPricing);
                 const revenue = Number(course.totalRevenue || 0).toFixed(2);
                 const rating = course.averageRating ?? 0;
                 const updated = new Date(course.updatedAt).toLocaleDateString(undefined, {
@@ -379,10 +397,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                   {courses.map((course) => {
                     const thumb = courseThumbnailUrl(course);
                     const students = course.totalEnrollments ?? course.totalStudents ?? 0;
-                    const priceLabel =
-                      course.pricingType === 'free' || Number(course.price) === 0
-                        ? 'Free'
-                        : `GH₵${Number(course.price).toLocaleString()}`;
+                    const priceLabel = formatCreatorCoursePrice(course, subscriptionPricing);
                     const revenue = Number(course.totalRevenue || 0).toFixed(2);
                     const rating = course.averageRating ?? 0;
 

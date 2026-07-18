@@ -3,13 +3,11 @@ import {
   FiShoppingCart,
   FiBook,
   FiArrowRight,
-  FiChevronLeft,
-  FiChevronRight,
   FiX,
   FiMinus,
   FiPlus,
 } from 'react-icons/fi';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import HardcopyRequestModal from '../../components/HardcopyRequestModal';
 import BookMarketplaceCard from '../../components/BookMarketplaceCard';
@@ -21,8 +19,41 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 
+/** Decorative book photos for the store hero — stacked fan layout. */
+const HERO_BOOK_COVERS = [
+  {
+    src: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80',
+    rotate: '-14deg',
+    x: '6%',
+    z: 1,
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=400&q=80',
+    rotate: '-7deg',
+    x: '22%',
+    z: 2,
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=400&q=80',
+    rotate: '0deg',
+    x: '38%',
+    z: 5,
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=400&q=80',
+    rotate: '7deg',
+    x: '54%',
+    z: 3,
+  },
+  {
+    src: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80',
+    rotate: '14deg',
+    x: '70%',
+    z: 1,
+  },
+];
+
 const Store = () => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
   const [cartCount, setCartCount] = useState(0);
@@ -32,38 +63,8 @@ const Store = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [justAddedId, setJustAddedId] = useState('');
+  const [fanReady, setFanReady] = useState(false);
   const navigate = useNavigate();
-
-  const fallbackHeroSlides = useMemo(
-    () => [
-      { id: 'fb-1', url: '/images/bk-1.jpg', alt: 'Featured digital book â€” The Wise Scholar', tag: 'Spotlight' },
-      { id: 'fb-2', url: '/images/bk-3.jpg', alt: 'Reading collection highlight', tag: 'Trending' },
-      { id: 'fb-3', url: '/images/bk-5.jpg', alt: 'New in the library', tag: 'New' },
-    ],
-    []
-  );
-
-  /** Prefer live book covers when the API returns titles; fall back to static art. */
-  const heroSlides = useMemo(() => {
-    const tags = ['Spotlight', 'Trending', 'New'];
-    const fromApi = books
-      .filter((b) => b?.thumbnail || b?.title)
-      .slice(0, 8)
-      .map((b, i) => ({
-        id: `book-${b._id}`,
-        url: b.thumbnail || DEFAULT_BOOK_COVER,
-        alt: b.title || 'Book cover',
-        tag: tags[i % tags.length],
-        bookId: String(b._id),
-        title: b.title,
-        author: b.author,
-      }));
-    if (fromApi.length) return fromApi;
-    return fallbackHeroSlides;
-  }, [books, fallbackHeroSlides]);
-
-  const currentHero = heroSlides[currentImageIndex] ?? heroSlides[0];
-  const heroBookId = currentHero?.bookId;
 
   // Fetch books from API
   useEffect(() => {
@@ -86,25 +87,9 @@ const Store = () => {
   }, []);
 
   useEffect(() => {
-    setCurrentImageIndex((i) => Math.min(i, Math.max(0, heroSlides.length - 1)));
-  }, [heroSlides.length]);
-
-  useEffect(() => {
-    if (heroSlides.length <= 1) return undefined;
-    const interval = setInterval(() => {
-      setCurrentImageIndex((prev) => (prev + 1) % heroSlides.length);
-    }, 5500);
-    return () => clearInterval(interval);
-  }, [heroSlides]);
-
-  const goHeroSlide = (dir) => {
-    setCurrentImageIndex((prev) => {
-      const next = prev + dir;
-      if (next < 0) return heroSlides.length - 1;
-      if (next >= heroSlides.length) return 0;
-      return next;
-    });
-  };
+    const id = window.requestAnimationFrame(() => setFanReady(true));
+    return () => window.cancelAnimationFrame(id);
+  }, []);
 
   const getCart = () => {
     try {
@@ -233,216 +218,152 @@ const Store = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section with Featured Book */}
-      <div className="relative min-h-[38vh] overflow-hidden text-white sm:min-h-[42vh] lg:min-h-[min(52vh,560px)]">
-        {/* Hero-style layered background (matches main hero vibe) */}
-        <div className="absolute inset-0 z-0" aria-hidden>
-          {/* Solid brand base (slightly darker for a calmer, premium look) */}
-          <div className="absolute inset-0 bg-[#1552D6]" />
-
-          {/* Soft light blobs (solid colors + blur, no gradients) */}
-          <div className="absolute -right-24 top-10 h-72 w-72 rounded-full bg-white/14 blur-3xl" />
-          <div className="absolute -left-28 -bottom-24 h-80 w-80 rounded-full bg-indigo-950/28 blur-3xl" />
-          <div className="absolute left-1/2 top-1/2 h-64 w-64 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white/10 blur-3xl" />
-
-          {/* Grain texture for a premium feel */}
-          <div
-            className="absolute inset-0 opacity-[0.07] mix-blend-overlay"
-            style={{
-              backgroundImage:
-                "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.75' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23n)' opacity='.45'/%3E%3C/svg%3E\")",
-            }}
-          />
-        </div>
-
-        <div className="relative z-10 mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8 lg:py-16">
-          <div className="grid min-w-0 grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-12">
-            <div className="min-w-0 space-y-4 text-white sm:space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 text-[11px] font-semibold uppercase tracking-wide text-blue-100 backdrop-blur-sm sm:px-4 sm:py-1.5 sm:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.9)]" aria-hidden />
-                {currentHero?.tag ?? 'Featured'}
+    <div className="min-h-screen bg-white">
+      {/* Hero — static copy + book image collection */}
+      <div className="border-b border-slate-100 bg-[#F7F9FC]">
+        <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
+            <div className="max-w-xl space-y-5">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1B5EF5] ring-1 ring-slate-200/80 sm:text-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-[#1B5EF5]" aria-hidden />
+                Bookstore
               </div>
-              <h1 className="line-clamp-4 text-balance text-3xl font-bold leading-tight tracking-tight sm:line-clamp-none sm:text-4xl sm:leading-tight md:text-5xl lg:text-[2.75rem] lg:leading-[1.1]">
-                {heroBookId && currentHero?.title
-                  ? currentHero.title
-                  : 'Discover Your Next Digital Adventure'}
+              <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight text-[#0B1F44] sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
+                Discover your next digital book
               </h1>
-              <p className="max-w-lg text-pretty text-sm leading-relaxed text-blue-100/95 sm:text-base md:text-lg">
-                {heroBookId && currentHero?.author
-                  ? `${currentHero.author} â€” browse the marketplace for more titles and instant checkout.`
-                  : 'Explore our curated collection of digital books and expand your knowledge.'}
+              <p className="max-w-md text-pretty text-sm leading-relaxed text-slate-500 sm:text-base">
+                Browse the marketplace for more titles and instant checkout—ebooks you can open right
+                away, plus hardcopy requests when you need print.
               </p>
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <div className="pt-1">
                 <a
                   href="#store-books"
-                  className="inline-flex w-full items-center justify-center rounded-xl bg-white px-5 py-3 text-center text-sm font-semibold text-blue-900 shadow-lg shadow-blue-950/20 transition-colors duration-300 hover:bg-blue-50 sm:w-auto sm:px-6 sm:text-base"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1552D6]"
                 >
                   Browse collection
+                  <FiArrowRight className="h-4 w-4" />
                 </a>
-                {heroBookId ? (
-                  <Link
-                    to={`/store/${heroBookId}`}
-                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/95 underline-offset-4 transition-colors hover:text-blue-100 hover:underline sm:text-base"
-                  >
-                    <span>Open this book</span>
-                    <FiArrowRight className="h-4 w-4" />
-                  </Link>
-                ) : (
-                  <a
-                    href="#store-books"
-                    className="inline-flex items-center justify-center gap-2 text-sm font-semibold text-white/95 underline-offset-4 transition-colors hover:text-blue-100 hover:underline sm:text-base"
-                  >
-                    <span>Learn more</span>
-                    <FiArrowRight className="h-4 w-4" />
-                  </a>
-                )}
               </div>
             </div>
 
-            {/* Hero carousel â€” crossfade covers + arrows + dots */}
-            <div className="relative min-w-0 w-full justify-self-center lg:justify-self-end">
-              <div className="relative mx-auto w-full max-w-[min(100%,320px)] sm:max-w-md lg:max-w-[320px]">
+            <div
+              className={`store-book-fan relative mx-auto h-[280px] w-full max-w-md sm:h-[340px] lg:max-w-none ${
+                fanReady ? 'store-book-fan--ready' : ''
+              }`}
+              aria-hidden
+            >
+              <style>{`
+                @keyframes storeBookFanIn {
+                  from {
+                    opacity: 0;
+                    transform: translateY(20px) rotate(var(--book-r)) scale(0.96);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0) rotate(var(--book-r)) scale(1);
+                  }
+                }
+                .store-book-fan__card {
+                  opacity: 0;
+                  transform: translateY(20px) rotate(var(--book-r)) scale(0.96);
+                  pointer-events: none;
+                }
+                .store-book-fan--ready .store-book-fan__card {
+                  animation: storeBookFanIn 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+                  animation-delay: var(--book-delay);
+                }
+              `}</style>
+              {HERO_BOOK_COVERS.map((cover, i) => (
                 <div
-                  className="relative aspect-[4/3] w-full sm:aspect-[3/4]"
-                  role="region"
-                  aria-roledescription="carousel"
-                  aria-label="Featured books and promotions"
+                  key={cover.src}
+                  className="store-book-fan__card absolute top-[22%] w-[36%] max-w-[148px] overflow-hidden rounded-lg bg-white shadow-[0_14px_32px_rgba(15,23,42,0.16)] ring-1 ring-black/5 sm:top-[20%] sm:max-w-[168px]"
+                  style={{
+                    left: cover.x,
+                    zIndex: cover.z,
+                    '--book-r': cover.rotate,
+                    '--book-delay': `${80 + i * 110}ms`,
+                  }}
                 >
-                  {/* Soft shelf / glow behind covers */}
-                  <div
-                    className="pointer-events-none absolute inset-x-[8%] bottom-[6%] top-[18%] rounded-[2rem] bg-gradient-to-b from-white/20 to-transparent blur-2xl"
-                    aria-hidden
-                  />
-                  {heroSlides.map((slide, i) => (
+                  <div className="aspect-[3/4]">
                     <img
-                      key={slide.id}
-                      src={slide.url}
-                      alt={slide.alt}
-                      className={`absolute inset-0 m-auto max-h-[92%] max-w-[92%] object-contain drop-shadow-[0_25px_45px_rgba(0,0,0,0.35)] transition-opacity duration-700 ease-out ${
-                        i === currentImageIndex ? 'z-10 opacity-100' : 'z-0 opacity-0'
-                      }`}
-                      draggable={false}
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = DEFAULT_BOOK_COVER;
-                      }}
+                      src={cover.src}
+                      alt=""
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
                     />
-                  ))}
-                  <button
-                    type="button"
-                    onClick={() => goHeroSlide(-1)}
-                    className="absolute left-0 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white shadow-md backdrop-blur-sm transition hover:bg-white/25 sm:left-1"
-                    aria-label="Previous slide"
-                  >
-                    <FiChevronLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => goHeroSlide(1)}
-                    className="absolute right-0 top-1/2 z-30 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-white/25 bg-white/15 text-white shadow-md backdrop-blur-sm transition hover:bg-white/25 sm:right-1"
-                    aria-label="Next slide"
-                  >
-                    <FiChevronRight className="h-5 w-5" />
-                  </button>
-                </div>
-
-                {heroSlides.length > 1 ? (
-                  <div className="mt-4 flex justify-center gap-2" role="tablist" aria-label="Choose slide">
-                    {heroSlides.map((slide, i) => (
-                      <button
-                        key={slide.id}
-                        type="button"
-                        role="tab"
-                        aria-selected={i === currentImageIndex}
-                        aria-label={`Show slide ${i + 1}`}
-                        onClick={() => setCurrentImageIndex(i)}
-                        className={`h-2 rounded-full transition-all duration-300 ${
-                          i === currentImageIndex ? 'w-8 bg-white' : 'w-2 bg-white/35 hover:bg-white/55'
-                        }`}
-                      />
-                    ))}
                   </div>
-                ) : null}
               </div>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Main content */}
+      {/* Marketplace */}
       <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
-        <div>
+        <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
           <div>
-            <div className="mb-6 sm:mb-8">
-              <div className="flex items-end justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl md:text-3xl">
+            <h2 className="text-xl font-bold tracking-tight text-[#0B1F44] sm:text-2xl md:text-3xl">
                     Marketplace
                   </h2>
-                  <p className="mt-1 text-sm text-slate-600">
+            <p className="mt-1 text-sm text-slate-500">
                     Buy digital books instantly. Hardcopy requests are handled via WhatsApp.
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* Mobile cart button */}
                   <button
                     type="button"
                     onClick={handleOpenCart}
-                    className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-slate-900 hover:bg-slate-50 sm:hidden"
+              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:hidden"
                     aria-label="View cart"
                   >
                     <span className="relative">
                       <FiShoppingCart className="h-5 w-5" />
                       {cartCount > 0 ? (
-                        <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1.5 text-[11px] font-bold leading-none text-white">
+                  <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1B5EF5] px-1.5 text-[11px] font-bold leading-none text-white">
                           {cartCount}
                         </span>
                       ) : null}
                     </span>
                   </button>
-
-                  {/* Desktop cart button */}
                   <button
                     type="button"
                     onClick={handleOpenCart}
-                    className="hidden sm:inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-900 hover:bg-slate-50"
+              className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex"
                   >
                     <FiShoppingCart className="h-4 w-4" />
                     View cart
                     {cartCount > 0 ? (
-                      <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-blue-600 px-2 text-xs font-bold text-white">
+                <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#1B5EF5] px-2 text-xs font-bold text-white">
                         {cartCount}
                       </span>
                     ) : null}
                   </button>
-                </div>
               </div>
             </div>
 
-            {/* Loading state */}
-            {isLoading && (
-              <div className="flex justify-center items-center h-64">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1B5EF5] border-t-transparent" />
               </div>
-            )}
+        ) : null}
 
-            {/* Error state */}
-            {error && (
-              <div className="text-center py-12">
-                <div className="text-red-600 mb-4">{error}</div>
+        {error ? (
+          <div className="py-12 text-center">
+            <p className="mb-3 text-sm font-medium text-rose-600">{error}</p>
                 <button 
+              type="button"
                   onClick={() => window.location.reload()}
-                  className="text-indigo-600 hover:text-indigo-800"
+              className="text-sm font-semibold text-[#1B5EF5] hover:underline"
                 >
                   Try again
                 </button>
               </div>
-            )}
+        ) : null}
 
-            {/* Books grid */}
-            {!isLoading && !error && (
-              <div className="grid grid-cols-1 gap-4 justify-items-center sm:grid-cols-2 sm:justify-items-stretch sm:gap-5 lg:grid-cols-3 lg:gap-5">
+        {!isLoading && !error && books.length > 0 ? (
+          <div className="grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-2 sm:justify-items-stretch sm:gap-5 lg:grid-cols-3 lg:gap-5">
                 {books.map((book) => (
                   <BookMarketplaceCard
                     key={book._id}
@@ -455,21 +376,15 @@ const Store = () => {
                   />
                 ))}
               </div>
-            )}
+        ) : null}
 
-
-            {/* Empty state */}
-            {!isLoading && !error && books.length === 0 && (
-              <div className="text-center py-12">
-                <FiBook className="mx-auto h-12 w-12 text-gray-400" />
-                <h3 className="mt-2 text-sm font-medium text-gray-900">No books found</h3>
-                <p className="mt-1 text-sm text-gray-500">
-                  Check back later for new titles.
-                </p>
-              </div>
-            )}
+        {!isLoading && !error && books.length === 0 ? (
+          <div className="py-12 text-center">
+            <FiBook className="mx-auto h-12 w-12 text-slate-300" />
+            <h3 className="mt-2 text-sm font-medium text-[#0B1F44]">No books found</h3>
+            <p className="mt-1 text-sm text-slate-500">Check back later for new titles.</p>
           </div>
-        </div>
+        ) : null}
       </main>
 
       {/* Cart modal */}
@@ -515,7 +430,7 @@ const Store = () => {
                     <img
                       src={item.image || item.thumbnail || DEFAULT_BOOK_COVER}
                       alt=""
-                      className="h-16 w-12 shrink-0 rounded-lg border border-slate-200 object-cover"
+                      className="h-16 w-14 shrink-0 rounded-lg border border-slate-200 bg-slate-50 object-contain p-0.5"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = DEFAULT_BOOK_COVER;

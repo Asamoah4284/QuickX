@@ -145,10 +145,11 @@ export default function CreatorCommunity() {
                     <span className="text-xs text-amber-700">· announcement</span>
                   ) : null}
                   {p.pinned ? <span className="text-xs text-slate-400"> · pinned</span> : null}
+                  {p.featured ? <span className="text-xs text-amber-600"> · featured</span> : null}
                 </p>
                 <p className="mt-1 line-clamp-2 text-sm text-slate-600">{p.body}</p>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex shrink-0 flex-wrap justify-end gap-2">
                 <button
                   type="button"
                   className="text-xs font-semibold text-blue-600"
@@ -162,6 +163,20 @@ export default function CreatorCommunity() {
                   }}
                 >
                   {p.pinned ? 'Unpin' : 'Pin'}
+                </button>
+                <button
+                  type="button"
+                  className="text-xs font-semibold text-amber-600"
+                  onClick={async () => {
+                    await axios.patch(
+                      `${API_URL}/api/community/${tutorId}/posts/${p._id}`,
+                      { featured: !p.featured },
+                      { headers: authHeaders() }
+                    );
+                    load();
+                  }}
+                >
+                  {p.featured ? 'Unfeature' : 'Feature'}
                 </button>
                 <button
                   type="button"
@@ -275,24 +290,26 @@ export default function CreatorCommunity() {
             onSubmit={async (e) => {
               e.preventDefault();
               const fd = new FormData(e.currentTarget);
+              const action = String(fd.get('action') || 'block');
               await axios.post(
                 `${API_URL}/api/community/${tutorId}/blocks`,
                 {
                   userId: fd.get('userId'),
                   reason: fd.get('reason'),
-                  blocked: true,
+                  blocked: action === 'block',
+                  muted: action === 'mute',
                 },
                 { headers: authHeaders() }
               );
               e.currentTarget.reset();
-              setMessage('User blocked');
+              setMessage(action === 'mute' ? 'User muted' : 'User blocked');
               load();
             }}
           >
             <input
               name="userId"
               required
-              placeholder="User ID to block"
+              placeholder="User ID"
               className="rounded-xl border px-3 py-2 text-sm"
             />
             <input
@@ -300,14 +317,21 @@ export default function CreatorCommunity() {
               placeholder="Reason"
               className="rounded-xl border px-3 py-2 text-sm"
             />
+            <select name="action" className="rounded-xl border px-3 py-2 text-sm" defaultValue="block">
+              <option value="block">Block (no access)</option>
+              <option value="mute">Mute (can view, can&apos;t post)</option>
+            </select>
             <button type="submit" className="rounded-xl bg-rose-600 px-3 py-2 text-sm text-white">
-              <FiSlash className="inline" /> Block
+              <FiSlash className="inline" /> Apply
             </button>
           </form>
           {blocks.map((b) => (
             <div key={b._id} className="flex items-center justify-between border-b py-2 text-sm">
               <span>
-                {b.userId?.fullName || b.userId} — {b.reason || 'No reason'}
+                {b.userId?.fullName || b.userId}
+                {b.blocked ? ' · blocked' : ''}
+                {b.muted ? ' · muted' : ''}
+                {b.reason ? ` — ${b.reason}` : ''}
               </span>
               <button
                 type="button"
@@ -320,7 +344,7 @@ export default function CreatorCommunity() {
                   load();
                 }}
               >
-                Unblock
+                Remove
               </button>
             </div>
           ))}

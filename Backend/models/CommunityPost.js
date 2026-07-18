@@ -35,6 +35,7 @@ const communityPostSchema = new mongoose.Schema(
     },
     body: { type: String, trim: true, default: '' },
     media: [mediaSchema],
+    mentions: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     roomId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'DiscussionRoom',

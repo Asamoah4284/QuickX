@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
 import { FiShoppingCart, FiPackage, FiMinus, FiPlus, FiCheck } from 'react-icons/fi';
-import { formatGhs } from '../utils/formatGhs';
 import { formatBookListingPrice } from '../utils/bookListingPrice';
 
 const DEFAULT_COVER = '/images/bk-1.jpg';
 
 /**
- * Compact marketplace card — horizontal layout, price and actions grouped (no wide gap).
+ * Marketplace card — enhanced horizontal layout.
  */
 export default function BookMarketplaceCard({
   book,
@@ -23,25 +22,25 @@ export default function BookMarketplaceCard({
   const listingPrice = formatBookListingPrice(book);
 
   return (
-    <article className="group/card mx-auto w-full max-w-[22rem] overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-sm ring-1 ring-slate-900/[0.03] transition hover:border-slate-300 hover:shadow-md">
+    <article className="group/card mx-auto w-full max-w-[22rem] overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-[0_10px_28px_rgba(15,23,42,0.07)]">
       <div className="flex gap-4 p-3.5 sm:gap-4 sm:p-4">
         <Link
           to={detailPath}
-          className="relative block h-[9.5rem] w-[7.5rem] shrink-0 overflow-hidden rounded-lg bg-slate-100 sm:h-[11rem] sm:w-[8.5rem]"
+          className="relative flex h-[9.5rem] w-[7.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-50 ring-1 ring-slate-200/70 sm:h-[11rem] sm:w-[8.5rem]"
           aria-label={`View ${book.title}`}
         >
           <img
             src={book.thumbnail || DEFAULT_COVER}
             alt=""
-            className="h-full w-full object-cover transition duration-300 group-hover/card:scale-105"
+            className="max-h-full max-w-full object-contain p-1.5 transition duration-300 group-hover/card:scale-[1.03]"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = DEFAULT_COVER;
             }}
           />
           <span
-            className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-              isEbook ? 'bg-indigo-600 text-white' : 'bg-emerald-600 text-white'
+            className={`absolute left-1.5 top-1.5 rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ${
+              isEbook ? 'bg-[#1B5EF5]' : 'bg-emerald-600'
             }`}
           >
             {isEbook ? 'E-book' : 'Print'}
@@ -53,13 +52,13 @@ export default function BookMarketplaceCard({
           ) : null}
         </Link>
 
-        <div className="flex min-w-0 flex-1 flex-col justify-between">
+        <div className="flex min-w-0 flex-1 flex-col justify-between py-0.5">
           <div>
             <Link
               to={detailPath}
-              className="min-w-0 text-inherit no-underline hover:text-[#0c2340] focus:outline-none focus-visible:underline"
+              className="min-w-0 text-inherit no-underline hover:text-[#1B5EF5] focus:outline-none focus-visible:underline"
             >
-              <h3 className="line-clamp-2 text-[15px] font-bold leading-snug text-[#0c2340] sm:text-base">
+              <h3 className="line-clamp-2 text-[15px] font-bold leading-snug tracking-tight text-[#0B1F44] sm:text-base">
                 {book.title}
               </h3>
               {book.author ? (
@@ -72,9 +71,11 @@ export default function BookMarketplaceCard({
             ) : null}
           </div>
 
-          <div className="mt-2 space-y-2">
+          <div className="mt-2 space-y-2.5">
             <div className="flex flex-wrap items-center gap-2">
-              <p className="shrink-0 text-lg font-black text-[#0c2340]">{listingPrice}</p>
+              <p className="shrink-0 text-lg font-bold tracking-tight text-[#0B1F44]">
+                {listingPrice}
+              </p>
 
               {isEbook ? (
                 inCart ? (
@@ -91,7 +92,7 @@ export default function BookMarketplaceCard({
                     >
                       <FiMinus className="h-3.5 w-3.5" aria-hidden />
                     </button>
-                    <span className="min-w-[1.75rem] text-center text-sm font-bold text-[#0c2340]">
+                    <span className="min-w-[1.75rem] text-center text-sm font-bold text-[#0B1F44]">
                       {cartQuantity}
                     </span>
                     <button
@@ -111,7 +112,7 @@ export default function BookMarketplaceCard({
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold transition ${
                       justAdded
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-[#0c2340] text-white hover:bg-[#0a1c33]'
+                        : 'bg-[#0B1F44] text-white hover:bg-[#1B5EF5]'
                     }`}
                   >
                     {justAdded ? (
@@ -143,7 +144,7 @@ export default function BookMarketplaceCard({
             <div className="flex items-center gap-3 text-xs sm:text-sm">
               <Link
                 to={detailPath}
-                className="font-medium text-indigo-600 hover:underline"
+                className="font-semibold text-[#1B5EF5] hover:underline"
               >
                 Details
               </Link>
@@ -151,7 +152,7 @@ export default function BookMarketplaceCard({
                 <button
                   type="button"
                   onClick={() => onHardcopyRequest(book)}
-                  className="font-medium text-slate-500 hover:text-emerald-700"
+                  className="font-medium text-slate-500 transition hover:text-[#0B1F44]"
                 >
                   Hardcopy
                 </button>

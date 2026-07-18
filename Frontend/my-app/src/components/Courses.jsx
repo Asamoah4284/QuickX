@@ -1,61 +1,60 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
-const courses = [
+const highlights = [
   {
     id: 1,
-    title: 'Productivity Systems for Busy Professionals',
-    category: 'Business',
+    topic: 'Business',
+    title: 'Markets & trading foundations',
     image: 'https://i.pinimg.com/736x/90/a3/bc/90a3bc59e3f92890f4c251c9d79559ae.jpg',
+    href: '/courses',
   },
   {
     id: 2,
-    title: 'Modern JavaScript: From Fundamentals to Real Projects',
-    category: 'Development',
+    topic: 'Development',
+    title: 'Build practical tech skills',
     image: 'https://i.pinimg.com/736x/22/ff/c3/22ffc3a863846e2d265dc4f6ac994abd.jpg',
+    href: '/courses',
   },
   {
     id: 3,
-    title: 'Logo Design: From Concept to Presentation',
-    category: 'Design',
+    topic: 'Design',
+    title: 'Learn with clear structure',
     image: 'https://i.pinimg.com/736x/06/98/6a/06986a1609bd2fcbd8cb047c789738d0.jpg',
+    href: '/courses',
   },
 ];
 
-function Courses() {
+export default function Courses() {
   return (
-    <section className="bg-gray-50 py-10 sm:py-16">
-      <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8">
-        <div className="mb-8 text-center sm:mb-12">
-          <h2 className="mb-3 text-2xl font-bold text-gray-900 sm:mb-4 sm:text-3xl lg:text-4xl">
+    <section className="bg-white pt-16 pb-12 sm:pt-20 sm:pb-16 md:pt-24">
+      <div className="mx-auto max-w-6xl px-5 sm:px-8">
+        <div className="mx-auto max-w-2xl text-center">
+          <h2 className="text-2xl font-bold tracking-tight text-[#0B1F44] sm:text-3xl md:text-4xl">
             Trending on Quick X
           </h2>
-          <p className="mx-auto max-w-2xl text-sm text-gray-600 sm:text-base md:text-lg">
+          <p className="mt-3 text-sm leading-relaxed text-slate-500 sm:text-base">
             A snapshot of what learners are opening right now—browse the full catalog anytime.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-5 sm:gap-6 md:grid-cols-2 md:gap-8 lg:grid-cols-3">
-          {courses.map((course) => (
-            <Link 
-              to="/courses" 
-              key={course.id} 
-              className="cursor-pointer overflow-hidden rounded-xl bg-white shadow-md transition-transform hover:scale-[1.02] sm:hover:scale-105"
+        <div className="mt-8 grid gap-5 sm:mt-10 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
+          {highlights.map((item) => (
+            <Link
+              key={item.id}
+              to={item.href}
+              className="group relative block aspect-[16/10] overflow-hidden rounded-2xl bg-slate-100 shadow-[0_8px_30px_rgba(15,23,42,0.08)] ring-1 ring-black/5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_14px_40px_rgba(15,23,42,0.12)]"
+              aria-label={`${item.topic}: ${item.title}`}
             >
-              <div className="relative">
-                <img
-                  src={course.image}
-                  alt={course.title}
-                  className="h-36 w-full object-cover sm:h-44 md:h-48"
-                />
-                <div className="absolute top-4 left-4">
-                  <span className="px-3 py-1 bg-teal-500 text-white text-sm font-medium rounded-md">
-                    {course.category}
-                  </span>
-                </div>
-              </div>
-
-           
+              <img
+                src={item.image}
+                alt=""
+                className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                loading="lazy"
+                referrerPolicy="no-referrer"
+              />
+              <span className="absolute left-3 top-3 rounded-md bg-teal-500 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm sm:left-4 sm:top-4">
+                {item.topic}
+              </span>
             </Link>
           ))}
         </div>
@@ -63,5 +62,3 @@ function Courses() {
     </section>
   );
 }
-
-export default Courses; 

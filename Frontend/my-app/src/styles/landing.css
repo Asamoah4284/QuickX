@@ -1,0 +1,158 @@
+/* QuickX landing — shared atmosphere */
+.qx-landing {
+  --qx-navy: #0b1f44;
+  --qx-blue: #1b5ef5;
+  --qx-blue-deep: #1246c4;
+  --qx-ink: #0b1f44;
+  --qx-muted: #64748b;
+  --qx-line: rgba(11, 31, 68, 0.1);
+  color: var(--qx-ink);
+  background: #fff;
+}
+
+.qx-grain::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  opacity: 0.28;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+}
+
+.qx-grid-fade {
+  background-image:
+    linear-gradient(to right, rgba(11, 31, 68, 0.06) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(11, 31, 68, 0.06) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 20%, transparent 75%);
+}
+
+/* Scratched hall — corridor light + worn wall texture (not a solid fill) */
+.qx-scratched-hall {
+  position: relative;
+  isolation: isolate;
+  background:
+    radial-gradient(120% 80% at 50% -10%, rgba(255, 255, 255, 0.85) 0%, transparent 55%),
+    linear-gradient(180deg, #e8edf5 0%, #dfe6f0 42%, #e6ebf3 100%);
+}
+
+.qx-scratched-hall::before {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.55;
+  mix-blend-mode: multiply;
+  background-image:
+    /* fine diagonal scratches */
+    repeating-linear-gradient(
+      -18deg,
+      transparent 0,
+      transparent 11px,
+      rgba(11, 31, 68, 0.035) 11px,
+      rgba(11, 31, 68, 0.035) 12px
+    ),
+    repeating-linear-gradient(
+      12deg,
+      transparent 0,
+      transparent 17px,
+      rgba(11, 31, 68, 0.028) 17px,
+      rgba(11, 31, 68, 0.028) 18px
+    ),
+    /* longer worn streaks */
+    repeating-linear-gradient(
+      96deg,
+      transparent 0,
+      transparent 48px,
+      rgba(15, 23, 42, 0.03) 48px,
+      rgba(15, 23, 42, 0.03) 49px,
+      transparent 50px,
+      transparent 90px
+    );
+}
+
+.qx-scratched-hall::after {
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.4;
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.55'/%3E%3C/svg%3E");
+}
+
+@keyframes qxRise {
+  from {
+    opacity: 0;
+    transform: translateY(28px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes qxKen {
+  from {
+    transform: scale(1.08) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.16) translate3d(-1.5%, 1%, 0);
+  }
+}
+
+@keyframes qxDrift {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(2%, -3%, 0);
+  }
+}
+
+@keyframes qxLine {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes qxPulseSoft {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.qx-rise {
+  animation: qxRise 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.qx-rise-d1 {
+  animation-delay: 0.08s;
+}
+.qx-rise-d2 {
+  animation-delay: 0.16s;
+}
+.qx-rise-d3 {
+  animation-delay: 0.24s;
+}
+.qx-rise-d4 {
+  animation-delay: 0.32s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .qx-rise,
+  .qx-ken,
+  .qx-drift {
+    animation: none !important;
+  }
+}

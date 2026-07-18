@@ -1,32 +1,31 @@
-import React from 'react';
 import { Link } from 'react-router-dom';
 
-const Call = () => {
+export default function Call() {
   return (
-    <section className="bg-gradient-to-r from-gray-50 to-gray-100 py-14 sm:py-20 md:py-28">
-      <div className="container mx-auto px-4">
-        <div className="mx-auto max-w-3xl text-center">
-        <h2 className="mb-4 text-2xl font-bold leading-snug text-black sm:mb-6 sm:text-3xl md:text-4xl lg:text-5xl">
-            Your next skill is one course away
-          </h2>
-          
-          <p className="mb-6 text-sm leading-relaxed text-[#333] sm:mb-8 sm:text-base md:text-lg lg:text-xl">
-            Search the catalog, compare what each course covers, and learn with instructors who break topics down clearly—whenever it fits your schedule.
-          </p>
-          
-          <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
-           <Link to="/courses"><button type="button" className="rounded-lg bg-gradient-to-r from-blue-400 to-blue-500 px-6 py-2.5 text-sm font-semibold text-white transition duration-300 hover:from-blue-500 hover:to-blue-600 sm:px-8 sm:py-3 sm:text-base">
-              Browse the catalog
-            </button></Link> 
-            <Link to="/register"><button type="button" className="rounded-lg border border-blue-400 bg-transparent px-6 py-2.5 text-sm font-semibold text-blue-400 transition duration-300 hover:bg-blue-400/10 sm:px-8 sm:py-3 sm:text-base">
-              Create an account
-            </button></Link>
-          </div>
-
+    <section className="bg-[#F7F9FC]">
+      <div className="mx-auto max-w-3xl px-5 py-16 text-center sm:px-8 sm:py-20 md:py-24">
+        <h2 className="text-[clamp(1.85rem,4.5vw,2.75rem)] font-bold leading-tight tracking-tight text-[#0B1F44]">
+          Your next skill is one course away
+        </h2>
+        <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-slate-500 sm:text-base">
+          Search the catalog, compare what each course covers, and learn with instructors who break
+          topics down clearly—whenever it fits your schedule.
+        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/courses"
+            className="inline-flex items-center justify-center rounded-xl bg-[#1B5EF5] px-6 py-3 text-sm font-semibold text-white transition hover:bg-[#1552D6]"
+          >
+            Browse the catalog
+          </Link>
+          <Link
+            to="/register"
+            className="inline-flex items-center justify-center rounded-xl border border-[#1B5EF5]/35 bg-transparent px-6 py-3 text-sm font-semibold text-[#1B5EF5] transition hover:border-[#1B5EF5] hover:bg-[#1B5EF5]/5"
+          >
+            Create an account
+          </Link>
         </div>
       </div>
     </section>
   );
-};
-
-export default Call;
+}

@@ -33,6 +33,23 @@ async function assertNotBlocked(tutorId, userId) {
   return !block;
 }
 
+async function assertCanContribute(tutorId, userId) {
+  const row = await CommunityBlock.findOne({ tutorId, userId });
+  if (!row) return { ok: true };
+  if (row.blocked) return { ok: false, message: 'You are blocked from this community' };
+  if (row.muted) {
+    return { ok: false, message: 'You are muted in this community and cannot post right now' };
+  }
+  return { ok: true };
+}
+
+async function requireCanContribute(req, res, next) {
+  if (req.isCommunityTutor || req.isCommunityAdmin) return next();
+  const check = await assertCanContribute(req.params.tutorId, req.user._id);
+  if (!check.ok) return res.status(403).json({ message: check.message });
+  return next();
+}
+
 async function getSubscriberIds(tutorId) {
   const rows = await listSubscribersForTutor(tutorId);
   return rows.map((r) => r.studentId?._id || r.studentId).filter(Boolean);
@@ -86,9 +103,9 @@ router.get('/:tutorId/posts', async (req, res) => {
   }
 });
 
-router.post('/:tutorId/posts', async (req, res) => {
+router.post('/:tutorId/posts', requireCanContribute, async (req, res) => {
   try {
-    const { body, media, type, roomId, pollId } = req.body;
+    const { body, media, type, roomId, pollId, mentions } = req.body;
     const isAnnouncement = type === 'announcement';
     if (isAnnouncement && !req.isCommunityTutor && !req.isCommunityAdmin) {
       return res.status(403).json({ message: 'Only the tutor can post announcements' });
@@ -97,12 +114,17 @@ router.post('/:tutorId/posts', async (req, res) => {
       return res.status(400).json({ message: 'Post body or media is required' });
     }
 
+    const mentionIds = Array.isArray(mentions)
+      ? mentions.map((id) => String(id)).filter(Boolean)
+      : [];
+
     const post = await CommunityPost.create({
       tutorId: req.params.tutorId,
       authorId: req.user._id,
       type: isAnnouncement ? 'announcement' : 'post',
       body: String(body || '').trim(),
       media: Array.isArray(media) ? media : [],
+      mentions: mentionIds,
       roomId: roomId || null,
       pollId: pollId || null,
     });
@@ -122,6 +144,20 @@ router.post('/:tutorId/posts', async (req, res) => {
         entityType: 'post',
         entityId: post._id,
         title: 'New announcement',
+        body: String(body || '').slice(0, 120),
+      });
+    }
+
+    for (const mid of mentionIds) {
+      if (String(mid) === String(req.user._id)) continue;
+      await createNotification({
+        userId: mid,
+        type: 'mention',
+        actorId: req.user._id,
+        tutorId: req.params.tutorId,
+        entityType: 'post',
+        entityId: post._id,
+        title: 'You were mentioned',
         body: String(body || '').slice(0, 120),
       });
     }
@@ -252,7 +288,7 @@ router.get('/:tutorId/posts/:postId/comments', async (req, res) => {
   }
 });
 
-router.post('/:tutorId/posts/:postId/comments', async (req, res) => {
+router.post('/:tutorId/posts/:postId/comments', requireCanContribute, async (req, res) => {
   try {
     const post = await CommunityPost.findOne({
       _id: req.params.postId,
@@ -388,7 +424,7 @@ router.get('/:tutorId/questions', async (req, res) => {
   }
 });
 
-router.post('/:tutorId/questions', async (req, res) => {
+router.post('/:tutorId/questions', requireCanContribute, async (req, res) => {
   try {
     const { title, body, topic, courseId, attachments } = req.body;
     if (!String(title || '').trim() || !String(body || '').trim()) {
@@ -448,7 +484,7 @@ router.get('/:tutorId/questions/:questionId', async (req, res) => {
   }
 });
 
-router.post('/:tutorId/questions/:questionId/answers', async (req, res) => {
+router.post('/:tutorId/questions/:questionId/answers', requireCanContribute, async (req, res) => {
   try {
     const question = await CommunityQuestion.findOne({
       _id: req.params.questionId,

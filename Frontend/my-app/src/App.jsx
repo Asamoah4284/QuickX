@@ -21,7 +21,6 @@ import ResetPassword from "./pages/auth/ResetPassword";
 import VerifyAccount from "./pages/auth/VerifyAccount";
 import ProtectedRoute from "./components/ProtectedRoute";
 import MainSchool from "./pages/School/MainSchool";
-import ForexSchool from "./pages/School/ForexSchool";
 import CryptoSchool from "./pages/School/CryptoSchool";
 import WebDevSchool from "./pages/School/WebDevSchool";
 import CourseDetail from "./pages/School/CourseDetail";
@@ -83,9 +82,9 @@ const router = createBrowserRouter([
             index: true,
             element: <MainSchool />
           },
-          { 
+          {
             path: "forex",
-            element: <ForexSchool/>
+            element: <Navigate to="/school" replace />
           },
           {
             path: "crypto",

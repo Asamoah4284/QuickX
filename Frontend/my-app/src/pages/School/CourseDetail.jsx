@@ -679,7 +679,7 @@ const CourseDetail = () => {
       ? '/school/crypto'
       : courseData.courseType === 'webdev'
         ? '/school/webdev'
-        : '/school/forex';
+        : '/school';
 
   const lessonOrdinal = (() => {
     try {

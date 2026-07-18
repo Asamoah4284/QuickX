@@ -477,9 +477,9 @@ function PreviewLessonTile({ preview, onOpenPreview, onLockedClick, subscriberAc
           Watch
         </span>
       ) : (
-        <span className="absolute left-1 top-1 z-10 rounded-[3px] bg-blue-600 px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm">
-          Preview
-        </span>
+      <span className="absolute left-1 top-1 z-10 rounded-[3px] bg-blue-600 px-1 py-0.5 text-[9px] font-bold uppercase leading-none tracking-wide text-white shadow-sm">
+        Preview
+      </span>
       )}
       {locked ? (
         <div className="pointer-events-none absolute inset-0 z-[5] flex items-center justify-center">
@@ -503,14 +503,14 @@ function PreviewLessonTile({ preview, onOpenPreview, onLockedClick, subscriberAc
               <path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2v-8a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 5a3 3 0 116 0v3H9V6zm3 8a1.75 1.75 0 110 3.5A1.75 1.75 0 0112 14z" />
             </svg>
           ) : (
-            <svg
-              className="h-3.5 w-3.5 shrink-0 drop-shadow-md"
-              fill="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden
-            >
-              <path d="M8 5v14l11-7z" />
-            </svg>
+          <svg
+            className="h-3.5 w-3.5 shrink-0 drop-shadow-md"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden
+          >
+            <path d="M8 5v14l11-7z" />
+          </svg>
           )}
           <span className="text-[11px] font-semibold tabular-nums tracking-tight drop-shadow-md sm:text-xs">
             {locked ? 'Subscribe' : subscriberAccess ? 'Open course' : formatCompact(views)}
@@ -808,19 +808,19 @@ export default function InstructorProfile() {
         }
       }
       const checkoutState = {
-        item: {
-          type: 'creator_subscription',
-          id: userId,
-          instructorId: userId,
-          planId: plan.id,
-          title: `Subscribe to ${display}`,
-          description: `${plan.title} — ${plan.periodNote}`,
-          price: plan.price,
-          instructorName: display,
-          ...(image ? { image, thumbnail: image } : {}),
-        },
-        returnPath: from,
-        returnTabState: null,
+          item: {
+            type: 'creator_subscription',
+            id: userId,
+            instructorId: userId,
+            planId: plan.id,
+            title: `Subscribe to ${display}`,
+            description: `${plan.title} — ${plan.periodNote}`,
+            price: plan.price,
+            instructorName: display,
+            ...(image ? { image, thumbnail: image } : {}),
+          },
+          returnPath: from,
+          returnTabState: null,
       };
       if (!token) {
         savePendingCheckout(checkoutState);
@@ -968,7 +968,7 @@ export default function InstructorProfile() {
                   </div>
                 </div>
               ) : (
-                <SinglePreviewLessonDesktopShowcase preview={p} onOpenPreview={openProfileVideoPreview} />
+            <SinglePreviewLessonDesktopShowcase preview={p} onOpenPreview={openProfileVideoPreview} />
               )
             ) : (
               <div className="hidden lg:block">
@@ -1186,6 +1186,7 @@ export default function InstructorProfile() {
       ) : null}
     </div>
   );
+  
 
   const librarySection = (
     <div id="instructor-videos" className="scroll-mt-24 px-0 pt-0 pb-0 sm:scroll-mt-28">
