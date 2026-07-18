@@ -130,7 +130,8 @@ export default function NotificationBell() {
       </button>
 
       {open ? (
-        <div className="absolute right-0 z-50 mt-2 w-[min(22rem,calc(100vw-1.5rem))] origin-top-right overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.14)] [animation:notifPanelIn_0.2s_ease-out]">
+        <div className="fixed left-1/2 top-[4.25rem] z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:w-[min(22rem,calc(100vw-1.5rem))] sm:translate-x-0">
+          <div className="origin-top overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.14)] [animation:notifPanelIn_0.2s_ease-out] sm:origin-top-right">
           <style>{`
             @keyframes notifPanelIn {
               from { opacity: 0; transform: translateY(-6px) scale(0.98); }
@@ -223,6 +224,7 @@ export default function NotificationBell() {
             >
               Go to dashboard
             </Link>
+          </div>
           </div>
         </div>
       ) : null}

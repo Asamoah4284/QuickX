@@ -23,32 +23,37 @@ const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const HERO_BOOK_COVERS = [
   {
     src: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80',
-    rotate: '-14deg',
-    x: '6%',
+    rotate: '-12deg',
+    x: '8%',
+    xMobile: '4%',
     z: 1,
   },
   {
     src: 'https://images.unsplash.com/photo-1507842217343-583bb7270b66?auto=format&fit=crop&w=400&q=80',
-    rotate: '-7deg',
-    x: '22%',
+    rotate: '-6deg',
+    x: '24%',
+    xMobile: '20%',
     z: 2,
   },
   {
     src: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=400&q=80',
     rotate: '0deg',
-    x: '38%',
+    x: '40%',
+    xMobile: '36%',
     z: 5,
   },
   {
     src: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?auto=format&fit=crop&w=400&q=80',
-    rotate: '7deg',
-    x: '54%',
+    rotate: '6deg',
+    x: '56%',
+    xMobile: '52%',
     z: 3,
   },
   {
     src: 'https://images.unsplash.com/photo-1481627834876-b7833e8f5570?auto=format&fit=crop&w=400&q=80',
-    rotate: '14deg',
-    x: '70%',
+    rotate: '12deg',
+    x: '72%',
+    xMobile: '68%',
     z: 1,
   },
 ];
@@ -218,17 +223,17 @@ const Store = () => {
   };
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-white">
       {/* Hero — static copy + book image collection */}
-      <div className="border-b border-slate-100 bg-[#F7F9FC]">
-        <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
-          <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-14">
-            <div className="max-w-xl space-y-5">
+      <div className="border-b border-slate-100 bg-[#F7F9FC] pt-20 sm:pt-24">
+        <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8 lg:pb-20 lg:pt-12">
+          <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
+            <div className="max-w-xl space-y-4 sm:space-y-5">
               <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1B5EF5] ring-1 ring-slate-200/80 sm:text-xs">
                 <span className="h-1.5 w-1.5 rounded-full bg-[#1B5EF5]" aria-hidden />
                 Bookstore
               </div>
-              <h1 className="text-balance text-3xl font-bold leading-tight tracking-tight text-[#0B1F44] sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
+              <h1 className="text-balance text-[1.85rem] font-bold leading-tight tracking-tight text-[#0B1F44] sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
                 Discover your next digital book
               </h1>
               <p className="max-w-md text-pretty text-sm leading-relaxed text-slate-500 sm:text-base">
@@ -238,7 +243,7 @@ const Store = () => {
               <div className="pt-1">
                 <a
                   href="#store-books"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1552D6]"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1552D6] sm:w-auto sm:py-3"
                 >
                   Browse collection
                   <FiArrowRight className="h-4 w-4" />
@@ -246,55 +251,64 @@ const Store = () => {
               </div>
             </div>
 
-            <div
-              className={`store-book-fan relative mx-auto h-[280px] w-full max-w-md sm:h-[340px] lg:max-w-none ${
-                fanReady ? 'store-book-fan--ready' : ''
-              }`}
-              aria-hidden
-            >
-              <style>{`
-                @keyframes storeBookFanIn {
-                  from {
+            <div className="relative mx-auto w-full max-w-[22rem] overflow-hidden sm:max-w-md lg:max-w-none">
+              <div
+                className={`store-book-fan relative mx-auto h-[220px] w-full sm:h-[300px] lg:h-[340px] ${
+                  fanReady ? 'store-book-fan--ready' : ''
+                }`}
+                aria-hidden
+              >
+                <style>{`
+                  @keyframes storeBookFanIn {
+                    from {
+                      opacity: 0;
+                      transform: translateY(20px) rotate(var(--book-r)) scale(0.96);
+                    }
+                    to {
+                      opacity: 1;
+                      transform: translateY(0) rotate(var(--book-r)) scale(1);
+                    }
+                  }
+                  .store-book-fan__card {
+                    left: var(--book-x-mobile);
                     opacity: 0;
                     transform: translateY(20px) rotate(var(--book-r)) scale(0.96);
+                    pointer-events: none;
                   }
-                  to {
-                    opacity: 1;
-                    transform: translateY(0) rotate(var(--book-r)) scale(1);
+                  .store-book-fan--ready .store-book-fan__card {
+                    animation: storeBookFanIn 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
+                    animation-delay: var(--book-delay);
                   }
-                }
-                .store-book-fan__card {
-                  opacity: 0;
-                  transform: translateY(20px) rotate(var(--book-r)) scale(0.96);
-                  pointer-events: none;
-                }
-                .store-book-fan--ready .store-book-fan__card {
-                  animation: storeBookFanIn 1.05s cubic-bezier(0.22, 1, 0.36, 1) both;
-                  animation-delay: var(--book-delay);
-                }
-              `}</style>
-              {HERO_BOOK_COVERS.map((cover, i) => (
-                <div
-                  key={cover.src}
-                  className="store-book-fan__card absolute top-[22%] w-[36%] max-w-[148px] overflow-hidden rounded-lg bg-white shadow-[0_14px_32px_rgba(15,23,42,0.16)] ring-1 ring-black/5 sm:top-[20%] sm:max-w-[168px]"
-                  style={{
-                    left: cover.x,
-                    zIndex: cover.z,
-                    '--book-r': cover.rotate,
-                    '--book-delay': `${80 + i * 110}ms`,
-                  }}
-                >
-                  <div className="aspect-[3/4]">
-                    <img
-                      src={cover.src}
-                      alt=""
-                      className="h-full w-full object-cover"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
+                  @media (min-width: 640px) {
+                    .store-book-fan__card {
+                      left: var(--book-x);
+                    }
+                  }
+                `}</style>
+                {HERO_BOOK_COVERS.map((cover, i) => (
+                  <div
+                    key={cover.src}
+                    className="store-book-fan__card absolute top-[18%] w-[30%] max-w-[108px] overflow-hidden rounded-lg bg-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 sm:top-[20%] sm:w-[34%] sm:max-w-[168px]"
+                    style={{
+                      zIndex: cover.z,
+                      '--book-x': cover.x,
+                      '--book-x-mobile': cover.xMobile,
+                      '--book-r': cover.rotate,
+                      '--book-delay': `${80 + i * 110}ms`,
+                    }}
+                  >
+                    <div className="aspect-[3/4]">
+                      <img
+                        src={cover.src}
+                        alt=""
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
                   </div>
+                ))}
               </div>
-              ))}
             </div>
           </div>
         </div>
@@ -302,22 +316,22 @@ const Store = () => {
 
       {/* Marketplace */}
       <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
-        <div className="mb-6 flex items-end justify-between gap-4 sm:mb-8">
-          <div>
+        <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
+          <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold tracking-tight text-[#0B1F44] sm:text-2xl md:text-3xl">
-                    Marketplace
-                  </h2>
-            <p className="mt-1 text-sm text-slate-500">
-                    Buy digital books instantly. Hardcopy requests are handled via WhatsApp.
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={handleOpenCart}
+              Marketplace
+            </h2>
+            <p className="mt-1 text-sm leading-relaxed text-slate-500">
+              Buy digital books instantly. Hardcopy requests are handled via WhatsApp.
+            </p>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <button
+              type="button"
+              onClick={handleOpenCart}
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:hidden"
-                    aria-label="View cart"
-                  >
+              aria-label="View cart"
+            >
                     <span className="relative">
                       <FiShoppingCart className="h-5 w-5" />
                       {cartCount > 0 ? (
@@ -363,7 +377,7 @@ const Store = () => {
         ) : null}
 
         {!isLoading && !error && books.length > 0 ? (
-          <div className="grid grid-cols-1 justify-items-center gap-4 sm:grid-cols-2 sm:justify-items-stretch sm:gap-5 lg:grid-cols-3 lg:gap-5">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5">
                 {books.map((book) => (
                   <BookMarketplaceCard
                     key={book._id}

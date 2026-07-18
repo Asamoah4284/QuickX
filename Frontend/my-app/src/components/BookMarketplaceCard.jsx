@@ -22,11 +22,11 @@ export default function BookMarketplaceCard({
   const listingPrice = formatBookListingPrice(book);
 
   return (
-    <article className="group/card mx-auto w-full max-w-[22rem] overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-[0_10px_28px_rgba(15,23,42,0.07)]">
-      <div className="flex gap-4 p-3.5 sm:gap-4 sm:p-4">
+    <article className="group/card w-full overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm transition hover:border-slate-300 hover:shadow-[0_10px_28px_rgba(15,23,42,0.07)]">
+      <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
         <Link
           to={detailPath}
-          className="relative flex h-[9.5rem] w-[7.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-50 ring-1 ring-slate-200/70 sm:h-[11rem] sm:w-[8.5rem]"
+          className="relative flex h-[8.5rem] w-[6.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-50 ring-1 ring-slate-200/70 sm:h-[11rem] sm:w-[8.5rem]"
           aria-label={`View ${book.title}`}
         >
           <img

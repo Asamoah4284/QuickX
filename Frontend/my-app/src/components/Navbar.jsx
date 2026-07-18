@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -34,7 +35,12 @@ const Navbar = () => {
     pathname.startsWith('/admin') ||
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/community') ||
-    pathname.includes('/community');
+    pathname.includes('/community') ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/register') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
+    pathname.startsWith('/verify');
 
   const navSolid = scrolled || alwaysVisible;
   const creatorDestination =
@@ -223,7 +229,7 @@ const Navbar = () => {
             <img
               src="/logo.jpg"
               alt="QuickX Learn"
-              className={`h-8 w-auto rounded-lg object-contain sm:h-9 ${
+              className={`h-10 w-auto rounded-lg object-contain sm:h-11 ${
                 navSolid ? '' : 'ring-1 ring-white/30'
               }`}
             />
@@ -360,173 +366,183 @@ const Navbar = () => {
         </div>
       </div>
 
-      {/* Mobile Menu — full-screen sheet */}
-      <div
-        className={`fixed inset-0 z-[9999] md:hidden ${
-          isMobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
-        }`}
-        aria-hidden={!isMobileMenuOpen}
-      >
-        <div
-          className={`absolute inset-0 bg-[#0B1F44]/45 backdrop-blur-[2px] transition-opacity duration-300 ${
-            isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
-          onClick={closeMobile}
-        />
-
-        <aside
-          className={`absolute inset-0 flex w-full flex-col bg-white transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
-          }`}
-          role="dialog"
-          aria-modal="true"
-          aria-label="Navigation menu"
-        >
-          {/* Header */}
-          <div className="flex h-[4.25rem] shrink-0 items-center justify-between border-b border-slate-100 px-4">
-            <Link to="/" onClick={closeMobile} className="flex items-center gap-2.5">
-              <img src="/logo.jpg" alt="QuickX Learn" className="h-8 w-auto rounded-lg object-contain" />
-            </Link>
-            <button
-              type="button"
-              aria-label="Close menu"
-              onClick={closeMobile}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-700 transition hover:bg-slate-100"
-              tabIndex={isMobileMenuOpen ? 0 : -1}
+      {/* Mobile menu portaled to body — avoids nav backdrop-filter containing-block bug */}
+      {typeof document !== 'undefined'
+        ? createPortal(
+            <div
+              className={`fixed inset-0 z-[9999] md:hidden ${
+                isMobileMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'
+              }`}
+              aria-hidden={!isMobileMenuOpen}
             >
-              <FiX className="h-5 w-5" />
-            </button>
-          </div>
+              <div
+                className={`absolute inset-0 bg-slate-900/40 transition-opacity duration-300 ${
+                  isMobileMenuOpen ? 'opacity-100' : 'opacity-0'
+                }`}
+                onClick={closeMobile}
+              />
 
-          {/* Nav links */}
-          <div className="flex-1 overflow-y-auto px-3 py-4">
-            <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-              Explore
-            </p>
-            <nav className="space-y-1">
-              {desktopLinks.map(({ to, label, Icon }) => {
-                const active = linkActive(to);
-                return (
-                  <Link
-                    key={to}
-                    to={to}
-                    onClick={closeMobile}
-                    className={`group flex items-center gap-3 rounded-2xl px-3 py-3.5 transition ${
-                      active
-                        ? 'bg-[#1B5EF5]/8 text-[#0B1F44]'
-                        : 'text-slate-700 hover:bg-slate-50'
-                    }`}
-                  >
-                    <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition ${
-                        active
-                          ? 'bg-[#1B5EF5] text-white'
-                          : 'bg-slate-100 text-slate-600 group-hover:bg-slate-200/80'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                    </span>
-                    <span className="flex-1 text-[15px] font-semibold tracking-tight">{label}</span>
-                    <FiChevronRight
-                      className={`h-4 w-4 shrink-0 ${
-                        active ? 'text-[#1B5EF5]' : 'text-slate-300 group-hover:text-slate-400'
-                      }`}
+              <aside
+                className={`absolute inset-0 flex h-[100dvh] w-full flex-col bg-white transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                  isMobileMenuOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}
+                role="dialog"
+                aria-modal="true"
+                aria-label="Navigation menu"
+              >
+                <div className="flex h-[4.25rem] shrink-0 items-center justify-between border-b border-slate-100 bg-white px-4">
+                  <Link to="/" onClick={closeMobile} className="flex items-center gap-2.5">
+                    <img
+                      src="/logo.jpg"
+                      alt="QuickX Learn"
+                      className="h-10 w-auto rounded-lg object-contain"
                     />
                   </Link>
-                );
-              })}
-            </nav>
-
-            {isLoggedIn ? (
-              <div className="mt-6">
-                <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
-                  Account
-                </p>
-                <div className="space-y-1">
-                  <Link
-                    to="/membership"
+                  <button
+                    type="button"
+                    aria-label="Close menu"
                     onClick={closeMobile}
-                    className={`group flex items-center gap-3 rounded-2xl px-3 py-3.5 transition ${
-                      linkActive('/membership')
-                        ? 'bg-[#1B5EF5]/8 text-[#0B1F44]'
-                        : 'text-slate-700 hover:bg-slate-50'
-                    }`}
+                    className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-slate-100 text-slate-700"
+                    tabIndex={isMobileMenuOpen ? 0 : -1}
                   >
-                    <span
-                      className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
-                        linkActive('/membership')
-                          ? 'bg-[#1B5EF5] text-white'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      <FiMonitor className="h-5 w-5" />
-                    </span>
-                    <span className="flex-1 text-[15px] font-semibold tracking-tight">Dashboard</span>
-                    <FiChevronRight className="h-4 w-4 text-slate-300" />
-                  </Link>
-                  <Link
-                    to={creatorDestination}
-                    onClick={closeMobile}
-                    className="group flex items-center gap-3 rounded-2xl px-3 py-3.5 text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
-                      <FiZap className="h-5 w-5" />
-                    </span>
-                    <span className="flex-1 text-[15px] font-semibold tracking-tight">
-                      {creatorLabel}
-                    </span>
-                    <FiChevronRight className="h-4 w-4 text-slate-300" />
-                  </Link>
+                    <FiX className="h-5 w-5" />
+                  </button>
                 </div>
-              </div>
-            ) : null}
-          </div>
 
-          {/* Sticky footer */}
-          <div className="shrink-0 border-t border-slate-100 bg-slate-50/80 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
-            {isLoggedIn ? (
-              <div className="space-y-3">
-                <div className="flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 ring-1 ring-slate-200/80">
-                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1B5EF5] text-sm font-bold text-white">
-                    {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-semibold text-[#0B1F44]">
-                      {user?.fullName || 'Member'}
-                    </p>
-                    <p className="truncate text-xs text-slate-400">{user?.email || ''}</p>
-                  </div>
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-3 py-4">
+                  <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                    Explore
+                  </p>
+                  <nav className="space-y-1">
+                    {desktopLinks.map(({ to, label, Icon }) => {
+                      const active = linkActive(to);
+                      return (
+                        <Link
+                          key={to}
+                          to={to}
+                          onClick={closeMobile}
+                          className={`flex items-center gap-3 rounded-2xl px-3 py-3.5 ${
+                            active
+                              ? 'bg-[#1B5EF5]/10 text-[#0B1F44]'
+                              : 'text-slate-700 active:bg-slate-50'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                              active
+                                ? 'bg-[#1B5EF5] text-white'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <span className="flex-1 text-[15px] font-semibold tracking-tight">
+                            {label}
+                          </span>
+                          <FiChevronRight
+                            className={`h-4 w-4 shrink-0 ${
+                              active ? 'text-[#1B5EF5]' : 'text-slate-300'
+                            }`}
+                          />
+                        </Link>
+                      );
+                    })}
+                  </nav>
+
+                  {isLoggedIn ? (
+                    <div className="mt-6">
+                      <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
+                        Account
+                      </p>
+                      <div className="space-y-1">
+                        <Link
+                          to="/membership"
+                          onClick={closeMobile}
+                          className={`flex items-center gap-3 rounded-2xl px-3 py-3.5 ${
+                            linkActive('/membership')
+                              ? 'bg-[#1B5EF5]/10 text-[#0B1F44]'
+                              : 'text-slate-700 active:bg-slate-50'
+                          }`}
+                        >
+                          <span
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${
+                              linkActive('/membership')
+                                ? 'bg-[#1B5EF5] text-white'
+                                : 'bg-slate-100 text-slate-600'
+                            }`}
+                          >
+                            <FiMonitor className="h-5 w-5" />
+                          </span>
+                          <span className="flex-1 text-[15px] font-semibold tracking-tight">
+                            Dashboard
+                          </span>
+                          <FiChevronRight className="h-4 w-4 text-slate-300" />
+                        </Link>
+                        <Link
+                          to={creatorDestination}
+                          onClick={closeMobile}
+                          className="flex items-center gap-3 rounded-2xl px-3 py-3.5 text-slate-700 active:bg-slate-50"
+                        >
+                          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+                            <FiZap className="h-5 w-5" />
+                          </span>
+                          <span className="flex-1 text-[15px] font-semibold tracking-tight">
+                            {creatorLabel}
+                          </span>
+                          <FiChevronRight className="h-4 w-4 text-slate-300" />
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600 transition hover:bg-rose-50"
-                >
-                  <FiLogOut className="h-4 w-4" />
-                  Sign out
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-2.5">
-                <Link
-                  to="/login"
-                  onClick={closeMobile}
-                  className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-[#0B1F44] transition hover:border-slate-300"
-                >
-                  Log in
-                </Link>
-                <Link
-                  to="/register"
-                  onClick={closeMobile}
-                  className="rounded-2xl bg-[#1B5EF5] px-4 py-3.5 text-center text-sm font-semibold text-white transition hover:bg-[#1552D6]"
-                >
-                  Sign up
-                </Link>
-              </div>
-            )}
-          </div>
-        </aside>
-      </div>
+
+                <div className="shrink-0 border-t border-slate-100 bg-slate-50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                  {isLoggedIn ? (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3 rounded-2xl bg-white px-3.5 py-3 ring-1 ring-slate-200/80">
+                        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#1B5EF5] text-sm font-bold text-white">
+                          {user?.fullName ? user.fullName.charAt(0).toUpperCase() : 'U'}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-sm font-semibold text-[#0B1F44]">
+                            {user?.fullName || 'Member'}
+                          </p>
+                          <p className="truncate text-xs text-slate-400">{user?.email || ''}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleLogout}
+                        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-rose-200 bg-white px-4 py-3 text-sm font-semibold text-rose-600"
+                      >
+                        <FiLogOut className="h-4 w-4" />
+                        Sign out
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <Link
+                        to="/login"
+                        onClick={closeMobile}
+                        className="rounded-2xl border border-slate-200 bg-white px-4 py-3.5 text-center text-sm font-semibold text-[#0B1F44]"
+                      >
+                        Log in
+                      </Link>
+                      <Link
+                        to="/register"
+                        onClick={closeMobile}
+                        className="rounded-2xl bg-[#1B5EF5] px-4 py-3.5 text-center text-sm font-semibold text-white"
+                      >
+                        Sign up
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </aside>
+            </div>,
+            document.body
+          )
+        : null}
     </nav>
   );
 };
