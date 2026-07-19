@@ -8,18 +8,28 @@ const API_URL = import.meta.env.VITE_API_URL;
 const buildLessonId = (moduleIndex, sectionIndex, lessonIndex) =>
   `${moduleIndex}-${sectionIndex}-${lessonIndex}`;
 
+const byOrder = (a, b) => (Number(a?.order) || 0) - (Number(b?.order) || 0);
+
 const applyEnrollmentToCourse = (course) => {
   const completedLessonIds = new Set(course?.enrollment?.completedLessonIds || []);
-  const modules = (course.modules || []).map((module, moduleIndex) => ({
-    ...module,
-    sections: (module.sections || []).map((section, sectionIndex) => ({
-      ...section,
-      lessons: (section.lessons || []).map((lesson, lessonIndex) => ({
-        ...lesson,
-        isCompleted: completedLessonIds.has(buildLessonId(moduleIndex, sectionIndex, lessonIndex)),
-      })),
-    })),
-  }));
+  const modules = [...(course.modules || [])]
+    .sort(byOrder)
+    .map((module, moduleIndex) => ({
+      ...module,
+      sections: [...(module.sections || [])]
+        .sort(byOrder)
+        .map((section, sectionIndex) => ({
+          ...section,
+          lessons: [...(section.lessons || [])]
+            .sort(byOrder)
+            .map((lesson, lessonIndex) => ({
+              ...lesson,
+              isCompleted: completedLessonIds.has(
+                buildLessonId(moduleIndex, sectionIndex, lessonIndex)
+              ),
+            })),
+        })),
+    }));
 
   return {
     ...course,
@@ -386,43 +396,39 @@ const CourseDetail = () => {
     }
   };
 
-  // Optimize video URL handling
+  // Prefer CloudFront over direct S3 origin for faster playback.
   const getOptimizedVideoUrl = async (url) => {
     if (!url) return null;
-    
+
     try {
-      // If it's already a valid URL with protocol, return it
-      if (url.startsWith('http://') || url.startsWith('https://')) {
-        return url;
+      let resolved = String(url).trim();
+
+      if (resolved.startsWith('/')) {
+        resolved = `${API_URL}${resolved}`;
+      } else if (
+        !resolved.startsWith('http://') &&
+        !resolved.startsWith('https://') &&
+        (resolved.includes('cloudinary.com') || resolved.includes('res.cloudinary.com'))
+      ) {
+        resolved = `https://${resolved}`;
       }
-      
-      // If it's an S3 URL, get a fresh signed URL
-      if (url.includes('amazonaws.com')) {
-        const token = localStorage.getItem('authToken');
-        if (!token) return null;
-        
-        const response = await axios.get(`${API_URL}/api/courses/${courseId}/s3VideoUrl`, {
-          headers: { Authorization: `Bearer ${token}` },
-          params: { videoUrl: url }
-        });
-        return response.data.url;
-      }
-      
-      // If it's a relative path, prepend API URL
-      if (url.startsWith('/')) {
-        return `${API_URL}${url}`;
-      }
-      
-      // If it's a Cloudinary URL without protocol
-      if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
-        return `https://${url}`;
-      }
-      
-      return url;
+
+      return publicAssetUrl(resolved) || resolved;
     } catch (error) {
       console.error('Error optimizing video URL:', error);
-      return url;
+      return publicAssetUrl(url) || url;
     }
+  };
+
+  const isLikelyMov = (url) => /\.mov(\?|#|$)/i.test(String(url || ''));
+
+  // Chrome/Edge often reject type="video/quicktime". Prefer mp4/webm hints; omit for .mov.
+  const videoSourceType = (url) => {
+    const path = String(url || '').split('?')[0].toLowerCase();
+    if (path.endsWith('.webm')) return 'video/webm';
+    if (path.endsWith('.ogg') || path.endsWith('.ogv')) return 'video/ogg';
+    if (path.endsWith('.mov') || path.endsWith('.qt')) return null;
+    return 'video/mp4';
   };
 
   // Resolve playable URL — do not pre-fetch; CORS probes false-fail and block the player.
@@ -543,31 +549,45 @@ const CourseDetail = () => {
 
   // Handle video loading issues
   const handleVideoError = (e) => {
-    console.error("Video playback error:", e);
+    const videoElement = videoRef.current || e.currentTarget;
+    const mediaError = videoElement?.error;
+    console.error('Video playback error:', {
+      code: mediaError?.code,
+      message: mediaError?.message,
+      videoUrl,
+    });
     setIsVideoLoading(false);
-    
-    // Check for specific error types
-    const videoElement = e.target;
-    if (videoElement.error) {
-      switch (videoElement.error.code) {
+
+    if (isLikelyMov(videoUrl || currentLessonMediaUrl)) {
+      setVideoError(
+        'This lesson uses a .MOV file, which most browsers (Chrome/Edge) cannot play. Ask the tutor to re-upload the lesson as MP4.'
+      );
+      return;
+    }
+
+    if (mediaError) {
+      switch (mediaError.code) {
         case 1:
-          setVideoError("Video loading was aborted. Please try again.");
+          setVideoError('Video loading was aborted. Please try again.');
           break;
         case 2:
-          setVideoError("Network error occurred. Please check your internet connection.");
+          setVideoError('Network error. Please check your connection and try again.');
           break;
         case 3:
-          setVideoError("Video decoding failed. The format may not be supported.");
+          setVideoError('Video decoding failed. The file may be corrupted or use an unsupported codec.');
           break;
         case 4:
-          setVideoError("Video not supported. Please try a different browser.");
+          setVideoError(
+            'This video format is not supported in your browser. Prefer MP4 (H.264). Try Chrome or Safari, or ask the tutor to re-upload as MP4.'
+          );
           break;
         default:
-          setVideoError("Unable to play this video. Please try again later or contact support.");
+          setVideoError('Unable to play this video. Please try again or contact support.');
       }
-    } else {
-      setVideoError("Unable to play this video. Please try again later or contact support.");
+      return;
     }
+
+    setVideoError('Unable to play this video. Please try again or contact support.');
   };
 
   // Handle video loading
@@ -857,7 +877,7 @@ const CourseDetail = () => {
                       className="w-full h-full"
                       autoPlay={autoPlayLesson}
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       controlsList="nodownload"
                       onError={async (e) => {
                         console.error('Video playback error:', {
@@ -888,7 +908,11 @@ const CourseDetail = () => {
                         advanceToNextLesson();
                       }}
                     >
-                      <source src={videoUrl} type="video/mp4" />
+                      {videoSourceType(videoUrl) ? (
+                        <source src={videoUrl} type={videoSourceType(videoUrl)} />
+                      ) : (
+                        <source src={videoUrl} />
+                      )}
                       Your browser does not support the video tag.
                     </video>
                   </>

@@ -243,6 +243,13 @@ export default function CommunityHub() {
   const addComposerFile = async (file, mediaType) => {
     const token = localStorage.getItem('authToken');
     if (!file || !token) return;
+    if (
+      (mediaType === 'video' || mediaType === 'document') &&
+      !access.isTutor
+    ) {
+      setError('Only the tutor can post videos and files');
+      return;
+    }
     setUploadingMedia(true);
     setError('');
     try {
@@ -261,6 +268,10 @@ export default function CommunityHub() {
   };
 
   const addComposerLink = () => {
+    if (!access.isTutor) {
+      setError('Only the tutor can post links');
+      return;
+    }
     const url = linkDraft.trim();
     if (!url) return;
     const normalized = url.startsWith('http') ? url : `https://${url}`;
@@ -691,7 +702,7 @@ export default function CommunityHub() {
                   </ul>
                 ) : null}
 
-                {showLinkInput ? (
+                {access.isTutor && showLinkInput ? (
                   <div className="mt-3 flex gap-2">
                     <input
                       value={linkDraft}
@@ -725,44 +736,48 @@ export default function CommunityHub() {
                       }}
                     />
                   </label>
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                    <FiVideo className="h-3.5 w-3.5" />
-                    Video
-                    <input
-                      type="file"
-                      accept="video/*"
-                      className="hidden"
-                      disabled={uploadingMedia}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        e.target.value = '';
-                        if (f) addComposerFile(f, 'video');
-                      }}
-                    />
-                  </label>
-                  <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                    <FiPaperclip className="h-3.5 w-3.5" />
-                    File
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip"
-                      className="hidden"
-                      disabled={uploadingMedia}
-                      onChange={(e) => {
-                        const f = e.target.files?.[0];
-                        e.target.value = '';
-                        if (f) addComposerFile(f, 'document');
-                      }}
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setShowLinkInput((v) => !v)}
-                    className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-                  >
-                    <FiLink className="h-3.5 w-3.5" />
-                    Link
-                  </button>
+                  {access.isTutor ? (
+                    <>
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                        <FiVideo className="h-3.5 w-3.5" />
+                        Video
+                        <input
+                          type="file"
+                          accept="video/*"
+                          className="hidden"
+                          disabled={uploadingMedia}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            e.target.value = '';
+                            if (f) addComposerFile(f, 'video');
+                          }}
+                        />
+                      </label>
+                      <label className="inline-flex cursor-pointer items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                        <FiPaperclip className="h-3.5 w-3.5" />
+                        File
+                        <input
+                          type="file"
+                          accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.txt,.zip"
+                          className="hidden"
+                          disabled={uploadingMedia}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            e.target.value = '';
+                            if (f) addComposerFile(f, 'document');
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowLinkInput((v) => !v)}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+                      >
+                        <FiLink className="h-3.5 w-3.5" />
+                        Link
+                      </button>
+                    </>
+                  ) : null}
                   {uploadingMedia ? (
                     <span className="text-xs text-slate-400">Uploading…</span>
                   ) : null}
@@ -922,6 +937,8 @@ export default function CommunityHub() {
                               key={idx}
                               src={src}
                               controls
+                              playsInline
+                              preload="metadata"
                               className="max-h-80 w-full rounded-xl bg-black"
                             />
                           );

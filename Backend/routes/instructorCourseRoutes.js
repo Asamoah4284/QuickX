@@ -74,23 +74,27 @@ function normalizeResources(resources = []) {
 function normalizeModules(modules = []) {
     if (!Array.isArray(modules)) return [];
 
+    // Array order from the editor is the source of truth (supports tutor reordering).
     return modules.map((module, moduleIndex) => ({
+        ...(module?._id ? { _id: module._id } : {}),
         title: String(module?.title || `Module ${moduleIndex + 1}`).trim(),
         description: String(module?.description || '').trim(),
         price: Number(module?.price || 0),
         level: module?.level || 'beginner',
-        order: Number(module?.order ?? moduleIndex + 1),
+        order: moduleIndex + 1,
         unlocked: Boolean(module?.unlocked),
         sections: Array.isArray(module?.sections)
             ? module.sections.map((section, sectionIndex) => ({
+                ...(section?._id ? { _id: section._id } : {}),
                 title: String(section?.title || `Section ${sectionIndex + 1}`).trim(),
                 description: String(section?.description || '').trim(),
-                order: Number(section?.order ?? sectionIndex + 1),
+                order: sectionIndex + 1,
                 lessons: Array.isArray(section?.lessons)
                     ? section.lessons.map((lesson, lessonIndex) => {
                         const type = lesson?.lessonType || lesson?.type || 'video';
 
                         return {
+                            ...(lesson?._id ? { _id: lesson._id } : {}),
                             title: String(lesson?.title || `Lesson ${lessonIndex + 1}`).trim(),
                             type,
                             lessonType: type,
@@ -107,7 +111,7 @@ function normalizeModules(modules = []) {
                             free: Boolean(lesson?.free || lesson?.isPreview),
                             isPreview: Boolean(lesson?.isPreview),
                             isLocked: lesson?.isLocked === undefined ? !Boolean(lesson?.isPreview) : Boolean(lesson?.isLocked),
-                            order: Number(lesson?.order ?? lessonIndex + 1)
+                            order: lessonIndex + 1
                         };
                     })
                     : []

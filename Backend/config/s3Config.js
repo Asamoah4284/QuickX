@@ -73,6 +73,8 @@ async function generateVideoUrl(contentType = 'video/mp4') {
             Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
             Key: VideoName,
             ContentType: ct,
+            // Unique keys — long CDN cache helps Ghana/West Africa edge hits
+            CacheControl: 'public, max-age=31536000, immutable',
         });
 
         const uploadURL = await getSignedUrl(s3Client, command, { expiresIn: 300 });

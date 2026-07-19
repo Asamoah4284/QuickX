@@ -287,7 +287,7 @@ function MediaThumb({ videoSrc, posterSrc, className }) {
         playsInline
         loop
         autoPlay
-        preload="auto"
+        preload="metadata"
         className={className}
       />
     );
@@ -1438,6 +1438,29 @@ export default function InstructorProfile() {
                     </button>
                   );
                 })}
+              </div>
+              <div className="mt-3">
+                <p className="text-left text-xs font-medium text-zinc-500">We accept</p>
+                <div className="mt-2 flex flex-wrap items-center justify-start gap-2.5">
+                  <img
+                    src="/images/payments/momo.png"
+                    alt="MoMo from MTN"
+                    title="MTN Mobile Money"
+                    className="h-12 w-auto rounded-md object-contain sm:h-14"
+                  />
+                  <img
+                    src="/images/payments/telecel-cash.png"
+                    alt="Telecel Cash"
+                    title="Telecel Cash"
+                    className="h-12 w-auto rounded-md object-contain sm:h-14"
+                  />
+                  <img
+                    src="/images/payments/airteltigo.png"
+                    alt="AirtelTigo"
+                    title="AirtelTigo Money"
+                    className="h-12 w-auto rounded-md bg-white object-contain sm:h-14"
+                  />
+                </div>
               </div>
               <div className="relative mt-4 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-blue-50/90 to-indigo-100/80 p-4 shadow-inner ring-1 ring-blue-200/60">
                 <div

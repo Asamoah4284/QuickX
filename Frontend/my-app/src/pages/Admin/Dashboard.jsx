@@ -1661,7 +1661,7 @@ const AdminDashboard = () => {
                                 />
                                 <input
                                     type="number"
-                                    placeholder="Discount Amount"
+                                    placeholder="Discount %"
                                     className="border rounded-lg px-4 py-2"
                                     value={newCoupon.discount}
                                     onChange={(e) => setNewCoupon({...newCoupon, discount: e.target.value})}
@@ -1702,9 +1702,9 @@ const AdminDashboard = () => {
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {coupons.map((coupon) => (
-                                            <tr key={coupon.id}>
+                                            <tr key={coupon._id || coupon.id}>
                                                 <td className="px-6 py-4 whitespace-nowrap">{coupon.code}</td>
-                                                <td className="px-6 py-4 whitespace-nowrap">{coupon.discount}</td>
+                                                <td className="px-6 py-4 whitespace-nowrap">{coupon.discount}%</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">{new Date(coupon.validUntil).toLocaleDateString()}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">{coupon.uses}/{coupon.maxUses}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
@@ -1716,7 +1716,7 @@ const AdminDashboard = () => {
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <button
-                                                        onClick={() => handleDeleteCoupon(coupon.id)}
+                                                        onClick={() => handleDeleteCoupon(coupon._id || coupon.id)}
                                                         className="text-red-600 hover:text-red-900"
                                                     >
                                                         Delete

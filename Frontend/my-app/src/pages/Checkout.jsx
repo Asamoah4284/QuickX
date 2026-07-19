@@ -456,6 +456,8 @@ function Checkout() {
         final: finalPrice
       });
 
+      await recordCouponUse();
+
       const metaPurchasePayload = getMetaPixelPurchasePayloadForTrackedBook(checkoutItem, finalPrice);
       if (metaPurchasePayload) {
         trackMetaEvent('Purchase', metaPurchasePayload);
@@ -1039,43 +1041,42 @@ function Checkout() {
     };
   };
 
-  // Handle coupon application
+  const checkoutSubtotal = () =>
+    isBookCart ? bookCartSubtotal : Number(checkoutItem?.price || 0);
+
+  const discountAmount = () => {
+    const subtotal = checkoutSubtotal();
+    if (!couponApplied || discount <= 0) return 0;
+    return Number(((subtotal * discount) / 100).toFixed(2));
+  };
+
+  // Validate admin coupon — usage is recorded after successful payment
   const handleApplyCoupon = async () => {
     try {
+      setCouponError('');
+      const code = String(couponCode || '').trim();
+      if (!code) {
+        setCouponError('Enter a coupon code');
+        return;
+      }
+
+      const validateResponse = await axios.post(`${API_URL}/api/validate-coupon`, {
+        code,
+        price: checkoutSubtotal(),
+      });
+
+      if (validateResponse.data.valid) {
+        setCouponId(validateResponse.data.couponId);
+        setDiscount(validateResponse.data.discount);
+        setCouponApplied(true);
         setCouponError('');
-        // Get the auth token from localStorage
-        const token = localStorage.getItem('authToken');
-        
-        if (!token) {
-            setCouponError('Please login to apply coupon');
-            return;
-        }
-
-        // First validate the coupon
-        const validateResponse = await axios.post(`${API_URL}/api/validate-coupon`, {
-            code: couponCode,
-            price: checkoutItem?.price || 0
-        });
-
-        if (validateResponse.data.valid) {
-            // If valid, apply the coupon to increment usage count
-            const applyResponse = await axios.post(`${API_URL}/api/apply-coupon`, 
-                { couponId: validateResponse.data.couponId },
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-
-            if (applyResponse.data) {
-                setCouponId(validateResponse.data.couponId);
-                setDiscount(validateResponse.data.discount);
-                setCouponApplied(true);
-                setCouponError('');
-            }
-        }
+        setCouponCode(code.toUpperCase());
+      }
     } catch (error) {
-        setCouponError(error.response?.data?.message || 'Invalid coupon code');
-        setCouponApplied(false);
-        setDiscount(0);
-        setCouponId(null);
+      setCouponError(error.response?.data?.message || 'Invalid coupon code');
+      setCouponApplied(false);
+      setDiscount(0);
+      setCouponId(null);
     }
   };
 
@@ -1087,12 +1088,26 @@ function Checkout() {
     setDiscount(0);
   };
 
+  const recordCouponUse = async () => {
+    if (!couponId) return;
+    const token = localStorage.getItem('authToken');
+    if (!token) return;
+    try {
+      await axios.post(
+        `${API_URL}/api/apply-coupon`,
+        { couponId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+    } catch {
+      /* non-blocking — payment already succeeded */
+    }
+  };
+
   // Calculate final price with discount
   const calculateFinalPrice = () => {
-    const subtotal = isBookCart ? bookCartSubtotal : Number(checkoutItem?.price || 0);
+    const subtotal = checkoutSubtotal();
     if (couponApplied && discount > 0) {
-        const discountAmount = Number((subtotal * discount / 100).toFixed(2));
-        return Number((subtotal - discountAmount).toFixed(2));
+      return Number((subtotal - discountAmount()).toFixed(2));
     }
     return Number(subtotal.toFixed(2));
   };
@@ -1328,59 +1343,70 @@ function Checkout() {
                 )}
               </div>
               
-              {/* Coupon Code Section */}
-              {checkoutItem?.type !== 'creator_subscription' ? (
-                <div className="mt-4 mb-6">
-                  <div className="flex">
-                    <input
-                      type="text"
-                      placeholder="Enter coupon code"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-l-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm"
-                      disabled={couponApplied}
-                    />
-                    {!couponApplied ? (
-                      <button
-                        onClick={handleApplyCoupon}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-r-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-                      >
-                        Apply
-                      </button>
-                    ) : (
-                      <button
-                        onClick={handleRemoveCoupon}
-                        className="px-4 py-2 bg-red-600 text-white rounded-r-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </div>
-                  {couponError && (
-                    <p className="mt-1 text-sm text-red-600">{couponError}</p>
-                  )}
-                  {couponApplied && (
-                    <p className="mt-1 text-sm text-green-600">
-                      Coupon applied! {discount}% discount
-                    </p>
+              {/* Coupon — codes created in Admin → Coupons */}
+              <div className="mt-5">
+                <label htmlFor="checkout-coupon" className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Coupon code
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    id="checkout-coupon"
+                    type="text"
+                    placeholder="Enter admin coupon"
+                    value={couponCode}
+                    onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (!couponApplied) handleApplyCoupon();
+                      }
+                    }}
+                    className="min-w-0 flex-1 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none placeholder:text-slate-400 focus:border-[#1B5EF5] focus:ring-2 focus:ring-[#1B5EF5]/15 disabled:bg-slate-50"
+                    disabled={couponApplied}
+                    autoComplete="off"
+                  />
+                  {!couponApplied ? (
+                    <button
+                      type="button"
+                      onClick={handleApplyCoupon}
+                      className="shrink-0 rounded-xl bg-[#1B5EF5] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700"
+                    >
+                      Apply
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="shrink-0 rounded-xl bg-slate-100 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+                    >
+                      Remove
+                    </button>
                   )}
                 </div>
-              ) : null}
-              
+                {couponError ? (
+                  <p className="mt-1.5 text-sm text-red-600">{couponError}</p>
+                ) : null}
+                {couponApplied ? (
+                  <p className="mt-1.5 text-sm font-medium text-emerald-600">
+                    Coupon applied — {discount}% off
+                  </p>
+                ) : null}
+              </div>
+
               <div className="mt-6 border-t border-slate-100 pt-5">
                 <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                         <p className="text-slate-500">Subtotal</p>
-                        <p className="font-medium text-slate-900">GH₵{checkoutItem?.price?.toFixed(2)}</p>
+                        <p className="font-medium text-slate-900">GH₵{checkoutSubtotal().toFixed(2)}</p>
                     </div>
-                    {couponApplied && (
+                    {couponApplied ? (
                         <div className="flex justify-between text-sm">
                             <p className="text-slate-500">Discount ({discount}%)</p>
                             <p className="font-medium text-emerald-600">
-                                -GH₵{((checkoutItem?.price * discount) / 100).toFixed(2)}
+                                -GH₵{discountAmount().toFixed(2)}
                             </p>
                         </div>
-                    )}
+                    ) : null}
                     <div className="flex justify-between border-t border-slate-100 pt-3">
                         <p className="text-base font-semibold text-slate-900">Total</p>
                         <p className="text-base font-semibold text-slate-900">GH₵{calculateFinalPrice().toFixed(2)}</p>

@@ -114,6 +114,15 @@ router.post('/:tutorId/posts', requireCanContribute, async (req, res) => {
       return res.status(400).json({ message: 'Post body or media is required' });
     }
 
+    const canPostRichMedia = req.isCommunityTutor || req.isCommunityAdmin;
+    const mediaList = Array.isArray(media) ? media : [];
+    const tutorOnlyTypes = new Set(['video', 'document', 'link']);
+    if (!canPostRichMedia && mediaList.some((m) => tutorOnlyTypes.has(String(m?.type || '').toLowerCase()))) {
+      return res.status(403).json({
+        message: 'Only the tutor can post videos, files, and links',
+      });
+    }
+
     const mentionIds = Array.isArray(mentions)
       ? mentions.map((id) => String(id)).filter(Boolean)
       : [];
@@ -123,7 +132,7 @@ router.post('/:tutorId/posts', requireCanContribute, async (req, res) => {
       authorId: req.user._id,
       type: isAnnouncement ? 'announcement' : 'post',
       body: String(body || '').trim(),
-      media: Array.isArray(media) ? media : [],
+      media: mediaList,
       mentions: mentionIds,
       roomId: roomId || null,
       pollId: pollId || null,
