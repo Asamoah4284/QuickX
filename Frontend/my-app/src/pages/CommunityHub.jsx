@@ -72,7 +72,13 @@ export default function CommunityHub() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get('tab') || 'feed';
 
-  const [access, setAccess] = useState({ loading: true, subscribed: false, isTutor: false });
+  const [access, setAccess] = useState({
+    loading: true,
+    subscribed: false,
+    isTutor: false,
+    canAccessCommunity: false,
+    features: [],
+  });
   const [stats, setStats] = useState(null);
   const [posts, setPosts] = useState([]);
   const [composer, setComposer] = useState('');
@@ -127,7 +133,7 @@ export default function CommunityHub() {
   const checkAccess = useCallback(async () => {
     const token = localStorage.getItem('authToken');
     if (!token) {
-      setAccess({ loading: false, subscribed: false, isTutor: false });
+      setAccess({ loading: false, subscribed: false, isTutor: false, canAccessCommunity: false, features: [] });
       return;
     }
     try {
@@ -138,10 +144,18 @@ export default function CommunityHub() {
         loading: false,
         subscribed: Boolean(data.subscribed),
         isTutor: Boolean(data.isTutor),
+        canAccessCommunity: Boolean(data.isTutor || data.canAccessCommunity),
+        features: Array.isArray(data.features) ? data.features : data.subscription?.features || [],
         subscription: data.subscription,
       });
     } catch {
-      setAccess({ loading: false, subscribed: false, isTutor: false });
+      setAccess({
+        loading: false,
+        subscribed: false,
+        isTutor: false,
+        canAccessCommunity: false,
+        features: [],
+      });
     }
   }, [tutorId]);
 
@@ -430,20 +444,21 @@ export default function CommunityHub() {
     );
   }
 
-  if (!access.subscribed && !access.isTutor) {
+  if (!access.canAccessCommunity && !access.isTutor) {
     return (
       <div className="hub-shell min-h-screen px-4 pb-16 pt-28 sm:pt-32">
         <style>{HUB_STYLES}</style>
         <div className="mx-auto max-w-md text-center">
           <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#1B5EF5]">
-            Members only
+            {access.subscribed ? 'Upgrade required' : 'Members only'}
           </p>
           <h1 className="mt-3 text-3xl font-semibold tracking-[-0.02em] text-slate-950">
-            Community locked
+            {access.subscribed ? 'Community needs Premium' : 'Community locked'}
           </h1>
           <p className="mt-3 text-base leading-relaxed text-slate-600">
-            Subscribe to {tutorName} to unlock discussions, Q&amp;A, live sessions, and shared
-            resources.
+            {access.subscribed
+              ? 'Your Basic plan includes course videos only. Upgrade to Premium or higher to join the community, Q&A, and signals.'
+              : `Subscribe to ${tutorName} on Premium or higher to unlock discussions, Q&A, live sessions, and shared resources.`}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Link

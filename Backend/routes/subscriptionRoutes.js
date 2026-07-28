@@ -6,6 +6,7 @@ const {
   getActiveSubscription,
   listActiveSubscriptionsForStudent,
   listSubscribersForTutor,
+  getPlanFeatures,
 } = require('../services/tutorSubscriptionService');
 const User = require('../models/User');
 
@@ -18,21 +19,27 @@ router.get('/instructors/:tutorId/subscription/me', auth, async (req, res) => {
       return res.json({
         subscribed: true,
         isTutor: true,
+        features: ['videos', 'community', 'download', 'ask', 'post_trade', 'signals', 'mentored'],
+        canAccessCommunity: true,
         subscription: null,
       });
     }
 
     const sub = await getActiveSubscription(req.user._id, tutorId);
+    const features = sub ? getPlanFeatures(sub.planId) : [];
     res.json({
       subscribed: Boolean(sub),
       isTutor: false,
       accessType: sub ? 'subscription' : null,
+      features,
+      canAccessCommunity: features.includes('community'),
       subscription: sub
         ? {
             planId: sub.planId,
             startsAt: sub.startsAt,
             endsAt: sub.endsAt,
             status: sub.status,
+            features,
           }
         : null,
     });

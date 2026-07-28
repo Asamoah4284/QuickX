@@ -62,11 +62,15 @@ function sortCourses(list, tab) {
 
 function subscriptionFromPrice(subscriptionPricing) {
   if (!subscriptionPricing || typeof subscriptionPricing !== 'object') return null;
+  const basic = Number(subscriptionPricing.basic ?? subscriptionPricing.month1);
+  if (Number.isFinite(basic) && basic > 0) return basic;
+  const premium = Number(subscriptionPricing.premium);
+  if (Number.isFinite(premium) && premium > 0) return premium;
   const month1 = Number(subscriptionPricing.month1);
   if (Number.isFinite(month1) && month1 > 0) return month1;
   const month3 = Number(subscriptionPricing.month3 ?? subscriptionPricing.month2);
   if (Number.isFinite(month3) && month3 > 0) return month3;
-  const year1 = Number(subscriptionPricing.year1);
+  const year1 = Number(subscriptionPricing.year1 ?? subscriptionPricing.diamond);
   if (Number.isFinite(year1) && year1 > 0) return year1;
   return null;
 }

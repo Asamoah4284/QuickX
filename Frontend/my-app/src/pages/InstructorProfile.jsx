@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
+import { buildSubscriptionPlans } from '../utils/creatorSubscriptionPlans';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -14,62 +15,6 @@ const TYPE_LABEL = {
   crypto: 'Crypto',
   webdev: 'Web dev',
 };
-
-function buildSubscriptionPlans(subscriptionPricing) {
-  const month1 = Number(subscriptionPricing?.month1 ?? 49);
-  const month3 = Number(
-    subscriptionPricing?.month3 ?? subscriptionPricing?.month2 ?? 129
-  );
-  const year1 = Number(subscriptionPricing?.year1 ?? 399);
-  return [
-    {
-      id: '1m',
-      label: '1 mo',
-      title: '1 month',
-      price: Number.isFinite(month1) ? month1 : 49,
-      compareAt: null,
-      periodNote: 'Monthly access',
-      badge: null,
-    },
-    {
-      id: '3m',
-      label: '3 mo',
-      title: '3 months',
-      price: Number.isFinite(month3) ? month3 : 129,
-      compareAt: null,
-      periodNote: 'Quarterly access',
-      badge: null,
-    },
-    {
-      id: '1y',
-      label: '1 yr',
-      title: '1 year',
-      price: Number.isFinite(year1) ? year1 : 399,
-      compareAt: null,
-      periodNote: 'Annual access',
-      badge: 'Best value',
-    },
-  ];
-}
-
-const SUBSCRIPTION_BENEFITS = [
-  {
-    label: 'Easy access to all current and future uploaded courses',
-    icon: 'star-card',
-  },
-  {
-    label: 'Download course and watch offline',
-    icon: 'download',
-  },
-  {
-    label: 'Direct one on one with instructor',
-    icon: 'bolt',
-  },
-  {
-    label: 'Join in structured fun and community for updates and signals',
-    icon: 'chat',
-  },
-];
 
 function normalizeOutcome(value) {
   const s = String(value || '').trim();
@@ -655,8 +600,12 @@ export default function InstructorProfile() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [subscriptionDrawerOpen, setSubscriptionDrawerOpen] = useState(false);
-  const [selectedSubscriptionPlanId, setSelectedSubscriptionPlanId] = useState('1m');
-  const [communityAccess, setCommunityAccess] = useState({ subscribed: false, isTutor: false });
+  const [selectedSubscriptionPlanId, setSelectedSubscriptionPlanId] = useState('basic');
+  const [communityAccess, setCommunityAccess] = useState({
+    subscribed: false,
+    isTutor: false,
+    canAccessCommunity: false,
+  });
   const [profileVideoPreview, setProfileVideoPreview] = useState(null);
   const profilePreviewVideoRef = useRef(null);
   const [videoDropdownOpen, setVideoDropdownOpen] = useState(false);
@@ -684,11 +633,14 @@ export default function InstructorProfile() {
           setCommunityAccess({
             subscribed: Boolean(payload.subscribed),
             isTutor: Boolean(payload.isTutor),
+            canAccessCommunity: Boolean(payload.isTutor || payload.canAccessCommunity),
           });
         }
       })
       .catch(() => {
-        if (!cancelled) setCommunityAccess({ subscribed: false, isTutor: false });
+        if (!cancelled) {
+          setCommunityAccess({ subscribed: false, isTutor: false, canAccessCommunity: false });
+        }
       });
     return () => {
       cancelled = true;
@@ -1122,7 +1074,7 @@ export default function InstructorProfile() {
 
   const actionButtons = (
     <div className="flex w-full flex-col items-center gap-2 sm:items-start lg:items-end">
-      {communityAccess.subscribed || communityAccess.isTutor ? (
+      {communityAccess.canAccessCommunity || communityAccess.isTutor ? (
         <Link
           to={`/instructors/${userId}/community`}
           className="inline-flex min-h-[2.75rem] min-w-[10.5rem] items-center justify-center rounded-full bg-emerald-600 px-6 text-sm font-bold text-white shadow-md transition hover:bg-emerald-700 sm:min-h-[3rem] sm:min-w-[11rem]"
@@ -1491,7 +1443,8 @@ export default function InstructorProfile() {
                       <span className="text-sm font-medium text-zinc-600">{selectedSubscriptionPlan.periodNote}</span>
                     </div>
                     <p className="mt-2 text-sm font-medium text-zinc-600">
-                      {SUBSCRIPTION_BENEFITS.length} perks · subscriber access
+                      {(selectedSubscriptionPlan.benefitLabels || []).length} perks ·{' '}
+                      {selectedSubscriptionPlan.label} access
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center justify-center" aria-hidden>
@@ -1530,12 +1483,12 @@ export default function InstructorProfile() {
               ) : null}
 
               <ul className="mt-5 space-y-4 pb-2">
-                {SUBSCRIPTION_BENEFITS.map((b) => (
-                  <li key={b.label} className="flex items-start gap-3">
+                {(selectedSubscriptionPlan.benefitLabels || []).map((label) => (
+                  <li key={label} className="flex items-start gap-3">
                     <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100">
-                      <SubscriptionBenefitIcon name={b.icon} />
+                      <SubscriptionBenefitIcon name="check" />
                     </span>
-                    <span className="pt-1.5 text-[13px] leading-snug text-zinc-800 sm:text-[15px]">{b.label}</span>
+                    <span className="pt-1.5 text-[13px] leading-snug text-zinc-800 sm:text-[15px]">{label}</span>
                   </li>
                 ))}
               </ul>

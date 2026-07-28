@@ -617,6 +617,7 @@ exports.updateTutorSubscriptionPricing = async (req, res) => {
             return res.status(404).json({ message: 'Tutor profile not found' });
         }
 
+        const current = profile.subscriptionPricing || {};
         const clamp = (value, fallback) => {
             if (value === undefined || value === null || value === '') return fallback;
             const n = Number(value);
@@ -624,8 +625,14 @@ exports.updateTutorSubscriptionPricing = async (req, res) => {
             return Math.max(0, Math.min(1_000_000, Math.round(n)));
         };
 
-        const current = profile.subscriptionPricing || {};
         profile.subscriptionPricing = {
+            basic: clamp(pricing.basic, current.basic ?? current.month1 ?? 49),
+            premium: clamp(pricing.premium, current.premium ?? 99),
+            premiumPlus: clamp(
+                pricing.premiumPlus,
+                current.premiumPlus ?? current.month3 ?? 249
+            ),
+            diamond: clamp(pricing.diamond, current.diamond ?? current.year1 ?? 599),
             month1: clamp(pricing.month1, current.month1 ?? 49),
             month2: clamp(pricing.month2, current.month2 ?? 89),
             month3: clamp(

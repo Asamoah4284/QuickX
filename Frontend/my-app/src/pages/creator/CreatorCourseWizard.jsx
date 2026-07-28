@@ -12,7 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const steps = [
   { label: 'Basics', description: 'Title, cover, and description' },
-  { label: 'Pricing', description: '1 month, 3 months, and 1 year access' },
+  { label: 'Pricing', description: 'Basic, Premium & Diamond' },
   { label: 'Curriculum', description: 'Modules and lessons' },
   { label: 'Review', description: 'Check and publish' },
 ];
@@ -134,9 +134,9 @@ export default function CreatorCourseWizard() {
   const [thumbnailPreviewFailed, setThumbnailPreviewFailed] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
   const [subscriptionPricing, setSubscriptionPricing] = useState({
-    month1: 49,
-    month3: 129,
-    year1: 399,
+    basic: 49,
+    premium: 99,
+    diamond: 599,
   });
   const [subscriptionPricingSaving, setSubscriptionPricingSaving] = useState(false);
   const hydratedRef = useRef(false);
@@ -162,9 +162,9 @@ export default function CreatorCourseWizard() {
         setSettings(profileResponse.data.settings || { courseAutoApproval: false });
         const sp = profileResponse.data?.tutorProfile?.subscriptionPricing;
         setSubscriptionPricing({
-          month1: Number(sp?.month1 ?? 49) || 0,
-          month3: Number(sp?.month3 ?? sp?.month2 ?? 129) || 0,
-          year1: Number(sp?.year1 ?? 399) || 0,
+          basic: Number(sp?.basic ?? sp?.month1 ?? 49) || 0,
+          premium: Number(sp?.premium ?? sp?.premiumPlus ?? sp?.month3 ?? 99) || 0,
+          diamond: Number(sp?.diamond ?? sp?.year1 ?? 599) || 0,
         });
 
         if (courseResponse.data) {
@@ -311,9 +311,9 @@ export default function CreatorCourseWizard() {
       setSubscriptionPricingSaving(true);
       const payload = {
         subscriptionPricing: {
-          month1: Math.max(0, Math.round(Number(subscriptionPricing.month1) || 0)),
-          month3: Math.max(0, Math.round(Number(subscriptionPricing.month3) || 0)),
-          year1: Math.max(0, Math.round(Number(subscriptionPricing.year1) || 0)),
+          basic: Math.max(0, Math.round(Number(subscriptionPricing.basic) || 0)),
+          premium: Math.max(0, Math.round(Number(subscriptionPricing.premium) || 0)),
+          diamond: Math.max(0, Math.round(Number(subscriptionPricing.diamond) || 0)),
         },
       };
       await axios.put(`${API_URL}/api/users/creator/profile`, payload, {
@@ -539,7 +539,7 @@ export default function CreatorCourseWizard() {
         </div>
 
         <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          Next you&apos;ll set <span className="font-semibold text-slate-800">1 month / 3 months / 1 year</span>{' '}
+          Next you&apos;ll set <span className="font-semibold text-slate-800">Basic / Premium / Diamond</span>{' '}
           subscription prices for access to your courses.
         </p>
       </div>
@@ -548,42 +548,42 @@ export default function CreatorCourseWizard() {
     stepContent = (
       <div className="space-y-6">
         <StudioPanel
-          title="Subscription access pricing"
-          description="Learners subscribe to you and unlock your full catalog for the selected length."
+          title="Subscription plan pricing"
+          description="Set prices for Basic, Premium, and Diamond. Each plan unlocks different features."
         >
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="space-y-2 text-sm text-slate-600">
-              <span>1 month (GHS)</span>
+              <span>Basic — 1 month · videos only (GHS)</span>
               <input
                 type="number"
                 min="0"
-                value={subscriptionPricing.month1}
+                value={subscriptionPricing.basic}
                 onChange={(e) =>
-                  setSubscriptionPricing((cur) => ({ ...cur, month1: e.target.value }))
+                  setSubscriptionPricing((cur) => ({ ...cur, basic: e.target.value }))
                 }
                 className={inputCls}
               />
             </label>
             <label className="space-y-2 text-sm text-slate-600">
-              <span>3 months (GHS)</span>
+              <span>Premium — 1 month · community, offline, signals (GHS)</span>
               <input
                 type="number"
                 min="0"
-                value={subscriptionPricing.month3}
+                value={subscriptionPricing.premium}
                 onChange={(e) =>
-                  setSubscriptionPricing((cur) => ({ ...cur, month3: e.target.value }))
+                  setSubscriptionPricing((cur) => ({ ...cur, premium: e.target.value }))
                 }
                 className={inputCls}
               />
             </label>
             <label className="space-y-2 text-sm text-slate-600">
-              <span>1 year (GHS)</span>
+              <span>Diamond — 1 year · mentorship (GHS)</span>
               <input
                 type="number"
                 min="0"
-                value={subscriptionPricing.year1}
+                value={subscriptionPricing.diamond}
                 onChange={(e) =>
-                  setSubscriptionPricing((cur) => ({ ...cur, year1: e.target.value }))
+                  setSubscriptionPricing((cur) => ({ ...cur, diamond: e.target.value }))
                 }
                 className={inputCls}
               />
@@ -594,9 +594,9 @@ export default function CreatorCourseWizard() {
             <p className="text-sm font-medium text-slate-700">Student preview</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {[
-                { label: '1 month', value: subscriptionPricing.month1 },
-                { label: '3 months', value: subscriptionPricing.month3 },
-                { label: '1 year', value: subscriptionPricing.year1 },
+                { label: 'Basic', value: subscriptionPricing.basic, note: 'Videos only · 1 mo' },
+                { label: 'Premium', value: subscriptionPricing.premium, note: 'Full access · 1 mo' },
+                { label: 'Diamond', value: subscriptionPricing.diamond, note: 'Mentorship · 1 yr' },
               ].map((item) => (
                 <div key={item.label} className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -606,7 +606,7 @@ export default function CreatorCourseWizard() {
                     GH₵
                     {Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">Full course access</p>
+                  <p className="mt-1 text-xs text-slate-500">{item.note}</p>
                 </div>
               ))}
             </div>
@@ -678,9 +678,9 @@ export default function CreatorCourseWizard() {
 
             <div className="grid gap-3 sm:grid-cols-3">
               {[
-                { label: '1 month', value: subscriptionPricing.month1 },
-                { label: '3 months', value: subscriptionPricing.month3 },
-                { label: '1 year', value: subscriptionPricing.year1 },
+                { label: 'Basic', value: subscriptionPricing.basic },
+                { label: 'Premium', value: subscriptionPricing.premium },
+                { label: 'Diamond', value: subscriptionPricing.diamond },
               ].map((item) => (
                 <div key={item.label} className="rounded-2xl border border-slate-200 p-4">
                   <p className="text-sm text-slate-500">{item.label} access</p>

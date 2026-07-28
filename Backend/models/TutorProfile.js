@@ -20,10 +20,16 @@ const payoutDetailsSchema = new mongoose.Schema({
 }, { _id: false });
 
 const subscriptionPricingSchema = new mongoose.Schema({
+    // Tiered plans
+    basic: { type: Number, default: 49, min: 0 },
+    premium: { type: Number, default: 99, min: 0 },
+    premiumPlus: { type: Number, default: 249, min: 0 },
+    diamond: { type: Number, default: 599, min: 0 },
+    // Legacy duration fields (still read as fallbacks)
     month1: { type: Number, default: 49, min: 0 },
-    month2: { type: Number, default: 89, min: 0 }, // legacy 2-month
+    month2: { type: Number, default: 89, min: 0 },
     month3: { type: Number, default: 129, min: 0 },
-    year1: { type: Number, default: 399, min: 0 }
+    year1: { type: Number, default: 399, min: 0 },
 }, { _id: false });
 
 const tutorProfileSchema = new mongoose.Schema({

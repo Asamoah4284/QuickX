@@ -160,7 +160,7 @@ const creatorProfileValidation = [
     body('subscriptionPricing').optional().custom((value) => {
         if (value == null || value === '') return true;
         if (typeof value !== 'object') return false;
-        const keys = ['month1', 'month2', 'month3', 'year1'];
+        const keys = ['basic', 'premium', 'premiumPlus', 'diamond', 'month1', 'month2', 'month3', 'year1'];
         for (const k of keys) {
             if (value[k] === undefined || value[k] === null || value[k] === '') continue;
             const n = Number(value[k]);
@@ -208,6 +208,27 @@ function clampPrice(value, fallback = 0) {
     return Math.max(0, Math.min(1_000_000, Math.round(n)));
 }
 
+function sanitizeSubscriptionPricing(pricing = {}) {
+    const month1 = clampPrice(pricing.month1, 49);
+    const month3 = clampPrice(
+        pricing.month3 !== undefined && pricing.month3 !== null && pricing.month3 !== ''
+            ? pricing.month3
+            : pricing.month2,
+        129
+    );
+    const year1 = clampPrice(pricing.year1, 399);
+    return {
+        basic: clampPrice(pricing.basic, month1 || 49),
+        premium: clampPrice(pricing.premium, 99),
+        premiumPlus: clampPrice(pricing.premiumPlus, month3 || 249),
+        diamond: clampPrice(pricing.diamond, year1 || 599),
+        month1,
+        month2: clampPrice(pricing.month2, 89),
+        month3,
+        year1,
+    };
+}
+
 function sanitizeCreatorDraft(body = {}) {
     const socialLinks = body.socialLinks || {};
     const pricing = body.subscriptionPricing || {};
@@ -246,17 +267,7 @@ function sanitizeCreatorDraft(body = {}) {
             accountNumber: String(body.payoutDetails?.accountNumber || '').trim(),
             currency: String(body.payoutDetails?.currency || 'GHS').trim()
         },
-        subscriptionPricing: {
-            month1: clampPrice(pricing.month1, 49),
-            month2: clampPrice(pricing.month2, 89),
-            month3: clampPrice(
-                pricing.month3 !== undefined && pricing.month3 !== null && pricing.month3 !== ''
-                    ? pricing.month3
-                    : pricing.month2,
-                129
-            ),
-            year1: clampPrice(pricing.year1, 399)
-        }
+        subscriptionPricing: sanitizeSubscriptionPricing(pricing)
     };
 }
 
@@ -605,19 +616,7 @@ router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) 
                 {
                     $set: {
                         userId: req.user._id,
-                        subscriptionPricing: {
-                            month1: clampPrice(pricing.month1, 49),
-                            month2: clampPrice(pricing.month2, 89),
-                            month3: clampPrice(
-                                pricing.month3 !== undefined &&
-                                    pricing.month3 !== null &&
-                                    pricing.month3 !== ''
-                                    ? pricing.month3
-                                    : pricing.month2,
-                                129
-                            ),
-                            year1: clampPrice(pricing.year1, 399),
-                        },
+                        subscriptionPricing: sanitizeSubscriptionPricing(pricing),
                     },
                 },
                 { new: true, upsert: true, setDefaultsOnInsert: true }

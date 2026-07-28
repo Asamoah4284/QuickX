@@ -1,15 +1,11 @@
 const TutorSubscription = require('../models/TutorSubscription');
-
-const PLAN_DURATION_DAYS = {
-  '1m': 30,
-  '2m': 60,
-  '3m': 90,
-  '1y': 365,
-};
-
-function planDurationDays(planId) {
-  return PLAN_DURATION_DAYS[String(planId)] || 30;
-}
+const {
+  planDurationDays,
+  normalizePlanId,
+  planHasFeature,
+  getPlanFeatures,
+  FEATURES,
+} = require('../constants/creatorSubscriptionPlans');
 
 function addDays(date, days) {
   const d = new Date(date);
@@ -29,7 +25,7 @@ async function expireIfNeeded(sub) {
 
 /**
  * Create or extend an active subscription after successful payment.
- * Idempotent on transactionId.
+ * Idempotent on transactionId. Stores canonical plan ids (basic/premium/…).
  */
 async function createOrExtendFromPayment({
   studentId,
@@ -43,7 +39,8 @@ async function createOrExtendFromPayment({
     if (existingByTx) return existingByTx;
   }
 
-  const days = planDurationDays(planId);
+  const canonicalPlanId = normalizePlanId(planId) || String(planId);
+  const days = planDurationDays(canonicalPlanId);
   const now = new Date();
 
   let sub = await TutorSubscription.findOne({
@@ -54,7 +51,7 @@ async function createOrExtendFromPayment({
 
   if (sub && sub.endsAt > now) {
     sub.endsAt = addDays(sub.endsAt, days);
-    sub.planId = planId;
+    sub.planId = canonicalPlanId;
     if (paymentId) sub.paymentId = paymentId;
     if (transactionId) sub.transactionId = transactionId;
     await sub.save();
@@ -65,7 +62,7 @@ async function createOrExtendFromPayment({
     return await TutorSubscription.create({
       studentId,
       tutorId,
-      planId,
+      planId: canonicalPlanId,
       startsAt: now,
       endsAt: addDays(now, days),
       status: 'active',
@@ -90,7 +87,6 @@ async function getActiveSubscription(studentId, tutorId) {
   }).sort({ endsAt: -1 });
 
   if (!sub) {
-    // Catch stale "active" rows past endsAt
     const stale = await TutorSubscription.findOne({
       studentId,
       tutorId,
@@ -107,6 +103,15 @@ async function hasActiveSubscription(studentId, tutorId) {
   if (String(studentId) === String(tutorId)) return true;
   const sub = await getActiveSubscription(studentId, tutorId);
   return Boolean(sub);
+}
+
+/** True if student has an active sub that includes the given feature. */
+async function hasSubscriptionFeature(studentId, tutorId, feature) {
+  if (!studentId || !tutorId || !feature) return false;
+  if (String(studentId) === String(tutorId)) return true;
+  const sub = await getActiveSubscription(studentId, tutorId);
+  if (!sub) return false;
+  return planHasFeature(sub.planId, feature);
 }
 
 /**
@@ -149,7 +154,6 @@ async function enrollStudentInTutorPublishedCourses(studentId, tutorId) {
       { ordered: false }
     );
   } catch (err) {
-    // Ignore duplicate-key races; other errors still bubble
     if (err?.code !== 11000 && !err?.writeErrors) throw err;
   }
 
@@ -190,11 +194,15 @@ async function listSubscribersForTutor(tutorId) {
 }
 
 module.exports = {
-  PLAN_DURATION_DAYS,
+  FEATURES,
   planDurationDays,
   createOrExtendFromPayment,
   getActiveSubscription,
   hasActiveSubscription,
+  hasSubscriptionFeature,
+  getPlanFeatures,
+  planHasFeature,
+  normalizePlanId,
   enrollStudentInTutorPublishedCourses,
   listActiveSubscriptionsForStudent,
   listSubscribersForTutor,

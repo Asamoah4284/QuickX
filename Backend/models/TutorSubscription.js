@@ -16,7 +16,7 @@ const tutorSubscriptionSchema = new mongoose.Schema(
     },
     planId: {
       type: String,
-      enum: ['1m', '2m', '3m', '1y'],
+      enum: ['basic', 'premium', 'premium_plus', 'diamond', '1m', '2m', '3m', '1y'],
       required: true,
     },
     startsAt: {

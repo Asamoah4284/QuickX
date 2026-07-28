@@ -1,36 +1,154 @@
 /**
- * Creator subscription tiers (GHS defaults) — keep in sync with InstructorProfile plans.
- * Actual charged price comes from each tutor's TutorProfile.subscriptionPricing.
+ * Creator subscription tiers — keep in sync with Frontend utils/creatorSubscriptionPlans.js
+ *
+ * basic   — videos only, 1 month
+ * premium — videos + community + download + ask + trades + signals, 1 month
+ * diamond — premium + mentorship, 1 year
+ *
+ * Legacy ids (premium_plus, 1m, 2m, 3m, 1y) still resolve for existing subscriptions.
  */
-const CREATOR_SUBSCRIPTION_PLAN_DEFAULTS = {
-  '1m': 49,
-  '2m': 89, // legacy
-  '3m': 129,
-  '1y': 399,
+
+const FEATURES = {
+  VIDEOS: 'videos',
+  COMMUNITY: 'community',
+  DOWNLOAD: 'download',
+  ASK: 'ask',
+  POST_TRADE: 'post_trade',
+  SIGNALS: 'signals',
+  MENTORED: 'mentored',
 };
 
-const PLAN_PRICE_FIELD = {
-  '1m': 'month1',
-  '2m': 'month2',
-  '3m': 'month3',
-  '1y': 'year1',
+const PLAN_DEFINITIONS = {
+  basic: {
+    id: 'basic',
+    label: 'Basic',
+    title: 'Basic plan',
+    durationDays: 30,
+    periodNote: '1 month · watch videos only',
+    priceField: 'basic',
+    legacyPriceFields: ['month1'],
+    defaultPrice: 49,
+    features: [FEATURES.VIDEOS],
+    benefitLabels: ['Watch course videos'],
+  },
+  premium: {
+    id: 'premium',
+    label: 'Premium',
+    title: 'Premium plan',
+    durationDays: 30,
+    periodNote: '1 month · community, Q&A, signals & offline',
+    priceField: 'premium',
+    legacyPriceFields: ['month3', 'month2', 'premiumPlus'],
+    defaultPrice: 99,
+    features: [
+      FEATURES.VIDEOS,
+      FEATURES.COMMUNITY,
+      FEATURES.DOWNLOAD,
+      FEATURES.ASK,
+      FEATURES.POST_TRADE,
+      FEATURES.SIGNALS,
+    ],
+    benefitLabels: [
+      'Watch course videos',
+      'Join the community',
+      'Ask questions',
+      'Post trades',
+      'Join signal page',
+      'Download & watch offline',
+    ],
+  },
+  diamond: {
+    id: 'diamond',
+    label: 'Diamond',
+    title: 'Diamond plan',
+    durationDays: 365,
+    periodNote: '1 year · full access + mentorship',
+    priceField: 'diamond',
+    legacyPriceFields: ['year1'],
+    defaultPrice: 599,
+    badge: 'Best value',
+    features: [
+      FEATURES.VIDEOS,
+      FEATURES.COMMUNITY,
+      FEATURES.DOWNLOAD,
+      FEATURES.ASK,
+      FEATURES.POST_TRADE,
+      FEATURES.SIGNALS,
+      FEATURES.MENTORED,
+    ],
+    benefitLabels: [
+      'Watch course videos',
+      'Join the community',
+      'Ask questions',
+      'Post trades',
+      'Join signal page',
+      'Download & watch offline',
+      '1-on-1 mentorship',
+    ],
+  },
+};
+
+/** Map old / removed plan ids → current tiers. */
+const LEGACY_PLAN_ALIASES = {
+  '1m': 'basic',
+  '2m': 'premium',
+  '3m': 'premium',
+  '1y': 'diamond',
+  premium_plus: 'premium',
+};
+
+const CANONICAL_PLAN_IDS = Object.keys(PLAN_DEFINITIONS);
+const ACCEPTED_PLAN_IDS = [
+  ...CANONICAL_PLAN_IDS,
+  ...Object.keys(LEGACY_PLAN_ALIASES),
+];
+
+function normalizePlanId(planId) {
+  const id = String(planId || '').trim();
+  if (PLAN_DEFINITIONS[id]) return id;
+  if (LEGACY_PLAN_ALIASES[id]) return LEGACY_PLAN_ALIASES[id];
+  return null;
+}
+
+function getPlanDefinition(planId) {
+  const canonical = normalizePlanId(planId);
+  return canonical ? PLAN_DEFINITIONS[canonical] : null;
+}
+
+function planDurationDays(planId) {
+  return getPlanDefinition(planId)?.durationDays || 30;
+}
+
+function planHasFeature(planId, feature) {
+  const def = getPlanDefinition(planId);
+  if (!def) return false;
+  return def.features.includes(feature);
+}
+
+function getPlanFeatures(planId) {
+  return getPlanDefinition(planId)?.features || [];
+}
+
+const CREATOR_SUBSCRIPTION_PLAN_DEFAULTS = {
+  basic: PLAN_DEFINITIONS.basic.defaultPrice,
+  premium: PLAN_DEFINITIONS.premium.defaultPrice,
+  diamond: PLAN_DEFINITIONS.diamond.defaultPrice,
+  premium_plus: PLAN_DEFINITIONS.premium.defaultPrice,
+  '1m': PLAN_DEFINITIONS.basic.defaultPrice,
+  '2m': PLAN_DEFINITIONS.premium.defaultPrice,
+  '3m': PLAN_DEFINITIONS.premium.defaultPrice,
+  '1y': PLAN_DEFINITIONS.diamond.defaultPrice,
 };
 
 function getCreatorSubscriptionPlanPrice(planId) {
-  if (planId == null || planId === '') return null;
-  const p = CREATOR_SUBSCRIPTION_PLAN_DEFAULTS[String(planId)];
-  return p != null ? p : null;
+  const canonical = normalizePlanId(planId);
+  if (!canonical) return null;
+  return PLAN_DEFINITIONS[canonical].defaultPrice;
 }
 
-/**
- * Resolve the price a student must pay for a tutor's plan.
- * Prefers tutor custom pricing; falls back to platform defaults.
- * For 3m, also accepts legacy month2 when month3 is unset.
- */
 async function getExpectedCreatorSubscriptionPrice(tutorId, planId) {
-  const id = String(planId || '');
-  const fallback = getCreatorSubscriptionPlanPrice(id);
-  if (fallback == null) return null;
+  const def = getPlanDefinition(planId);
+  if (!def) return null;
 
   try {
     const TutorProfile = require('../models/TutorProfile');
@@ -38,30 +156,40 @@ async function getExpectedCreatorSubscriptionPrice(tutorId, planId) {
       .select('subscriptionPricing')
       .lean();
     const pricing = profile?.subscriptionPricing || {};
-    const field = PLAN_PRICE_FIELD[id];
 
-    if (id === '3m') {
-      const month3 = Number(pricing.month3);
-      if (Number.isFinite(month3) && month3 >= 0) return month3;
-      const month2 = Number(pricing.month2);
-      if (Number.isFinite(month2) && month2 >= 0) return month2;
-      return fallback;
+    const hasOwn = (field) =>
+      pricing[field] !== undefined && pricing[field] !== null && pricing[field] !== '';
+
+    if (hasOwn(def.priceField)) {
+      const primary = Number(pricing[def.priceField]);
+      if (Number.isFinite(primary) && primary >= 0) return primary;
     }
 
-    if (field) {
-      const custom = Number(pricing[field]);
-      if (Number.isFinite(custom) && custom >= 0) return custom;
+    for (const field of def.legacyPriceFields || []) {
+      if (!hasOwn(field)) continue;
+      const legacy = Number(pricing[field]);
+      if (Number.isFinite(legacy) && legacy >= 0) return legacy;
     }
   } catch (err) {
     console.error('getExpectedCreatorSubscriptionPrice:', err.message);
   }
 
-  return fallback;
+  return def.defaultPrice;
 }
 
 module.exports = {
+  FEATURES,
+  PLAN_DEFINITIONS,
+  LEGACY_PLAN_ALIASES,
+  CANONICAL_PLAN_IDS,
+  ACCEPTED_PLAN_IDS,
   CREATOR_SUBSCRIPTION_PLAN_DEFAULTS,
   CREATOR_SUBSCRIPTION_PLAN_PRICES: CREATOR_SUBSCRIPTION_PLAN_DEFAULTS,
+  normalizePlanId,
+  getPlanDefinition,
+  planDurationDays,
+  planHasFeature,
+  getPlanFeatures,
   getCreatorSubscriptionPlanPrice,
   getExpectedCreatorSubscriptionPrice,
 };

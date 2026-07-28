@@ -9,9 +9,9 @@ function PricingEditor({ application, onSaved }) {
   const adminToken = localStorage.getItem('adminToken');
   const sp = application.subscriptionPricing || {};
   const [pricing, setPricing] = useState({
-    month1: Number(sp.month1 ?? 49),
-    month3: Number(sp.month3 ?? sp.month2 ?? 129),
-    year1: Number(sp.year1 ?? 399),
+    basic: Number(sp.basic ?? sp.month1 ?? 49),
+    premium: Number(sp.premium ?? sp.premiumPlus ?? sp.month3 ?? 99),
+    diamond: Number(sp.diamond ?? sp.year1 ?? 599),
   });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -19,9 +19,9 @@ function PricingEditor({ application, onSaved }) {
   useEffect(() => {
     const next = application.subscriptionPricing || {};
     setPricing({
-      month1: Number(next.month1 ?? 49),
-      month3: Number(next.month3 ?? next.month2 ?? 129),
-      year1: Number(next.year1 ?? 399),
+      basic: Number(next.basic ?? next.month1 ?? 49),
+      premium: Number(next.premium ?? next.premiumPlus ?? next.month3 ?? 99),
+      diamond: Number(next.diamond ?? next.year1 ?? 599),
     });
   }, [application._id, application.subscriptionPricing]);
 
@@ -33,9 +33,9 @@ function PricingEditor({ application, onSaved }) {
         `${API_URL}/api/admin/tutors/applications/${application._id}/subscription-pricing`,
         {
           subscriptionPricing: {
-            month1: pricing.month1,
-            month3: pricing.month3,
-            year1: pricing.year1,
+            basic: pricing.basic,
+            premium: pricing.premium,
+            diamond: pricing.diamond,
           },
         },
         { headers: { Authorization: `Bearer ${adminToken}` } }
@@ -50,41 +50,27 @@ function PricingEditor({ application, onSaved }) {
 
   return (
     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-sm font-semibold text-slate-900">Subscription access prices (GHS)</p>
+      <p className="text-sm font-semibold text-slate-900">Subscription plan prices (GHS)</p>
       <p className="mt-1 text-xs text-slate-500">
-        1 month, 3 months, and 1 year — these are what students pay for full course access.
+        Basic, Premium, and Diamond — feature tiers students can buy.
       </p>
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
-        <label className="text-xs text-slate-600">
-          1 month
-          <input
-            type="number"
-            min="0"
-            value={pricing.month1}
-            onChange={(e) => setPricing((c) => ({ ...c, month1: e.target.value }))}
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900"
-          />
-        </label>
-        <label className="text-xs text-slate-600">
-          3 months
-          <input
-            type="number"
-            min="0"
-            value={pricing.month3}
-            onChange={(e) => setPricing((c) => ({ ...c, month3: e.target.value }))}
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900"
-          />
-        </label>
-        <label className="text-xs text-slate-600">
-          1 year
-          <input
-            type="number"
-            min="0"
-            value={pricing.year1}
-            onChange={(e) => setPricing((c) => ({ ...c, year1: e.target.value }))}
-            className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900"
-          />
-        </label>
+        {[
+          { key: 'basic', label: 'Basic (1 mo · videos)' },
+          { key: 'premium', label: 'Premium (1 mo · full access)' },
+          { key: 'diamond', label: 'Diamond (1 yr · mentorship)' },
+        ].map((field) => (
+          <label key={field.key} className="text-xs text-slate-600">
+            {field.label}
+            <input
+              type="number"
+              min="0"
+              value={pricing[field.key]}
+              onChange={(e) => setPricing((c) => ({ ...c, [field.key]: e.target.value }))}
+              className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-gray-900"
+            />
+          </label>
+        ))}
       </div>
       {error ? <p className="mt-2 text-xs text-rose-600">{error}</p> : null}
       <button

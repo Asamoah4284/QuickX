@@ -137,7 +137,7 @@ const handleValidationErrors = (req, res, next) => {
 const validateCreatorSubscriptionPayment = [
     body('instructorId').isMongoId().withMessage('Invalid instructor ID'),
     body('planId')
-        .isIn(['1m', '2m', '3m', '1y'])
+        .isIn(['basic', 'premium', 'premium_plus', 'diamond', '1m', '2m', '3m', '1y'])
         .withMessage('Invalid subscription plan'),
     body('amount')
         .isFloat({ min: 0.01 })

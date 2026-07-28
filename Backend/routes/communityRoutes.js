@@ -4,6 +4,9 @@ const auth = require('../middleware/auth');
 const {
   requireTutorSubscriber,
   requireCommunityModerator,
+  requireCommunityAccess,
+  requireTutorFeature,
+  FEATURES,
 } = require('../middleware/requireTutorSubscriber');
 const CommunityPost = require('../models/CommunityPost');
 const CommunityComment = require('../models/CommunityComment');
@@ -55,8 +58,8 @@ async function getSubscriberIds(tutorId) {
   return rows.map((r) => r.studentId?._id || r.studentId).filter(Boolean);
 }
 
-// All community routes under /:tutorId require auth + subscription
-router.use('/:tutorId', auth, requireTutorSubscriber);
+// All community routes under /:tutorId require auth + Premium (community feature)
+router.use('/:tutorId', auth, requireTutorSubscriber, requireCommunityAccess);
 
 router.use('/:tutorId', async (req, res, next) => {
   const ok = await assertNotBlocked(req.params.tutorId, req.user._id);
@@ -433,7 +436,7 @@ router.get('/:tutorId/questions', async (req, res) => {
   }
 });
 
-router.post('/:tutorId/questions', requireCanContribute, async (req, res) => {
+router.post('/:tutorId/questions', requireCanContribute, requireTutorFeature(FEATURES.ASK), async (req, res) => {
   try {
     const { title, body, topic, courseId, attachments } = req.body;
     if (!String(title || '').trim() || !String(body || '').trim()) {
@@ -493,7 +496,7 @@ router.get('/:tutorId/questions/:questionId', async (req, res) => {
   }
 });
 
-router.post('/:tutorId/questions/:questionId/answers', requireCanContribute, async (req, res) => {
+router.post('/:tutorId/questions/:questionId/answers', requireCanContribute, requireTutorFeature(FEATURES.ASK), async (req, res) => {
   try {
     const question = await CommunityQuestion.findOne({
       _id: req.params.questionId,
