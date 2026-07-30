@@ -1,9 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link, Navigate, useLocation } from 'react-router-dom';
-import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget, FiArrowRight } from 'react-icons/fi';
+import { FiUser, FiBook, FiCalendar, FiClock, FiAward, FiBookOpen, FiSettings, FiLogOut, FiTrendingUp, FiDollarSign, FiTarget, FiArrowRight, FiDownload } from 'react-icons/fi';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import Loader from '../components/Loader';
+import {
+  deleteLesson,
+  estimateQuota,
+  formatBytes,
+  listDownloads,
+} from '../utils/offlineLessonStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -88,6 +94,9 @@ function Membership() {
   const [withdrawalError, setWithdrawalError] = useState('');
   const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
   const [isProcessingWithdrawal, setIsProcessingWithdrawal] = useState(false);
+  const [offlineDownloads, setOfflineDownloads] = useState([]);
+  const [offlineQuota, setOfflineQuota] = useState(null);
+  const [offlineLoading, setOfflineLoading] = useState(false);
 
   // Define animation styles
   const animationStyles = `
@@ -185,6 +194,55 @@ function Membership() {
     const timer = setTimeout(() => setShowSuccessMessage(false), 5000);
     return () => clearTimeout(timer);
   }, [location.state]);
+
+  const refreshOfflineDownloads = useCallback(async () => {
+    setOfflineLoading(true);
+    try {
+      const [rows, quota] = await Promise.all([listDownloads(), estimateQuota()]);
+      setOfflineDownloads(rows);
+      setOfflineQuota(quota);
+    } catch (err) {
+      console.error('Failed to load offline downloads:', err);
+      setOfflineDownloads([]);
+      setOfflineQuota(null);
+    } finally {
+      setOfflineLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshOfflineDownloads();
+  }, [refreshOfflineDownloads]);
+
+  useEffect(() => {
+    if (activeTab !== 'offlineDownloads') return;
+    refreshOfflineDownloads();
+  }, [activeTab, refreshOfflineDownloads]);
+
+  const handleRemoveOfflineDownload = async (courseId, lessonId) => {
+    try {
+      await deleteLesson(courseId, lessonId);
+      await refreshOfflineDownloads();
+    } catch (err) {
+      console.error('Failed to remove offline download:', err);
+    }
+  };
+
+  const offlineByCourse = offlineDownloads.reduce((acc, item) => {
+    const id = String(item.courseId || 'unknown');
+    if (!acc[id]) {
+      acc[id] = {
+        courseId: id,
+        courseTitle: item.courseTitle || 'Course',
+        lessons: [],
+        totalSize: 0,
+      };
+    }
+    acc[id].lessons.push(item);
+    acc[id].totalSize += item.size || 0;
+    return acc;
+  }, {});
+  const offlineCourseGroups = Object.values(offlineByCourse);
 
   useEffect(() => {
     const authToken = localStorage.getItem('authToken');
@@ -826,6 +884,24 @@ function Membership() {
                   </li>
                   <li>
                     <button
+                      onClick={() => setActiveTab('offlineDownloads')}
+                      className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        activeTab === 'offlineDownloads'
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <FiDownload className="mr-3" />
+                      Offline downloads
+                      {offlineDownloads.length > 0 && (
+                        <span className="ml-auto rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                          {offlineDownloads.length}
+                        </span>
+                      )}
+                    </button>
+                  </li>
+                  <li>
+                    <button
                       onClick={() => setActiveTab('certificates')}
                       className={`w-full flex items-center px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                         activeTab === 'certificates'
@@ -1236,6 +1312,121 @@ function Membership() {
               </div>
             )}
             
+            {activeTab === 'offlineDownloads' && (
+              <div className="rounded-2xl border border-slate-200 bg-white p-6">
+                <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+                  <div>
+                    <h2 className="text-xl font-semibold tracking-tight text-slate-950">Offline downloads</h2>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Lessons saved on this device. Watch them without using mobile data.
+                    </p>
+                  </div>
+                  {offlineDownloads.length > 0 && (
+                    <div className="text-right text-sm text-slate-600">
+                      <p className="font-semibold text-slate-900">
+                        {offlineDownloads.length} lesson{offlineDownloads.length === 1 ? '' : 's'}
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {formatBytes(offlineDownloads.reduce((sum, row) => sum + (row.size || 0), 0))}
+                        {offlineQuota?.quota
+                          ? ` · ${formatBytes(offlineQuota.usage || 0)} of ${formatBytes(offlineQuota.quota)} used`
+                          : ''}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                {offlineLoading ? (
+                  <div className="py-12">
+                    <Loader fullScreen={false} size="sm" label="Loading downloads…" />
+                  </div>
+                ) : offlineCourseGroups.length > 0 ? (
+                  <div className="space-y-5">
+                    {offlineCourseGroups.map((group) => (
+                      <div
+                        key={group.courseId}
+                        className="overflow-hidden rounded-2xl border border-slate-200"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 bg-slate-50 px-4 py-3">
+                          <div className="min-w-0">
+                            <h3 className="truncate text-sm font-semibold text-slate-900">
+                              {group.courseTitle}
+                            </h3>
+                            <p className="text-xs text-slate-500">
+                              {group.lessons.length} lesson{group.lessons.length === 1 ? '' : 's'} ·{' '}
+                              {formatBytes(group.totalSize)}
+                            </p>
+                          </div>
+                          <Link
+                            to={`/school/course/${group.courseId}`}
+                            className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          >
+                            Open course
+                            <FiArrowRight />
+                          </Link>
+                        </div>
+                        <ul className="divide-y divide-slate-100">
+                          {group.lessons.map((item) => (
+                            <li
+                              key={item.key}
+                              className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-medium text-slate-900">
+                                  {item.lessonTitle || 'Lesson'}
+                                </p>
+                                <p className="text-xs text-slate-500">
+                                  {formatBytes(item.size)}
+                                  {item.downloadedAt
+                                    ? ` · Saved ${new Date(item.downloadedAt).toLocaleDateString()}`
+                                    : ''}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Link
+                                  to={`/school/course/${item.courseId}`}
+                                  state={{ lessonId: item.lessonId }}
+                                  className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+                                >
+                                  Watch
+                                </Link>
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    handleRemoveOfflineDownload(item.courseId, item.lessonId)
+                                  }
+                                  className="rounded-lg border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50"
+                                >
+                                  Remove
+                                </button>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-10 text-center">
+                    <div className="mx-auto mb-4 inline-flex rounded-full bg-blue-100 p-3 text-blue-700">
+                      <FiDownload size={24} />
+                    </div>
+                    <h3 className="text-lg font-semibold text-slate-900">No offline downloads yet</h3>
+                    <p className="mx-auto mt-1 max-w-md text-sm text-slate-500">
+                      Open a course and use “Download for offline” under the video player. Saved lessons
+                      will appear here.
+                    </p>
+                    <Link
+                      to="/school"
+                      className="mt-5 inline-flex items-center justify-center rounded-xl bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
+                    >
+                      Browse courses
+                    </Link>
+                  </div>
+                )}
+              </div>
+            )}
+
             {activeTab === 'certificates' && (
               <div className="bg-white rounded-xl shadow-sm p-6">
                 <h2 className="text-lg font-bold text-gray-900 mb-4">My Certificates</h2>

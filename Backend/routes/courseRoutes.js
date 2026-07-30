@@ -26,6 +26,130 @@ function resolveCourseTutorId(course) {
     return raw;
 }
 
+/** Rewrite S3 object URLs to CloudFront when CLOUDFRONT_URL / CDN_URL is set. */
+function publicAssetUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    const cdn = String(
+        process.env.CLOUDFRONT_URL ||
+            process.env.CDN_URL ||
+            'https://d3mvqd2a72xwvk.cloudfront.net'
+    )
+        .trim()
+        .replace(/\/$/, '');
+    if (!cdn) return url;
+    const trimmed = url.trim();
+    if (trimmed.includes('.cloudfront.net')) return trimmed;
+    try {
+        const u = new URL(trimmed);
+        const host = u.hostname.toLowerCase();
+        const isVirtualHostedS3 =
+            host.endsWith('.amazonaws.com') && /\.s3[.-]/i.test(host);
+        if (isVirtualHostedS3 && u.pathname && u.pathname !== '/') {
+            return `${cdn}${u.pathname}`;
+        }
+    } catch {
+        return url;
+    }
+    return url;
+}
+
+function findLessonInCourse(course, lessonId) {
+    const target = String(lessonId || '').trim();
+    if (!target || !course?.modules) return null;
+
+    // Path form: moduleIndex-sectionIndex-lessonIndex
+    if (/^\d+-\d+-\d+$/.test(target)) {
+        const [m, s, l] = target.split('-').map((n) => Number(n));
+        const lesson = course.modules?.[m]?.sections?.[s]?.lessons?.[l];
+        if (lesson) {
+            return {
+                lesson,
+                moduleIndex: m,
+                sectionIndex: s,
+                lessonIndex: l,
+                pathId: target,
+            };
+        }
+        return null;
+    }
+
+    for (let m = 0; m < course.modules.length; m += 1) {
+        const sections = course.modules[m]?.sections || [];
+        for (let s = 0; s < sections.length; s += 1) {
+            const lessons = sections[s]?.lessons || [];
+            for (let l = 0; l < lessons.length; l += 1) {
+                const lesson = lessons[l];
+                if (lesson?._id && String(lesson._id) === target) {
+                    return {
+                        lesson,
+                        moduleIndex: m,
+                        sectionIndex: s,
+                        lessonIndex: l,
+                        pathId: `${m}-${s}-${l}`,
+                    };
+                }
+            }
+        }
+    }
+    return null;
+}
+
+async function userHasCourseAccess(userId, course) {
+    const isOwner =
+        course.source === 'user' &&
+        course.createdBy &&
+        course.createdBy.toString() === userId.toString();
+    if (isOwner) {
+        return { allowed: true, via: 'owner', purchase: null, enrollment: null };
+    }
+
+    const [purchase, enrollment] = await Promise.all([
+        Purchase.findOne({
+            userId,
+            courseId: course._id,
+            status: 'completed',
+        }),
+        Enrollment.findOne({
+            studentId: userId,
+            courseId: course._id,
+        }),
+    ]);
+
+    if (purchase) {
+        return { allowed: true, via: 'purchase', purchase, enrollment };
+    }
+    if (enrollment) {
+        return { allowed: true, via: 'enrollment', purchase, enrollment };
+    }
+
+    const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
+    const tutorId = resolveCourseTutorId(course);
+    const subscribed = tutorId ? await hasActiveSubscription(userId, tutorId) : false;
+    if (subscribed) {
+        return { allowed: true, via: 'subscription', purchase, enrollment };
+    }
+
+    return { allowed: false, via: null, purchase, enrollment };
+}
+
+async function userCanDownloadOffline(userId, course, access) {
+    if (!access?.allowed) return false;
+    if (access.via === 'owner') return true;
+
+    const purchase = access.purchase || await Purchase.findOne({
+        userId,
+        courseId: course._id,
+        status: 'completed',
+    });
+    if (purchase) return true;
+
+    const { hasSubscriptionFeature } = require('../services/tutorSubscriptionService');
+    const { FEATURES } = require('../constants/creatorSubscriptionPlans');
+    const tutorId = resolveCourseTutorId(course);
+    if (!tutorId) return false;
+    return hasSubscriptionFeature(userId, tutorId, FEATURES.DOWNLOAD);
+}
+
 async function buildTransactionRecord({ course, userId, amount, paymentReference = '' }) {
     const settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
     const commissionRate = Number(settings?.commissionRate || 15);
@@ -328,7 +452,11 @@ router.get('/:id/full', auth, async (req, res) => {
             course.createdBy &&
             course.createdBy.toString() === user._id.toString();
         if (isOwner) {
-            return res.json(course);
+            return res.json({
+                ...course.toObject(),
+                canDownloadOffline: true,
+                tutorId: resolveCourseTutorId(course) ? String(resolveCourseTutorId(course)) : null,
+            });
         }
 
         const [purchase, enrollment] = await Promise.all([
@@ -369,10 +497,185 @@ router.get('/:id/full', auth, async (req, res) => {
         
         res.json({
             ...course.toObject(),
-            enrollment: accessEnrollment
+            enrollment: accessEnrollment,
+            canDownloadOffline: await userCanDownloadOffline(user._id, course, {
+                allowed: true,
+                via: isOwner ? 'owner' : (purchase ? 'purchase' : (accessEnrollment ? 'enrollment' : 'subscription')),
+                purchase,
+                enrollment: accessEnrollment,
+            }),
+            tutorId: resolveCourseTutorId(course) ? String(resolveCourseTutorId(course)) : null,
         });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+/**
+ * Shared entitlement + lesson resolution for offline download.
+ * Returns { error, status, payload } where payload is ready for JSON or stream.
+ */
+async function resolveLessonDownloadEntitlement(user, courseId, lessonId) {
+    const course = await Course.findById(courseId);
+    if (!course) {
+        return { status: 404, error: { message: 'Course not found' } };
+    }
+
+    const access = await userHasCourseAccess(user._id, course);
+    if (!access.allowed) {
+        return {
+            status: 403,
+            error: {
+                message: 'Access denied. Please purchase this course or subscribe.',
+                code: 'NO_ACCESS',
+            },
+        };
+    }
+
+    const canDownload = await userCanDownloadOffline(user._id, course, access);
+    if (!canDownload) {
+        return {
+            status: 403,
+            error: {
+                message:
+                    'Offline downloads require Premium or Diamond, or a course purchase. Upgrade to download and watch without using mobile data.',
+                code: 'UPGRADE_REQUIRED',
+                canDownloadOffline: false,
+            },
+        };
+    }
+
+    const decodedLessonId = decodeURIComponent(String(lessonId || '').trim());
+    const found = findLessonInCourse(course, decodedLessonId);
+    if (!found?.lesson) {
+        return { status: 404, error: { message: 'Lesson not found' } };
+    }
+
+    const rawUrl = String(found.lesson.videoUrl || found.lesson.filePath || '').trim();
+    if (!rawUrl) {
+        return { status: 404, error: { message: 'This lesson has no downloadable video' } };
+    }
+
+    const url = publicAssetUrl(rawUrl);
+    const lessonKey = found.lesson._id ? String(found.lesson._id) : found.pathId;
+    return {
+        status: 200,
+        course,
+        found,
+        url,
+        lessonKey,
+        access,
+    };
+}
+
+/**
+ * Entitlement for offline lesson download.
+ * Allowed for: course owner, completed purchase, or Premium/Diamond (download feature).
+ * Basic subscribers can stream but not download.
+ */
+router.get('/:id/lessons/:lessonId/download', auth, async (req, res) => {
+    try {
+        const jwt = require('jsonwebtoken');
+        const resolved = await resolveLessonDownloadEntitlement(
+            req.user,
+            req.params.id,
+            req.params.lessonId
+        );
+        if (resolved.error) {
+            return res.status(resolved.status).json(resolved.error);
+        }
+
+        const { course, found, url, lessonKey } = resolved;
+        const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
+        const offlineLicense = jwt.sign(
+            {
+                typ: 'offline_lesson',
+                uid: String(req.user._id),
+                cid: String(course._id),
+                lid: lessonKey,
+                exp: Math.floor(expiresAt.getTime() / 1000),
+            },
+            process.env.JWT_SECRET
+        );
+
+        res.json({
+            allowed: true,
+            url,
+            streamPath: `/api/courses/${course._id}/lessons/${encodeURIComponent(lessonKey)}/download-stream`,
+            courseId: String(course._id),
+            courseTitle: course.title || '',
+            lessonId: lessonKey,
+            pathId: found.pathId,
+            lessonTitle: found.lesson.title || '',
+            offlineLicense,
+            offlineLicenseExpiresAt: expiresAt.toISOString(),
+        });
+    } catch (error) {
+        console.error('lesson download entitlement:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+/**
+ * Authenticated byte stream for offline save (avoids CDN CORS issues in the browser).
+ */
+router.get('/:id/lessons/:lessonId/download-stream', auth, async (req, res) => {
+    try {
+        const resolved = await resolveLessonDownloadEntitlement(
+            req.user,
+            req.params.id,
+            req.params.lessonId
+        );
+        if (resolved.error) {
+            return res.status(resolved.status).json(resolved.error);
+        }
+
+        const { url } = resolved;
+        // Large lesson files — no short timeout; pipe bytes through (do not buffer).
+        const upstream = await axios.get(url, {
+            responseType: 'stream',
+            timeout: 0,
+            maxContentLength: Infinity,
+            maxBodyLength: Infinity,
+            validateStatus: (s) => s >= 200 && s < 400,
+        });
+
+        const contentType = upstream.headers['content-type'] || 'video/mp4';
+        const contentLength = upstream.headers['content-length'];
+        res.setHeader('Content-Type', contentType);
+        if (contentLength) res.setHeader('Content-Length', contentLength);
+        res.setHeader('Content-Disposition', 'inline');
+        res.setHeader('Cache-Control', 'private, no-store');
+        // Allow browser fetch() from the Vite/dev/prod origin
+        res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+        res.setHeader('Access-Control-Allow-Credentials', 'true');
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Length, Content-Type');
+
+        req.on('close', () => {
+            try {
+                upstream.data.destroy();
+            } catch {
+                // ignore
+            }
+        });
+
+        upstream.data.on('error', (err) => {
+            console.error('download-stream upstream error:', err.message);
+            if (!res.headersSent) {
+                res.status(502).json({ message: 'Failed to fetch video for download' });
+            } else {
+                res.destroy(err);
+            }
+        });
+        upstream.data.pipe(res);
+    } catch (error) {
+        console.error('lesson download-stream:', error.message);
+        if (!res.headersSent) {
+            res.status(502).json({
+                message: 'Could not download video. Try again on a stable Wi‑Fi connection.',
+                error: error.message,
+            });
+        }
     }
 });
 

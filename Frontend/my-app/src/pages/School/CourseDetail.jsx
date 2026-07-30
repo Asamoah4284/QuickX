@@ -2,11 +2,24 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
+import {
+  deleteLesson,
+  fetchVideoBlob,
+  formatBytes,
+  getBlobUrl,
+  isDownloaded,
+  listDownloadsForCourse,
+  revokeBlobUrl,
+  saveLesson,
+} from '../../utils/offlineLessonStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 const buildLessonId = (moduleIndex, sectionIndex, lessonIndex) =>
   `${moduleIndex}-${sectionIndex}-${lessonIndex}`;
+
+const stableLessonId = (lesson, moduleIndex, sectionIndex, lessonIndex) =>
+  lesson?._id ? String(lesson._id) : buildLessonId(moduleIndex, sectionIndex, lessonIndex);
 
 const byOrder = (a, b) => (Number(a?.order) || 0) - (Number(b?.order) || 0);
 
@@ -185,8 +198,17 @@ const CourseDetail = () => {
   const [mobileCurriculumOpen, setMobileCurriculumOpen] = useState(false);
   /** After a lesson ends, autoplay the next one */
   const [autoPlayLesson, setAutoPlayLesson] = useState(false);
+  const [canDownloadOffline, setCanDownloadOffline] = useState(false);
+  const [lessonDownloaded, setLessonDownloaded] = useState(false);
+  const [downloadProgress, setDownloadProgress] = useState(null); // 0-100 or null
+  const [downloadBusy, setDownloadBusy] = useState(false);
+  const [downloadMessage, setDownloadMessage] = useState('');
+  const [playingFromOffline, setPlayingFromOffline] = useState(false);
+  const [courseDownloads, setCourseDownloads] = useState([]);
   const videoRef = useRef(null);
   const shouldAutoPlayRef = useRef(false);
+  const blobUrlRef = useRef(null);
+  const downloadAbortRef = useRef(null);
 
   const tryPlayCurrentVideo = useCallback(() => {
     const el = videoRef.current;
@@ -286,6 +308,7 @@ const CourseDetail = () => {
         const hydratedCourse = applyEnrollmentToCourse(data);
         setCourseData(hydratedCourse);
         setProgressPercentage(data.enrollment?.progressPercent || 0);
+        setCanDownloadOffline(Boolean(data.canDownloadOffline));
         setError(null);
       } catch (err) {
         console.error('Error fetching course:', err);
@@ -326,83 +349,61 @@ const CourseDetail = () => {
   const currentLessonMediaUrl = String(
     currentLesson?.videoUrl || currentLesson?.filePath || ''
   ).trim();
+  const currentStableLessonId = currentLesson
+    ? stableLessonId(currentLesson, activeModule, activeSection, activeLesson)
+    : null;
+
+  const refreshCourseDownloads = useCallback(async () => {
+    if (!courseId) return;
+    try {
+      const rows = await listDownloadsForCourse(courseId);
+      setCourseDownloads(rows);
+    } catch (err) {
+      console.error('list downloads:', err);
+    }
+  }, [courseId]);
+
+  useEffect(() => {
+    refreshCourseDownloads();
+  }, [refreshCourseDownloads, courseData]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const check = async () => {
+      if (!courseId || !currentStableLessonId) {
+        setLessonDownloaded(false);
+        return;
+      }
+      const ok = await isDownloaded(courseId, currentStableLessonId);
+      if (!cancelled) setLessonDownloaded(ok);
+    };
+    check();
+    return () => {
+      cancelled = true;
+    };
+  }, [courseId, currentStableLessonId, courseDownloads]);
 
   // Check if video URL is valid
   const checkVideoUrl = (url) => {
-    if (!url) {
-      console.error('Video URL is empty');
-      return false;
-    }
-    
-    // If it's a relative path, it's valid
-    if (url.startsWith('/')) {
-      console.log('Valid relative video URL:', url);
-      return true;
-    }
-    
-    // If it's already a valid URL, return true
+    if (!url) return false;
+    if (String(url).startsWith('blob:')) return true;
+    if (url.startsWith('/')) return true;
     try {
-      const videoUrl = new URL(url);
-      const isValid = videoUrl.protocol === 'http:' || videoUrl.protocol === 'https:';
-      console.log('Video URL validation:', { url, isValid });
-      return isValid;
+      const parsed = new URL(url);
+      return parsed.protocol === 'http:' || parsed.protocol === 'https:';
     } catch (e) {
-      // If it's not a valid URL, it might be a Cloudinary URL without protocol
-      // Check if it looks like a Cloudinary URL
       if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
-        // Add https:// if missing
-        if (!url.startsWith('http')) {
-          console.log('Adding https:// to Cloudinary URL:', url);
-          return true; // We'll fix the URL when using it
-        }
+        return true;
       }
-      console.error('Invalid video URL:', { url, error: e.message });
       return false;
-    }
-  };
-
-  // Ensure video URL is properly formatted
-  const getFormattedVideoUrl = (url) => {
-    if (!url) {
-      console.error('Cannot format empty video URL');
-      return '';
-    }
-    
-    // If it's a relative path, prepend the base URL
-    if (url.startsWith('/')) {
-      const baseUrl = `${API_URL}`; // Replace with your actual backend URL
-      const formattedUrl = `${baseUrl}${url}`;
-      console.log('Formatted relative URL:', formattedUrl);
-      return formattedUrl;
-    }
-    
-    // If it's already a valid URL, return it
-    try {
-      new URL(url);
-      console.log('Video URL is already properly formatted:', url);
-      return url;
-    } catch (e) {
-      // If it's not a valid URL, it might be a Cloudinary URL without protocol
-      if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
-        // Add https:// if missing
-        if (!url.startsWith('http')) {
-          const formattedUrl = `https://${url}`;
-          console.log('Formatted Cloudinary URL:', formattedUrl);
-          return formattedUrl;
-        }
-      }
-      console.error('Failed to format video URL:', { url, error: e.message });
-      return url;
     }
   };
 
   // Prefer CloudFront over direct S3 origin for faster playback.
   const getOptimizedVideoUrl = async (url) => {
     if (!url) return null;
-
     try {
       let resolved = String(url).trim();
-
       if (resolved.startsWith('/')) {
         resolved = `${API_URL}${resolved}`;
       } else if (
@@ -412,7 +413,6 @@ const CourseDetail = () => {
       ) {
         resolved = `https://${resolved}`;
       }
-
       return publicAssetUrl(resolved) || resolved;
     } catch (error) {
       console.error('Error optimizing video URL:', error);
@@ -424,19 +424,21 @@ const CourseDetail = () => {
 
   // Chrome/Edge often reject type="video/quicktime". Prefer mp4/webm hints; omit for .mov.
   const videoSourceType = (url) => {
-    const path = String(url || '').split('?')[0].toLowerCase();
-    if (path.endsWith('.webm')) return 'video/webm';
-    if (path.endsWith('.ogg') || path.endsWith('.ogv')) return 'video/ogg';
-    if (path.endsWith('.mov') || path.endsWith('.qt')) return null;
+    if (String(url || '').startsWith('blob:')) return null;
+    const pathPart = String(url || '').split('?')[0].toLowerCase();
+    if (pathPart.endsWith('.webm')) return 'video/webm';
+    if (pathPart.endsWith('.ogg') || pathPart.endsWith('.ogv')) return 'video/ogg';
+    if (pathPart.endsWith('.mov') || pathPart.endsWith('.qt')) return null;
     return 'video/mp4';
   };
 
-  // Resolve playable URL — do not pre-fetch; CORS probes false-fail and block the player.
+  // Resolve playable URL — prefer offline cache, then stream CDN.
   useEffect(() => {
-    if (!currentLessonMediaUrl) {
+    if (!currentLessonMediaUrl && !currentStableLessonId) {
       setVideoUrl(null);
       setIsVideoLoading(false);
       setVideoError(null);
+      setPlayingFromOffline(false);
       return undefined;
     }
 
@@ -444,9 +446,45 @@ const CourseDetail = () => {
     const loadVideoUrl = async () => {
       setIsVideoLoading(true);
       setVideoError(null);
+      setPlayingFromOffline(false);
+      if (blobUrlRef.current) {
+        revokeBlobUrl(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
+
       try {
+        if (courseId && currentStableLessonId) {
+          const localUrl = await getBlobUrl(courseId, currentStableLessonId);
+          if (!cancelled && localUrl) {
+            blobUrlRef.current = localUrl;
+            setVideoUrl(localUrl);
+            setPlayingFromOffline(true);
+            setLessonDownloaded(true);
+            return;
+          }
+        }
+
+        if (!currentLessonMediaUrl) {
+          if (!cancelled) {
+            setVideoUrl(null);
+            if (!navigator.onLine) {
+              setVideoError('This lesson is not downloaded. Connect to Wi‑Fi and download it for offline viewing.');
+            }
+          }
+          return;
+        }
+
+        // Always resolve the CDN/stream URL when we have media — even if the browser
+        // reports offline incorrectly, <video> can still buffer from cache/CDN.
         const optimizedUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
-        if (!cancelled) setVideoUrl(optimizedUrl);
+        if (!cancelled) {
+          setVideoUrl(optimizedUrl);
+          if (!navigator.onLine) {
+            setVideoError(
+              'You appear offline. If playback fails, connect to Wi‑Fi and use Download for offline.'
+            );
+          }
+        }
       } catch (error) {
         console.error('Error loading video:', error);
         if (!cancelled) setVideoError('Failed to load video. Please try again.');
@@ -457,8 +495,210 @@ const CourseDetail = () => {
     loadVideoUrl();
     return () => {
       cancelled = true;
+      if (blobUrlRef.current) {
+        revokeBlobUrl(blobUrlRef.current);
+        blobUrlRef.current = null;
+      }
     };
-  }, [currentLessonMediaUrl, courseId]);
+  }, [currentLessonMediaUrl, courseId, currentStableLessonId]);
+
+  const handleDownloadLesson = useCallback(async () => {
+    if (downloadBusy) return;
+    if (!courseId) {
+      setDownloadMessage('Missing course. Refresh the page and try again.');
+      return;
+    }
+    if (!currentStableLessonId) {
+      setDownloadMessage('Select a lesson first, then download it for offline.');
+      return;
+    }
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      setDownloadMessage('Please log in to download lessons.');
+      return;
+    }
+
+    if (downloadAbortRef.current) {
+      downloadAbortRef.current.abort();
+    }
+    const abortController = new AbortController();
+    downloadAbortRef.current = abortController;
+
+    setDownloadBusy(true);
+    setDownloadProgress(0);
+    setDownloadMessage(
+      isLikelyMov(currentLessonMediaUrl)
+        ? 'Downloading… (.MOV plays offline best on Safari / iPhone)'
+        : 'Preparing download…'
+    );
+    try {
+      if (navigator?.storage?.persist) {
+        try {
+          await navigator.storage.persist();
+        } catch {
+          // ignore
+        }
+      }
+
+      const { data } = await axios.get(
+        `${API_URL}/api/courses/${courseId}/lessons/${encodeURIComponent(currentStableLessonId)}/download`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          timeout: 60000,
+          signal: abortController.signal,
+        }
+      );
+
+      if (abortController.signal.aborted) {
+        throw Object.assign(new Error('Download cancelled'), { name: 'AbortError', cancelled: true });
+      }
+
+      if (!data?.allowed || !data?.url) {
+        throw new Error(data?.message || 'Download not allowed');
+      }
+
+      const remoteUrl = publicAssetUrl(data.url) || data.url;
+      const streamUrl = data.streamPath
+        ? `${API_URL}${data.streamPath}`
+        : remoteUrl;
+
+      setDownloadMessage('Downloading video…');
+      let blob;
+      try {
+        blob = await fetchVideoBlob(streamUrl, (pct) => setDownloadProgress(pct), {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: abortController.signal,
+        });
+      } catch (streamErr) {
+        if (streamErr?.cancelled || streamErr?.name === 'AbortError' || abortController.signal.aborted) {
+          throw streamErr;
+        }
+        if (streamUrl !== remoteUrl) {
+          setDownloadMessage('Retrying via CDN…');
+          blob = await fetchVideoBlob(remoteUrl, (pct) => setDownloadProgress(pct), {
+            signal: abortController.signal,
+          });
+        } else {
+          throw streamErr;
+        }
+      }
+
+      if (abortController.signal.aborted) {
+        throw Object.assign(new Error('Download cancelled'), { name: 'AbortError', cancelled: true });
+      }
+
+      const mimeType =
+        blob.type && blob.type !== 'application/octet-stream'
+          ? blob.type
+          : isLikelyMov(remoteUrl)
+            ? 'video/quicktime'
+            : 'video/mp4';
+
+      setDownloadMessage('Saving on this device…');
+      await saveLesson({
+        courseId,
+        lessonId: data.lessonId || currentStableLessonId,
+        blob,
+        courseTitle: data.courseTitle || courseData?.title || '',
+        lessonTitle: data.lessonTitle || currentLesson?.title || '',
+        remoteUrl,
+        mimeType,
+        offlineLicense: data.offlineLicense || '',
+        offlineLicenseExpiresAt: data.offlineLicenseExpiresAt || '',
+      });
+
+      setLessonDownloaded(true);
+      setDownloadMessage(
+        isLikelyMov(remoteUrl)
+          ? 'Saved offline. On Chrome/Edge, .MOV may not play — use Safari/iPhone, or ask the tutor for MP4.'
+          : 'Saved offline — you can watch without using mobile data.'
+      );
+      await refreshCourseDownloads();
+
+      if (blobUrlRef.current) revokeBlobUrl(blobUrlRef.current);
+      const localUrl = await getBlobUrl(courseId, data.lessonId || currentStableLessonId);
+      if (localUrl) {
+        blobUrlRef.current = localUrl;
+        setVideoUrl(localUrl);
+        setPlayingFromOffline(true);
+        setVideoError(null);
+      }
+    } catch (err) {
+      if (err?.cancelled || err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') {
+        setDownloadMessage('Download cancelled.');
+      } else {
+        console.error('Offline download failed:', err);
+        const status = err.response?.status || err.status;
+        const code = err.response?.data?.code;
+        if (status === 403 && code === 'UPGRADE_REQUIRED') {
+          setCanDownloadOffline(false);
+          setDownloadMessage(
+            err.response?.data?.message ||
+              'Upgrade to Premium or Diamond to download lessons for offline viewing.'
+          );
+        } else if (status === 401) {
+          setDownloadMessage('Session expired. Please log in again, then retry the download.');
+        } else {
+          const msg =
+            err.response?.data?.message ||
+            err.message ||
+            'Download failed. Try again on Wi‑Fi.';
+          setDownloadMessage(msg);
+        }
+      }
+    } finally {
+      if (downloadAbortRef.current === abortController) {
+        downloadAbortRef.current = null;
+      }
+      setDownloadBusy(false);
+      setDownloadProgress(null);
+    }
+  }, [
+    courseId,
+    currentStableLessonId,
+    currentLessonMediaUrl,
+    downloadBusy,
+    courseData?.title,
+    currentLesson?.title,
+    refreshCourseDownloads,
+  ]);
+
+  const handleCancelDownload = useCallback(() => {
+    if (!downloadAbortRef.current) return;
+    downloadAbortRef.current.abort();
+    setDownloadMessage('Cancelling…');
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      downloadAbortRef.current?.abort();
+    };
+  }, []);
+
+  const handleRemoveListedDownload = useCallback(
+    async (lessonId) => {
+      if (!courseId || !lessonId) return;
+      try {
+        await deleteLesson(courseId, lessonId);
+        await refreshCourseDownloads();
+        if (String(lessonId) === String(currentStableLessonId)) {
+          setLessonDownloaded(false);
+          setPlayingFromOffline(false);
+          if (blobUrlRef.current) {
+            revokeBlobUrl(blobUrlRef.current);
+            blobUrlRef.current = null;
+          }
+          if (currentLessonMediaUrl && navigator.onLine) {
+            const optimizedUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
+            setVideoUrl(optimizedUrl);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [courseId, currentStableLessonId, currentLessonMediaUrl, refreshCourseDownloads]
+  );
 
   // Reliably start next lesson after URL is ready (state autoPlay is easy for browsers to ignore)
   useEffect(() => {
@@ -477,15 +717,25 @@ const CourseDetail = () => {
     acc + module.sections.reduce((sectionAcc, section) => 
       sectionAcc + section.lessons.filter(lesson => lesson.isCompleted).length, 0), 0) || 0;
 
-  // Handle lesson selection
+  // Handle lesson selection — start playback without requiring a second Play click
   const handleLessonClick = useCallback((moduleIndex, sectionIndex, lessonIndex) => {
+    const sameLesson =
+      moduleIndex === activeModule &&
+      sectionIndex === activeSection &&
+      lessonIndex === activeLesson;
+
     setActiveModule(moduleIndex);
     setActiveSection(sectionIndex);
     setActiveLesson(lessonIndex);
     setVideoError(null);
-    shouldAutoPlayRef.current = false;
-    setAutoPlayLesson(false);
-  }, []);
+    shouldAutoPlayRef.current = true;
+    setAutoPlayLesson(true);
+
+    // Same lesson already loaded — videoUrl won't change, so play immediately
+    if (sameLesson) {
+      requestAnimationFrame(() => tryPlayCurrentVideo());
+    }
+  }, [activeModule, activeSection, activeLesson, tryPlayCurrentVideo]);
 
   const advanceToNextLesson = useCallback(() => {
     if (!courseData?.modules?.length) return false;
@@ -801,8 +1051,8 @@ const CourseDetail = () => {
                       setActiveLesson(prevModule.sections[prevModule.sections.length - 1].lessons.length - 1);
                     }
                     setVideoError(null);
-                    setAutoPlayLesson(false);
-                    shouldAutoPlayRef.current = false;
+                    shouldAutoPlayRef.current = true;
+                    setAutoPlayLesson(true);
                   }}
                 >
                   Previous
@@ -848,7 +1098,7 @@ const CourseDetail = () => {
                           <div className="text-white mb-4">{videoError}</div>
                           <button 
                             onClick={async () => {
-                              const freshUrl = await getOptimizedVideoUrl(currentLesson.videoUrl);
+                              const freshUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
                               setVideoUrl(freshUrl);
                               setVideoError(null);
                             }}
@@ -870,6 +1120,11 @@ const CourseDetail = () => {
                         <p className="text-xs font-medium text-white/80">Loading video…</p>
                       </div>
                     )}
+                    {playingFromOffline && (
+                      <div className="absolute left-3 top-3 z-[5] rounded-md bg-emerald-600/90 px-2 py-1 text-[11px] font-semibold text-white shadow">
+                        Playing offline
+                      </div>
+                    )}
                     <video
                       ref={videoRef}
                       key={videoUrl}
@@ -885,7 +1140,7 @@ const CourseDetail = () => {
                           videoUrl: videoUrl
                         });
                         handleVideoError(e);
-                        // Try to refresh the URL on error
+                        if (playingFromOffline) return;
                         const freshUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
                         if (freshUrl && freshUrl !== videoUrl) {
                           setVideoUrl(freshUrl);
@@ -918,7 +1173,7 @@ const CourseDetail = () => {
                   </>
                 ) : (
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="text-center">
+                    <div className="text-center px-4">
                       <div className="w-20 h-20 bg-white bg-opacity-20 rounded-full flex items-center justify-center mx-auto mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-white" fill="currentColor" viewBox="0 0 24 24">
                           <path d="M8 5v14l11-7z" />
@@ -926,16 +1181,133 @@ const CourseDetail = () => {
                       </div>
                       <div className="text-white">
                         <div className="text-xl font-medium">
-                          {currentLesson ? currentLesson.title : 'Select a lesson to start learning'}
+                          {videoError
+                            ? 'Offline video unavailable'
+                            : currentLesson
+                              ? currentLesson.title
+                              : 'Select a lesson to start learning'}
                         </div>
                         <div className="text-sm text-gray-300 mt-1">
-                          {currentLesson ? currentLesson.duration : ''}
+                          {videoError || (currentLesson ? currentLesson.duration : '')}
                         </div>
                       </div>
                     </div>
                   </div>
                 )}
               </div>
+
+              {currentLessonMediaUrl ? (
+                <div className="border-b border-slate-200/80 bg-gradient-to-b from-slate-50 to-white px-3 py-3 sm:px-4">
+                  {downloadBusy ? (
+                    <div className="overflow-hidden rounded-xl border border-[#1B5EF5]/20 bg-white shadow-sm">
+                      <div className="flex items-center justify-between gap-3 px-3.5 pt-3 pb-2">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#1B5EF5]/10 text-[#1B5EF5]">
+                            <svg className="h-4 w-4 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-[#0B1F44]">Saving for offline</p>
+                            <p className="truncate text-xs text-slate-500">
+                              {downloadMessage || 'Preparing download…'}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2.5">
+                          <span className="tabular-nums text-sm font-bold text-[#1B5EF5]">
+                            {downloadProgress != null ? `${downloadProgress}%` : '…'}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleCancelDownload}
+                            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-700 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </div>
+                      <div className="mx-3.5 mb-3 h-2 overflow-hidden rounded-full bg-slate-100">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-[#1B5EF5] to-[#4B8BFF] transition-[width] duration-300 ease-out"
+                          style={{ width: `${Math.max(downloadProgress ?? 2, 2)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ) : canDownloadOffline ? (
+                    lessonDownloaded ? (
+                      <div className="flex items-center gap-2.5 rounded-xl border border-emerald-200/80 bg-emerald-50/60 px-3.5 py-2.5">
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                        <div className="min-w-0">
+                          <p className="text-sm font-semibold text-emerald-900">
+                            {playingFromOffline ? 'Playing offline' : 'Saved on this device'}
+                          </p>
+                          <p className="text-xs text-emerald-700/80">
+                            Watch without using mobile data
+                          </p>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 shadow-sm">
+                        <div className="flex min-w-0 items-center gap-2.5">
+                          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#E8EEF8] text-[#0B1F44]">
+                            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                            </svg>
+                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-[#0B1F44]">Download for offline</p>
+                            <p className="text-xs text-slate-500">
+                              {isLikelyMov(currentLessonMediaUrl)
+                                ? '.MOV — best offline on Safari / iPhone'
+                                : 'Save this lesson to watch without data'}
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={handleDownloadLesson}
+                          className="shrink-0 rounded-lg bg-[#1B5EF5] px-3.5 py-2 text-xs font-semibold text-white shadow-sm hover:bg-[#1549c9] active:scale-[0.98]"
+                        >
+                          Download
+                        </button>
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5">
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-[#0B1F44]">Offline downloads</p>
+                        <p className="text-xs text-slate-500">
+                          Available on Premium or Diamond (or with a course purchase).
+                        </p>
+                      </div>
+                      {courseData?.tutorId ? (
+                        <Link
+                          to={`/instructors/${courseData.tutorId}`}
+                          className="shrink-0 rounded-lg bg-[#0B1F44] px-3.5 py-2 text-xs font-semibold text-white hover:bg-[#1B5EF5]"
+                        >
+                          Upgrade
+                        </Link>
+                      ) : null}
+                    </div>
+                  )}
+                  {downloadMessage && !downloadBusy ? (
+                    <p
+                      className={`mt-2 text-xs ${
+                        /fail|error|expired|upgrade|cannot|empty|not enough|limit/i.test(downloadMessage)
+                          ? 'font-medium text-rose-600'
+                          : 'text-slate-500'
+                      }`}
+                    >
+                      {downloadMessage}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
 
               <div className="space-y-6 p-2.5 sm:p-4 md:p-6">
                 <div>
@@ -969,6 +1341,8 @@ const CourseDetail = () => {
                         setActiveLesson(0);
                       }
                       setVideoError(null);
+                      shouldAutoPlayRef.current = true;
+                      setAutoPlayLesson(true);
                     }}
                     disabled={
                       activeModule === courseData.modules.length - 1 &&
@@ -986,6 +1360,61 @@ const CourseDetail = () => {
 
           {/* Right: widgets */}
           <aside className="order-last w-full shrink-0 space-y-4 bg-white px-0 pt-0 pb-2 sm:px-3 sm:pb-4 md:p-6 xl:w-[320px] xl:py-8 xl:pl-0 xl:pr-6">
+            <div className="rounded-xl border border-slate-200 bg-white p-3.5 shadow-sm sm:p-4">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <h3 className="text-sm font-semibold text-[#0B1F44]">Downloads on this device</h3>
+                  <p className="mt-1 text-xs text-slate-500 leading-relaxed">
+                    Watch saved lessons without using mobile data.
+                  </p>
+                </div>
+                <Link
+                  to="/membership"
+                  state={{ activeTab: 'offlineDownloads' }}
+                  className="shrink-0 text-[11px] font-semibold text-[#1B5EF5] hover:underline"
+                >
+                  View all
+                </Link>
+              </div>
+              {courseDownloads.length === 0 ? (
+                <p className="mt-3 text-xs text-slate-500">
+                  {canDownloadOffline
+                    ? 'No lessons downloaded yet. Use Download under the player.'
+                    : 'Upgrade to Premium or Diamond to save lessons offline.'}
+                </p>
+              ) : (
+                <ul className="mt-3 max-h-56 space-y-2 overflow-y-auto">
+                  {courseDownloads.map((item) => (
+                    <li
+                      key={item.key}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-slate-100 bg-slate-50/80 px-2.5 py-2"
+                    >
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-emerald-100 text-emerald-700">
+                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                          </svg>
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-xs font-medium text-slate-900">
+                            {item.lessonTitle || 'Lesson'}
+                          </p>
+                          <p className="text-[11px] text-slate-500">{formatBytes(item.size)}</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveListedDownload(item.lessonId)}
+                        className="shrink-0 text-[11px] font-semibold text-rose-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
             <div className="rounded-lg border border-gray-200 bg-white p-3 shadow-sm sm:p-4">
               <h3 className="text-sm font-semibold text-gray-900">Your learning plan</h3>
               <p className="text-xs text-gray-600 mt-2 leading-relaxed">

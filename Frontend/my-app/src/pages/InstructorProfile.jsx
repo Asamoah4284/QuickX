@@ -3,9 +3,31 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
-import { buildSubscriptionPlans } from '../utils/creatorSubscriptionPlans';
+import { buildSubscriptionPlans, getPlanDefinition, normalizePlanId } from '../utils/creatorSubscriptionPlans';
 
 const API_URL = import.meta.env.VITE_API_URL;
+
+const PLAN_RANK = { basic: 1, premium: 2, diamond: 3 };
+
+function planRank(planId) {
+  const id = normalizePlanId(planId);
+  return id ? PLAN_RANK[id] || 0 : 0;
+}
+
+function formatSubscriptionEnd(endsAt) {
+  if (!endsAt) return null;
+  const d = new Date(endsAt);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+/** Short billing label from plan period (e.g. "Monthly") — not the raw endsAt. */
+function planBillingLabel(planDef) {
+  if (!planDef) return null;
+  if (planDef.durationDays >= 360) return 'Yearly';
+  if (planDef.durationDays >= 28) return 'Monthly';
+  return null;
+}
 
 const FALLBACK_THUMB =
   'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600&q=80';
@@ -605,8 +627,15 @@ export default function InstructorProfile() {
     subscribed: false,
     isTutor: false,
     canAccessCommunity: false,
+    planId: null,
+    features: [],
+    endsAt: null,
   });
   const [profileVideoPreview, setProfileVideoPreview] = useState(null);
+  const [profilePreviewStatus, setProfilePreviewStatus] = useState({
+    loading: false,
+    error: null,
+  });
   const profilePreviewVideoRef = useRef(null);
   const [videoDropdownOpen, setVideoDropdownOpen] = useState(false);
   const [videoSidebarOpen, setVideoSidebarOpen] = useState(false);
@@ -617,8 +646,18 @@ export default function InstructorProfile() {
   );
 
   useEffect(() => {
-    if (subscriptionDrawerOpen) setSelectedSubscriptionPlanId('1m');
-  }, [subscriptionDrawerOpen]);
+    if (!subscriptionDrawerOpen) return;
+    const currentId = normalizePlanId(communityAccess.planId);
+    if (communityAccess.subscribed && currentId) {
+      // Prefer next upgrade tier; otherwise stay on current
+      const order = ['basic', 'premium', 'diamond'];
+      const idx = order.indexOf(currentId);
+      const nextId = idx >= 0 && idx < order.length - 1 ? order[idx + 1] : currentId;
+      setSelectedSubscriptionPlanId(nextId);
+    } else {
+      setSelectedSubscriptionPlanId('basic');
+    }
+  }, [subscriptionDrawerOpen, communityAccess.subscribed, communityAccess.planId]);
 
   const loadCommunityAccess = useCallback(() => {
     const token = localStorage.getItem('authToken');
@@ -630,16 +669,30 @@ export default function InstructorProfile() {
       })
       .then(({ data: payload }) => {
         if (!cancelled) {
+          const rawPlanId = payload.subscription?.planId || null;
+          const planId = payload.isTutor
+            ? 'diamond'
+            : normalizePlanId(rawPlanId) || (payload.subscribed ? 'basic' : null);
           setCommunityAccess({
             subscribed: Boolean(payload.subscribed),
             isTutor: Boolean(payload.isTutor),
             canAccessCommunity: Boolean(payload.isTutor || payload.canAccessCommunity),
+            planId,
+            features: Array.isArray(payload.features) ? payload.features : [],
+            endsAt: payload.subscription?.endsAt || null,
           });
         }
       })
       .catch(() => {
         if (!cancelled) {
-          setCommunityAccess({ subscribed: false, isTutor: false, canAccessCommunity: false });
+          setCommunityAccess({
+            subscribed: false,
+            isTutor: false,
+            canAccessCommunity: false,
+            planId: null,
+            features: [],
+            endsAt: null,
+          });
         }
       });
     return () => {
@@ -718,7 +771,10 @@ export default function InstructorProfile() {
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (e) => {
-      if (e.key === 'Escape') setProfileVideoPreview(null);
+      if (e.key === 'Escape') {
+        setProfileVideoPreview(null);
+        setProfilePreviewStatus({ loading: false, error: null });
+      }
     };
     window.addEventListener('keydown', onKey);
     return () => {
@@ -727,21 +783,100 @@ export default function InstructorProfile() {
     };
   }, [profileVideoPreview]);
 
-  // Preview plays with sound. Unmuted autoplay may be blocked on mobile — user tap Play still has audio.
+  // Preview: start muted so autoplay works, then allow unmute. Show load/error feedback.
   useEffect(() => {
     if (!profileVideoPreview) return undefined;
     const el = profilePreviewVideoRef.current;
     if (!el) return undefined;
-    el.muted = false;
-    el.defaultMuted = false;
-    el.volume = 1;
-    const tryPlay = () => {
-      const p = el.play();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
+
+    let cancelled = false;
+    let stallTimer = null;
+
+    const clearStall = () => {
+      if (stallTimer) {
+        clearTimeout(stallTimer);
+        stallTimer = null;
+      }
     };
-    tryPlay();
-    el.addEventListener('loadeddata', tryPlay);
-    return () => el.removeEventListener('loadeddata', tryPlay);
+
+    const armStall = () => {
+      clearStall();
+      stallTimer = setTimeout(() => {
+        if (cancelled || !el) return;
+        if (el.readyState < 2 || (el.paused && el.currentTime < 0.05)) {
+          setProfilePreviewStatus({
+            loading: false,
+            error:
+              'Preview is taking too long to load. Check your connection, or open the full course after subscribing.',
+          });
+        }
+      }, 20000);
+    };
+
+    setProfilePreviewStatus({ loading: true, error: null });
+    el.muted = true;
+    el.defaultMuted = true;
+    el.playsInline = true;
+
+    const onCanPlay = () => {
+      if (cancelled) return;
+      setProfilePreviewStatus((s) => ({ ...s, loading: false }));
+      clearStall();
+      const p = el.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(() => {
+          // Autoplay blocked — controls remain for manual play
+          setProfilePreviewStatus({ loading: false, error: null });
+        });
+      }
+    };
+
+    const onPlaying = () => {
+      if (cancelled) return;
+      clearStall();
+      setProfilePreviewStatus({ loading: false, error: null });
+    };
+
+    const onWaiting = () => {
+      if (cancelled) return;
+      setProfilePreviewStatus((s) => ({ ...s, loading: true }));
+      armStall();
+    };
+
+    const onError = () => {
+      if (cancelled) return;
+      clearStall();
+      const code = el.error?.code;
+      let message = 'This preview could not be played.';
+      if (code === 2) message = 'Network error while loading the preview. Try again on Wi‑Fi.';
+      else if (code === 3) {
+        message =
+          'This video format is not supported in this browser. Ask the tutor to re-upload as MP4 (H.264).';
+      } else if (code === 4) message = 'Preview source not found or is unavailable.';
+      setProfilePreviewStatus({ loading: false, error: message });
+    };
+
+    el.addEventListener('canplay', onCanPlay);
+    el.addEventListener('playing', onPlaying);
+    el.addEventListener('waiting', onWaiting);
+    el.addEventListener('error', onError);
+    armStall();
+
+    // Kick load if browser is idle
+    try {
+      el.load();
+    } catch {
+      // ignore
+    }
+
+    return () => {
+      cancelled = true;
+      clearStall();
+      el.removeEventListener('canplay', onCanPlay);
+      el.removeEventListener('playing', onPlaying);
+      el.removeEventListener('waiting', onWaiting);
+      el.removeEventListener('error', onError);
+    };
   }, [profileVideoPreview]);
 
   const goToSubscriptionCheckout = useCallback(
@@ -759,15 +894,35 @@ export default function InstructorProfile() {
           image = publicAssetUrl(raw) || raw;
         }
       }
+      const currentId = normalizePlanId(communityAccess.planId);
+      const isUpgrade =
+        communityAccess.subscribed &&
+        !communityAccess.isTutor &&
+        planRank(plan.id) > planRank(currentId);
+      const isRenew =
+        communityAccess.subscribed &&
+        !communityAccess.isTutor &&
+        normalizePlanId(plan.id) === currentId;
+      const titleVerb = isUpgrade ? 'Upgrade' : isRenew ? 'Renew' : 'Subscribe';
+      const chargePrice = Number(plan.price) || 0;
+      const listPrice = Number(plan.listPrice ?? plan.price) || chargePrice;
+      const credit = Number(plan.credit) || 0;
+      const descriptionClean = isUpgrade && credit > 0
+        ? `Upgrade to ${plan.label} — you only pay the difference (${formatGhs(credit)} credit applied)`
+        : `${plan.title} — ${plan.periodNote}`;
       const checkoutState = {
           item: {
             type: 'creator_subscription',
             id: userId,
             instructorId: userId,
             planId: plan.id,
-            title: `Subscribe to ${display}`,
-            description: `${plan.title} — ${plan.periodNote}`,
-            price: plan.price,
+            title: `${titleVerb} — ${display}`,
+            description: descriptionClean,
+            price: chargePrice,
+            listPrice,
+            credit,
+            isUpgrade: Boolean(isUpgrade),
+            fromPlanId: isUpgrade ? currentId : null,
             instructorName: display,
             ...(image ? { image, thumbnail: image } : {}),
           },
@@ -783,20 +938,28 @@ export default function InstructorProfile() {
       }
       navigate('/checkout', { state: checkoutState });
     },
-    [navigate, userId, data]
+    [navigate, userId, data, communityAccess.subscribed, communityAccess.isTutor, communityAccess.planId]
   );
 
   const handleChooseSubscriptionPlan = useCallback(
     (planId) => {
-      const plans = buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing);
+      const plans = buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing, {
+        currentPlanId: communityAccess.subscribed ? communityAccess.planId : null,
+      });
       const plan = plans.find((p) => p.id === planId) ?? plans[0];
       setSubscriptionDrawerOpen(false);
       goToSubscriptionCheckout(plan);
     },
-    [data?.tutorProfile?.subscriptionPricing, goToSubscriptionCheckout]
+    [
+      data?.tutorProfile?.subscriptionPricing,
+      goToSubscriptionCheckout,
+      communityAccess.subscribed,
+      communityAccess.planId,
+    ]
   );
 
   const openProfileVideoPreview = useCallback((payload) => {
+    setProfilePreviewStatus({ loading: true, error: null });
     setProfileVideoPreview(payload);
   }, []);
 
@@ -993,10 +1156,21 @@ export default function InstructorProfile() {
   const displayName = data?.user?.fullName || 'Instructor';
   const selectedSubscriptionPlan = useMemo(
     () => {
-      const plans = buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing);
+      const plans = buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing, {
+        currentPlanId: communityAccess.subscribed ? communityAccess.planId : null,
+      });
       return plans.find((p) => p.id === selectedSubscriptionPlanId) ?? plans[0];
     },
-    [data?.tutorProfile?.subscriptionPricing, selectedSubscriptionPlanId]
+    [
+      data?.tutorProfile?.subscriptionPricing,
+      selectedSubscriptionPlanId,
+      communityAccess.subscribed,
+      communityAccess.planId,
+    ]
+  );
+  const currentPlanDef = useMemo(
+    () => (communityAccess.planId ? getPlanDefinition(communityAccess.planId) : null),
+    [communityAccess.planId]
   );
   const subscriptionCtaSavingsPct = subscriptionSavingsPercent(
     selectedSubscriptionPlan.price,
@@ -1072,6 +1246,27 @@ export default function InstructorProfile() {
     },
   ];
 
+  const canUpgradePlan =
+    communityAccess.subscribed &&
+    !communityAccess.isTutor &&
+    planRank(communityAccess.planId) > 0 &&
+    planRank(communityAccess.planId) < planRank('diamond');
+  const subscriptionEndsLabel = formatSubscriptionEnd(communityAccess.endsAt);
+  const billingLabel = planBillingLabel(currentPlanDef);
+  const selectedIsUpgrade =
+    communityAccess.subscribed &&
+    !communityAccess.isTutor &&
+    planRank(selectedSubscriptionPlanId) > planRank(communityAccess.planId);
+  const selectedIsCurrent =
+    communityAccess.subscribed &&
+    !communityAccess.isTutor &&
+    normalizePlanId(selectedSubscriptionPlanId) === normalizePlanId(communityAccess.planId);
+  const selectedIsDowngrade =
+    communityAccess.subscribed &&
+    !communityAccess.isTutor &&
+    planRank(selectedSubscriptionPlanId) > 0 &&
+    planRank(selectedSubscriptionPlanId) < planRank(communityAccess.planId);
+
   const actionButtons = (
     <div className="flex w-full flex-col items-center gap-2 sm:items-start lg:items-end">
       {communityAccess.canAccessCommunity || communityAccess.isTutor ? (
@@ -1082,36 +1277,73 @@ export default function InstructorProfile() {
           {communityAccess.isTutor ? 'Open my community' : 'Join community'}
         </Link>
       ) : null}
-      <button
-        type="button"
-        onClick={() => setSubscriptionDrawerOpen(true)}
-        className="group relative inline-flex min-h-[2.75rem] min-w-[10.5rem] items-center justify-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 px-6 text-sm font-bold tracking-tight text-white shadow-[0_8px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(37,99,235,0.65)] hover:brightness-[1.03] active:translate-y-0 active:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:min-h-[3rem] sm:min-w-[11rem] sm:px-7"
-      >
-        <span
-          className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition group-hover:opacity-100"
-          aria-hidden
-        />
-        <span
-          className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 shadow-inner ring-1 ring-white/30 backdrop-blur-[2px]"
-          aria-hidden
-        >
-          <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+
+      {communityAccess.isTutor ? (
+        <p className="text-sm font-semibold text-zinc-600">This is your instructor profile</p>
+      ) : communityAccess.subscribed && currentPlanDef ? (
+        <>
+          <div className="flex w-full min-w-[10.5rem] flex-col items-center gap-1 sm:items-start lg:items-end">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-600">
+              Subscribed
+            </p>
+            <p className="text-lg font-bold tracking-tight text-zinc-900">
+              {currentPlanDef.label}
+              {billingLabel ? (
+                <span className="ml-1.5 text-sm font-medium text-zinc-500">{billingLabel}</span>
+              ) : null}
+            </p>
+          </div>
+          {canUpgradePlan ? (
+            <button
+              type="button"
+              onClick={() => setSubscriptionDrawerOpen(true)}
+              className="inline-flex min-h-[2.75rem] min-w-[10.5rem] items-center justify-center rounded-full bg-[#1B5EF5] px-6 text-sm font-bold text-white shadow-sm transition hover:bg-[#1552D6] focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 sm:min-h-[3rem] sm:min-w-[11rem]"
+            >
+              Upgrade
+            </button>
+          ) : null}
+          <button
+            type="button"
+            onClick={() => setSubscriptionDrawerOpen(true)}
+            className="text-sm font-semibold text-blue-700 underline-offset-4 transition hover:text-blue-800 hover:underline"
+          >
+            Compare plans
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={() => setSubscriptionDrawerOpen(true)}
+            className="group relative inline-flex min-h-[2.75rem] min-w-[10.5rem] items-center justify-center gap-2.5 overflow-hidden rounded-full bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 px-6 text-sm font-bold tracking-tight text-white shadow-[0_8px_30px_-6px_rgba(37,99,235,0.55)] ring-1 ring-white/15 transition hover:-translate-y-0.5 hover:shadow-[0_12px_40px_-8px_rgba(37,99,235,0.65)] hover:brightness-[1.03] active:translate-y-0 active:brightness-95 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:min-h-[3rem] sm:min-w-[11rem] sm:px-7"
+          >
+            <span
+              className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 transition group-hover:opacity-100"
+              aria-hidden
             />
-          </svg>
-        </span>
-        <span className="relative">Subscribe</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => setSubscriptionDrawerOpen(true)}
-        className="text-sm font-semibold text-blue-700 underline-offset-4 transition hover:text-blue-800 hover:underline"
-      >
-        Compare plans
-      </button>
+            <span
+              className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/20 shadow-inner ring-1 ring-white/30 backdrop-blur-[2px]"
+              aria-hidden
+            >
+              <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"
+                />
+              </svg>
+            </span>
+            <span className="relative">Subscribe</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setSubscriptionDrawerOpen(true)}
+            className="text-sm font-semibold text-blue-700 underline-offset-4 transition hover:text-blue-800 hover:underline"
+          >
+            Compare plans
+          </button>
+        </>
+      )}
     </div>
   );
 
@@ -1371,22 +1603,47 @@ export default function InstructorProfile() {
                   {displayName}&apos;s community
                 </p>
               </div>
-              <p className="mt-4 text-sm font-bold text-zinc-900 sm:mt-5 sm:text-base">Subscription benefits</p>
+              <p className="mt-4 text-sm font-bold text-zinc-900 sm:mt-5 sm:text-base">
+                {communityAccess.subscribed && !communityAccess.isTutor
+                  ? 'Upgrade or renew'
+                  : 'Subscription benefits'}
+              </p>
+              {communityAccess.subscribed && currentPlanDef && !communityAccess.isTutor ? (
+                <p className="mt-1 text-xs text-zinc-500">
+                  You&apos;re on <span className="font-semibold text-zinc-800">{currentPlanDef.label}</span>
+                  {billingLabel ? ` (${billingLabel.toLowerCase()})` : ''}
+                  {subscriptionEndsLabel ? ` · access until ${subscriptionEndsLabel}` : ''}.
+                </p>
+              ) : null}
               <div className="mt-3 flex gap-2 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing).map((plan) => {
+                {buildSubscriptionPlans(data?.tutorProfile?.subscriptionPricing, {
+                  currentPlanId: communityAccess.subscribed ? communityAccess.planId : null,
+                }).map((plan) => {
                   const active = plan.id === selectedSubscriptionPlanId;
+                  const isCurrent =
+                    communityAccess.subscribed &&
+                    !communityAccess.isTutor &&
+                    normalizePlanId(plan.id) === normalizePlanId(communityAccess.planId);
+                  const isLower =
+                    communityAccess.subscribed &&
+                    !communityAccess.isTutor &&
+                    planRank(plan.id) < planRank(communityAccess.planId);
                   return (
                     <button
                       key={plan.id}
                       type="button"
+                      disabled={isLower}
                       onClick={() => setSelectedSubscriptionPlanId(plan.id)}
                       className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                         active
                           ? 'bg-zinc-900 text-white shadow-sm'
-                          : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
+                          : isLower
+                            ? 'cursor-not-allowed bg-zinc-50 text-zinc-400'
+                            : 'bg-zinc-100 text-zinc-700 hover:bg-zinc-200'
                       }`}
                     >
                       {plan.label}
+                      {isCurrent ? ' · Current' : ''}
                     </button>
                   );
                 })}
@@ -1440,12 +1697,22 @@ export default function InstructorProfile() {
                           {formatGhs(selectedSubscriptionPlan.compareAt)}
                         </span>
                       ) : null}
-                      <span className="text-sm font-medium text-zinc-600">{selectedSubscriptionPlan.periodNote}</span>
+                      <span className="text-sm font-medium text-zinc-600">
+                        {selectedSubscriptionPlan.isUpgradePrice
+                          ? 'due today'
+                          : selectedSubscriptionPlan.periodNote}
+                      </span>
                     </div>
-                    <p className="mt-2 text-sm font-medium text-zinc-600">
-                      {(selectedSubscriptionPlan.benefitLabels || []).length} perks ·{' '}
-                      {selectedSubscriptionPlan.label} access
-                    </p>
+                    {selectedSubscriptionPlan.isUpgradePrice && selectedSubscriptionPlan.credit > 0 ? (
+                      <p className="mt-2 text-sm font-medium text-emerald-700">
+                        {formatGhs(selectedSubscriptionPlan.credit)} credit from your current plan applied
+                      </p>
+                    ) : (
+                      <p className="mt-2 text-sm font-medium text-zinc-600">
+                        {(selectedSubscriptionPlan.benefitLabels || []).length} perks ·{' '}
+                        {selectedSubscriptionPlan.label} access
+                      </p>
+                    )}
                   </div>
                   <div className="flex shrink-0 items-center justify-center" aria-hidden>
                     <div className="relative flex h-20 w-20 items-center justify-center">
@@ -1496,12 +1763,22 @@ export default function InstructorProfile() {
             <div className="border-t border-zinc-100 bg-white px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-3">
               <button
                 type="button"
-                onClick={() => handleChooseSubscriptionPlan(selectedSubscriptionPlanId)}
-                className="w-full rounded-2xl bg-blue-600 py-3.5 text-center text-base font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99] sm:py-4 sm:text-[17px]"
+                disabled={selectedIsDowngrade}
+                onClick={() => {
+                  if (selectedIsDowngrade) return;
+                  handleChooseSubscriptionPlan(selectedSubscriptionPlanId);
+                }}
+                className="w-full rounded-2xl bg-blue-600 py-3.5 text-center text-base font-bold text-white shadow-lg shadow-blue-600/25 transition hover:bg-blue-700 active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-zinc-300 disabled:shadow-none sm:py-4 sm:text-[17px]"
               >
-                {subscriptionCtaSavingsPct > 0
-                  ? `Subscribe (${subscriptionCtaSavingsPct}% off)`
-                  : 'Subscribe'}
+                {selectedIsDowngrade
+                  ? 'Included in your current plan'
+                  : selectedIsCurrent
+                    ? `Renew ${selectedSubscriptionPlan.label} · ${formatGhs(selectedSubscriptionPlan.price)}`
+                    : selectedIsUpgrade
+                      ? `Upgrade to ${selectedSubscriptionPlan.label} · ${formatGhs(selectedSubscriptionPlan.price)}`
+                      : subscriptionCtaSavingsPct > 0
+                        ? `Subscribe (${subscriptionCtaSavingsPct}% off)`
+                        : 'Subscribe'}
               </button>
               <p className="mt-2 text-center text-[11px] text-zinc-500">Pricing in Ghana cedis (GHS).</p>
             </div>
@@ -1515,7 +1792,10 @@ export default function InstructorProfile() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="profile-preview-video-title"
-          onClick={() => setProfileVideoPreview(null)}
+          onClick={() => {
+            setProfileVideoPreview(null);
+            setProfilePreviewStatus({ loading: false, error: null });
+          }}
         >
           <div
             className="relative flex h-[100dvh] w-full max-w-3xl flex-col overflow-hidden bg-zinc-950 shadow-2xl ring-1 ring-white/10 sm:h-auto sm:max-h-[90vh] sm:rounded-xl"
@@ -1537,7 +1817,10 @@ export default function InstructorProfile() {
               </div>
               <button
                 type="button"
-                onClick={() => setProfileVideoPreview(null)}
+                onClick={() => {
+                  setProfileVideoPreview(null);
+                  setProfilePreviewStatus({ loading: false, error: null });
+                }}
                 className="shrink-0 rounded-full bg-white/15 p-1.5 text-white hover:bg-white/25 sm:rounded sm:bg-transparent sm:p-1 sm:text-zinc-500 sm:hover:bg-zinc-100 sm:hover:text-zinc-800"
                 aria-label="Close preview"
               >
@@ -1547,15 +1830,54 @@ export default function InstructorProfile() {
               </button>
             </div>
 
-            <video
-              ref={profilePreviewVideoRef}
-              key={profileVideoPreview.src}
-              src={profileVideoPreview.src}
-              controls
-              playsInline
-              autoPlay
-              className="min-h-0 w-full flex-1 bg-black object-contain sm:max-h-[min(70vh,28rem)] sm:flex-none sm:aspect-video"
-            />
+            <div className="relative min-h-0 w-full flex-1 bg-black sm:max-h-[min(70vh,28rem)] sm:flex-none sm:aspect-video">
+              <video
+                ref={profilePreviewVideoRef}
+                key={profileVideoPreview.src}
+                controls
+                playsInline
+                autoPlay
+                muted
+                preload="auto"
+                className="h-full w-full bg-black object-contain"
+              >
+                {/\.webm(\?|#|$)/i.test(profileVideoPreview.src || '') ? (
+                  <source src={profileVideoPreview.src} type="video/webm" />
+                ) : /\.mov(\?|#|$)/i.test(profileVideoPreview.src || '') ? (
+                  <source src={profileVideoPreview.src} type="video/quicktime" />
+                ) : (
+                  <source src={profileVideoPreview.src} type="video/mp4" />
+                )}
+              </video>
+              {profilePreviewStatus.loading && !profilePreviewStatus.error ? (
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-black/50">
+                  <div className="h-10 w-10 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+                  <p className="text-xs font-medium text-white/90">Loading preview…</p>
+                </div>
+              ) : null}
+              {profilePreviewStatus.error ? (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 p-6 text-center">
+                  <div>
+                    <p className="text-sm font-medium text-white">{profilePreviewStatus.error}</p>
+                    <button
+                      type="button"
+                      className="mt-4 rounded-full bg-white px-4 py-2 text-sm font-semibold text-zinc-900"
+                      onClick={() => {
+                        const el = profilePreviewVideoRef.current;
+                        setProfilePreviewStatus({ loading: true, error: null });
+                        if (el) {
+                          el.load();
+                          const p = el.play();
+                          if (p && typeof p.catch === 'function') p.catch(() => {});
+                        }
+                      }}
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+            </div>
 
             <div className="shrink-0 border-t border-white/10 bg-zinc-950 px-4 py-3 text-center sm:border-zinc-100 sm:bg-white">
               <button

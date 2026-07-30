@@ -177,6 +177,65 @@ async function getExpectedCreatorSubscriptionPrice(tutorId, planId) {
   return def.defaultPrice;
 }
 
+const PLAN_RANK = { basic: 1, premium: 2, diamond: 3 };
+
+function planRank(planId) {
+  const id = normalizePlanId(planId);
+  return id ? PLAN_RANK[id] || 0 : 0;
+}
+
+/**
+ * Charge amount for subscribe / renew / upgrade.
+ * Upgrades only charge list(target) − list(current). Renewals charge full list price.
+ */
+async function getExpectedCreatorSubscriptionCharge(tutorId, planId, studentId) {
+  const listPrice = await getExpectedCreatorSubscriptionPrice(tutorId, planId);
+  if (listPrice == null) return null;
+
+  const targetId = normalizePlanId(planId);
+  if (!studentId || !targetId) {
+    return {
+      amount: listPrice,
+      listPrice,
+      credit: 0,
+      isUpgrade: false,
+      fromPlanId: null,
+      toPlanId: targetId,
+    };
+  }
+
+  try {
+    const { getActiveSubscription } = require('../services/tutorSubscriptionService');
+    const sub = await getActiveSubscription(studentId, tutorId);
+    const fromPlanId = sub ? normalizePlanId(sub.planId) : null;
+
+    if (fromPlanId && planRank(targetId) > planRank(fromPlanId)) {
+      const currentList = await getExpectedCreatorSubscriptionPrice(tutorId, fromPlanId);
+      const credit = Math.max(0, Number(currentList) || 0);
+      const amount = Math.max(0, Number(listPrice) - credit);
+      return {
+        amount,
+        listPrice,
+        credit: Math.min(credit, Number(listPrice)),
+        isUpgrade: true,
+        fromPlanId,
+        toPlanId: targetId,
+      };
+    }
+  } catch (err) {
+    console.error('getExpectedCreatorSubscriptionCharge:', err.message);
+  }
+
+  return {
+    amount: listPrice,
+    listPrice,
+    credit: 0,
+    isUpgrade: false,
+    fromPlanId: null,
+    toPlanId: targetId,
+  };
+}
+
 module.exports = {
   FEATURES,
   PLAN_DEFINITIONS,
@@ -185,11 +244,14 @@ module.exports = {
   ACCEPTED_PLAN_IDS,
   CREATOR_SUBSCRIPTION_PLAN_DEFAULTS,
   CREATOR_SUBSCRIPTION_PLAN_PRICES: CREATOR_SUBSCRIPTION_PLAN_DEFAULTS,
+  PLAN_RANK,
   normalizePlanId,
   getPlanDefinition,
   planDurationDays,
+  planRank,
   planHasFeature,
   getPlanFeatures,
   getCreatorSubscriptionPlanPrice,
   getExpectedCreatorSubscriptionPrice,
+  getExpectedCreatorSubscriptionCharge,
 };

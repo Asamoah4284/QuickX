@@ -10,7 +10,7 @@ const User = require('../models/User');
 const Program = require('../models/Program');
 const { body, validationResult } = require('express-validator');
 const { createEnrollmentFromPayment } = require('../services/programEnrollmentService');
-const { getExpectedCreatorSubscriptionPrice } = require('../constants/creatorSubscriptionPlans');
+const { getExpectedCreatorSubscriptionCharge } = require('../constants/creatorSubscriptionPlans');
 const {
     validateOfferPaymentAmount,
     validateBookCartPayment,
@@ -220,17 +220,24 @@ router.post(
                 return res.status(400).json({ message: 'This user is not a creator' });
             }
 
-            const expectedPrice = await getExpectedCreatorSubscriptionPrice(instructor._id, planId);
-            if (expectedPrice == null) {
+            const quote = await getExpectedCreatorSubscriptionCharge(
+                instructor._id,
+                planId,
+                req.user._id
+            );
+            if (quote == null || quote.amount == null) {
                 return res.status(400).json({ message: 'Unknown plan' });
             }
 
             const finalAmount = Number(amount);
-            if (Math.abs(expectedPrice - finalAmount) > 0.02) {
+            if (Math.abs(Number(quote.amount) - finalAmount) > 0.02) {
                 return res.status(400).json({
                     message: 'Invalid amount. Price mismatch.',
-                    expected: expectedPrice,
+                    expected: quote.amount,
                     received: finalAmount,
+                    listPrice: quote.listPrice,
+                    credit: quote.credit,
+                    isUpgrade: quote.isUpgrade,
                 });
             }
 

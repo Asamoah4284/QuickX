@@ -123,16 +123,61 @@ function resolvePlanPrice(subscriptionPricing, def) {
   return def.defaultPrice;
 }
 
+export function planRank(planId) {
+  const id = normalizePlanId(planId);
+  return id ? ({ basic: 1, premium: 2, diamond: 3 }[id] || 0) : 0;
+}
+
+/**
+ * Upgrade charge = target list − current list. Renew / new subscribe = full list.
+ */
+export function getSubscriptionChargePrice({
+  targetPrice,
+  currentPlanId,
+  targetPlanId,
+  currentPlanPrice,
+}) {
+  const list = Math.max(0, Number(targetPrice) || 0);
+  const from = normalizePlanId(currentPlanId);
+  const to = normalizePlanId(targetPlanId);
+  if (from && to && planRank(to) > planRank(from)) {
+    const credit = Math.max(0, Number(currentPlanPrice) || 0);
+    return {
+      amount: Math.max(0, list - credit),
+      listPrice: list,
+      credit: Math.min(credit, list),
+      isUpgrade: true,
+    };
+  }
+  return { amount: list, listPrice: list, credit: 0, isUpgrade: false };
+}
+
 /** Build checkout / profile plan cards from a tutor's subscriptionPricing. */
-export function buildSubscriptionPlans(subscriptionPricing) {
+export function buildSubscriptionPlans(subscriptionPricing, options = {}) {
+  const currentPlanId = normalizePlanId(options.currentPlanId);
+  const currentDef = currentPlanId ? PLAN_DEFINITIONS[currentPlanId] : null;
+  const currentPrice = currentDef
+    ? resolvePlanPrice(subscriptionPricing, currentDef)
+    : 0;
+
   return ['basic', 'premium', 'diamond'].map((id) => {
     const def = PLAN_DEFINITIONS[id];
+    const listPrice = resolvePlanPrice(subscriptionPricing, def);
+    const charge = getSubscriptionChargePrice({
+      targetPrice: listPrice,
+      currentPlanId,
+      targetPlanId: id,
+      currentPlanPrice: currentPrice,
+    });
     return {
       id: def.id,
       label: def.label,
       title: def.title,
-      price: resolvePlanPrice(subscriptionPricing, def),
-      compareAt: null,
+      price: charge.amount,
+      listPrice,
+      credit: charge.credit,
+      isUpgradePrice: charge.isUpgrade,
+      compareAt: charge.isUpgrade && charge.credit > 0 ? listPrice : null,
       periodNote: def.periodNote,
       badge: def.badge || null,
       features: def.features,

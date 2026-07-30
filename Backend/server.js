@@ -66,8 +66,13 @@ const s3UrlLimiter = rateLimit({
 });
 
 // Apply rate limiting to all API routes (OPTIONS preflight skipped so CORS stays reliable)
+// Offline lesson streams can run for several minutes — do not count them against the burst limit.
 app.use('/api/', (req, res, next) => {
     if (req.method === 'OPTIONS') return next();
+    const path = String(req.originalUrl || req.url || '');
+    if (/\/courses\/[^/]+\/lessons\/[^/]+\/download(?:-stream)?(?:\?|$)/.test(path)) {
+        return next();
+    }
     return apiLimiter(req, res, next);
 });
 

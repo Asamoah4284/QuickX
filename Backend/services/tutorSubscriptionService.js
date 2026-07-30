@@ -50,7 +50,22 @@ async function createOrExtendFromPayment({
   }).sort({ endsAt: -1 });
 
   if (sub && sub.endsAt > now) {
-    sub.endsAt = addDays(sub.endsAt, days);
+    const prevCanonical = normalizePlanId(sub.planId) || String(sub.planId);
+    const prevDays = planDurationDays(prevCanonical);
+    const isUpgrade = days > prevDays || (
+      // rank-style: diamond > premium > basic when duration equal (basic/premium both 30)
+      (canonicalPlanId === 'premium' && prevCanonical === 'basic') ||
+      (canonicalPlanId === 'diamond' && prevCanonical !== 'diamond')
+    );
+
+    if (isUpgrade) {
+      // New tier starts a fresh billing period from payment time (don't keep leftover yearly credit as "Basic renews 2027").
+      sub.endsAt = addDays(now, days);
+    } else {
+      // Same plan (or renew): extend from remaining access.
+      const base = sub.endsAt > now ? sub.endsAt : now;
+      sub.endsAt = addDays(base, days);
+    }
     sub.planId = canonicalPlanId;
     if (paymentId) sub.paymentId = paymentId;
     if (transactionId) sub.transactionId = transactionId;
@@ -93,6 +108,18 @@ async function getActiveSubscription(studentId, tutorId) {
       status: 'active',
     }).sort({ endsAt: -1 });
     if (stale) await expireIfNeeded(stale);
+    return null;
+  }
+
+  // Monthly plans that still carry a ~year endsAt (leftover from older yearly/stack bugs)
+  const canon = normalizePlanId(sub.planId);
+  if ((canon === 'basic' || canon === 'premium') && sub.startsAt && sub.endsAt) {
+    const spanDays = (sub.endsAt.getTime() - new Date(sub.startsAt).getTime()) / 86400000;
+    if (spanDays >= 300) {
+      const days = planDurationDays(canon);
+      sub.endsAt = addDays(now, days);
+      await sub.save();
+    }
   }
 
   return sub;
