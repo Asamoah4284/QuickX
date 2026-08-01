@@ -57,7 +57,7 @@ function PricingEditor({ application, onSaved }) {
       <div className="mt-3 grid gap-3 sm:grid-cols-3">
         {[
           { key: 'basic', label: 'Basic (1 mo · videos)' },
-          { key: 'premium', label: 'Premium (1 mo · full access)' },
+          { key: 'premium', label: 'Premium (3 mo · full access)' },
           { key: 'diamond', label: 'Diamond (1 yr · mentorship)' },
         ].map((field) => (
           <label key={field.key} className="text-xs text-slate-600">

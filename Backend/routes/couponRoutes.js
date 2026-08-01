@@ -18,24 +18,43 @@ router.get('/admin/coupons', adminAuth, async (req, res) => {
 router.post('/admin/coupons', adminAuth, async (req, res) => {
     try {
         const { code, discount, validUntil, maxUses } = req.body;
+        const normalizedCode = String(code || '').trim().toUpperCase();
+        const discountNum = Number(discount);
+        const maxUsesNum = Number(maxUses);
+        const validUntilDate = validUntil ? new Date(validUntil) : null;
 
-        // Check if coupon code already exists
-        const existingCoupon = await Coupon.findOne({ code: code.toUpperCase() });
+        if (!normalizedCode) {
+            return res.status(400).json({ message: 'Coupon code is required' });
+        }
+        if (!Number.isFinite(discountNum) || discountNum < 0 || discountNum > 100) {
+            return res.status(400).json({ message: 'Discount must be a number between 0 and 100' });
+        }
+        if (!validUntilDate || Number.isNaN(validUntilDate.getTime())) {
+            return res.status(400).json({ message: 'Valid until date is required' });
+        }
+        if (!Number.isFinite(maxUsesNum) || maxUsesNum < 1) {
+            return res.status(400).json({ message: 'Max uses must be at least 1' });
+        }
+
+        const existingCoupon = await Coupon.findOne({ code: normalizedCode });
         if (existingCoupon) {
             return res.status(400).json({ message: 'Coupon code already exists' });
         }
 
         const coupon = new Coupon({
-            code: code.toUpperCase(),
-            discount,
-            validUntil,
-            maxUses,
+            code: normalizedCode,
+            discount: discountNum,
+            validUntil: validUntilDate,
+            maxUses: maxUsesNum,
             isActive: true
         });
 
         await coupon.save();
         res.status(201).json(coupon);
     } catch (error) {
+        if (error?.code === 11000) {
+            return res.status(400).json({ message: 'Coupon code already exists' });
+        }
         res.status(500).json({ message: 'Error creating coupon', error: error.message });
     }
 });

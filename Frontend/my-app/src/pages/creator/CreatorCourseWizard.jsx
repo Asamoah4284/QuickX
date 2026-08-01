@@ -565,7 +565,7 @@ export default function CreatorCourseWizard() {
               />
             </label>
             <label className="space-y-2 text-sm text-slate-600">
-              <span>Premium — 1 month · community, offline, signals (GHS)</span>
+              <span>Premium — 3 months · community, offline, signals (GHS)</span>
               <input
                 type="number"
                 min="0"
@@ -595,7 +595,7 @@ export default function CreatorCourseWizard() {
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {[
                 { label: 'Basic', value: subscriptionPricing.basic, note: 'Videos only · 1 mo' },
-                { label: 'Premium', value: subscriptionPricing.premium, note: 'Full access · 1 mo' },
+                { label: 'Premium', value: subscriptionPricing.premium, note: 'Full access · 3 mo' },
                 { label: 'Diamond', value: subscriptionPricing.diamond, note: 'Mentorship · 1 yr' },
               ].map((item) => (
                 <div key={item.label} className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">

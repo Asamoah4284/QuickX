@@ -797,37 +797,51 @@ const AdminDashboard = () => {
     const handleAddCoupon = async () => {
         try {
             const token = localStorage.getItem('adminToken');
-            
-            // Format the coupon data
-            const formattedCoupon = {
-                code: newCoupon.code.toUpperCase(),
-                discount: Number(newCoupon.discount),
-                validUntil: new Date(newCoupon.validUntil).toISOString(),
-                maxUses: Number(newCoupon.maxUses),
-                isActive: true
-            };
+            const code = String(newCoupon.code || '').trim().toUpperCase();
+            const discount = Number(newCoupon.discount);
+            const maxUses = Number(newCoupon.maxUses);
+            const validUntilRaw = String(newCoupon.validUntil || '').trim();
 
-            // Validate the data
-            if (!formattedCoupon.code || !formattedCoupon.discount || !formattedCoupon.validUntil || !formattedCoupon.maxUses) {
-                setError('Please fill in all fields');
+            // Validate before formatting — empty date used to throw and show a generic failure
+            if (!code) {
+                setError('Enter a coupon code');
                 return;
             }
-
-            if (formattedCoupon.discount < 0 || formattedCoupon.discount > 100) {
+            if (!Number.isFinite(discount) || newCoupon.discount === '') {
+                setError('Enter a discount percentage');
+                return;
+            }
+            if (discount < 0 || discount > 100) {
                 setError('Discount must be between 0 and 100');
                 return;
             }
-
-            if (formattedCoupon.maxUses < 1) {
-                setError('Maximum uses must be at least 1');
+            if (!validUntilRaw) {
+                setError('Pick a Valid Until date');
                 return;
             }
+            const validUntilDate = new Date(validUntilRaw);
+            if (Number.isNaN(validUntilDate.getTime())) {
+                setError('Valid Until date is invalid');
+                return;
+            }
+            if (!Number.isFinite(maxUses) || newCoupon.maxUses === '' || maxUses < 1) {
+                setError('Max uses must be at least 1');
+                return;
+            }
+
+            const formattedCoupon = {
+                code,
+                discount,
+                validUntil: validUntilDate.toISOString(),
+                maxUses,
+                isActive: true
+            };
 
             const response = await axios.post(`${API_URL}/api/admin/coupons`, formattedCoupon, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             
-            setCoupons([...coupons, response.data]);
+            setCoupons([response.data, ...coupons]);
             setNewCoupon({
                 code: '',
                 discount: '',
@@ -838,7 +852,13 @@ const AdminDashboard = () => {
             setError('');
         } catch (error) {
             console.error('Error creating coupon:', error);
-            setError(error.response?.data?.message || 'Failed to create coupon');
+            const data = error.response?.data;
+            setError(
+                data?.message ||
+                data?.error ||
+                (Array.isArray(data?.errors) ? data.errors.map((e) => e.msg || e.message).join(' ') : '') ||
+                'Failed to create coupon'
+            );
         }
     };
 
@@ -1652,39 +1672,57 @@ const AdminDashboard = () => {
                             
                             {/* Add New Coupon Form */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-                                <input
-                                    type="text"
-                                    placeholder="Coupon Code"
-                                    className="border rounded-lg px-4 py-2"
-                                    value={newCoupon.code}
-                                    onChange={(e) => setNewCoupon({...newCoupon, code: e.target.value})}
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="Discount %"
-                                    className="border rounded-lg px-4 py-2"
-                                    value={newCoupon.discount}
-                                    onChange={(e) => setNewCoupon({...newCoupon, discount: e.target.value})}
-                                />
-                                <input
-                                    type="date"
-                                    className="border rounded-lg px-4 py-2"
-                                    value={newCoupon.validUntil}
-                                    onChange={(e) => setNewCoupon({...newCoupon, validUntil: e.target.value})}
-                                />
-                                <input
-                                    type="number"
-                                    placeholder="Max Uses"
-                                    className="border rounded-lg px-4 py-2"
-                                    value={newCoupon.maxUses}
-                                    onChange={(e) => setNewCoupon({...newCoupon, maxUses: e.target.value})}
-                                />
-                                <button
-                                    onClick={handleAddCoupon}
-                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                                >
-                                    Add Coupon
-                                </button>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-gray-600">Coupon code</label>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. ELMAX"
+                                        className="w-full border rounded-lg px-4 py-2"
+                                        value={newCoupon.code}
+                                        onChange={(e) => setNewCoupon({...newCoupon, code: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-gray-600">Discount %</label>
+                                    <input
+                                        type="number"
+                                        placeholder="e.g. 30"
+                                        min={0}
+                                        max={100}
+                                        className="w-full border rounded-lg px-4 py-2"
+                                        value={newCoupon.discount}
+                                        onChange={(e) => setNewCoupon({...newCoupon, discount: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-gray-600">Valid until</label>
+                                    <input
+                                        type="date"
+                                        className="w-full border rounded-lg px-4 py-2"
+                                        value={newCoupon.validUntil}
+                                        onChange={(e) => setNewCoupon({...newCoupon, validUntil: e.target.value})}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="mb-1 block text-xs font-medium text-gray-600">Max uses</label>
+                                    <input
+                                        type="number"
+                                        placeholder="e.g. 20"
+                                        min={1}
+                                        className="w-full border rounded-lg px-4 py-2"
+                                        value={newCoupon.maxUses}
+                                        onChange={(e) => setNewCoupon({...newCoupon, maxUses: e.target.value})}
+                                    />
+                                </div>
+                                <div className="flex items-end">
+                                    <button
+                                        type="button"
+                                        onClick={handleAddCoupon}
+                                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                    >
+                                        Add Coupon
+                                    </button>
+                                </div>
                             </div>
 
                             {/* Coupons List */}

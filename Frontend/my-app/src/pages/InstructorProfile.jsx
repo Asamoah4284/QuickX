@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { SiMastercard, SiVisa } from 'react-icons/si';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
 import { buildSubscriptionPlans, getPlanDefinition, normalizePlanId } from '../utils/creatorSubscriptionPlans';
@@ -25,6 +26,7 @@ function formatSubscriptionEnd(endsAt) {
 function planBillingLabel(planDef) {
   if (!planDef) return null;
   if (planDef.durationDays >= 360) return 'Yearly';
+  if (planDef.durationDays >= 80) return '3 months';
   if (planDef.durationDays >= 28) return 'Monthly';
   return null;
 }
@@ -1669,6 +1671,14 @@ export default function InstructorProfile() {
                     title="AirtelTigo Money"
                     className="h-12 w-auto rounded-md bg-white object-contain sm:h-14"
                   />
+                  <span
+                    title="Visa & Mastercard"
+                    className="inline-flex h-12 items-center gap-2 rounded-md bg-white px-2.5 ring-1 ring-zinc-200 sm:h-14 sm:px-3"
+                    aria-label="Visa and Mastercard"
+                  >
+                    <SiVisa className="h-6 w-auto text-[#1434CB] sm:h-7" aria-hidden />
+                    <SiMastercard className="h-7 w-auto sm:h-8" aria-hidden />
+                  </span>
                 </div>
               </div>
               <div className="relative mt-4 overflow-hidden rounded-3xl bg-gradient-to-br from-sky-50 via-blue-50/90 to-indigo-100/80 p-4 shadow-inner ring-1 ring-blue-200/60">

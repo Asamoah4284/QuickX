@@ -2,7 +2,7 @@
  * Creator subscription tiers — keep in sync with Frontend utils/creatorSubscriptionPlans.js
  *
  * basic   — videos only, 1 month
- * premium — videos + community + download + ask + trades + signals, 1 month
+ * premium — videos + community + download + ask + trades + signals, 3 months
  * diamond — premium + mentorship, 1 year
  *
  * Legacy ids (premium_plus, 1m, 2m, 3m, 1y) still resolve for existing subscriptions.
@@ -35,8 +35,8 @@ const PLAN_DEFINITIONS = {
     id: 'premium',
     label: 'Premium',
     title: 'Premium plan',
-    durationDays: 30,
-    periodNote: '1 month · community, Q&A, signals & offline',
+    durationDays: 90,
+    periodNote: '3 months · community, Q&A, signals & offline',
     priceField: 'premium',
     legacyPriceFields: ['month3', 'month2', 'premiumPlus'],
     defaultPrice: 99,

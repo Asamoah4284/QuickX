@@ -1009,62 +1009,91 @@ function Checkout() {
       ''
     )}_${Date.now()}`;
 
-    // Put card first so Paystack shows it in the channel list (GHS often defaults to MoMo).
+    // Card + Apple Pay for wallet/autofill; MoMo also keeps card so users can switch.
     const channels =
-      paymentMethod === 'card' ? ['card'] : ['card', 'mobile_money'];
+      paymentMethod === 'card'
+        ? ['card', 'apple_pay']
+        : ['card', 'mobile_money', 'apple_pay'];
+
+    const email = formData.email.trim();
+    const phone = String(formData.phoneNumber || '').trim();
+    const localUser = (() => {
+      try {
+        return JSON.parse(localStorage.getItem('user') || 'null');
+      } catch {
+        return null;
+      }
+    })();
+    const fullName = String(localUser?.fullName || localUser?.name || '').trim();
+    const [firstName, ...restName] = fullName.split(/\s+/).filter(Boolean);
+    const lastName = restName.join(' ');
+
+    const paystackParams = {
+      key: paystackPublicKey,
+      email,
+      amount,
+      currency: 'GHS',
+      reference,
+      channels,
+      ...(firstName ? { firstName } : {}),
+      ...(lastName ? { lastName } : {}),
+      // Prefill MoMo / customer phone when available (helps browser + Paystack autofill)
+      ...(phone ? { phone } : {}),
+      metadata: {
+        payment_method: paymentMethod,
+        phone_number: phone,
+        provider: formData.provider || '',
+        item_type: checkoutItem?.type,
+        item_id: isBookCart
+          ? bookCartItems.map((i) => String(i?.id ?? '')).filter(Boolean).join(',')
+          : String(checkoutItem?.id ?? checkoutItem?._id ?? ''),
+        referral_code: formData.referralCode || '',
+        coupon_applied: couponApplied ? 'Yes' : 'No',
+        discount_amount: discount,
+        original_price: checkoutItem?.price,
+        final_price: finalPrice,
+        custom_fields: [
+          {
+            display_name: 'Phone Number',
+            variable_name: 'phone_number',
+            value: phone,
+          },
+          {
+            display_name: 'Provider',
+            variable_name: 'provider',
+            value: formData.provider || '',
+          },
+          {
+            display_name: 'Item Type',
+            variable_name: 'item_type',
+            value: checkoutItem?.type,
+          },
+          {
+            display_name: 'Payment Method',
+            variable_name: 'payment_method',
+            value: paymentMethod,
+          },
+        ],
+      },
+      onSuccess: (transaction) => {
+        handlePaymentSuccess(transaction);
+      },
+      onCancel: () => {
+        handlePaymentClose();
+      },
+    };
 
     try {
       const paystack = new PaystackPop();
-      paystack.newTransaction({
-        key: paystackPublicKey,
-        email: formData.email.trim(),
-        amount,
-        currency: 'GHS',
-        reference,
-        channels,
-        metadata: {
-          payment_method: paymentMethod,
-          phone_number: formData.phoneNumber || '',
-          provider: formData.provider || '',
-          item_type: checkoutItem?.type,
-          item_id: isBookCart
-            ? bookCartItems.map((i) => String(i?.id ?? '')).filter(Boolean).join(',')
-            : String(checkoutItem?.id ?? checkoutItem?._id ?? ''),
-          referral_code: formData.referralCode || '',
-          coupon_applied: couponApplied ? 'Yes' : 'No',
-          discount_amount: discount,
-          original_price: checkoutItem?.price,
-          final_price: finalPrice,
-          custom_fields: [
-            {
-              display_name: 'Phone Number',
-              variable_name: 'phone_number',
-              value: formData.phoneNumber || '',
-            },
-            {
-              display_name: 'Provider',
-              variable_name: 'provider',
-              value: formData.provider || '',
-            },
-            {
-              display_name: 'Item Type',
-              variable_name: 'item_type',
-              value: checkoutItem?.type,
-            },
-            {
-              display_name: 'Payment Method',
-              variable_name: 'payment_method',
-              value: paymentMethod,
-            },
-          ],
-        },
-        onSuccess: (transaction) => {
-          handlePaymentSuccess(transaction);
-        },
-        onCancel: () => {
-          handlePaymentClose();
-        },
-      });
+      // checkout() enables wallet / Apple Pay pre-checkout when the device supports it
+      if (typeof paystack.checkout === 'function') {
+        Promise.resolve(paystack.checkout(paystackParams)).catch((err) => {
+          console.warn('Paystack.checkout failed, falling back to newTransaction:', err);
+          paystack.newTransaction(paystackParams);
+        });
+      } else {
+        paystack.newTransaction(paystackParams);
+      }
     } catch (err) {
       console.error('Paystack open failed:', err);
       alert(err?.message || 'Could not open Paystack. Please try again.');
@@ -1499,7 +1528,7 @@ function Checkout() {
                 </div>
               </div>
               
-              <form onSubmit={handleSubmit}>
+              <form onSubmit={handleSubmit} autoComplete="on" method="post">
                 {paymentMethod === 'momo' && (
                   <div className="grid grid-cols-1 gap-6 mb-6">
                     <div>
@@ -1512,6 +1541,8 @@ function Checkout() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        autoComplete="email"
+                        inputMode="email"
                         className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                         placeholder="example@email.com"
                       />
@@ -1529,6 +1560,7 @@ function Checkout() {
                           name="referralCode"
                           value={formData.referralCode}
                           onChange={handleChange}
+                          autoComplete="off"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Enter referral code"
                         />
@@ -1562,9 +1594,9 @@ function Checkout() {
                       </label>
                       <div className="relative">
                         <input
-                          type="text"
+                          type="tel"
                           id="phoneNumber"
-                          name="phoneNumber"
+                          name="phone"
                           value={formData.phoneNumber}
                           onChange={(e) => {
                             const formatted = formatPhoneNumber(e.target.value);
@@ -1573,6 +1605,8 @@ function Checkout() {
                               setErrors(prev => ({ ...prev, phoneNumber: null }));
                             }
                           }}
+                          autoComplete="tel"
+                          inputMode="numeric"
                           className={`w-full px-3 py-2 border ${errors.phoneNumber ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                           placeholder="0XX XXX XXXX"
                           maxLength="10"
@@ -1597,6 +1631,8 @@ function Checkout() {
                         name="email"
                         value={formData.email}
                         onChange={handleChange}
+                        autoComplete="email"
+                        inputMode="email"
                         className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
                         placeholder="example@email.com"
                       />
@@ -1614,6 +1650,7 @@ function Checkout() {
                           name="referralCode"
                           value={formData.referralCode}
                           onChange={handleChange}
+                          autoComplete="off"
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                           placeholder="Enter referral code"
                         />
@@ -1626,8 +1663,9 @@ function Checkout() {
                         <SiMastercard className="h-8 w-auto" title="Mastercard" />
                       </div>
                       <p className="mt-2 text-sm text-slate-600">
-                        Click <span className="font-semibold text-slate-800">Pay with Card</span> to
-                        enter your Visa/Mastercard details on Paystack&apos;s secure screen.
+                        Click <span className="font-semibold text-slate-800">Pay with Card</span> for
+                        Paystack&apos;s secure screen — saved cards, Apple Pay, and browser autofill
+                        work there when available on your device.
                       </p>
                     </div>
                   </div>

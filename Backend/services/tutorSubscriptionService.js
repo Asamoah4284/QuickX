@@ -53,7 +53,7 @@ async function createOrExtendFromPayment({
     const prevCanonical = normalizePlanId(sub.planId) || String(sub.planId);
     const prevDays = planDurationDays(prevCanonical);
     const isUpgrade = days > prevDays || (
-      // rank-style: diamond > premium > basic when duration equal (basic/premium both 30)
+      // rank-style: diamond > premium > basic (premium is 3 months, basic 1 month)
       (canonicalPlanId === 'premium' && prevCanonical === 'basic') ||
       (canonicalPlanId === 'diamond' && prevCanonical !== 'diamond')
     );
@@ -111,7 +111,7 @@ async function getActiveSubscription(studentId, tutorId) {
     return null;
   }
 
-  // Monthly plans that still carry a ~year endsAt (leftover from older yearly/stack bugs)
+  // Basic/Premium that still carry a ~year endsAt (leftover from older yearly/stack bugs)
   const canon = normalizePlanId(sub.planId);
   if ((canon === 'basic' || canon === 'premium') && sub.startsAt && sub.endsAt) {
     const spanDays = (sub.endsAt.getTime() - new Date(sub.startsAt).getTime()) / 86400000;
