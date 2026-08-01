@@ -752,7 +752,16 @@ function Pricing() {
     setCustomerEmail('');
   }, []);
 
+  const isMongoId = (id) => /^[a-f\d]{24}$/i.test(String(id || '').trim());
+
   const goToCheckoutOrRegister = (checkoutState) => {
+    const itemId = checkoutState?.item?.id ?? checkoutState?.item?._id;
+    if (checkoutState?.item?.type === 'course' && !isMongoId(itemId)) {
+      setErrorMessage(
+        'This course cannot be purchased from this page (invalid course ID). Open it from the school catalog instead.'
+      );
+      return;
+    }
     if (!isAuthenticated) {
       savePendingCheckout(checkoutState);
       navigate('/register', {
@@ -772,32 +781,61 @@ function Pricing() {
       console.error(`Module not found: ${moduleId}`);
       return;
     }
+
+    // Prefer real Mongo course id from the listing (API) over mock module-1 / module-2 ids
+    const realCourseId = isMongoId(moduleToPurchase.id)
+      ? moduleToPurchase.id
+      : isMongoId(courseId)
+        ? courseId
+        : isMongoId(courseData?.id)
+          ? courseData.id
+          : null;
+
+    if (!realCourseId) {
+      setErrorMessage(
+        'This demo listing has no real course ID. Buy the course from the school catalog instead.'
+      );
+      return;
+    }
     
     goToCheckoutOrRegister({
       item: {
-        id: moduleToPurchase.id,
-        title: moduleToPurchase.title,
-        price: moduleToPurchase.price,
+        id: realCourseId,
+        title: moduleToPurchase.title || courseData.title,
+        price: moduleToPurchase.price ?? courseData.price,
         type: 'course',
         image: courseData.image
       },
-      returnPath: `/school/course/${moduleId}`,
+      returnPath: `/school/course/${realCourseId}`,
       returnTabState: { tab: 'content' }
     });
   };
 
-  // Handle bundle purchase
+  // Handle bundle purchase — never send id "bundle" to Paystack
   const handleBundlePurchase = () => {
+    const realCourseId = isMongoId(courseId)
+      ? courseId
+      : isMongoId(courseData?.id)
+        ? courseData.id
+        : (courseData?.modules || []).map((m) => m.id).find((id) => isMongoId(id));
+
+    if (!realCourseId) {
+      setErrorMessage(
+        'Bundle checkout needs a real course from the catalog. Open a course page and buy from there.'
+      );
+      return;
+    }
+
     goToCheckoutOrRegister({
       item: {
-        id: 'bundle',
-        title: 'Complete Forex Trading Bundle',
-        price: bundlePrice,
+        id: realCourseId,
+        title: courseData?.title || 'Complete Forex Trading Bundle',
+        price: courseData?.price ?? bundlePrice,
         type: 'course',
         image: courseData.image,
-        description: 'Get access to all three levels of forex trading education'
+        description: courseData?.description || 'Full course access'
       },
-      returnPath: '/school',
+      returnPath: `/school/course/${realCourseId}`,
       returnTabState: null
     });
   };

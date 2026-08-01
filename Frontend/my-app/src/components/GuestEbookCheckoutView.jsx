@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiChevronDown, FiLock, FiShoppingBag } from 'react-icons/fi';
-import { PaystackButton } from 'react-paystack';
 import PaymentSuccessModal from './PaymentSuccessModal';
 
 /** Minimal guest checkout for a single ebook — email, MoMo, pay, instant download. */
@@ -19,7 +18,7 @@ export default function GuestEbookCheckoutView({
   setFormData,
   setErrors,
   handleSubmit,
-  getPaystackConfig,
+  onPayClick,
   paymentSuccessModal,
   completeSuccessAndNavigate,
 }) {
@@ -66,7 +65,7 @@ export default function GuestEbookCheckoutView({
 
           <form onSubmit={handleSubmit} className="p-5 sm:p-6">
             <p className="mb-5 text-sm leading-relaxed text-slate-600">
-              Pay with Mobile Money. After payment you go straight to your download page — no
+              Pay with Mobile Money or Card. After payment you go straight to your download page — no
               sign-up required.
             </p>
 
@@ -145,14 +144,16 @@ export default function GuestEbookCheckoutView({
 
             <div className="mt-6">
               {guestMoMoReady ? (
-                <PaystackButton
-                  {...getPaystackConfig()}
-                  text={`Pay GH₵${total} with Mobile Money`}
+                <button
+                  type="button"
+                  onClick={onPayClick}
+                  disabled={isProcessing}
                   className={`flex w-full items-center justify-center rounded-xl bg-blue-600 px-4 py-4 text-base font-semibold text-white shadow-sm transition hover:bg-blue-700 ${
                     isProcessing ? 'cursor-not-allowed opacity-70' : ''
                   }`}
-                  disabled={isProcessing}
-                />
+                >
+                  {`Pay GH₵${total}`}
+                </button>
               ) : (
                 <button
                   type="button"

@@ -262,7 +262,14 @@ router.get('/user/purchased', auth, async (req, res) => {
             return Array.from(courseMap.values());
         };
 
-        // Respond immediately with what we already have (enrollment happens at payment time).
+        // Repair paid-but-unenrolled courses before responding so dashboard is correct immediately.
+        try {
+            const { repairCourseAccessFromPayments } = require('../services/coursePurchaseService');
+            await repairCourseAccessFromPayments(req.user._id);
+        } catch (repairErr) {
+            console.error('purchased courses repair:', repairErr.message);
+        }
+
         const courses = await buildCourseList();
         res.json(courses);
 
@@ -731,7 +738,7 @@ router.post('/:id/enroll', auth, async (req, res) => {
     }
 });
 
-// Purchase course (authenticated)
+// Purchase course (authenticated) — idempotent; prefer /payments/initialize which also grants access
 router.post('/:id/purchase', auth, async (req, res) => {
     try {
         console.log('Processing course purchase:', {
@@ -740,122 +747,31 @@ router.post('/:id/purchase', auth, async (req, res) => {
             body: req.body
         });
 
-        const user = req.user;
-        const course = await Course.findById(req.params.id);
-        
-        if (!course) {
-            return res.status(404).json({ message: 'Course not found' });
-        }
-
-        // Check if user already purchased this course
-        const existingPurchase = await Purchase.findOne({ 
-            userId: user._id, 
-            courseId: course._id,
-            status: 'completed'
-        });
-        
-        if (existingPurchase) {
-            return res.status(400).json({ 
-                message: 'You have already purchased this course',
-                purchaseId: existingPurchase._id
-            });
-        }
-
-        // Create a new purchase record
-        const purchase = new Purchase({
-            userId: user._id,
-            courseId: course._id,
-            amount: req.body.amount || course.price,
-            status: 'completed',
-            paymentMethod: req.body.paymentMethod || 'momo',
-            transactionId: req.body.reference || req.body.transactionId,
-            referralCode: req.body.referralCode || null
+        const { grantCourseAccess } = require('../services/coursePurchaseService');
+        const result = await grantCourseAccess({
+            userId: req.user._id,
+            courseId: req.params.id,
+            amount: req.body.amount,
+            transactionId: req.body.reference || req.body.transactionId || '',
+            paymentMethod: req.body.paymentMethod || 'paystack',
         });
 
-        try {
-            await purchase.save();
-            console.log('Purchase record saved:', purchase);
-        } catch (saveError) {
-            console.error('Error saving purchase record:', saveError);
-            throw new Error('Failed to save purchase record: ' + saveError.message);
-        }
-        
-        // Update course student count
-        try {
-            course.totalStudents += 1;
-            await course.save();
-            console.log('Course student count updated');
-        } catch (courseError) {
-            console.error('Error updating course:', courseError);
-            // Don't throw here, as the purchase is already saved
-        }
-
-        // If this is a forex course, add all forex ebooks to user's purchased books
-        if (course.courseType === 'forex') {
-            try {
-                const Book = require('../models/Book');
-                const forexBooks = await Book.find({ 
-                    category: 'forex',
-                    type: 'ebook'
-                });
-
-                // Add forex books to user's purchased books if not already purchased
-                if (forexBooks.length > 0) {
-                    const User = require('../models/User');
-                    const userDoc = await User.findById(user._id);
-                    
-                    for (const book of forexBooks) {
-                        if (!userDoc.purchasedBooks.includes(book._id)) {
-                            userDoc.purchasedBooks.push(book._id);
-                        }
-                    }
-                    
-                    await userDoc.save();
-                    console.log('Forex books added to user purchases');
-                }
-            } catch (forexError) {
-                console.error('Error adding forex books:', forexError);
-                // Don't throw here, as the main purchase is complete
-            }
-        }
-
-        await Promise.all([
-            Enrollment.findOneAndUpdate(
-                { studentId: user._id, courseId: course._id },
-                {
-                    $setOnInsert: {
-                        studentId: user._id,
-                        courseId: course._id,
-                        enrolledAt: new Date()
-                    }
-                },
-                { upsert: true, new: true }
-            ),
-            User.findByIdAndUpdate(user._id, {
-                $addToSet: { purchasedCourses: course._id }
-            })
-        ]);
-
-        const transactionRecord = await buildTransactionRecord({
-            course,
-            userId: user._id,
-            amount: req.body.amount || course.price,
-            paymentReference: purchase.transactionId || req.body.reference || ''
-        });
-        await Transaction.create(transactionRecord);
-        
         res.json({
             success: true,
-            message: 'Course purchased successfully',
+            message: result.createdPurchase
+                ? 'Course purchased successfully'
+                : 'Course access already on your account',
             purchase: {
-                id: purchase._id,
-                courseId: course._id,
-                amount: purchase.amount,
-                status: purchase.status,
-                purchaseDate: purchase.createdAt
+                id: result.purchaseId,
+                courseId: result.courseId,
+                amount: req.body.amount,
+                status: 'completed',
             }
         });
     } catch (error) {
+        if (error.status === 404) {
+            return res.status(404).json({ message: error.message || 'Course not found' });
+        }
         console.error('Error in course purchase:', error);
         res.status(500).json({ 
             success: false,

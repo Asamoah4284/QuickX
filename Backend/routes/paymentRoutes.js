@@ -15,8 +15,13 @@ const {
     validateOfferPaymentAmount,
     validateBookCartPayment,
 } = require('../utils/bookOfferHelpers');
+const {
+    grantCourseAccess,
+    repairCourseAccessFromPayments,
+} = require('../services/coursePurchaseService');
 
 const paystackSecretKey = process.env.PAYSTACK_SECRET_KEY;
+const CARD_LIKE_METHODS = ['card', 'paystack', 'direct'];
 
 async function verifyPaystackTransaction(transactionId) {
     if (!paystackSecretKey || !/^sk_(test|live)_/.test(paystackSecretKey)) {
@@ -87,9 +92,14 @@ const validatePayment = [
     body('paymentMethod')
         .isIn(['MTN', 'Vodafone', 'AirtelTigo', 'momo', 'paystack', 'card', 'direct'])
         .withMessage('Invalid payment method'),
+    // MoMo number required only for mobile-money methods (card payments often have no phone)
     body('momoNumber')
+        .if((value, { req }) => !CARD_LIKE_METHODS.includes(String(req.body.paymentMethod || '')))
         .matches(/^0\d{9}$/)
         .withMessage('Invalid mobile money number format. Must start with 0 and be 10 digits'),
+    body('momoNumber')
+        .if((value, { req }) => CARD_LIKE_METHODS.includes(String(req.body.paymentMethod || '')))
+        .optional({ nullable: true, checkFalsy: true }),
     body('referralCode')
         .optional({ nullable: true, checkFalsy: true })
         .if(body('referralCode').notEmpty())
@@ -103,8 +113,12 @@ const validatePayment = [
         .isEmail()
         .withMessage('Valid email is required in shipping address'),
     body('shippingAddress.phone')
+        .if((value, { req }) => !CARD_LIKE_METHODS.includes(String(req.body.paymentMethod || '')))
         .matches(/^0\d{9}$/)
         .withMessage('Valid phone number is required in shipping address'),
+    body('shippingAddress.phone')
+        .if((value, { req }) => CARD_LIKE_METHODS.includes(String(req.body.paymentMethod || '')))
+        .optional({ nullable: true, checkFalsy: true }),
     body('currency')
         .equals('GHS')
         .withMessage('Currency must be GHS')
@@ -393,6 +407,30 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             items
         } = req.body;
 
+        // Idempotent: same Paystack reference already completed — re-grant access if needed
+        const existingByTxn = await Payment.findOne({ transactionId, status: 'completed' });
+        if (existingByTxn) {
+            if (
+                existingByTxn.itemType === 'course' &&
+                existingByTxn.itemId &&
+                String(existingByTxn.userId) === String(req.user._id)
+            ) {
+                await grantCourseAccess({
+                    userId: req.user._id,
+                    courseId: existingByTxn.itemId,
+                    amount: existingByTxn.finalAmount ?? existingByTxn.originalAmount,
+                    transactionId: existingByTxn.transactionId,
+                    paymentMethod: existingByTxn.paymentMethod || paymentMethod,
+                });
+            }
+            return res.json({
+                success: true,
+                message: 'Payment already recorded',
+                alreadyRecorded: true,
+                courseAccessGranted: existingByTxn.itemType === 'course',
+            });
+        }
+
         // Validate the purchase item exists and verify price
         let purchaseItem;
         let finalAmount = Number(amount); // Original amount
@@ -553,6 +591,18 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             }
         }
 
+        // Courses: grant Purchase + Enrollment in the same request (do not rely on a second frontend call)
+        let courseAccess = null;
+        if (itemType === 'course' && itemId) {
+            courseAccess = await grantCourseAccess({
+                userId: req.user._id,
+                courseId: itemId,
+                amount: Number(amount),
+                transactionId,
+                paymentMethod: paymentMethod || 'paystack',
+            });
+        }
+
         console.log('Payment record:', {
             ...paymentRecord,
             breakdown: {
@@ -565,6 +615,8 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
         res.json({ 
             success: true, 
             message: 'Payment initialized successfully',
+            courseAccessGranted: Boolean(courseAccess),
+            courseAccess,
             payment: {
                 ...paymentRecord,
                 breakdown: {
@@ -838,22 +890,14 @@ router.post('/webhook', async (req, res) => {
                     return res.status(404).json({ message: 'User not found' });
                 }
 
-                if (payment.itemType === 'course') {
-                    const course = await Course.findById(payment.itemId);
-                    if (user.purchasedCourses && Array.isArray(user.purchasedCourses)) {
-                        user.purchasedCourses.push(payment.itemId);
-                    }
-                    if (course && course.courseType === 'forex' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
-                        const forexBooks = await Book.find({
-                            category: 'forex',
-                            type: 'ebook'
-                        });
-                        for (const book of forexBooks) {
-                            if (!user.purchasedBooks.includes(book._id)) {
-                                user.purchasedBooks.push(book._id);
-                            }
-                        }
-                    }
+                if (payment.itemType === 'course' && payment.itemId) {
+                    await grantCourseAccess({
+                        userId: user._id,
+                        courseId: payment.itemId,
+                        amount: payment.finalAmount ?? payment.originalAmount,
+                        transactionId: payment.transactionId,
+                        paymentMethod: payment.paymentMethod || 'paystack',
+                    });
                 } else if (payment.itemType === 'book' && user.purchasedBooks && Array.isArray(user.purchasedBooks)) {
                     user.purchasedBooks.push(payment.itemId);
                 } else if (
@@ -876,6 +920,29 @@ router.post('/webhook', async (req, res) => {
         res.json({ message: 'Webhook processed successfully' });
     } catch (error) {
         res.status(500).json({ message: 'Server error', error: error.message });
+    }
+});
+
+// @route   POST /api/payments/repair-course-access
+// @desc    Grant missing Purchase/Enrollment for completed course Payments
+// @access  Private
+router.post('/repair-course-access', auth, async (req, res) => {
+    try {
+        const result = await repairCourseAccessFromPayments(req.user._id);
+        res.json({
+            success: true,
+            message:
+                result.repaired > 0
+                    ? `Restored access to ${result.repaired} course(s).`
+                    : 'No missing course access found.',
+            ...result,
+        });
+    } catch (error) {
+        console.error('repair-course-access error:', error);
+        res.status(500).json({
+            message: 'Could not repair course access',
+            error: error.message,
+        });
     }
 });
 

@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCreditCard, FiLock, FiArrowLeft, FiCheck, FiShoppingBag, FiCalendar, FiPhone, FiChevronDown } from 'react-icons/fi';
+import { FiCreditCard, FiLock, FiArrowLeft, FiShoppingBag, FiPhone, FiChevronDown } from 'react-icons/fi';
 import { SiVisa, SiMastercard } from 'react-icons/si';
-import { PaystackButton } from 'react-paystack';
+import PaystackPop from '@paystack/inline-js';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import GuestEbookCheckoutView from '../components/GuestEbookCheckoutView';
@@ -17,6 +17,8 @@ import {
 } from '../utils/bookCart';
 import { ensureMetaPixel, trackMetaEvent } from '../utils/metaPixel';
 import { clearPendingCheckout, readPendingCheckout } from '../utils/pendingCheckout';
+
+const isMongoId = (id) => /^[a-f\d]{24}$/i.test(String(id || '').trim());
 
 /** Same rules as CoursePublicDetail / store: absolute URL or `${apiUrl}${path}`. */
 function resolveCheckoutItemImageUrl(item, apiUrl) {
@@ -311,40 +313,19 @@ function Checkout() {
               /\S+@\S+\.\S+/.test(formData.email));
   };
 
+  const validateCardFields = () => {
+    return !!(formData.email && /\S+@\S+\.\S+/.test(formData.email));
+  };
+
   // Form validation
   const validateForm = () => {
     const newErrors = {};
     
     if (paymentMethod === 'card') {
-      // Validate card name
-      if (!formData.cardName.trim()) {
-        newErrors.cardName = 'Cardholder name is required';
-      }
-      
-      // Validate card number (basic validation for demo)
-      if (!formData.cardNumber.trim()) {
-        newErrors.cardNumber = 'Card number is required';
-      } else if (!/^\d{16}$/.test(formData.cardNumber.replace(/\s/g, ''))) {
-        newErrors.cardNumber = 'Card number must be 16 digits';
-      }
-      
-      // Validate expiry date (MM/YY format)
-      if (!formData.expiryDate.trim()) {
-        newErrors.expiryDate = 'Expiry date is required';
-      } else if (!/^\d{2}\/\d{2}$/.test(formData.expiryDate)) {
-        newErrors.expiryDate = 'Use MM/YY format';
-      }
-      
-      // Validate CVV (3-4 digits)
-      if (!formData.cvv.trim()) {
-        newErrors.cvv = 'CVV is required';
-      } else if (!/^\d{3,4}$/.test(formData.cvv)) {
-        newErrors.cvv = 'CVV must be 3-4 digits';
-      }
-      
-      // Validate zip code (basic validation)
-      if (!formData.zipCode.trim()) {
-        newErrors.zipCode = 'ZIP/Postal code is required';
+      if (!formData.email.trim()) {
+        newErrors.email = 'Email is required';
+      } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+        newErrors.email = 'Enter a valid email address';
       }
     } else if (paymentMethod === 'momo') {
       // Validate email
@@ -371,23 +352,6 @@ function Checkout() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Format card number with spaces
-  const formatCardNumber = (value) => {
-    const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
-    const matches = v.match(/\d{4,16}/g);
-    const match = (matches && matches[0]) || '';
-    const parts = [];
-    
-    for (let i = 0, len = match.length; i < len; i += 4) {
-      parts.push(match.substring(i, i + 4));
-    }
-    
-    if (parts.length) {
-      return parts.join(' ');
-    }
-    return value;
-  };
-
   // Format phone number
   const formatPhoneNumber = (value) => {
     const v = value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
@@ -397,31 +361,13 @@ function Checkout() {
     return v;
   };
 
-  // Handle submission of payment form for card payments
+  // Handle submission — card/MoMo both complete via Paystack button, not this form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Block all credit card submissions
-    if (paymentMethod === 'card') {
-      alert('Credit card payments are not available at this time. Please use Mobile Money (MoMo) to complete your purchase.');
-      togglePaymentMethod('momo');
-      return;
-    }
-
-    // Do nothing else - all purchases should go through Paystack/MoMo
-    return;
   };
 
   // Handle Paystack payment success
   const handlePaymentSuccess = async (reference) => {
-    // Block all non-MoMo payments
-    if (paymentMethod !== 'momo') {
-      alert('Only Mobile Money (MoMo) payments are accepted. Please use MoMo to complete your purchase.');
-      togglePaymentMethod('momo');
-      setIsProcessing(false);
-      return;
-    }
-
     console.log('Payment success response:', reference);
     setIsProcessing(true);
     
@@ -675,6 +621,17 @@ function Checkout() {
         throw new Error('Subscription payment failed');
       }
 
+      const resolvedPaymentMethod =
+        paymentMethod === 'card'
+          ? 'card'
+          : formData.provider === 'mtn'
+            ? 'MTN'
+            : formData.provider === 'vodafone'
+              ? 'Vodafone'
+              : formData.provider === 'airtel'
+                ? 'AirtelTigo'
+                : 'MTN';
+
       // First save the payment data
       const paymentData = {
         itemType: checkoutItem.type,
@@ -686,10 +643,8 @@ function Checkout() {
                 offerOptionId: String(checkoutItem.offerOptionId || ''),
               }
             : { itemId: String(itemId) }),
-        paymentMethod: formData.provider === 'mtn' ? 'MTN' : 
-                      formData.provider === 'vodafone' ? 'Vodafone' : 
-                      formData.provider === 'airtel' ? 'AirtelTigo' : 'MTN',
-        momoNumber: formData.phoneNumber,
+        paymentMethod: resolvedPaymentMethod,
+        momoNumber: formData.phoneNumber || '',
         shippingAddress: {
           fullName: formData.email.split('@')[0] || 'Customer',
           phone: formData.phoneNumber || '',
@@ -706,6 +661,7 @@ function Checkout() {
       console.log('Sending payment data:', JSON.stringify(paymentData, null, 2));
 
       // Validate required fields before sending
+      const needsPhone = paymentMethod !== 'card';
       if (
         !paymentData.itemType ||
         (paymentData.itemType === 'book_cart'
@@ -713,10 +669,16 @@ function Checkout() {
           : paymentData.itemType === 'book_offer'
             ? !paymentData.itemId || !paymentData.offerOptionId
             : !paymentData.itemId) ||
-        !paymentData.momoNumber ||
+        (needsPhone && !paymentData.momoNumber) ||
         paymentData.amount == null
       ) {
         throw new Error('Missing required payment data fields');
+      }
+      if (checkoutItem?.type === 'course' && !isMongoId(itemId)) {
+        throw new Error(
+          'Invalid course ID after payment. Contact support with your Paystack reference: ' +
+            referenceString
+        );
       }
 
       // Ensure we're using the correct API URL
@@ -738,21 +700,33 @@ function Checkout() {
 
         if (paymentResponse.data.success) {
           if (checkoutItem?.type === 'course' && itemId) {
-            // Save course purchase to database
-            await axios.post(
-              `${API_URL}/api/courses/${String(itemId)}/purchase`, 
-              {
-                reference: referenceString,
-                amount: finalPrice,
-                status: 'completed',
-                referralCode: formData.referralCode || ''
-              },
-              {
-                headers: { 'Authorization': `Bearer ${authToken}` }
-              }
-            );
+            // Access is granted inside /payments/initialize. Keep /purchase as idempotent backup.
+            try {
+              await axios.post(
+                `${API_URL}/api/courses/${String(itemId)}/purchase`,
+                {
+                  reference: referenceString,
+                  amount: finalPrice,
+                  status: 'completed',
+                  paymentMethod: resolvedPaymentMethod,
+                  referralCode: formData.referralCode || '',
+                },
+                { headers: { Authorization: `Bearer ${authToken}` } }
+              );
+            } catch (purchaseErr) {
+              console.warn('Backup course purchase call failed (initialize should have granted access):', purchaseErr);
+            }
 
-            // Update localStorage for course
+            try {
+              await axios.post(
+                `${API_URL}/api/payments/repair-course-access`,
+                {},
+                { headers: { Authorization: `Bearer ${authToken}` } }
+              );
+            } catch {
+              /* non-blocking */
+            }
+
             const purchasedCourses = JSON.parse(localStorage.getItem('purchasedCourses') || '[]');
             if (!purchasedCourses.some(course => course.id === itemId || course.id === String(itemId))) {
               purchasedCourses.push({
@@ -766,10 +740,10 @@ function Checkout() {
 
             setPaymentSuccessModal({
               title: 'Payment successful',
-              description: `You now have full access to ${checkoutItem.title}.`,
-              ctaLabel: 'Start learning',
-              navigateTo: `/school/course/${String(itemId)}`,
-              navigateState: { fromPurchase: true, courseId: String(itemId) },
+              description: `You now have full access to ${checkoutItem.title}. Find it anytime under My Courses.`,
+              ctaLabel: 'Go to My Courses',
+              navigateTo: '/membership',
+              navigateState: { activeTab: 'myCourses', fromPurchase: true, courseId: String(itemId) },
               amount: finalPrice,
               productLabel: checkoutItem.title,
             });
@@ -930,7 +904,37 @@ function Checkout() {
         return;
       }
 
-      alert(`Error processing payment: ${errorMessage}`);
+      // Course paid on Paystack but finalize failed — try repair so dashboard is not empty
+      if (checkoutItem?.type === 'course' && authToken && paymentRef) {
+        try {
+          await axios.post(
+            `${API_URL}/api/payments/repair-course-access`,
+            {},
+            { headers: { Authorization: `Bearer ${authToken}` } }
+          );
+          const courseId = String(checkoutItem?.id ?? checkoutItem?._id ?? '');
+          setPaymentSuccessModal({
+            title: 'Payment received',
+            description:
+              'Your payment went through. We restored course access on your account — check My Courses.',
+            ctaLabel: 'Go to My Courses',
+            navigateTo: '/membership',
+            navigateState: { activeTab: 'myCourses', fromPurchase: true, courseId },
+            amount: calculateFinalPrice(),
+            productLabel: checkoutItem.title,
+          });
+          setIsProcessing(false);
+          return;
+        } catch {
+          /* fall through to alert with support reference */
+        }
+      }
+
+      alert(
+        `Error processing payment: ${errorMessage}${
+          paymentRef ? `\n\nPaystack reference: ${paymentRef}` : ''
+        }`
+      );
       setIsProcessing(false);
     }
   };
@@ -968,78 +972,116 @@ function Checkout() {
     navigate(backPath);
   };
 
-  // Get Paystack config
-  const getPaystackConfig = () => {
-    // Only allow MoMo payments
-    if (paymentMethod !== 'momo') {
-      return null;
+  // Open Paystack via Inline JS (not react-paystack) so channels are applied reliably.
+  // Card tab → card only. MoMo tab → card + mobile money so both appear in the popup.
+  const openPaystackCheckout = useCallback(() => {
+    if (!paystackPublicKey) {
+      alert('Paystack is not configured. Please contact support.');
+      return;
+    }
+    if (!formData.email || !/\S+@\S+\.\S+/.test(formData.email)) {
+      alert('Enter a valid email address to continue.');
+      return;
+    }
+
+    // Block course checkout with fake IDs (e.g. "bundle", "module-1") before money is taken
+    if (checkoutItem?.type === 'course') {
+      const courseId = checkoutItem?.id ?? checkoutItem?._id;
+      if (!isMongoId(courseId)) {
+        alert(
+          'This course listing has an invalid ID and cannot be purchased. Open the course from the school catalog and try again.'
+        );
+        return;
+      }
     }
 
     const finalPrice = calculateFinalPrice();
-    
-    return {
-      reference: `${checkoutItem?.type}_${checkoutItem?.id ?? checkoutItem?._id ?? 'cart'}_${checkoutItem?.planId ?? ''}_${Date.now()}`,
-      email: formData.email,
-      amount: finalPrice * 100,
-      publicKey: paystackPublicKey,
-      text: "Pay with Mobile Money",
-      onSuccess: handlePaymentSuccess,
-      onClose: handlePaymentClose,
-      currency: "GHS",
-      channels: ["mobile_money"],
-      metadata: {
-        custom_fields: [
-          {
-            display_name: "Phone Number",
-            variable_name: "phone_number",
-            value: formData.phoneNumber
-          },
-          {
-            display_name: "Provider",
-            variable_name: "provider",
-            value: formData.provider
-          },
-          {
-            display_name: "Item Type",
-            variable_name: "item_type",
-            value: checkoutItem?.type
-          },
-          {
-            display_name: "Item ID",
-            variable_name: "item_id",
-            value: isBookCart
-              ? bookCartItems.map((i) => String(i?.id ?? '')).filter(Boolean).join(',')
-              : String(checkoutItem?.id ?? checkoutItem?._id ?? '')
-          },
-          {
-            display_name: "Referral Code",
-            variable_name: "referral_code",
-            value: formData.referralCode || ''
-          },
-          {
-            display_name: "Coupon Applied",
-            variable_name: "coupon_applied",
-            value: couponApplied ? "Yes" : "No"
-          },
-          {
-            display_name: "Discount Amount",
-            variable_name: "discount_amount",
-            value: discount
-          },
-          {
-            display_name: "Original Price",
-            variable_name: "original_price",
-            value: checkoutItem?.price
-          },
-          {
-            display_name: "Final Price",
-            variable_name: "final_price",
-            value: finalPrice
-          }
-        ]
-      }
-    };
-  };
+    const amount = Math.round(Number(finalPrice) * 100);
+    if (!Number.isFinite(amount) || amount < 100) {
+      alert('Invalid payment amount. Please refresh and try again.');
+      return;
+    }
+
+    const reference = `${checkoutItem?.type || 'item'}_${String(
+      checkoutItem?.id ?? checkoutItem?._id ?? 'cart'
+    ).replace(/[^a-zA-Z0-9_-]/g, '')}_${String(checkoutItem?.planId || 'x').replace(
+      /[^a-zA-Z0-9_-]/g,
+      ''
+    )}_${Date.now()}`;
+
+    // Put card first so Paystack shows it in the channel list (GHS often defaults to MoMo).
+    const channels =
+      paymentMethod === 'card' ? ['card'] : ['card', 'mobile_money'];
+
+    try {
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: paystackPublicKey,
+        email: formData.email.trim(),
+        amount,
+        currency: 'GHS',
+        reference,
+        channels,
+        metadata: {
+          payment_method: paymentMethod,
+          phone_number: formData.phoneNumber || '',
+          provider: formData.provider || '',
+          item_type: checkoutItem?.type,
+          item_id: isBookCart
+            ? bookCartItems.map((i) => String(i?.id ?? '')).filter(Boolean).join(',')
+            : String(checkoutItem?.id ?? checkoutItem?._id ?? ''),
+          referral_code: formData.referralCode || '',
+          coupon_applied: couponApplied ? 'Yes' : 'No',
+          discount_amount: discount,
+          original_price: checkoutItem?.price,
+          final_price: finalPrice,
+          custom_fields: [
+            {
+              display_name: 'Phone Number',
+              variable_name: 'phone_number',
+              value: formData.phoneNumber || '',
+            },
+            {
+              display_name: 'Provider',
+              variable_name: 'provider',
+              value: formData.provider || '',
+            },
+            {
+              display_name: 'Item Type',
+              variable_name: 'item_type',
+              value: checkoutItem?.type,
+            },
+            {
+              display_name: 'Payment Method',
+              variable_name: 'payment_method',
+              value: paymentMethod,
+            },
+          ],
+        },
+        onSuccess: (transaction) => {
+          handlePaymentSuccess(transaction);
+        },
+        onCancel: () => {
+          handlePaymentClose();
+        },
+      });
+    } catch (err) {
+      console.error('Paystack open failed:', err);
+      alert(err?.message || 'Could not open Paystack. Please try again.');
+    }
+  }, [
+    paystackPublicKey,
+    formData.email,
+    formData.phoneNumber,
+    formData.provider,
+    formData.referralCode,
+    paymentMethod,
+    checkoutItem,
+    isBookCart,
+    bookCartItems,
+    couponApplied,
+    discount,
+  ]);
 
   const checkoutSubtotal = () =>
     isBookCart ? bookCartSubtotal : Number(checkoutItem?.price || 0);
@@ -1193,7 +1235,7 @@ function Checkout() {
         setFormData={setFormData}
         setErrors={setErrors}
         handleSubmit={handleSubmit}
-        getPaystackConfig={getPaystackConfig}
+        onPayClick={openPaystackCheckout}
         paymentSuccessModal={paymentSuccessModal}
         completeSuccessAndNavigate={completeSuccessAndNavigate}
       />
@@ -1546,149 +1588,68 @@ function Checkout() {
                 {paymentMethod === 'card' && (
                   <div className="grid grid-cols-1 gap-6 mb-6">
                     <div>
-                      <label htmlFor="cardName" className="block text-sm font-medium text-gray-700 mb-1">
-                        Cardholder Name
+                      <label htmlFor="card-email" className="block text-sm font-medium text-gray-700 mb-1">
+                        Email Address
                       </label>
                       <input
-                        type="text"
-                        id="cardName"
-                        name="cardName"
-                        value={formData.cardName}
+                        type="email"
+                        id="card-email"
+                        name="email"
+                        value={formData.email}
                         onChange={handleChange}
-                        className={`w-full px-3 py-2 border ${errors.cardName ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                        placeholder="Name on card"
+                        className={`w-full px-3 py-2 border ${errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
+                        placeholder="example@email.com"
                       />
-                      {errors.cardName && <p className="mt-1 text-sm text-red-500">{errors.cardName}</p>}
+                      {errors.email && <p className="mt-1 text-sm text-red-500">{errors.email}</p>}
                     </div>
-                    
-                    <div>
-                      <label htmlFor="cardNumber" className="block text-sm font-medium text-gray-700 mb-1">
-                        Card Number
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          id="cardNumber"
-                          name="cardNumber"
-                          value={formData.cardNumber}
-                          onChange={(e) => {
-                            const formatted = formatCardNumber(e.target.value);
-                            setFormData(prev => ({ ...prev, cardNumber: formatted }));
-                            if (errors.cardNumber) {
-                              setErrors(prev => ({ ...prev, cardNumber: null }));
-                            }
-                          }}
-                          className={`w-full border py-2 pl-3 pr-[5.5rem] ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="1234 5678 9012 3456"
-                          maxLength="19"
-                        />
-                        <div
-                          className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-2"
-                          aria-hidden
-                        >
-                          <SiVisa className="h-7 w-auto shrink-0 text-[#1434CB]" title="Visa" />
-                          <SiMastercard className="h-8 w-auto shrink-0" title="Mastercard" />
-                        </div>
-                      </div>
-                      {errors.cardNumber && <p className="mt-1 text-sm text-red-500">{errors.cardNumber}</p>}
-                    </div>
-                    
-                    <div className="grid grid-cols-2 gap-4">
+
+                    {checkoutItem?.type !== 'creator_subscription' ? (
                       <div>
-                        <label htmlFor="expiryDate" className="block text-sm font-medium text-gray-700 mb-1">
-                          Expiry Date
-                        </label>
-                        <div className="relative">
-                          <input
-                            type="text"
-                            id="expiryDate"
-                            name="expiryDate"
-                            value={formData.expiryDate}
-                            onChange={handleChange}
-                            className={`w-full px-3 py-2 border ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                            placeholder="MM/YY"
-                            maxLength="5"
-                          />
-                          <FiCalendar className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                        </div>
-                        {errors.expiryDate && <p className="mt-1 text-sm text-red-500">{errors.expiryDate}</p>}
-                      </div>
-                      
-                      <div>
-                        <label htmlFor="cvv" className="block text-sm font-medium text-gray-700 mb-1">
-                          CVV
+                        <label htmlFor="card-referralCode" className="block text-sm font-medium text-gray-700 mb-1">
+                          Referral Code (Optional)
                         </label>
                         <input
                           type="text"
-                          id="cvv"
-                          name="cvv"
-                          value={formData.cvv}
+                          id="card-referralCode"
+                          name="referralCode"
+                          value={formData.referralCode}
                           onChange={handleChange}
-                          className={`w-full px-3 py-2 border ${errors.cvv ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                          placeholder="123"
-                          maxLength="4"
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="Enter referral code"
                         />
-                        {errors.cvv && <p className="mt-1 text-sm text-red-500">{errors.cvv}</p>}
                       </div>
-                    </div>
-                    
-                    <div>
-                      <label htmlFor="zipCode" className="block text-sm font-medium text-gray-700 mb-1">
-                        Billing ZIP / Postal Code
-                      </label>
-                      <input
-                        type="text"
-                        id="zipCode"
-                        name="zipCode"
-                        value={formData.zipCode}
-                        onChange={handleChange}
-                        className={`w-full px-3 py-2 border ${errors.zipCode ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500`}
-                        placeholder="12345"
-                      />
-                      {errors.zipCode && <p className="mt-1 text-sm text-red-500">{errors.zipCode}</p>}
+                    ) : null}
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <SiVisa className="h-7 w-auto text-[#1434CB]" title="Visa" />
+                        <SiMastercard className="h-8 w-auto" title="Mastercard" />
+                      </div>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Click <span className="font-semibold text-slate-800">Pay with Card</span> to
+                        enter your Visa/Mastercard details on Paystack&apos;s secure screen.
+                      </p>
                     </div>
                   </div>
                 )}
                 
                 <div className="flex items-center space-x-4 mt-8">
-                  {paymentMethod === 'momo' ? (
-                    <>
-                      {formData.email && 
-                       formData.phoneNumber && 
-                       formData.phoneNumber.length === 10 &&
-                       /\S+@\S+\.\S+/.test(formData.email) ? (
-                        <PaystackButton
-                          {...getPaystackConfig()}
-                          className={`flex flex-1 items-center justify-center rounded-xl bg-[#1B5EF5] px-5 py-3 font-semibold text-white shadow-[0_8px_24px_-10px_rgba(27,94,245,0.65)] transition hover:bg-[#1550d6] focus:outline-none ${isProcessing ? 'cursor-not-allowed opacity-70' : ''}`}
-                          disabled={isProcessing}
-                        />
-                      ) : (
-                        <button
-                          type="button"
-                          className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-slate-300 px-5 py-3 font-semibold text-white"
-                          disabled={true}
-                        >
-                          Complete required fields
-                        </button>
-                      )}
-                    </>
+                  {(paymentMethod === 'momo' ? validateMomoFields() : validateCardFields()) ? (
+                    <button
+                      type="button"
+                      onClick={openPaystackCheckout}
+                      disabled={isProcessing}
+                      className={`flex flex-1 items-center justify-center rounded-xl bg-[#1B5EF5] px-5 py-3 font-semibold text-white shadow-[0_8px_24px_-10px_rgba(27,94,245,0.65)] transition hover:bg-[#1550d6] focus:outline-none ${isProcessing ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      {paymentMethod === 'card' ? 'Pay with Card' : 'Pay with Mobile Money'}
+                    </button>
                   ) : (
                     <button
-                      type="submit"
-                      className={`flex flex-1 items-center justify-center rounded-xl bg-[#1B5EF5] px-5 py-3 font-semibold text-white shadow-[0_8px_24px_-10px_rgba(27,94,245,0.65)] transition hover:bg-[#1550d6] focus:outline-none ${isProcessing ? 'cursor-not-allowed opacity-70' : ''}`}
-                      disabled={isProcessing}
+                      type="button"
+                      className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-slate-300 px-5 py-3 font-semibold text-white"
+                      disabled={true}
                     >
-                      {isProcessing ? (
-                        <>
-                          <span className="mr-2 h-4 w-4 animate-spin rounded-full border-b-2 border-t-2 border-white"></span>
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          Complete purchase
-                          <FiCheck className="ml-2" />
-                        </> 
-                      )}
+                      Complete required fields
                     </button>
                   )}
                 </div>
