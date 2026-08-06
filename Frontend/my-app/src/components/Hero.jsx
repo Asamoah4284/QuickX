@@ -1,7 +1,12 @@
 import { Link } from 'react-router-dom';
-import { FiArrowDownRight, FiPlus } from 'react-icons/fi';
+import { FiArrowDownRight } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
 
 const HERO_BG = '/images/hero.png';
+
+const COMMUNITY_WHATSAPP_URL = `https://wa.me/233559037872?text=${encodeURIComponent(
+  'I want to join community'
+)}`;
 
 const LEARNERS = [
   'https://i.pravatar.cc/100?img=12',
@@ -120,13 +125,15 @@ export default function Hero() {
                     loading="lazy"
                   />
                 ))}
-                <Link
-                  to="/register"
-                  className="relative z-10 -ml-3 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#1B5EF5] text-white transition hover:bg-[#1552D6] sm:h-11 sm:w-11"
-                  aria-label="Join the community"
+                <a
+                  href={COMMUNITY_WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="relative z-10 -ml-3 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#25D366] text-white transition hover:bg-[#1ebe57] sm:h-11 sm:w-11"
+                  aria-label="Join the community on WhatsApp"
                 >
-                  <FiPlus className="h-5 w-5" strokeWidth={2.5} />
-                </Link>
+                  <FaWhatsapp className="h-5 w-5" />
+                </a>
               </div>
               <p className="text-sm font-bold text-white sm:text-base">Growing community</p>
             </div>

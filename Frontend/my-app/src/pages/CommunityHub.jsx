@@ -27,6 +27,11 @@ import {
 import { uploadFileToS3 } from '../utils/uploadToS3';
 import { mentionHint, resolveMentions } from '../utils/communityMentions';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import { FaWhatsapp } from 'react-icons/fa';
+
+const COMMUNITY_WHATSAPP_URL = `https://wa.me/233559037872?text=${encodeURIComponent(
+  'I want to join community'
+)}`;
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -461,6 +466,15 @@ export default function CommunityHub() {
               : `Subscribe to ${tutorName} on Premium or higher to unlock discussions, Q&A, live sessions, and shared resources.`}
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
+            <a
+              href={COMMUNITY_WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe57]"
+            >
+              <FaWhatsapp className="h-5 w-5" aria-hidden />
+              Join community
+            </a>
             <Link
               to={`/instructors/${tutorId}`}
               className="rounded-2xl bg-[#0B1F44] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1B5EF5]"

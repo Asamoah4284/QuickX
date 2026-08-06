@@ -2,9 +2,19 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowUpRight } from 'react-icons/fi';
+import { FaWhatsapp } from 'react-icons/fa';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+
+/** QuickX community WhatsApp invite */
+const COMMUNITY_WHATSAPP_URL = `https://wa.me/233559037872?text=${encodeURIComponent(
+  'I want to join community'
+)}`;
+
+function openCommunityWhatsApp() {
+  window.open(COMMUNITY_WHATSAPP_URL, '_blank', 'noopener,noreferrer');
+}
 
 function initialsFor(name = '') {
   return (
@@ -238,6 +248,23 @@ export default function Community() {
             Private rooms with the tutors you follow — conversation, live sessions, and resources in
             one place.
           </p>
+          <div className="mt-7 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={openCommunityWhatsApp}
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
+            >
+              <FaWhatsapp className="h-5 w-5" aria-hidden />
+              Join community
+            </button>
+            <Link
+              to="/courses"
+              className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+            >
+              Browse courses
+              <FiArrowUpRight className="h-4 w-4" />
+            </Link>
+          </div>
           {!loading && communities.length > 0 ? (
             <p className="mt-6 text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
               {countLabel}
@@ -282,16 +309,26 @@ export default function Community() {
                     Nothing here yet.
                   </p>
                   <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-slate-500">
-                    Subscribe to a tutor and their community unlocks here — feed, Q&amp;A, rooms, and
-                    live sessions.
+                    Message us on WhatsApp to join the community, or subscribe to a tutor for their
+                    private space.
                   </p>
-                  <Link
-                    to="/courses"
-                    className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[#0B1F44] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1B5EF5]"
-                  >
-                    Browse courses
-                    <FiArrowUpRight className="h-4 w-4" />
-                  </Link>
+                  <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+                    <button
+                      type="button"
+                      onClick={openCommunityWhatsApp}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe57]"
+                    >
+                      <FaWhatsapp className="h-5 w-5" aria-hidden />
+                      Join community
+                    </button>
+                    <Link
+                      to="/courses"
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#0B1F44] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1B5EF5]"
+                    >
+                      Browse courses
+                      <FiArrowUpRight className="h-4 w-4" />
+                    </Link>
+                  </div>
                 </div>
               )}
             </div>
