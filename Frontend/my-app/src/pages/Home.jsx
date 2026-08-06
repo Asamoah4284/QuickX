@@ -22,7 +22,7 @@ export default function Home() {
   };
 
   const handleWhatsappClick = () => {
-    const phoneNumber = '+233555756303';
+    const phoneNumber = '233559037872';
     const message = 'Hello! I would like to get in touch with you.';
     window.open(
       `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`,

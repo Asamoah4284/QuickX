@@ -92,20 +92,31 @@ export default function Hero() {
             progress you can feel.
           </p>
 
-          <div className="qx-rise qx-rise-d3 mt-9 flex flex-wrap items-center gap-3">
-            <Link
-              to="/courses"
-              className="group inline-flex items-center gap-2 rounded-2xl bg-[#1B5EF5] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1552D6]"
+          <div className="qx-rise qx-rise-d3 mt-9 flex flex-col items-start gap-3">
+            <div className="flex flex-wrap items-center gap-3">
+              <Link
+                to="/courses"
+                className="group inline-flex items-center gap-2 rounded-2xl bg-[#1B5EF5] px-6 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1552D6]"
+              >
+                Explore courses
+                <FiArrowDownRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
+              <Link
+                to="/store"
+                className="inline-flex items-center rounded-2xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:border-white/50 hover:bg-white/10"
+              >
+                Browse books
+              </Link>
+            </div>
+            <a
+              href={COMMUNITY_WHATSAPP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-white underline decoration-white/50 underline-offset-4 transition hover:decoration-white"
             >
-              Explore courses
-              <FiArrowDownRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-            <Link
-              to="/store"
-              className="inline-flex items-center rounded-2xl border border-white/25 bg-white/5 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur-md transition hover:border-white/50 hover:bg-white/10"
-            >
-              Browse books
-            </Link>
+              <FaWhatsapp className="h-4 w-4 shrink-0 text-[#25D366]" aria-hidden />
+              Join community
+            </a>
           </div>
 
           {/* Community social proof */}
@@ -125,15 +136,6 @@ export default function Hero() {
                     loading="lazy"
                   />
                 ))}
-                <a
-                  href={COMMUNITY_WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="relative z-10 -ml-3 flex h-10 w-10 items-center justify-center rounded-full border-2 border-white bg-[#25D366] text-white transition hover:bg-[#1ebe57] sm:h-11 sm:w-11"
-                  aria-label="Join the community on WhatsApp"
-                >
-                  <FaWhatsapp className="h-5 w-5" />
-                </a>
               </div>
               <p className="text-sm font-bold text-white sm:text-base">Growing community</p>
             </div>
