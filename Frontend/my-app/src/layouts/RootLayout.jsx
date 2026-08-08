@@ -2,6 +2,7 @@ import { Outlet, ScrollRestoration, useLocation } from 'react-router-dom';
 import { useEffect, useLayoutEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import InstallAppBanner from '../components/InstallAppBanner';
 import { Helmet } from 'react-helmet-async';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -72,6 +73,7 @@ function RootLayout() {
           <Outlet />
         </main>
         {!hideFooter ? <Footer /> : null}
+        <InstallAppBanner />
       </div>
       <Analytics />
     </>

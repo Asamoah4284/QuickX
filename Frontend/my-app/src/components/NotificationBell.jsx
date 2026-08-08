@@ -2,6 +2,13 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiBell, FiHeart, FiMessageCircle, FiAtSign, FiInbox } from 'react-icons/fi';
+import {
+  getNotificationPermission,
+  isIosDevice,
+  isStandaloneDisplay,
+  pushSupported,
+  subscribeUserToPush,
+} from '../utils/webPush';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
@@ -40,6 +47,9 @@ export default function NotificationBell() {
   const [items, setItems] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [markingAll, setMarkingAll] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const [pushError, setPushError] = useState('');
+  const [permission, setPermission] = useState(() => getNotificationPermission());
   const ref = useRef(null);
 
   const load = useCallback(async () => {
@@ -71,8 +81,38 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', onDoc);
   }, []);
 
+  useEffect(() => {
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        setPermission(getNotificationPermission());
+        load();
+      }
+    };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => document.removeEventListener('visibilitychange', onVisibility);
+  }, [load]);
+
   const token = typeof window !== 'undefined' ? localStorage.getItem('authToken') : null;
   if (!token) return null;
+
+  const showPushCta =
+    pushSupported() &&
+    permission === 'default' &&
+    (!isIosDevice() || isStandaloneDisplay());
+
+  const enablePush = async () => {
+    setPushBusy(true);
+    setPushError('');
+    try {
+      await subscribeUserToPush();
+      setPermission(getNotificationPermission());
+    } catch (err) {
+      setPushError(err?.message || 'Could not enable notifications');
+      setPermission(getNotificationPermission());
+    } finally {
+      setPushBusy(false);
+    }
+  };
 
   const markAllRead = async () => {
     if (!unreadCount || markingAll) return;
@@ -156,6 +196,32 @@ export default function NotificationBell() {
               </button>
             ) : null}
           </div>
+
+          {showPushCta ? (
+            <div className="border-b border-slate-100 bg-[#F5F8FF] px-4 py-3">
+              <p className="text-xs font-semibold text-[#0B1F44]">Enable device notifications</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+                Get alerts for likes, replies, and mentions even when Quick-X is closed.
+              </p>
+              <button
+                type="button"
+                disabled={pushBusy}
+                onClick={enablePush}
+                className="mt-2 rounded-lg bg-[#1B5EF5] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1549c4] disabled:opacity-50"
+              >
+                {pushBusy ? 'Enabling…' : 'Turn on notifications'}
+              </button>
+              {pushError ? <p className="mt-1.5 text-[11px] text-rose-600">{pushError}</p> : null}
+            </div>
+          ) : null}
+
+          {isIosDevice() && !isStandaloneDisplay() && permission !== 'granted' ? (
+            <div className="border-b border-slate-100 bg-amber-50/80 px-4 py-2.5">
+              <p className="text-[11px] leading-relaxed text-amber-900/80">
+                iOS tip: Share → Add to Home Screen, open the installed app, then enable notifications.
+              </p>
+            </div>
+          ) : null}
 
           <ul className="max-h-[22rem] overflow-y-auto">
             {items.map((n) => {

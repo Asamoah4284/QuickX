@@ -1,3 +1,23 @@
+# Quick-X frontend
+
+## PWA install + Web Push
+
+The app is installable (Add to Home Screen) via `vite-plugin-pwa` and can receive device push notifications.
+
+1. Generate VAPID keys once in the Backend folder:
+   `npx web-push generate-vapid-keys`
+2. Set on the **Backend** (Render / local `.env`):
+   - `VAPID_PUBLIC_KEY`
+   - `VAPID_PRIVATE_KEY`
+   - `VAPID_SUBJECT=mailto:ops@quickxlearn.com`
+3. Set the **same public key** on the Frontend build env:
+   - `VITE_VAPID_PUBLIC_KEY=<public key>`
+4. Deploy over **HTTPS**. On iOS, users must Add to Home Screen before push works (Safari 16.4+).
+
+See also `Backend/.env.example` and `.env.example` in this folder.
+
+---
+
 # React + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

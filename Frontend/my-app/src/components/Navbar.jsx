@@ -15,6 +15,7 @@ import {
   FiMonitor,
 } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
+import { unsubscribeUserFromPush } from '../utils/webPush';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -170,17 +171,21 @@ const Navbar = () => {
   }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('user');
-    setIsLoggedIn(false);
-    setUser(null);
-    setShowCommunityLink(false);
-    
-    // Dispatch custom event to ensure all components update
-    window.dispatchEvent(new Event('auth-change'));
-    
-    // Redirect to home page instead of login
-    navigate('/');
+    unsubscribeUserFromPush()
+      .catch(() => {})
+      .finally(() => {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('user');
+        setIsLoggedIn(false);
+        setUser(null);
+        setShowCommunityLink(false);
+
+        // Dispatch custom event to ensure all components update
+        window.dispatchEvent(new Event('auth-change'));
+
+        // Redirect to home page instead of login
+        navigate('/');
+      });
   };
 
   const linkActive = (to) => {

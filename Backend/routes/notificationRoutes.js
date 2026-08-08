@@ -2,6 +2,58 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
+const PushSubscription = require('../models/PushSubscription');
+
+router.get('/vapid-public-key', (req, res) => {
+  const publicKey = process.env.VAPID_PUBLIC_KEY || '';
+  if (!publicKey) {
+    return res.status(503).json({ message: 'Push notifications are not configured' });
+  }
+  res.json({ publicKey });
+});
+
+router.post('/push-subscribe', auth, async (req, res) => {
+  try {
+    const sub = req.body?.subscription;
+    const endpoint = sub?.endpoint;
+    const keys = sub?.keys;
+    if (!endpoint || !keys?.p256dh || !keys?.auth) {
+      return res.status(400).json({ message: 'Invalid push subscription' });
+    }
+
+    const doc = await PushSubscription.findOneAndUpdate(
+      { endpoint },
+      {
+        userId: req.user._id,
+        endpoint,
+        keys: {
+          p256dh: keys.p256dh,
+          auth: keys.auth,
+        },
+        userAgent: String(req.body?.userAgent || req.get('user-agent') || '').slice(0, 500),
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+
+    res.json({ message: 'Subscribed', id: doc._id });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+router.delete('/push-subscribe', auth, async (req, res) => {
+  try {
+    const endpoint = req.body?.endpoint || req.query?.endpoint;
+    if (endpoint) {
+      await PushSubscription.deleteOne({ userId: req.user._id, endpoint });
+    } else {
+      await PushSubscription.deleteMany({ userId: req.user._id });
+    }
+    res.json({ message: 'Unsubscribed' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
 
 router.get('/', auth, async (req, res) => {
   try {

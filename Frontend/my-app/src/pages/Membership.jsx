@@ -10,6 +10,14 @@ import {
   formatBytes,
   listDownloads,
 } from '../utils/offlineLessonStore';
+import {
+  getNotificationPermission,
+  isIosDevice,
+  isStandaloneDisplay,
+  pushSupported,
+  subscribeUserToPush,
+  unsubscribeUserFromPush,
+} from '../utils/webPush';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -489,14 +497,18 @@ function Membership() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('authToken');
-    
-    // Dispatch custom event to ensure all components update
-    window.dispatchEvent(new Event('auth-change'));
-    
-    // Redirect to home page instead of login
-    window.location.href = '/';
+    unsubscribeUserFromPush()
+      .catch(() => {})
+      .finally(() => {
+        localStorage.removeItem('user');
+        localStorage.removeItem('authToken');
+
+        // Dispatch custom event to ensure all components update
+        window.dispatchEvent(new Event('auth-change'));
+
+        // Redirect to home page instead of login
+        window.location.href = '/';
+      });
   };
 
   // Circular progress component
@@ -1483,6 +1495,17 @@ function Membership() {
                   </div>
                   
                   <div className="pt-4 border-t border-gray-200">
+                    <h3 className="text-md font-medium text-gray-900 mb-3">Install Quick-X</h3>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {isStandaloneDisplay()
+                        ? 'You are using the installed Quick-X app.'
+                        : isIosDevice()
+                          ? 'On iPhone/iPad: tap Share, then Add to Home Screen.'
+                          : 'Use your browser Install / Add to Home Screen option, or the Install banner when it appears.'}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200">
                     <h3 className="text-md font-medium text-gray-900 mb-3">Notification Settings</h3>
                     <div className="space-y-2">
                       <div className="flex items-center">
@@ -1508,6 +1531,40 @@ function Membership() {
                         </label>
                       </div>
                     </div>
+                    {pushSupported() ? (
+                      <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4">
+                        <p className="text-sm font-medium text-gray-900">Device push notifications</p>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Status:{' '}
+                          {getNotificationPermission() === 'granted'
+                            ? 'Enabled'
+                            : getNotificationPermission() === 'denied'
+                              ? 'Blocked in browser settings'
+                              : 'Not enabled yet'}
+                        </p>
+                        {isIosDevice() && !isStandaloneDisplay() ? (
+                          <p className="mt-2 text-xs text-amber-700">
+                            Install Quick-X to your Home Screen first, then open the app and enable notifications.
+                          </p>
+                        ) : getNotificationPermission() !== 'granted' ? (
+                          <button
+                            type="button"
+                            className="mt-3 text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                            onClick={() => {
+                              subscribeUserToPush().catch((err) => {
+                                window.alert(err?.message || 'Could not enable notifications');
+                              });
+                            }}
+                          >
+                            Enable push notifications
+                          </button>
+                        ) : (
+                          <p className="mt-2 text-xs text-green-700">
+                            You will receive alerts when Quick-X is closed.
+                          </p>
+                        )}
+                      </div>
+                    ) : null}
                     <button className="mt-4 text-sm bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors">
                       Save Preferences
                     </button>
