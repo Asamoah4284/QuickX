@@ -97,8 +97,8 @@ export default function NotificationBell() {
 
   const showPushCta =
     pushSupported() &&
-    permission === 'default' &&
-    (!isIosDevice() || isStandaloneDisplay());
+    permission !== 'granted' &&
+    permission !== 'unsupported';
 
   const enablePush = async () => {
     setPushBusy(true);
@@ -199,27 +199,29 @@ export default function NotificationBell() {
 
           {showPushCta ? (
             <div className="border-b border-slate-100 bg-[#F5F8FF] px-4 py-3">
-              <p className="text-xs font-semibold text-[#0B1F44]">Enable device notifications</p>
+              <p className="text-xs font-semibold text-[#0B1F44]">Enable lock-screen notifications</p>
               <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
-                Get alerts for likes, replies, and mentions even when Quick-X is closed.
+                The bell only shows inside the app. Turn this on to get phone alerts when Quick-X is closed.
               </p>
-              <button
-                type="button"
-                disabled={pushBusy}
-                onClick={enablePush}
-                className="mt-2 rounded-lg bg-[#1B5EF5] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1549c4] disabled:opacity-50"
-              >
-                {pushBusy ? 'Enabling…' : 'Turn on notifications'}
-              </button>
+              {isIosDevice() && !isStandaloneDisplay() ? (
+                <p className="mt-2 text-[11px] leading-relaxed text-amber-800">
+                  On iPhone: open Quick-X from your <strong>Home Screen</strong> icon (not Safari), then tap Turn on.
+                </p>
+              ) : permission === 'denied' ? (
+                <p className="mt-2 text-[11px] leading-relaxed text-rose-600">
+                  Notifications are blocked. Enable them in your phone Settings for Quick-X / this browser.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  disabled={pushBusy}
+                  onClick={enablePush}
+                  className="mt-2 rounded-lg bg-[#1B5EF5] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1549c4] disabled:opacity-50"
+                >
+                  {pushBusy ? 'Enabling…' : 'Turn on notifications'}
+                </button>
+              )}
               {pushError ? <p className="mt-1.5 text-[11px] text-rose-600">{pushError}</p> : null}
-            </div>
-          ) : null}
-
-          {isIosDevice() && !isStandaloneDisplay() && permission !== 'granted' ? (
-            <div className="border-b border-slate-100 bg-amber-50/80 px-4 py-2.5">
-              <p className="text-[11px] leading-relaxed text-amber-900/80">
-                iOS tip: Share → Add to Home Screen, open the installed app, then enable notifications.
-              </p>
             </div>
           ) : null}
 

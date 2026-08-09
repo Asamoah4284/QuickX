@@ -49,15 +49,48 @@ export async function fetchVapidPublicKey() {
 
 export async function getSwRegistration() {
   if (!('serviceWorker' in navigator)) return null;
-  return navigator.serviceWorker.ready;
+  const ready = await navigator.serviceWorker.ready;
+  // Prefer the controlling SW; fall back to ready registration
+  if (navigator.serviceWorker.controller) {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    return regs.find((r) => r.active) || ready;
+  }
+  return ready;
 }
 
+async function saveSubscriptionToServer(subscription) {
+  const token = localStorage.getItem('authToken');
+  if (!token || !subscription) return;
+  await axios.post(
+    `${API_URL}/api/notifications/push-subscribe`,
+    {
+      subscription: subscription.toJSON(),
+      userAgent: navigator.userAgent,
+    },
+    { headers: { Authorization: `Bearer ${token}` } }
+  );
+}
+
+/**
+ * Request permission (if needed), create a PushSubscription, and register it
+ * with the backend so the phone can receive OS notifications while closed.
+ */
 export async function subscribeUserToPush() {
   if (!pushSupported()) {
     throw new Error('Push notifications are not supported on this device');
   }
 
-  const permission = await Notification.requestPermission();
+  // iOS only delivers Web Push from the installed Home Screen app
+  if (isIosDevice() && !isStandaloneDisplay()) {
+    throw new Error(
+      'On iPhone, open Quick-X from your Home Screen icon, then turn on notifications'
+    );
+  }
+
+  const permission =
+    Notification.permission === 'granted'
+      ? 'granted'
+      : await Notification.requestPermission();
   if (permission !== 'granted') {
     throw new Error('Notification permission was not granted');
   }
@@ -69,7 +102,9 @@ export async function subscribeUserToPush() {
   if (!vapidKey) throw new Error('Push is not configured on the server');
 
   const registration = await getSwRegistration();
-  if (!registration) throw new Error('Service worker is not ready');
+  if (!registration?.pushManager) {
+    throw new Error('Service worker is not ready — refresh and try again');
+  }
 
   let subscription = await registration.pushManager.getSubscription();
   if (!subscription) {
@@ -79,44 +114,71 @@ export async function subscribeUserToPush() {
     });
   }
 
-  await axios.post(
-    `${API_URL}/api/notifications/push-subscribe`,
-    {
-      subscription: subscription.toJSON(),
-      userAgent: navigator.userAgent,
-    },
-    { headers: { Authorization: `Bearer ${token}` } }
-  );
-
+  await saveSubscriptionToServer(subscription);
   localStorage.setItem(PUSH_PROMPTED_KEY, '1');
   return subscription;
 }
 
-export async function unsubscribeUserFromPush() {
-  if (!pushSupported()) return;
-  const registration = await getSwRegistration();
-  const subscription = registration ? await registration.pushManager.getSubscription() : null;
-  const endpoint = subscription?.endpoint;
-  const token = localStorage.getItem('authToken');
+/**
+ * If the user already granted permission, re-sync the subscription to the
+ * server (e.g. after login). Does not show a permission prompt.
+ */
+export async function ensurePushSubscription() {
+  try {
+    if (!pushSupported()) return false;
+    if (!localStorage.getItem('authToken')) return false;
+    if (Notification.permission !== 'granted') return false;
+    if (isIosDevice() && !isStandaloneDisplay()) return false;
 
-  if (subscription) {
-    try {
-      await subscription.unsubscribe();
-    } catch {
-      /* ignore */
-    }
-  }
+    const registration = await getSwRegistration();
+    if (!registration?.pushManager) return false;
 
-  if (token && endpoint) {
-    try {
-      await axios.delete(`${API_URL}/api/notifications/push-subscribe`, {
-        headers: { Authorization: `Bearer ${token}` },
-        data: { endpoint },
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) {
+      const vapidKey = await fetchVapidPublicKey();
+      if (!vapidKey) return false;
+      subscription = await registration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey),
       });
-    } catch {
-      /* ignore when already logged out / offline */
     }
+
+    await saveSubscriptionToServer(subscription);
+    return true;
+  } catch (err) {
+    console.warn('ensurePushSubscription:', err?.message || err);
+    return false;
   }
+}
+
+/**
+ * On logout: remove this device from the server only.
+ * Keep the browser PushSubscription so re-login can restore OS push quickly.
+ */
+export async function clearServerPushSubscription() {
+  if (!pushSupported()) return;
+  const token = localStorage.getItem('authToken');
+  if (!token) return;
+
+  try {
+    const registration = await getSwRegistration();
+    const subscription = registration
+      ? await registration.pushManager.getSubscription()
+      : null;
+    const endpoint = subscription?.endpoint;
+
+    await axios.delete(`${API_URL}/api/notifications/push-subscribe`, {
+      headers: { Authorization: `Bearer ${token}` },
+      data: endpoint ? { endpoint } : {},
+    });
+  } catch {
+    /* ignore when already logged out / offline */
+  }
+}
+
+/** @deprecated use clearServerPushSubscription — kept for call sites */
+export async function unsubscribeUserFromPush() {
+  return clearServerPushSubscription();
 }
 
 export function wasInstallBannerDismissed() {

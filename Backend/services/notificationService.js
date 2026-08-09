@@ -25,10 +25,18 @@ function notificationDeepLink(doc) {
 }
 
 async function sendPushToUser(userId, payload) {
-  if (!vapidConfigured && !configureWebPush()) return;
+  if (!vapidConfigured && !configureWebPush()) {
+    console.warn(
+      'web-push skipped: VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY not set on the server'
+    );
+    return;
+  }
 
   const subs = await PushSubscription.find({ userId }).lean();
-  if (!subs.length) return;
+  if (!subs.length) {
+    // User will only see the in-app bell until they enable device notifications
+    return;
+  }
 
   const body = JSON.stringify(payload);
   await Promise.all(

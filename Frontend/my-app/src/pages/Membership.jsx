@@ -15,8 +15,8 @@ import {
   isIosDevice,
   isStandaloneDisplay,
   pushSupported,
+  clearServerPushSubscription,
   subscribeUserToPush,
-  unsubscribeUserFromPush,
 } from '../utils/webPush';
 
 const API_URL = import.meta.env.VITE_API_URL;
@@ -497,7 +497,7 @@ function Membership() {
   };
 
   const handleLogout = () => {
-    unsubscribeUserFromPush()
+    clearServerPushSubscription()
       .catch(() => {})
       .finally(() => {
         localStorage.removeItem('user');

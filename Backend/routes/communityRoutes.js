@@ -147,16 +147,18 @@ router.post('/:tutorId/posts', requireCanContribute, async (req, res) => {
       type: 'post_created',
     });
 
-    if (isAnnouncement) {
+    // Notify members when the community owner (tutor/admin) posts to the feed
+    if (req.isCommunityTutor || req.isCommunityAdmin) {
       const ids = await getSubscriberIds(req.params.tutorId);
+      const snippet = String(body || '').trim().slice(0, 120) || 'New post in the community';
       await notifyMany(ids, {
-        type: 'announcement',
+        type: isAnnouncement ? 'announcement' : 'new_post',
         actorId: req.user._id,
         tutorId: req.params.tutorId,
         entityType: 'post',
         entityId: post._id,
-        title: 'New announcement',
-        body: String(body || '').slice(0, 120),
+        title: isAnnouncement ? 'New announcement' : 'New community post',
+        body: snippet,
       });
     }
 

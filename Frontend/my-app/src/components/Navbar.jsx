@@ -15,7 +15,7 @@ import {
   FiMonitor,
 } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
-import { unsubscribeUserFromPush } from '../utils/webPush';
+import { clearServerPushSubscription, ensurePushSubscription } from '../utils/webPush';
 
 const Navbar = () => {
   const [scrolled, setScrolled] = useState(false);
@@ -126,6 +126,15 @@ const Navbar = () => {
     };
   }, []);
 
+  // Re-register device push with the server after login / app open
+  useEffect(() => {
+    if (!isLoggedIn) return undefined;
+    const t = window.setTimeout(() => {
+      ensurePushSubscription();
+    }, 800);
+    return () => window.clearTimeout(t);
+  }, [isLoggedIn]);
+
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (!isLoggedIn || !token) {
@@ -171,7 +180,7 @@ const Navbar = () => {
   }, [isMobileMenuOpen]);
 
   const handleLogout = () => {
-    unsubscribeUserFromPush()
+    clearServerPushSubscription()
       .catch(() => {})
       .finally(() => {
         localStorage.removeItem('authToken');
