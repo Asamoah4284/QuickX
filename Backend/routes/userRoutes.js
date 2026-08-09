@@ -208,24 +208,44 @@ function clampPrice(value, fallback = 0) {
     return Math.max(0, Math.min(1_000_000, Math.round(n)));
 }
 
-function sanitizeSubscriptionPricing(pricing = {}) {
-    const month1 = clampPrice(pricing.month1, 49);
-    const month3 = clampPrice(
-        pricing.month3 !== undefined && pricing.month3 !== null && pricing.month3 !== ''
-            ? pricing.month3
-            : pricing.month2,
-        129
+function sanitizeSubscriptionPricing(pricing = {}, existing = {}) {
+    const merged = {
+        ...(existing && typeof existing === 'object' ? existing : {}),
+        ...(pricing && typeof pricing === 'object' ? pricing : {}),
+    };
+
+    const basic = clampPrice(
+        merged.basic !== undefined && merged.basic !== null && merged.basic !== ''
+            ? merged.basic
+            : merged.month1,
+        49
     );
-    const year1 = clampPrice(pricing.year1, 399);
+    const premium = clampPrice(merged.premium, 99);
+    const premiumPlus = clampPrice(
+        merged.premiumPlus !== undefined && merged.premiumPlus !== null && merged.premiumPlus !== ''
+            ? merged.premiumPlus
+            : merged.month3 !== undefined && merged.month3 !== null && merged.month3 !== ''
+              ? merged.month3
+              : merged.month2,
+        249
+    );
+    const diamond = clampPrice(
+        merged.diamond !== undefined && merged.diamond !== null && merged.diamond !== ''
+            ? merged.diamond
+            : merged.year1,
+        599
+    );
+
+    // Keep legacy keys aligned with current plan prices so UI never falls back to stale defaults
     return {
-        basic: clampPrice(pricing.basic, month1 || 49),
-        premium: clampPrice(pricing.premium, 99),
-        premiumPlus: clampPrice(pricing.premiumPlus, month3 || 249),
-        diamond: clampPrice(pricing.diamond, year1 || 599),
-        month1,
-        month2: clampPrice(pricing.month2, 89),
-        month3,
-        year1,
+        basic,
+        premium,
+        premiumPlus,
+        diamond,
+        month1: clampPrice(merged.month1, basic),
+        month2: clampPrice(merged.month2, premium),
+        month3: clampPrice(merged.month3, premiumPlus),
+        year1: clampPrice(merged.year1, diamond),
     };
 }
 
@@ -611,12 +631,16 @@ router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) 
 
         if (pricingOnly) {
             const pricing = req.body.subscriptionPricing || {};
+            const existingProfile = await TutorProfile.findOne({ userId: req.user._id }).lean();
             const tutorProfile = await TutorProfile.findOneAndUpdate(
                 { userId: req.user._id },
                 {
                     $set: {
                         userId: req.user._id,
-                        subscriptionPricing: sanitizeSubscriptionPricing(pricing),
+                        subscriptionPricing: sanitizeSubscriptionPricing(
+                            pricing,
+                            existingProfile?.subscriptionPricing
+                        ),
                     },
                 },
                 { new: true, upsert: true, setDefaultsOnInsert: true }

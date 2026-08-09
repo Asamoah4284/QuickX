@@ -275,10 +275,45 @@ export default function CreatorCourseWizard() {
     additionalMaterials: form.additionalMaterials,
   });
 
-  const saveDraft = async (silent = false) => {
+  const saveSubscriptionPricing = async (silent = true) => {
+    try {
+      setSubscriptionPricingSaving(true);
+      const basic = Math.max(0, Math.round(Number(subscriptionPricing.basic) || 0));
+      const premium = Math.max(0, Math.round(Number(subscriptionPricing.premium) || 0));
+      const diamond = Math.max(0, Math.round(Number(subscriptionPricing.diamond) || 0));
+      // Keep legacy month1/month3/year1 in sync so listings don't show old amounts
+      const payload = {
+        subscriptionPricing: {
+          basic,
+          premium,
+          diamond,
+          month1: basic,
+          month3: premium,
+          year1: diamond,
+        },
+      };
+      await axios.put(`${API_URL}/api/users/creator/profile`, payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!silent) setMessage('Subscription pricing saved.');
+      return true;
+    } catch (e) {
+      if (!silent) setError(e.response?.data?.message || e.message);
+      return false;
+    } finally {
+      setSubscriptionPricingSaving(false);
+    }
+  };
+
+  const saveDraft = async (silent = false, { includePricing = !silent } = {}) => {
     try {
       setSaving(true);
       setError('');
+
+      // Persist plan prices on explicit save / submit (not every autosave keystroke)
+      if (includePricing) {
+        await saveSubscriptionPricing(true);
+      }
 
       const payload = buildPayload();
       const response = activeCourseId
@@ -306,29 +341,6 @@ export default function CreatorCourseWizard() {
     }
   };
 
-  const saveSubscriptionPricing = async (silent = true) => {
-    try {
-      setSubscriptionPricingSaving(true);
-      const payload = {
-        subscriptionPricing: {
-          basic: Math.max(0, Math.round(Number(subscriptionPricing.basic) || 0)),
-          premium: Math.max(0, Math.round(Number(subscriptionPricing.premium) || 0)),
-          diamond: Math.max(0, Math.round(Number(subscriptionPricing.diamond) || 0)),
-        },
-      };
-      await axios.put(`${API_URL}/api/users/creator/profile`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!silent) setMessage('Subscription pricing saved.');
-      return true;
-    } catch (e) {
-      if (!silent) setError(e.response?.data?.message || e.message);
-      return false;
-    } finally {
-      setSubscriptionPricingSaving(false);
-    }
-  };
-
   const handleUpload = async (file) => {
     if (!file) return;
     try {
@@ -352,7 +364,7 @@ export default function CreatorCourseWizard() {
     try {
       setSubmitting(true);
       setError('');
-      const savedCourse = await saveDraft(true);
+      const savedCourse = await saveDraft(true, { includePricing: true });
       const courseIdToUse = savedCourse?._id || activeCourseId;
 
       if (!courseIdToUse) {
