@@ -170,6 +170,13 @@ const userSchema = new mongoose.Schema({
         unique: true,
         sparse: true
     },
+    /** User who referred this account at signup (optional) */
+    referredBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null,
+        index: true,
+    },
     referralEarnings: {
         type: Number,
         default: 0

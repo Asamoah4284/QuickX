@@ -22,12 +22,22 @@ function Register() {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    referralCode: '',
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Prefill referral from ?ref=CODE (shareable signup links)
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const ref = String(params.get('ref') || '').trim().toUpperCase();
+    if (ref) {
+      setFormData((prev) => ({ ...prev, referralCode: ref }));
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -46,12 +56,16 @@ function Register() {
         savePendingCheckout(checkoutIntent);
       }
 
-      const response = await axios.post(`${API_URL}/api/users/register`, {
+      const payload = {
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        password: formData.password
-      });
+        password: formData.password,
+      };
+      const code = String(formData.referralCode || '').trim().toUpperCase();
+      if (code) payload.referralCode = code;
+
+      const response = await axios.post(`${API_URL}/api/users/register`, payload);
       console.log('Received registration:', response.data);
       // Store token and user in localStorage
       localStorage.setItem('authToken', response.data.token);
@@ -74,9 +88,12 @@ function Register() {
         }
       );
     } catch (err) {
+      const apiMessage = err.response?.data?.message;
+      const firstValidation = err.response?.data?.errors?.[0]?.msg;
       setError(
-        err.response?.data?.message || 
-        'Enter a password (8+ chars, upper, lower, number, special).'
+        apiMessage ||
+          firstValidation ||
+          'Enter a password (8+ chars, upper, lower, number, special).'
       );
     } finally {
       setIsLoading(false);
@@ -225,6 +242,30 @@ function Register() {
                       className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-1">
+                    Referral code <span className="font-normal text-gray-400">(optional)</span>
+                  </label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FiUser className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      id="referralCode"
+                      name="referralCode"
+                      type="text"
+                      autoComplete="off"
+                      placeholder="Enter a friend's code"
+                      value={formData.referralCode}
+                      onChange={(e) =>
+                        setFormData({ ...formData, referralCode: e.target.value.toUpperCase() })
+                      }
+                      className="appearance-none block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-blue-500 focus:border-blue-500 text-sm uppercase tracking-wide"
+                    />
+                  </div>
+                
                 </div>
                 
                 <div>

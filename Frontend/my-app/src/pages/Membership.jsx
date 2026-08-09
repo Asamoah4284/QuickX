@@ -805,7 +805,7 @@ function Membership() {
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-slate-950 sm:text-base">Your referral code</h3>
                   <p className="mt-0.5 text-xs text-slate-600 sm:text-sm">
-                    Share with friends—you earn 10% commission on their purchases.
+                    Share with friends—you earn 5% commission on their purchases.
                   </p>
                 </div>
                 <div className="flex w-full flex-wrap items-stretch gap-2 sm:w-auto sm:justify-end sm:gap-2">

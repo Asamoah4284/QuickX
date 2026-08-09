@@ -133,6 +133,11 @@ const validateRegistration = [
         .withMessage('Phone number is required')
         .matches(/^\d{10,15}$/)
         .withMessage('Please provide a valid phone number (10-15 digits)'),
+    body('referralCode')
+        .optional({ checkFalsy: true })
+        .trim()
+        .isLength({ min: 4, max: 20 })
+        .withMessage('Referral code must be 4–20 characters'),
 ];
 
 const validateLogin = [
@@ -300,7 +305,7 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             return res.status(400).json({ errors: errors.array() });
         }
 
-        const { email, password, fullName, phone, country = '', avatar = '' } = req.body;
+        const { email, password, fullName, phone, country = '', avatar = '', referralCode = '' } = req.body;
         
         // Log the request data (excluding password)
         console.log('Registration attempt:', { email, fullName, phone });
@@ -308,6 +313,16 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         const userExists = await User.findOne({ email: email.toLowerCase() });
         if (userExists) {
             return res.status(400).json({ message: 'User already exists' });
+        }
+
+        let referredBy = null;
+        const code = String(referralCode || '').trim().toUpperCase();
+        if (code) {
+            const referrer = await User.findOne({ referralCode: code }).select('_id');
+            if (!referrer) {
+                return res.status(400).json({ message: 'Invalid referral code' });
+            }
+            referredBy = referrer._id;
         }
 
         // Generate 6-digit OTP
@@ -322,6 +337,7 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
             country: String(country || '').trim(),
             avatar: String(avatar || '').trim(),
             profilePicture: String(avatar || '').trim(),
+            referredBy,
             isVerified: false,
             verificationCode: otp,
             verificationCodeExpires: otpExpiry

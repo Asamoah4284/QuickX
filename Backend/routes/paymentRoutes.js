@@ -495,45 +495,49 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
             purchaseItem = validation.books;
         }
 
-        // Process referral if code provided
-        if (referralCode) {
-            const referringUser = await User.findOne({ referralCode });
-            
-            if (referringUser) {
-                // Prevent self-referral
-                if (referringUser._id.toString() === req.user._id.toString()) {
-                    return res.status(400).json({ message: 'Cannot use own referral code' });
-                }
+        // Referral: checkout code wins; otherwise use the referrer saved at signup
+        const checkoutCode = String(referralCode || '').trim().toUpperCase();
+        let referringUser = null;
+        if (checkoutCode) {
+            referringUser = await User.findOne({ referralCode: checkoutCode });
+            if (referringUser && referringUser._id.toString() === req.user._id.toString()) {
+                return res.status(400).json({ message: 'Cannot use own referral code' });
+            }
+        } else {
+            const buyer = await User.findById(req.user._id).select('referredBy');
+            if (buyer?.referredBy) {
+                referringUser = await User.findById(buyer.referredBy);
+            }
+        }
 
-                // Calculate commission (10% of original amount)
-                commissionAmount = Number((amount * 0.10).toFixed(2));
-                // Calculate final amount after commission
-                finalAmount = Number((amount - commissionAmount).toFixed(2));
-                referringUserId = referringUser._id;
+        if (referringUser && referringUser._id.toString() !== req.user._id.toString()) {
+            // 5% of purchase amount to the referrer
+            commissionAmount = Number((amount * 0.05).toFixed(2));
+            finalAmount = Number((amount - commissionAmount).toFixed(2));
+            referringUserId = referringUser._id;
 
-                try {
-                    await User.findByIdAndUpdate(
-                        referringUser._id,
-                        {
-                            $inc: { referralEarnings: commissionAmount },
-                            $push: {
-                                referralHistory: {
-                                    referredUser: req.user._id,
-                                    courseId: itemId,
-                                    amount: commissionAmount,
-                                    date: new Date()
-                                }
+            try {
+                await User.findByIdAndUpdate(
+                    referringUser._id,
+                    {
+                        $inc: { referralEarnings: commissionAmount },
+                        $push: {
+                            referralHistory: {
+                                referredUser: req.user._id,
+                                courseId: itemId,
+                                amount: commissionAmount,
+                                date: new Date()
                             }
-                        },
-                        { new: true }
-                    );
-                    console.log(`Referral commission of ${commissionAmount} credited to user ${referringUser._id}`);
-                } catch (referralErr) {
-                    console.error('Referral credit failed (payment will still complete):', referralErr);
-                    commissionAmount = 0;
-                    finalAmount = Number(amount);
-                    referringUserId = null;
-                }
+                        }
+                    },
+                    { new: true }
+                );
+                console.log(`Referral commission of ${commissionAmount} credited to user ${referringUser._id}`);
+            } catch (referralErr) {
+                console.error('Referral credit failed (payment will still complete):', referralErr);
+                commissionAmount = 0;
+                finalAmount = Number(amount);
+                referringUserId = null;
             }
         }
 
