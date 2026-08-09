@@ -3,7 +3,7 @@ import { FiX } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
-const WHATSAPP_NUMBER = '233542343069';
+const WHATSAPP_NUMBER = '233559037872';
 
 /**
  * Modal form to request a printed copy — opens WhatsApp with prefilled details.
