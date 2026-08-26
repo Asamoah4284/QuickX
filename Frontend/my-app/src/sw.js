@@ -1,19 +1,28 @@
 /* eslint-disable no-restricted-globals */
-import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
+import { cleanupOutdatedCaches, createHandlerBoundToURL, precacheAndRoute } from 'workbox-precaching';
 import { clientsClaim } from 'workbox-core';
 import { NavigationRoute, registerRoute } from 'workbox-routing';
-import { createHandlerBoundToURL } from 'workbox-precaching';
 
 self.skipWaiting();
 clientsClaim();
 cleanupOutdatedCaches();
-precacheAndRoute(self.__WB_MANIFEST);
 
-registerRoute(
-  new NavigationRoute(createHandlerBoundToURL('/index.html'), {
-    denylist: [/^\/api\//],
-  })
-);
+const manifest = self.__WB_MANIFEST || [];
+precacheAndRoute(manifest);
+
+// Only wire SPA navigation fallback when index.html was actually precached
+const hasIndexHtml = manifest.some((entry) => {
+  const url = typeof entry === 'string' ? entry : entry?.url;
+  return url === '/index.html' || url === 'index.html';
+});
+
+if (hasIndexHtml) {
+  registerRoute(
+    new NavigationRoute(createHandlerBoundToURL('/index.html'), {
+      denylist: [/^\/api\//],
+    })
+  );
+}
 
 self.addEventListener('push', (event) => {
   let data = {};

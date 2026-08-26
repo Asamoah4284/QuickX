@@ -35,6 +35,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
       `Book: ${book.title}`,
       book.author ? `Author: ${book.author}` : null,
       `Price: GHS${hardcopyAmount}`,
+      'Delivery: Free',
       'Qty: 1',
       `Name: ${name.trim()}`,
       phone.trim() ? `Phone: ${phone.trim()}` : null,
@@ -64,7 +65,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
               Request hardcopy
             </h3>
             <p className="mt-0.5 text-sm text-slate-500">
-              Prefer a printed book? We&apos;ll confirm delivery on WhatsApp.
+              Prefer a printed book? Free delivery — we&apos;ll confirm on WhatsApp.
             </p>
           </div>
           <button
@@ -92,6 +93,9 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
               <h4 className="text-base font-semibold text-slate-950">{book.title}</h4>
               {book.author ? <p className="mt-0.5 text-sm text-slate-600">{book.author}</p> : null}
               <p className="mt-1 text-sm font-semibold text-blue-700">{formatGhs(hardcopyAmount)}</p>
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-200">
+                Free delivery nationwide
+              </span>
             </div>
           </div>
 

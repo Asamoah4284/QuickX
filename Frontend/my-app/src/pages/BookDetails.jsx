@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiArrowRight, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
+import { FiArrowLeft, FiArrowRight, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiTruck, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
 import { formatBookListingPrice, getBookListingPrice } from '../utils/bookListingPrice';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
@@ -290,36 +290,56 @@ function HardcopyCtaButton({ onClick, variant = 'outline', className = '' }) {
   const isPrimary = variant === 'primary';
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`flex w-full items-center justify-center gap-3 rounded-2xl px-6 py-3.5 text-center transition ${
-        isPrimary
-          ? 'bg-[#FF5A5F] text-base font-semibold text-white shadow-lg shadow-rose-500/20 hover:bg-[#E04E52] sm:min-w-[240px]'
-          : 'border-2 border-slate-200 bg-white hover:border-emerald-300 hover:bg-emerald-50'
-      } ${className}`}
-    >
-      <FiPackage
-        className={`h-5 w-5 shrink-0 ${isPrimary ? 'text-white' : 'text-emerald-700'}`}
-        aria-hidden
-      />
-      <span>
-        <span
-          className={`block text-sm font-semibold leading-snug ${
-            isPrimary ? 'text-white' : 'text-slate-800'
+    <div className={`w-full ${className}`}>
+      <div
+        className={`overflow-hidden rounded-2xl border-2 ${
+          isPrimary
+            ? 'border-[#FF5A5F] bg-[#FF5A5F] shadow-lg shadow-rose-500/20'
+            : 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5'
+        }`}
+      >
+        <div
+          className={`flex items-center justify-center gap-2 px-4 py-2 text-center ${
+            isPrimary ? 'bg-white/15 text-white' : 'bg-emerald-50 text-emerald-800'
           }`}
         >
-          Prefer Hard Copy?
-        </span>
-        <span
-          className={`block text-sm leading-snug ${
-            isPrimary ? 'font-semibold text-white/95' : 'font-medium text-slate-600'
+          <FiTruck className="h-4 w-4 shrink-0" aria-hidden />
+          <span className="text-xs font-bold uppercase tracking-[0.14em]">
+            Free delivery nationwide
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onClick}
+          className={`flex w-full items-center justify-center gap-3 px-6 py-3.5 text-center transition ${
+            isPrimary
+              ? 'bg-[#FF5A5F] text-white hover:bg-[#E04E52]'
+              : 'bg-white hover:bg-emerald-50/60'
           }`}
         >
-          Request Here
-        </span>
-      </span>
-    </button>
+          <FiPackage
+            className={`h-5 w-5 shrink-0 ${isPrimary ? 'text-white' : 'text-emerald-700'}`}
+            aria-hidden
+          />
+          <span>
+            <span
+              className={`block text-sm font-semibold leading-snug ${
+                isPrimary ? 'text-white' : 'text-slate-800'
+              }`}
+            >
+              Prefer Hard Copy?
+            </span>
+            <span
+              className={`block text-sm leading-snug ${
+                isPrimary ? 'font-semibold text-white/95' : 'font-medium text-slate-600'
+              }`}
+            >
+              Request Here
+            </span>
+          </span>
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -705,12 +725,12 @@ function BookDetails() {
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[240px]"
                   >
                     <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
-                    Buy now ? instant download
+                    Buy now — instant download
                   </button>
                   <p className="text-sm text-slate-500">
-                    No account needed ? Pay with Mobile Money ? Download right after payment
+                    No account needed · Pay with Mobile Money · Download right after payment
                   </p>
-                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:w-auto" />
+                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:max-w-[280px]" />
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
                 <div className="w-full max-w-md space-y-2">
@@ -730,7 +750,7 @@ function BookDetails() {
                     </p>
                   ) : (
                     <p className="text-center text-sm text-slate-500">
-                      Secure ? MoMo ? Instant PDF ? Compare all plans below
+                      Secure · MoMo · Instant PDF · Compare all plans below
                     </p>
                   )}
                   <HardcopyCtaButton onClick={openHardcopyModal} />
@@ -738,15 +758,15 @@ function BookDetails() {
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
                 <div className="space-y-3">
                   <p className="text-sm text-slate-500">
-                    Choose a plan below. No account needed ? MoMo checkout.
+                    Choose a plan below. No account needed · MoMo checkout.
                   </p>
-                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:w-auto" />
+                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:max-w-[280px]" />
                 </div>
               ) : book.type !== 'ebook' ? (
                 <div className="space-y-2">
-                  <HardcopyCtaButton onClick={openHardcopyModal} variant="primary" className="sm:mx-auto sm:w-auto" />
+                  <HardcopyCtaButton onClick={openHardcopyModal} variant="primary" className="sm:mx-auto sm:max-w-[280px]" />
                   <p className="text-sm text-slate-500">
-                    Fill in your details ? we&apos;ll confirm delivery on WhatsApp.
+                    Fill in your details — we&apos;ll confirm free delivery on WhatsApp.
                   </p>
                 </div>
               ) : null}

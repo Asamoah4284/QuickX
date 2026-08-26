@@ -54,9 +54,9 @@ export default defineConfig({
         globIgnores: ['**/images/**', '**/*.map'],
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
       },
+      // Dev SW breaks Vite HMR / module loading — production only
       devOptions: {
-        enabled: true,
-        type: 'module',
+        enabled: false,
       },
     }),
   ],
