@@ -75,7 +75,7 @@ export default function Footer() {
               {[
                 ['/courses', 'Courses'],
                 ['/store', 'Books'],
-                ['/creator/onboarding', 'Creator programs'],
+                ['/programs', 'Creator programs'],
                 ['/school', 'School'],
               ].map(([to, label]) => (
                 <li key={to}>

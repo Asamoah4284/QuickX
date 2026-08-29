@@ -101,8 +101,15 @@ export default function CreatorOnboarding() {
         };
 
         setForm(nextState);
-        setCreatorStatus(data.user?.creatorStatus || data.tutorProfile?.applicationStatus || 'not_applied');
+        const status = data.user?.creatorStatus || data.tutorProfile?.applicationStatus || 'not_applied';
+        setCreatorStatus(status);
         localStorage.setItem('user', JSON.stringify(data.user));
+
+        if (data.user?.role === 'tutor' && data.user?.creatorStatus === 'approved') {
+          navigate('/creator/dashboard', { replace: true });
+          return;
+        }
+
         hydratedRef.current = true;
       } catch (loadError) {
         setError(loadError.response?.data?.message || loadError.message);
@@ -114,7 +121,7 @@ export default function CreatorOnboarding() {
     if (token) {
       loadProfile();
     }
-  }, [token]);
+  }, [token, navigate]);
 
   useEffect(() => {
     if (!hydratedRef.current || !token) return undefined;

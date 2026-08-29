@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
   Chart as ChartJS,
@@ -85,16 +86,21 @@ const doughnutOptions = {
 export default function CreatorDashboardOverview() {
   const token = localStorage.getItem('authToken');
   const [data, setData] = useState(null);
+  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    axios
-      .get(`${API_URL}/api/instructor/courses/dashboard`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      .then(({ data: response }) => {
-        setData(response);
+    const headers = { Authorization: `Bearer ${token}` };
+    Promise.all([
+      axios.get(`${API_URL}/api/instructor/courses/dashboard`, { headers }),
+      axios
+        .get(`${API_URL}/api/programs/user/me`, { headers })
+        .catch(() => ({ data: [] })),
+    ])
+      .then(([dashboardRes, enrollmentsRes]) => {
+        setData(dashboardRes.data);
+        setEnrollments(Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data : []);
       })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || requestError.message);
@@ -175,6 +181,49 @@ export default function CreatorDashboardOverview() {
 
   return (
     <div className="space-y-4">
+      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold text-slate-950">Creator program tracks</h2>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Active enrollments unlock publishing in each category.
+            </p>
+          </div>
+          <Link
+            to="/programs"
+            className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+          >
+            Manage programs
+          </Link>
+        </div>
+        {enrollments.length === 0 ? (
+          <p className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+            No active program enrollments yet.{' '}
+            <Link to="/programs" className="font-medium text-blue-700 hover:underline">
+              Join a creator track
+            </Link>{' '}
+            to publish courses in forex, crypto, or web development.
+          </p>
+        ) : (
+          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {enrollments.map((entry) => {
+              const program = entry.programId;
+              return (
+                <li
+                  key={entry._id}
+                  className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3"
+                >
+                  <p className="font-semibold text-slate-950">{program?.name || 'Creator program'}</p>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Active · {program?.courseType || 'creator track'}
+                  </p>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
+
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <OverviewCard label="Total courses" value={stats.totalCourses || 0} hint="All creator-owned courses" />
         <OverviewCard label="Students enrolled" value={stats.totalStudents || 0} hint="Unique learners across your catalog" />

@@ -958,7 +958,7 @@ function Checkout() {
     } else if (checkoutItem?.type === 'course') {
       backPath = '/courses';
     } else if (checkoutItem?.type === 'program') {
-      backPath = '/creator/onboarding';
+      backPath = '/programs';
     } else if (checkoutItem?.type === 'creator_subscription') {
       const iid = checkoutItem.instructorId ?? checkoutItem.id;
       backPath = iid ? `/instructors/${iid}` : '/courses';
@@ -1286,7 +1286,7 @@ function Checkout() {
             : checkoutItem.type === 'book_cart'
               ? 'Store'
               : checkoutItem.type === 'program'
-                ? 'Creator onboarding'
+                ? 'Creator programs'
                 : checkoutItem.type === 'creator_subscription'
                   ? 'Instructor'
                   : 'Courses'}

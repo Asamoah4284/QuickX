@@ -220,7 +220,7 @@ const Navbar = () => {
     { to: '/courses', label: 'Courses', Icon: FiGrid },
     { to: '/store', label: 'Books', Icon: FiBookOpen },
     ...(showCommunityLink ? [{ to: '/community', label: 'Community', Icon: FiUsers }] : []),
-    { to: '/creator/onboarding', label: 'Creator programs', Icon: FiZap },
+    { to: '/programs', label: 'Creator programs', Icon: FiZap },
   ];
 
   const closeMobile = () => setIsMobileMenuOpen(false);

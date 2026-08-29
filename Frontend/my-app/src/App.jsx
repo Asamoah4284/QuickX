@@ -48,6 +48,7 @@ import CreatorEarnings from "./pages/creator/CreatorEarnings";
 import CreatorPayouts from "./pages/creator/CreatorPayouts";
 import CreatorProfileSettings from "./pages/creator/CreatorProfileSettings";
 import CreatorCommunity from "./pages/creator/CreatorCommunity";
+import CreatorPrograms from "./pages/CreatorPrograms";
 import CreatorApplications from "./pages/Admin/CreatorApplications";
 import CourseReviewQueue from "./pages/Admin/CourseReviewQueue";
 import CreatorSettings from "./pages/Admin/CreatorSettings";
@@ -156,7 +157,7 @@ const router = createBrowserRouter([
       },
       {
         path: "programs",
-        element: <Navigate to="/creator/onboarding" replace />
+        element: <CreatorPrograms />
       },
       {
         path: "instructor",
