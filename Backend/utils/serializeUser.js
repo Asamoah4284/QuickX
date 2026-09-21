@@ -16,7 +16,9 @@ function serializeUser(user) {
         expertise: Array.isArray(user.expertise) ? user.expertise : [],
         languagesSpoken: Array.isArray(user.languagesSpoken) ? user.languagesSpoken : [],
         socialLinks: user.socialLinks || {},
-        subscriptionStatus: user.subscriptionStatus || 'none'
+        subscriptionStatus: user.subscriptionStatus || 'none',
+        walletBalance: Number(user.walletBalance || 0),
+        referralEarnings: Number(user.referralEarnings || 0),
     };
 }
 

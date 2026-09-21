@@ -104,4 +104,22 @@ router.patch('/:id/read', auth, async (req, res) => {
   }
 });
 
+const DeviceToken = require('../models/DeviceToken');
+
+router.post('/register-device', auth, async (req, res) => {
+  try {
+    const token = String(req.body?.token || '').trim();
+    if (!token) return res.status(400).json({ message: 'Device token is required' });
+    const platform = String(req.body?.platform || 'unknown');
+    await DeviceToken.findOneAndUpdate(
+      { token },
+      { userId: req.user._id, token, platform },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    res.json({ message: 'Device registered' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 module.exports = router;
