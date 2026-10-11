@@ -319,52 +319,64 @@ const MainSchool = () => {
                   return (
                     <article
                       key={`${courseTab}-${c._id}`}
-                      className="w-[min(100%,22rem)] min-w-[17rem] sm:min-w-[18.5rem] md:min-w-[20rem] max-w-[22rem] shrink-0 snap-start flex flex-col rounded-sm border border-transparent bg-white transition hover:opacity-[0.98]"
+                      className="group flex flex-col overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm transition-all hover:shadow-lg hover:shadow-indigo-500/5 hover:-translate-y-1 w-[min(100%,22rem)] min-w-[17rem] sm:min-w-[18.5rem] md:min-w-[20rem] max-w-[22rem] shrink-0 snap-start"
                     >
                       <Link
                         to={courseClickHref}
-                        className="block aspect-[16/10] overflow-hidden bg-slate-200 ring-1 ring-gray-200/80 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                        className="block aspect-[16/10] overflow-hidden bg-gray-100 relative"
                       >
                         <img
                           src={thumb}
-                          alt=""
-                          className="h-full w-full object-cover transition duration-300 hover:scale-[1.02]"
+                          alt={c.title}
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                           onError={(e) => {
                             e.currentTarget.onerror = null;
                             e.currentTarget.src = FALLBACK_THUMB;
                           }}
                         />
+                        {c.courseType && (
+                          <div className="absolute top-3 left-3 flex gap-2">
+                            <span className="rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-indigo-600 shadow-sm backdrop-blur">
+                              {c.courseType}
+                            </span>
+                          </div>
+                        )}
                       </Link>
-                      <div className="flex flex-1 flex-col pt-3 pr-1 pl-0.5">
-                        <h3 className="line-clamp-2 text-sm sm:text-base font-bold leading-snug text-gray-900">
-                          <Link to={courseClickHref} className="hover:text-indigo-700">
+                      <div className="flex flex-1 flex-col p-5">
+                        <h3 className="line-clamp-2 text-[16px] font-bold leading-snug text-gray-900 mb-2">
+                          <Link to={courseClickHref} className="hover:text-indigo-600 transition-colors">
                             {c.title}
                           </Link>
                         </h3>
-                        <p className="mt-0.5 text-xs sm:text-sm text-gray-600 line-clamp-1">
-                          {c.instructorModel === 'User' &&
-                          typeof c.instructor === 'object' &&
-                          c.instructor?._id ? (
-                            <Link
-                              to={`/instructors/${c.instructor._id}`}
-                              className="hover:text-indigo-700 hover:underline"
-                            >
-                              {instructorName}
-                            </Link>
-                          ) : (
-                            instructorName
-                          )}
+                        <p className="text-[13px] text-gray-500 mb-4 line-clamp-2">
+                          {c.shortDescription || c.description}
                         </p>
 
-                        {showRating ? (
-                          <div className="mt-2 flex flex-wrap items-center gap-1.5 text-xs sm:text-sm">
-                            <span className="font-bold text-amber-700">{rating.toFixed(1)}</span>
-                            <StarRating rating={rating} />
+                        <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {c.instructorModel === 'User' && typeof c.instructor === 'object' && c.instructor?._id ? (
+                              <Link to={`/instructors/${c.instructor._id}`} className="flex items-center gap-2 group/inst">
+                                {c.instructor.avatar || c.instructor.profilePicture ? (
+                                  <img src={publicAssetUrl(c.instructor.avatar || c.instructor.profilePicture)} alt="" className="w-6 h-6 rounded-full object-cover ring-2 ring-white shadow-sm transition group-hover/inst:ring-indigo-100" />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center text-[10px] font-bold uppercase">{instructorName.charAt(0)}</div>
+                                )}
+                                <span className="text-[13px] font-medium text-gray-600 group-hover/inst:text-indigo-600 transition-colors line-clamp-1">{instructorName}</span>
+                              </Link>
+                            ) : (
+                              <span className="text-[13px] font-medium text-gray-600 line-clamp-1">{instructorName}</span>
+                            )}
                           </div>
-                        ) : null}
 
-                        <div className="mt-2.5">
-                          <PriceLine course={c} />
+                          <div className="text-[15px] font-bold text-gray-900">
+                            {(() => {
+                              const basic = Number(c.subscriptionPricing?.basic ?? c.subscriptionPricing?.month1);
+                              if (Number.isFinite(basic) && basic > 0) {
+                                return `From GH₵${basic.toFixed(0)}/mo`;
+                              }
+                              return Number(c.price) === 0 ? 'Free' : `GH₵${c.price}`;
+                            })()}
+                          </div>
                         </div>
                       </div>
                     </article>

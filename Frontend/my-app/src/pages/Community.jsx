@@ -2,18 +2,16 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowUpRight } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
+import { FaTelegramPlane } from 'react-icons/fa';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-/** QuickX community WhatsApp invite */
-const COMMUNITY_WHATSAPP_URL = `https://wa.me/233559037872?text=${encodeURIComponent(
-  'I want to join community'
-)}`;
+/** QuickX community Telegram invite */
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
 
-function openCommunityWhatsApp() {
-  window.open(COMMUNITY_WHATSAPP_URL, '_blank', 'noopener,noreferrer');
+function openCommunityTelegram() {
+  window.open(COMMUNITY_TELEGRAM_URL, '_blank', 'noopener,noreferrer');
 }
 
 function initialsFor(name = '') {
@@ -251,10 +249,10 @@ export default function Community() {
           <div className="mt-7 flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={openCommunityWhatsApp}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
+              onClick={openCommunityTelegram}
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#229ED9] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#1E8CC0]"
             >
-              <FaWhatsapp className="h-5 w-5" aria-hidden />
+              <FaTelegramPlane className="h-5 w-5" aria-hidden />
               Join community
             </button>
             <Link
@@ -309,16 +307,16 @@ export default function Community() {
                     Nothing here yet.
                   </p>
                   <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-slate-500">
-                    Message us on WhatsApp to join the community, or subscribe to a tutor for their
+                    Message us on Telegram to join the community, or subscribe to a tutor for their
                     private space.
                   </p>
                   <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
                     <button
                       type="button"
-                      onClick={openCommunityWhatsApp}
-                      className="inline-flex items-center gap-2 rounded-2xl bg-[#25D366] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1ebe57]"
+                      onClick={openCommunityTelegram}
+                      className="inline-flex items-center gap-2 rounded-2xl bg-[#229ED9] px-5 py-3 text-sm font-semibold text-white transition hover:bg-[#1E8CC0]"
                     >
-                      <FaWhatsapp className="h-5 w-5" aria-hidden />
+                      <FaTelegramPlane className="h-5 w-5" aria-hidden />
                       Join community
                     </button>
                     <Link

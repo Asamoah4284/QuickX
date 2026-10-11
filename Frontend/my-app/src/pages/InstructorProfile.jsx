@@ -643,6 +643,7 @@ export default function InstructorProfile() {
   const [videoSidebarOpen, setVideoSidebarOpen] = useState(false);
   const [videoSidebarRender, setVideoSidebarRender] = useState(false);
   const [videoSidebarEntered, setVideoSidebarEntered] = useState(false);
+  const [activeTab, setActiveTab] = useState('videos');
   const [isMobile, setIsMobile] = useState(() =>
     typeof window !== 'undefined' ? window.matchMedia('(max-width: 639px)').matches : false
   );
@@ -1013,6 +1014,18 @@ export default function InstructorProfile() {
     return () => window.clearTimeout(t);
   }, [loading, location.hash, location.state, location.pathname, navigate]);
 
+  useEffect(() => {
+    if (loading) return;
+    const params = new URLSearchParams(location.search);
+    if (params.get('subscribe') === 'true') {
+      setSubscriptionDrawerOpen(true);
+      // Remove query param from URL so it doesn't reopen on refresh
+      params.delete('subscribe');
+      const newSearch = params.toString();
+      navigate(`${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash}`, { replace: true, state: location.state });
+    }
+  }, [loading, location.search, location.pathname, location.hash, location.state, navigate]);
+
   const videoDropdownItems = useMemo(() => {
     if (Array.isArray(data?.videoContent) && data.videoContent.length > 0) {
       return data.videoContent.map((v) => ({
@@ -1055,7 +1068,9 @@ export default function InstructorProfile() {
 
   /** Must run before any conditional return (Rules of Hooks). */
   const videoGrid = useMemo(() => {
-    if (usePreviewLessonGrid) {
+    const showPreviewGrid = activeTab === 'videos' && usePreviewLessonGrid;
+
+    if (showPreviewGrid) {
       if (profileLessons.length === 0) return null;
       if (profileLessons.length === 1) {
         const p = profileLessons[0];
@@ -1145,6 +1160,7 @@ export default function InstructorProfile() {
     openProfileVideoPreview,
     openLockedLesson,
     canWatchAsSubscriber,
+    activeTab,
   ]);
 
   const avatarSrc = useMemo(() => {
@@ -1224,7 +1240,7 @@ export default function InstructorProfile() {
 
   const stats = data.stats || { courses: 0, videos: 0, learners: 0, avgRating: 0 };
 
-  const videoGridCount = usePreviewLessonGrid
+  const videoGridCount = activeTab === 'videos' && usePreviewLessonGrid
     ? profileLessons.length
     : filteredCourses.length;
   const videoGridEmpty = videoGridCount === 0;
@@ -1380,23 +1396,40 @@ export default function InstructorProfile() {
       <div className={PREVIEW_STRIP_BLEED}>
         {/* TikTok-style content tab: videos active */}
         <div className="flex border-b border-zinc-100">
-          <div className="relative flex flex-1 justify-start pb-3 pl-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('videos')}
+            className={`relative flex flex-1 justify-start pb-3 pl-2 transition-opacity ${
+              activeTab === 'videos' ? 'opacity-100' : 'opacity-40 hover:opacity-70'
+            }`}
+          >
             <span className="inline-flex items-center gap-2 text-[15px] font-bold text-zinc-900">
               <svg className="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                 <path d="M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z" />
               </svg>
               Videos
             </span>
-            <span className="absolute bottom-0 left-2 h-[3px] w-14 rounded-full bg-zinc-900" />
-          </div>
-          <div className="hidden flex-1 justify-center pb-3 opacity-40 sm:flex sm:justify-start sm:px-6">
-            <span className="inline-flex items-center gap-2 text-[15px] font-semibold text-zinc-500">
+            {activeTab === 'videos' && (
+              <span className="absolute bottom-0 left-2 h-[3px] w-14 rounded-full bg-zinc-900" />
+            )}
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('courses')}
+            className={`relative flex-1 justify-center pb-3 sm:flex sm:justify-start sm:px-6 transition-opacity ${
+              activeTab === 'courses' ? 'opacity-100' : 'opacity-40 hover:opacity-70'
+            }`}
+          >
+            <span className="inline-flex items-center gap-2 text-[15px] font-bold text-zinc-900">
               <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path d="M4 4h6v6H4V4zm10 0h6v6h-6V4zM4 14h6v6H4v-6zm10 0h6v6h-6v-6z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
               </svg>
-              Playlists
+              Courses
             </span>
-          </div>
+            {activeTab === 'courses' && (
+              <span className="absolute bottom-0 left-0 h-[3px] w-16 sm:left-6 rounded-full bg-zinc-900" />
+            )}
+          </button>
         </div>
 
         <div className="mt-2 sm:mt-3">
@@ -1735,29 +1768,6 @@ export default function InstructorProfile() {
                   </div>
                 </div>
               </div>
-              {learningOutcomes.length > 0 ? (
-                <>
-                  <p className="mt-5 text-[13px] font-bold tracking-tight text-zinc-900 sm:mt-6 sm:text-sm">
-                    What you&apos;ll learn
-                  </p>
-                  <ul className="mt-3 space-y-3 pb-1">
-                    {learningOutcomes.map((item) => (
-                      <li
-                        key={item}
-                        className="flex items-start gap-3 text-[13px] leading-snug text-zinc-800 sm:text-[15px]"
-                      >
-                        <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-700 ring-1 ring-blue-200/70">
-                          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                          </svg>
-                        </span>
-                        <span className="pt-0.5">{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-5 border-t border-zinc-100" />
-                </>
-              ) : null}
 
               <ul className="mt-5 space-y-4 pb-2">
                 {(selectedSubscriptionPlan.benefitLabels || []).map((label) => (

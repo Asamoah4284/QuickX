@@ -12,6 +12,7 @@ import {
   FiDollarSign,
   FiX,
   FiClipboard,
+  FiCalendar,
 } from 'react-icons/fi';
 
 function navClass(active) {
@@ -41,6 +42,7 @@ export default function AdminLayout() {
     pathname === '/admin/courses' ||
     pathname.startsWith('/admin/courses/add') ||
     pathname.startsWith('/admin/courses/edit');
+  const isEvents = pathname.startsWith('/admin/events');
   const isSettingsTab = pathname.startsWith('/admin/settings') && !pathname.startsWith('/admin/platform');
   const isCoupons = pathname.startsWith('/admin/coupons');
   const isAds = pathname.startsWith('/admin/advertisements');
@@ -78,6 +80,10 @@ export default function AdminLayout() {
             <NavLink to="/admin/dashboard" end className={({ isActive }) => navClass(isActive)} onClick={close}>
               <FiHome className="mr-2 lg:mr-3" />
               Dashboard
+            </NavLink>
+            <NavLink to="/admin/events" className={() => navClass(isEvents)} onClick={close}>
+              <FiCalendar className="mr-2 lg:mr-3" />
+              Events & Tickets
             </NavLink>
             <NavLink to="/admin/tutors/applications" className={() => navClass(isTutorApps)} onClick={close}>
               <FiUsers className="mr-2 lg:mr-3" />

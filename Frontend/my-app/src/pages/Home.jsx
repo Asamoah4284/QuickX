@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { FaArrowUp, FaWhatsapp } from 'react-icons/fa';
 import Hero from '../components/Hero';
 import Learn from '../components/Learn';
+import HomeEvents from '../components/HomeEvents';
 import Courses from '../components/Courses';
 import Features from '../components/Features';
 import Call from '../components/Call';
@@ -34,6 +35,7 @@ export default function Home() {
     <div className="qx-landing min-h-screen overflow-x-hidden">
       <Hero />
       <Learn />
+      <HomeEvents />
       <Features />
       <Courses />
       <Call />

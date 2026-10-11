@@ -1,12 +1,10 @@
 import { Link } from 'react-router-dom';
 import { FiArrowDownRight } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
+import { FaTelegramPlane } from 'react-icons/fa';
 
 const HERO_BG = '/images/hero.png';
 
-const COMMUNITY_WHATSAPP_URL = `https://wa.me/233559037872?text=${encodeURIComponent(
-  'I want to join community'
-)}`;
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
 
 const LEARNERS = [
   'https://i.pravatar.cc/100?img=12',
@@ -109,12 +107,12 @@ export default function Hero() {
               </Link>
             </div>
             <a
-              href={COMMUNITY_WHATSAPP_URL}
+              href={COMMUNITY_TELEGRAM_URL}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 text-sm font-semibold text-white underline decoration-white/50 underline-offset-4 transition hover:decoration-white"
             >
-              <FaWhatsapp className="h-4 w-4 shrink-0 text-[#25D366]" aria-hidden />
+              <FaTelegramPlane className="h-4 w-4 shrink-0 text-[#229ED9]" aria-hidden />
               Join community
             </a>
           </div>

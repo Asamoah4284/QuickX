@@ -108,6 +108,7 @@ db.on('error', (err) => {
     console.error('MongoDB connection error:', err);
 });
 const { seedPrograms } = require('./scripts/seedPrograms');
+const { seedEvents } = require('./scripts/seedEvents');
 const Book = require('./models/Book');
 const BookOfferGroup = require('./models/BookOfferGroup');
 const {
@@ -161,8 +162,9 @@ db.once('open', async () => {
     }
     try {
         await seedPrograms();
+        await seedEvents();
     } catch (e) {
-        console.error('seedPrograms:', e.message);
+        console.error('seedPrograms/seedEvents:', e.message);
     }
 });
 
@@ -170,6 +172,7 @@ db.once('open', async () => {
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));
 app.use('/api/books', require('./routes/bookRoutes'));
+app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/affiliate', require('./routes/affiliateRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));

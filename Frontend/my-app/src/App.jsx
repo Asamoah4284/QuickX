@@ -28,9 +28,13 @@ import Store from "./pages/store/store";
 import Pricing from "./pages/School/Pricing";
 import Membership from "./pages/Membership";
 import CoursePublicDetail from "./pages/CoursePublicDetail";
+import Courses from "./pages/Courses";
+import Events from "./pages/Events";
+import EventDetail from "./pages/EventDetail";
 import InstructorProfile from "./pages/InstructorProfile";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
+import AdminEvents from "./pages/Admin/AdminEvents";
 import AdminProtectedRoute from "./components/AdminProtectedRoute";
 import AddCourse from './pages/Admin/AddCourse';
 import EditCourse from './pages/Admin/EditCourse';
@@ -141,11 +145,19 @@ const router = createBrowserRouter([
       },
       {
         path: "courses",
-        element: <MainSchool />
+        element: <Courses />
       },
       {
         path: "courses/:courseId",
         element: <CoursePublicDetail />
+      },
+      {
+        path: "events",
+        element: <Events />
+      },
+      {
+        path: "events/:id",
+        element: <EventDetail />
       },
       {
         path: "instructors/:userId",
@@ -289,6 +301,7 @@ const router = createBrowserRouter([
         children: [
           { index: true, element: <Navigate to="dashboard" replace /> },
           { path: "dashboard", element: <AdminDashboard /> },
+          { path: "events", element: <AdminEvents /> },
           { path: "courses/add", element: <AddCourse /> },
           { path: "courses/edit/:courseId", element: <EditCourse /> },
           { path: "courses/review-queue", element: <CourseReviewQueue /> },
