@@ -48,16 +48,16 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Banner */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
+      <div className="p-6 sm:p-8 rounded-[2rem] bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 border border-slate-800 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 shadow-xl">
         <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-bold uppercase tracking-wider">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/20 text-blue-300 text-xs font-black uppercase tracking-wider">
             <FiPieChart className="w-3.5 h-3.5" />
             <span>Community Partner Trading (Pie)</span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black">
             Back Your Mentor's Live Trades
           </h2>
-          <p className="text-slate-300 text-xs sm:text-sm max-w-xl">
+          <p className="text-slate-300 text-xs sm:text-sm max-w-xl leading-relaxed">
             Deposit capital into verified community pools to earn your slice of the trading profits.
             Profits and refunds flow automatically into your QuickX wallet.
           </p>
@@ -66,7 +66,7 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
         {isTutor && (
           <button
             onClick={() => setShowCreateModal(true)}
-            className="shrink-0 px-5 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-extrabold uppercase tracking-wider shadow-lg shadow-blue-600/30 transition flex items-center gap-2"
+            className="shrink-0 px-6 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-600/30 transition flex items-center gap-2 active:scale-95"
           >
             <FiPlus className="w-4 h-4" /> Launch Community Pie
           </button>
@@ -80,20 +80,20 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
           <p>Loading community pools...</p>
         </div>
       ) : pies.length === 0 ? (
-        <div className="p-8 rounded-3xl border border-slate-200 bg-white text-center space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-            <FiPieChart className="w-6 h-6" />
+        <div className="p-10 rounded-[2rem] border border-slate-200 bg-white text-center space-y-3 shadow-sm">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+            <FiPieChart className="w-7 h-7" />
           </div>
-          <h3 className="text-base font-bold text-slate-900">No active community pies yet</h3>
+          <h3 className="text-lg font-black text-slate-900">No active community pies yet</h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
             {isTutor
-              ? 'As the mentor, you can launch a trading pool for your community to back your live market trades!'
+              ? 'As the mentor, launch a trading pool for your community to back your live market execution!'
               : 'Your mentor has not launched an active trading pool yet. Check back soon!'}
           </p>
           {isTutor && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold inline-flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-xs font-black uppercase inline-flex items-center gap-1.5 shadow-md shadow-blue-500/20"
             >
               <FiPlus /> Launch Community Pie
             </button>
@@ -110,15 +110,15 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
             return (
               <div
                 key={pie._id}
-                className="rounded-3xl border border-slate-200/80 bg-white p-5 flex flex-col justify-between hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300"
+                className="rounded-[2rem] border border-slate-200/90 bg-white p-6 flex flex-col justify-between hover:shadow-2xl hover:shadow-slate-200/60 transition-all duration-300 group"
               >
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <span className="px-2.5 py-1 rounded-xl bg-blue-50 text-blue-700 text-xs font-black uppercase">
                       {pie.pair}
                     </span>
                     <span
-                      className={`px-2.5 py-0.5 rounded-xl text-[10px] font-black uppercase ${
+                      className={`px-2.5 py-0.5 rounded-xl text-[10px] font-black uppercase tracking-wider ${
                         pie.status === 'funding'
                           ? 'bg-amber-50 text-amber-700 border border-amber-200'
                           : pie.status === 'trading'
@@ -137,34 +137,61 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-slate-900 text-sm line-clamp-1">{pie.title}</h4>
-                    <p className="text-xs text-slate-500 line-clamp-2 mt-1">{pie.description}</p>
+                    <h4 className="font-black text-slate-900 text-base line-clamp-1 group-hover:text-blue-600 transition">
+                      {pie.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+                      {pie.description}
+                    </p>
                   </div>
 
-                  {/* Visualizer */}
-                  <div className="py-1 flex items-center justify-center">
+                  {/* Donut Visualizer */}
+                  <div className="py-2 flex items-center justify-center">
                     <PieChartDonut
                       deposits={[]}
                       targetAmount={pie.targetAmount}
                       raisedAmount={pie.raisedAmount}
-                      size={130}
+                      size={140}
                       interactive={false}
                       showLegend={false}
+                      theme="light"
                     />
                   </div>
 
+                  {/* Progress bar */}
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs font-bold">
+                      <span className="text-slate-500">
+                        GH₵{pie.raisedAmount.toLocaleString()} / GH₵{pie.targetAmount.toLocaleString()}
+                      </span>
+                      <span className="text-blue-600 font-black">{fillPct.toFixed(0)}%</span>
+                    </div>
+                    <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full"
+                        style={{ width: `${fillPct}%` }}
+                      />
+                    </div>
+                  </div>
+
                   {/* Conditions */}
-                  <div className="grid grid-cols-3 gap-1.5 p-2.5 rounded-xl bg-slate-50 text-center text-xs">
+                  <div className="grid grid-cols-3 gap-1.5 p-3 rounded-2xl bg-slate-50 text-center text-xs">
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Target</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                        Target
+                      </span>
                       <span className="font-black text-emerald-600">+{pie.targetRoiPercent}%</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Max Loss</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                        Max Loss
+                      </span>
                       <span className="font-black text-rose-600">-{pie.maxLossPercent}%</span>
                     </div>
                     <div>
-                      <span className="text-[10px] text-slate-400 block font-semibold">Trader Fee</span>
+                      <span className="text-[10px] text-slate-400 block font-bold uppercase">
+                        Trader Fee
+                      </span>
                       <span className="font-black text-indigo-600">{pie.ownerFeePercent}%</span>
                     </div>
                   </div>
@@ -173,7 +200,7 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
                 <div className="pt-4 mt-3 border-t border-slate-100 flex items-center gap-2">
                   <Link
                     to={`/ptrading/${pie._id}`}
-                    className="flex-1 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold text-center transition"
+                    className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-black text-center transition"
                   >
                     View Details
                   </Link>
@@ -181,7 +208,7 @@ export default function CommunityPTradingTab({ tutorId, isTutor }) {
                   {pie.status === 'funding' && (
                     <button
                       onClick={() => setSelectedPieForDeposit(pie)}
-                      className="flex-1 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase text-center shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-1"
+                      className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-black uppercase tracking-wider text-center shadow-md shadow-blue-500/20 transition flex items-center justify-center gap-1 active:scale-95"
                     >
                       <FiPieChart className="w-3.5 h-3.5" /> Buy Slice
                     </button>

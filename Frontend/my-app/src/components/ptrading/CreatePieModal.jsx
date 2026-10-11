@@ -9,6 +9,7 @@ import {
   FiCalendar,
   FiAlertCircle,
   FiCheckCircle,
+  FiZap,
 } from 'react-icons/fi';
 
 const MARKETS = [
@@ -54,7 +55,6 @@ export default function CreatePieModal({
     const { name, value } = e.target;
     setFormData((prev) => {
       const updated = { ...prev, [name]: value };
-      // If market changed, pick first pair of that market
       if (name === 'market') {
         const m = MARKETS.find((mk) => mk.value === value);
         if (m && m.pairs.length > 0) {
@@ -85,7 +85,6 @@ export default function CreatePieModal({
       setSubmitting(true);
       setError('');
 
-      // Compute deadline date
       const deadline = new Date();
       deadline.setDate(deadline.getDate() + (parseInt(formData.fundingDeadlineDays) || 2));
 
@@ -125,24 +124,27 @@ export default function CreatePieModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-xl bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-xl bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-100">
+        {/* Glow ambient */}
+        <div className="absolute top-0 right-1/4 w-72 h-32 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
         {/* Header */}
-        <div className="p-6 pb-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-600/30 border border-blue-400/40 flex items-center justify-center text-blue-400">
-              <FiPieChart className="w-5 h-5" />
+        <div className="relative p-6 pb-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 border border-indigo-400/30 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+              <FiPieChart className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Launch a New Trading Pie</h3>
-              <p className="text-xs text-blue-200">
-                Create a Partner pool for your community to buy slices
+              <h3 className="text-lg font-black text-white">Launch a Trading Pie</h3>
+              <p className="text-xs text-slate-400">
+                Open a partner pool for members to back your trades
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition"
+            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
           >
             <FiX className="w-5 h-5" />
           </button>
@@ -152,7 +154,7 @@ export default function CreatePieModal({
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
           {/* Title */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
               Pie Title *
             </label>
             <input
@@ -162,36 +164,36 @@ export default function CreatePieModal({
               onChange={handleChange}
               placeholder="e.g. BTC Bullish Halving Breakout Pool"
               required
-              className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+              className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-sm font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner"
             />
           </div>
 
           {/* Description */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Trading Strategy & Notes
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
+              Trading Strategy & Thesis
             </label>
             <textarea
               name="description"
               rows="2"
               value={formData.description}
               onChange={handleChange}
-              placeholder="Describe your trade thesis, technical setup, and execution plan..."
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+              placeholder="Describe your market setup, technical indicators, and execution gameplan..."
+              className="w-full px-4 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-medium text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner"
             />
           </div>
 
           {/* Market & Pair */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
                 Market
               </label>
               <select
                 name="market"
                 value={formData.market}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {MARKETS.map((m) => (
                   <option key={m.value} value={m.value}>
@@ -202,14 +204,14 @@ export default function CreatePieModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
                 Asset Pair
               </label>
               <select
                 name="pair"
                 value={formData.pair}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {currentMarket.pairs.map((p) => (
                   <option key={p} value={p}>
@@ -223,7 +225,7 @@ export default function CreatePieModal({
           {/* Target Amount & Min Deposit */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
                 Target Pool Amount (GH₵) *
               </label>
               <input
@@ -234,13 +236,13 @@ export default function CreatePieModal({
                 value={formData.targetAmount}
                 onChange={handleChange}
                 required
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-base font-black text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Min Deposit / Slice (GH₵)
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
+                Min Slice / Deposit (GH₵)
               </label>
               <input
                 type="number"
@@ -249,20 +251,20 @@ export default function CreatePieModal({
                 step="5"
                 value={formData.minDeposit}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-sm font-black text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600 focus:bg-white transition"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-base font-black text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
               />
             </div>
           </div>
 
-          {/* Conditions: Target ROI %, Max Loss %, Owner Fee % */}
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 block">
-              Trading Conditions & Safeguards
+          {/* Conditions Safeguards Grid */}
+          <div className="p-4 rounded-3xl bg-slate-950/80 border border-slate-800 space-y-3">
+            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 block">
+              Trading Conditions & Risk Safeguards
             </span>
 
             <div className="grid grid-cols-3 gap-2.5 text-xs">
               <div>
-                <label className="block text-[11px] font-bold text-emerald-700 mb-1 flex items-center gap-1">
+                <label className="block text-[11px] font-bold text-emerald-400 mb-1 flex items-center gap-1">
                   <FiTrendingUp className="w-3 h-3" /> Target ROI
                 </label>
                 <div className="relative">
@@ -273,14 +275,16 @@ export default function CreatePieModal({
                     max="1000"
                     value={formData.targetRoiPercent}
                     onChange={handleChange}
-                    className="w-full px-2.5 py-2 bg-white border border-emerald-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-emerald-500 text-xs"
+                    className="w-full px-3 py-2 bg-slate-900 border border-emerald-500/40 rounded-xl font-black text-emerald-300 focus:ring-2 focus:ring-emerald-500 text-xs"
                   />
-                  <span className="absolute right-2 top-2 text-[10px] text-slate-400 font-bold">%</span>
+                  <span className="absolute right-2.5 top-2 text-[10px] text-slate-500 font-bold">
+                    %
+                  </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-rose-700 mb-1 flex items-center gap-1">
+                <label className="block text-[11px] font-bold text-rose-400 mb-1 flex items-center gap-1">
                   <FiShield className="w-3 h-3" /> Stop Loss
                 </label>
                 <div className="relative">
@@ -291,15 +295,17 @@ export default function CreatePieModal({
                     max="100"
                     value={formData.maxLossPercent}
                     onChange={handleChange}
-                    className="w-full px-2.5 py-2 bg-white border border-rose-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-rose-500 text-xs"
+                    className="w-full px-3 py-2 bg-slate-900 border border-rose-500/40 rounded-xl font-black text-rose-300 focus:ring-2 focus:ring-rose-500 text-xs"
                   />
-                  <span className="absolute right-2 top-2 text-[10px] text-slate-400 font-bold">%</span>
+                  <span className="absolute right-2.5 top-2 text-[10px] text-slate-500 font-bold">
+                    %
+                  </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-indigo-700 mb-1 flex items-center gap-1">
-                  <FiPercent className="w-3 h-3" /> Performance Fee
+                <label className="block text-[11px] font-bold text-indigo-400 mb-1 flex items-center gap-1">
+                  <FiPercent className="w-3 h-3" /> Trader Fee
                 </label>
                 <div className="relative">
                   <input
@@ -309,29 +315,31 @@ export default function CreatePieModal({
                     max="50"
                     value={formData.ownerFeePercent}
                     onChange={handleChange}
-                    className="w-full px-2.5 py-2 bg-white border border-indigo-300 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-500 text-xs"
+                    className="w-full px-3 py-2 bg-slate-900 border border-indigo-500/40 rounded-xl font-black text-indigo-300 focus:ring-2 focus:ring-indigo-500 text-xs"
                   />
-                  <span className="absolute right-2 top-2 text-[10px] text-slate-400 font-bold">%</span>
+                  <span className="absolute right-2.5 top-2 text-[10px] text-slate-500 font-bold">
+                    %
+                  </span>
                 </div>
               </div>
             </div>
 
-            <p className="text-[11px] text-slate-500">
-              * If the trade wins, you receive {formData.ownerFeePercent}% performance fee from the profits. If the trade loses, you receive 0% and capital is safeguarded at max {formData.maxLossPercent}% loss.
+            <p className="text-[10px] text-slate-400 leading-normal">
+              * If the trade wins, you receive {formData.ownerFeePercent}% performance fee from the profits. If stopped out, you receive 0% and capital is safeguarded at max {formData.maxLossPercent}% loss floor.
             </p>
           </div>
 
           {/* Funding Window & Risk Level */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
                 <FiCalendar className="w-3.5 h-3.5" /> Funding Window
               </label>
               <select
                 name="fundingDeadlineDays"
                 value={formData.fundingDeadlineDays}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold text-slate-200 focus:ring-2 focus:ring-blue-500"
               >
                 <option value="1">24 Hours</option>
                 <option value="2">48 Hours (2 Days)</option>
@@ -341,14 +349,14 @@ export default function CreatePieModal({
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
                 Risk Classification
               </label>
               <select
                 name="riskLevel"
                 value={formData.riskLevel}
                 onChange={handleChange}
-                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold text-slate-200 focus:ring-2 focus:ring-blue-500"
               >
                 <option value="Low">Low Risk</option>
                 <option value="Moderate">Moderate Risk</option>
@@ -359,15 +367,15 @@ export default function CreatePieModal({
 
           {/* Alerts */}
           {error && (
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
-              <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-semibold">
+              <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
               <span>{error}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-              <FiCheckCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">
+              <FiCheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -377,13 +385,13 @@ export default function CreatePieModal({
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-white shadow-lg transition flex items-center justify-center gap-2 ${
+              className={`w-full py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-wider text-white shadow-xl transition flex items-center justify-center gap-2 ${
                 submitting
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 active:scale-[0.98]'
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-600/30 active:scale-[0.98]'
               }`}
             >
-              {submitting ? 'Publishing Pie...' : '🚀 Launch Pie & Open Funding'}
+              {submitting ? 'Publishing Pie…' : '🚀 Launch Pie & Open Funding'}
             </button>
           </div>
         </form>

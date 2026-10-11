@@ -73,24 +73,27 @@ export default function TradeUpdateModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in">
-      <div className="relative w-full max-w-lg bg-white rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-lg bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] text-slate-100">
+        {/* Glow ambient */}
+        <div className="absolute top-0 right-1/4 w-72 h-32 bg-indigo-500/20 rounded-full blur-3xl pointer-events-none" />
+
         {/* Header */}
-        <div className="p-6 pb-4 bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-indigo-500/20 border border-indigo-400/40 flex items-center justify-center text-indigo-400">
-              <FiActivity className="w-5 h-5" />
+        <div className="relative p-6 pb-4 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-indigo-600 to-blue-600 border border-indigo-400/30 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20">
+              <FiActivity className="w-6 h-6" />
             </div>
             <div>
-              <h3 className="text-lg font-bold">Post Trade Journal Update</h3>
-              <p className="text-xs text-indigo-200">
+              <h3 className="text-lg font-black text-white">Post Trade Journal Update</h3>
+              <p className="text-xs text-slate-400">
                 Keep slice holders informed on live market execution
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-white/10 transition"
+            className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition"
           >
             <FiX className="w-5 h-5" />
           </button>
@@ -99,7 +102,7 @@ export default function TradeUpdateModal({
         {/* Form Body */}
         <form onSubmit={handleSubmit} className="p-6 overflow-y-auto space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5">
               Update Title *
             </label>
             <input
@@ -109,14 +112,14 @@ export default function TradeUpdateModal({
               onChange={handleChange}
               placeholder="e.g. Position Filled at $64,250 | SL moved to breakeven"
               required
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold text-slate-900 focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+              className="w-full px-4 py-3 bg-slate-950 border border-slate-800 rounded-2xl text-xs font-bold text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
             />
           </div>
 
           <div className="grid grid-cols-3 gap-2.5 text-xs">
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-                <FiTrendingUp className="w-3 h-3 text-blue-600" /> Entry
+              <label className="block text-[11px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                <FiTrendingUp className="w-3 h-3 text-blue-400" /> Entry
               </label>
               <input
                 type="text"
@@ -124,13 +127,13 @@ export default function TradeUpdateModal({
                 value={formData.entryPrice}
                 onChange={handleChange}
                 placeholder="e.g. 64,200"
-                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl font-bold text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-                <FiShield className="w-3 h-3 text-rose-600" /> Stop Loss
+              <label className="block text-[11px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                <FiShield className="w-3 h-3 text-rose-400" /> Stop Loss
               </label>
               <input
                 type="text"
@@ -138,13 +141,13 @@ export default function TradeUpdateModal({
                 value={formData.stopLoss}
                 onChange={handleChange}
                 placeholder="e.g. 63,100"
-                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl font-bold text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] font-bold text-slate-600 mb-1 flex items-center gap-1">
-                <FiTarget className="w-3 h-3 text-emerald-600" /> Take Profit
+              <label className="block text-[11px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                <FiTarget className="w-3 h-3 text-emerald-400" /> Take Profit
               </label>
               <input
                 type="text"
@@ -152,28 +155,28 @@ export default function TradeUpdateModal({
                 value={formData.takeProfit}
                 onChange={handleChange}
                 placeholder="e.g. 68,500"
-                className="w-full px-2.5 py-2 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:ring-2 focus:ring-indigo-600"
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl font-bold text-white focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1">
-              <FiFileText className="w-3 h-3" /> Commentary / Analysis
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+              <FiFileText className="w-3.5 h-3.5" /> Commentary / Analysis
             </label>
             <textarea
               name="notes"
               rows="3"
               value={formData.notes}
               onChange={handleChange}
-              placeholder="Explain current price action, risk adjustments, or market conditions..."
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+              placeholder="Explain price action, risk adjustments, or market conditions..."
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5 flex items-center gap-1">
-              <FiLink className="w-3 h-3" /> Chart / Screenshot URL (Optional)
+            <label className="block text-xs font-black uppercase tracking-wider text-slate-400 mb-1.5 flex items-center gap-1">
+              <FiLink className="w-3.5 h-3.5" /> Chart / Screenshot URL (Optional)
             </label>
             <input
               type="url"
@@ -181,21 +184,21 @@ export default function TradeUpdateModal({
               value={formData.imageUrl}
               onChange={handleChange}
               placeholder="https://tradingview.com/x/... or image link"
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 focus:ring-2 focus:ring-indigo-600 focus:bg-white"
+              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs font-medium text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
           {/* Alerts */}
           {error && (
-            <div className="flex items-start gap-2.5 p-3 rounded-2xl bg-rose-50 text-rose-700 text-xs font-semibold border border-rose-200">
-              <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2.5 p-3.5 rounded-2xl bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-semibold">
+              <FiAlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
               <span>{error}</span>
             </div>
           )}
 
           {successMsg && (
-            <div className="flex items-center gap-2.5 p-3 rounded-2xl bg-emerald-50 text-emerald-700 text-xs font-semibold border border-emerald-200">
-              <FiCheckCircle className="w-4 h-4 shrink-0" />
+            <div className="flex items-center gap-2.5 p-3.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold">
+              <FiCheckCircle className="w-4 h-4 shrink-0 text-emerald-400" />
               <span>{successMsg}</span>
             </div>
           )}
@@ -204,13 +207,13 @@ export default function TradeUpdateModal({
             <button
               type="submit"
               disabled={submitting}
-              className={`w-full py-3.5 px-6 rounded-2xl text-xs font-extrabold uppercase tracking-wider text-white shadow-lg transition flex items-center justify-center gap-2 ${
+              className={`w-full py-4 px-6 rounded-2xl text-xs font-black uppercase tracking-wider text-white shadow-xl transition flex items-center justify-center gap-2 ${
                 submitting
-                  ? 'bg-slate-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-500/25 active:scale-[0.98]'
+                  ? 'bg-slate-800 text-slate-500 border border-slate-700 cursor-not-allowed'
+                  : 'bg-gradient-to-r from-indigo-600 via-blue-600 to-indigo-600 hover:from-indigo-500 hover:to-blue-500 shadow-indigo-600/30 active:scale-[0.98]'
               }`}
             >
-              {submitting ? 'Posting Update...' : 'Publish Update to Journal'}
+              {submitting ? 'Posting Update…' : 'Publish Update to Journal'}
             </button>
           </div>
         </form>
