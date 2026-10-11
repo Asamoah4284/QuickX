@@ -286,6 +286,12 @@ exports.createBook = async (req, res) => {
                 (type || 'ebook') === 'ebook' && hardcopyPrice != null && hardcopyPrice !== ''
                     ? Number(hardcopyPrice)
                     : undefined,
+            deliveryOptions: req.body.deliveryOptions ? {
+                availableTypes: req.body.deliveryOptions.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                estimatedDays: req.body.deliveryOptions.estimatedDays || '2 - 4 business days',
+                pickupLocations: req.body.deliveryOptions.pickupLocations || 'QuickX Distribution Center, Accra',
+                deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? deliveryFee) || 0,
+            } : undefined,
         });
 
         await newBook.save();
@@ -362,6 +368,14 @@ exports.updateBook = async (req, res) => {
         if (hardcopyPrice !== undefined) {
             book.hardcopyPrice =
                 hardcopyPrice === '' || hardcopyPrice == null ? null : Number(hardcopyPrice);
+        }
+        if (req.body.deliveryOptions !== undefined) {
+            book.deliveryOptions = {
+                availableTypes: req.body.deliveryOptions.availableTypes || book.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                estimatedDays: req.body.deliveryOptions.estimatedDays || book.deliveryOptions?.estimatedDays || '2 - 4 business days',
+                pickupLocations: req.body.deliveryOptions.pickupLocations || book.deliveryOptions?.pickupLocations || 'QuickX Distribution Center, Accra',
+                deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? book.deliveryOptions?.deliveryFee ?? deliveryFee ?? 0),
+            };
         }
         if (book.type === 'hardcopy') {
             book.hardcopyPrice = null;

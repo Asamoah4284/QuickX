@@ -25,6 +25,9 @@ const EMPTY_FORM = {
   isbn: '',
   stock: 0,
   deliveryFee: 0,
+  availableDeliveryTypes: ['pickup', 'pay_on_delivery', 'instant_pay'],
+  estimatedDeliveryDays: '2 - 4 business days',
+  pickupLocations: 'QuickX Distribution Center, Accra',
 };
 
 function textToList(value) {
@@ -61,6 +64,9 @@ function buildBookPayload(form) {
     fileUrl,
     stock,
     deliveryFee,
+    availableDeliveryTypes,
+    estimatedDeliveryDays,
+    pickupLocations,
     ...rest
   } = form;
   const payload = {
@@ -68,6 +74,14 @@ function buildBookPayload(form) {
     whatYoullLearn: textToList(whatYoullLearn),
     afterReadingOutcomes: textToList(afterReadingOutcomes),
     testimonials: normalizeTestimonialsForSave(testimonials),
+    deliveryOptions: {
+      availableTypes: Array.isArray(availableDeliveryTypes) && availableDeliveryTypes.length > 0
+        ? availableDeliveryTypes
+        : ['pickup', 'pay_on_delivery', 'instant_pay'],
+      estimatedDays: String(estimatedDeliveryDays || '2 - 4 business days').trim(),
+      pickupLocations: String(pickupLocations || 'QuickX Distribution Center, Accra').trim(),
+      deliveryFee: Number(deliveryFee) || 0,
+    },
   };
   if (form.type === 'ebook') {
     if (fileUrl) payload.fileUrl = fileUrl;
@@ -144,7 +158,10 @@ export default function CreatorBookWizard() {
           thumbnail: data.thumbnail || '',
           isbn: data.isbn || '',
           stock: data.stock ?? 0,
-          deliveryFee: data.deliveryFee ?? 0,
+          deliveryFee: data.deliveryFee ?? data.deliveryOptions?.deliveryFee ?? 0,
+          availableDeliveryTypes: data.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+          estimatedDeliveryDays: data.deliveryOptions?.estimatedDays || '2 - 4 business days',
+          pickupLocations: data.deliveryOptions?.pickupLocations || 'QuickX Distribution Center, Accra',
         });
       })
       .catch((e) => setError(e.response?.data?.message || e.message))
@@ -619,18 +636,109 @@ export default function CreatorBookWizard() {
             ) : null}
 
             {form.type === 'hardcopy' && (
-              <>
-                <div>
-                  <label className={labelCls}>Stock (units)</label>
-                  <input type="number" name="stock" min={0} value={form.stock} onChange={handleChange} className={inputCls} />
-                </div>
-                <div>
-                  <label className={labelCls}>Delivery Fee (GHS)</label>
-                  <input type="number" name="deliveryFee" min={0} step={0.01} value={form.deliveryFee} onChange={handleChange} className={inputCls} />
-                </div>
-              </>
+              <div>
+                <label className={labelCls}>Stock (units)</label>
+                <input type="number" name="stock" min={0} value={form.stock} onChange={handleChange} className={inputCls} />
+              </div>
             )}
           </div>
+
+          {/* Physical Delivery / Shipping Settings */}
+          {(form.type === 'hardcopy' || Boolean(form.hardcopyPrice)) && (
+            <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/40 p-4 sm:p-5 space-y-4">
+              <div>
+                <h4 className="text-sm font-bold text-slate-900">Physical Delivery &amp; Shipping Options</h4>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Configure available delivery methods for readers buying physical copies.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-2">
+                  Available Delivery Methods
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'pickup', label: 'Store / Local Pickup', desc: 'Customer picks up at pickup point' },
+                    { id: 'pay_on_delivery', label: 'Pay on Delivery (COD)', desc: 'Cash or MoMo upon arrival' },
+                    { id: 'instant_pay', label: 'Instant Pay Online', desc: 'Customer pays online before dispatch' },
+                  ].map((method) => {
+                    const isChecked = (form.availableDeliveryTypes || []).includes(method.id);
+                    return (
+                      <label
+                        key={method.id}
+                        className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition ${
+                          isChecked
+                            ? 'border-[#1B5EF5] bg-white shadow-xs'
+                            : 'border-slate-200 bg-slate-50/60 opacity-70'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const cur = form.availableDeliveryTypes || [];
+                            const next = e.target.checked
+                              ? [...cur, method.id]
+                              : cur.filter((x) => x !== method.id);
+                            setForm((prev) => ({ ...prev, availableDeliveryTypes: next }));
+                          }}
+                          className="mt-0.5 h-4 w-4 rounded text-[#1B5EF5]"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-slate-900">{method.label}</p>
+                          <p className="text-[11px] text-slate-500 mt-0.5">{method.desc}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <label className={labelCls}>Delivery Timeframe (Days)</label>
+                  <input
+                    type="text"
+                    name="estimatedDeliveryDays"
+                    value={form.estimatedDeliveryDays}
+                    onChange={handleChange}
+                    placeholder="e.g. 2 - 4 business days"
+                    className={inputCls}
+                  />
+                  <span className="text-[10px] text-slate-400">Shown to buyers on checkout</span>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Standard Delivery Fee (GHS)</label>
+                  <input
+                    type="number"
+                    name="deliveryFee"
+                    min={0}
+                    step={0.01}
+                    value={form.deliveryFee}
+                    onChange={handleChange}
+                    placeholder="0 for Free Delivery"
+                    className={inputCls}
+                  />
+                  <span className="text-[10px] text-slate-400">Set to 0 for Free Delivery</span>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Pickup Location Address</label>
+                  <input
+                    type="text"
+                    name="pickupLocations"
+                    value={form.pickupLocations}
+                    onChange={handleChange}
+                    placeholder="e.g. QuickX Hub, Accra"
+                    className={inputCls}
+                  />
+                  <span className="text-[10px] text-slate-400">Used if Pickup is selected</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">

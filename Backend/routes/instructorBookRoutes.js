@@ -106,6 +106,12 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
                 type === 'ebook' && hardcopyPrice != null && hardcopyPrice !== ''
                     ? Number(hardcopyPrice)
                     : undefined,
+            deliveryOptions: req.body.deliveryOptions ? {
+                availableTypes: req.body.deliveryOptions.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                estimatedDays: req.body.deliveryOptions.estimatedDays || '2 - 4 business days',
+                pickupLocations: req.body.deliveryOptions.pickupLocations || 'QuickX Distribution Center, Accra',
+                deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? deliveryFee) || 0,
+            } : undefined,
         });
 
         await book.save();
@@ -142,10 +148,19 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
             'title', 'author', 'description', 'type', 'price',
             'fileUrl', 'stock', 'thumbnail', 'isbn',
             'deliveryFee', 'watermarkTemplate', 'category',
-            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials', 'hardcopyPrice'
+            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials', 'hardcopyPrice', 'deliveryOptions'
         ];
         allowed.forEach((key) => {
             if (req.body[key] === undefined) return;
+            if (key === 'deliveryOptions') {
+                book.deliveryOptions = {
+                    availableTypes: req.body.deliveryOptions.availableTypes || book.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                    estimatedDays: req.body.deliveryOptions.estimatedDays || book.deliveryOptions?.estimatedDays || '2 - 4 business days',
+                    pickupLocations: req.body.deliveryOptions.pickupLocations || book.deliveryOptions?.pickupLocations || 'QuickX Distribution Center, Accra',
+                    deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? book.deliveryOptions?.deliveryFee ?? 0),
+                };
+                return;
+            }
             if (key === 'whatYoullLearn' || key === 'afterReadingOutcomes') {
                 book[key] = normalizeStringArray(req.body[key]);
                 return;

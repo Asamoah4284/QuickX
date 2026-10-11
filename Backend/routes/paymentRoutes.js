@@ -456,14 +456,27 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                 return res.status(404).json({ message: 'Book not found' });
             }
             
-            // Verify the amount matches the book price (with small tolerance for floating point)
-            const priceDiff = Math.abs(purchaseItem.price - finalAmount);
-            if (priceDiff > 0.01) {
+            // Verify amount matches ebook, hardcopy, or delivered price
+            const ebookPrice = Number(purchaseItem.price || 0);
+            const hardcopyBase =
+                purchaseItem.hardcopyPrice != null && purchaseItem.hardcopyPrice !== ''
+                    ? Number(purchaseItem.hardcopyPrice)
+                    : ebookPrice;
+            const deliveryFee = Number(
+                purchaseItem.deliveryOptions?.deliveryFee ?? purchaseItem.deliveryFee ?? 0
+            );
+            const hardcopyDeliveredPrice = hardcopyBase + deliveryFee;
+
+            const isMatch =
+                Math.abs(ebookPrice - finalAmount) <= 0.05 ||
+                Math.abs(hardcopyBase - finalAmount) <= 0.05 ||
+                Math.abs(hardcopyDeliveredPrice - finalAmount) <= 0.05;
+
+            if (!isMatch) {
                 return res.status(400).json({ 
                     message: 'Invalid amount. Price mismatch detected.',
                     expected: purchaseItem.price,
                     received: finalAmount,
-                    difference: priceDiff
                 });
             }
         } else if (itemType === 'book_cart') {
@@ -684,11 +697,25 @@ router.post('/initialize-guest', validatePayment, handleValidationErrors, async 
             if (!purchaseItem) {
                 return res.status(404).json({ message: 'Book not found' });
             }
-            if (purchaseItem.type !== 'ebook') {
-                return res.status(400).json({ message: 'Guest checkout is only for digital ebooks' });
-            }
-            const priceDiff = Math.abs(purchaseItem.price - finalAmount);
-            if (priceDiff > 0.01) {
+            const isPhysical =
+                purchaseItem.type === 'hardcopy' || Boolean(req.body.shippingAddress?.deliveryType);
+
+            const ebookPrice = Number(purchaseItem.price || 0);
+            const hardcopyBase =
+                purchaseItem.hardcopyPrice != null && purchaseItem.hardcopyPrice !== ''
+                    ? Number(purchaseItem.hardcopyPrice)
+                    : ebookPrice;
+            const deliveryFee = Number(
+                purchaseItem.deliveryOptions?.deliveryFee ?? purchaseItem.deliveryFee ?? 0
+            );
+            const hardcopyDeliveredPrice = hardcopyBase + deliveryFee;
+
+            const isMatch =
+                Math.abs(ebookPrice - finalAmount) <= 0.05 ||
+                Math.abs(hardcopyBase - finalAmount) <= 0.05 ||
+                Math.abs(hardcopyDeliveredPrice - finalAmount) <= 0.05;
+
+            if (!isMatch) {
                 return res.status(400).json({
                     message: 'Invalid amount. Price mismatch detected.',
                     expected: purchaseItem.price,

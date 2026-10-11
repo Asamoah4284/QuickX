@@ -71,7 +71,11 @@ const paymentSchema = new mongoose.Schema({
     shippingAddress: {
         fullName: String,
         phone: String,
-        email: String
+        email: String,
+        location: String,
+        deliveryType: String,
+        deliveryFee: Number,
+        estimatedDays: String,
     },
     status: {
         type: String,

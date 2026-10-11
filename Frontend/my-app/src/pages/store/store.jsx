@@ -122,7 +122,10 @@ const Store = () => {
   const cartQuantityById = useMemo(() => {
     const map = new Map();
     for (const item of cartItems) {
-      map.set(String(item.id), item.quantity || 1);
+      const key = String(item.id || item._id || '').trim();
+      if (key) {
+        map.set(key, item.quantity || 1);
+      }
     }
     return map;
   }, [cartItems]);
@@ -139,12 +142,15 @@ const Store = () => {
   // Add e-book to cart (marketplace flow)
   const handleAddBookToCart = (book) => {
     const existing = getCart();
-    const id = String(book._id);
-    const index = existing.findIndex((b) => String(b?.id) === id);
+    const id = String(book._id || book.id || '').trim();
+    if (!id) return;
+    const index = existing.findIndex((b) => String(b?.id || b?._id || '').trim() === id);
     if (index >= 0) {
       const next = [...existing];
       next[index] = {
         ...next[index],
+        id,
+        _id: id,
         quantity: Math.min(99, (next[index].quantity || 1) + 1),
       };
       setCart(next);
@@ -152,14 +158,16 @@ const Store = () => {
       setCart([
         ...existing,
         {
-          id: book._id,
+          id,
+          _id: id,
           type: 'book',
           title: book.title,
           price: Number(book.price || 0),
-          image: book.thumbnail,
-          thumbnail: book.thumbnail,
+          image: book.thumbnail || book.image,
+          thumbnail: book.thumbnail || book.image,
           fileUrl: book.fileUrl,
           author: book.author,
+          format: book.format || 'ebook',
           quantity: 1,
         },
       ]);
@@ -169,26 +177,28 @@ const Store = () => {
   };
 
   const handleUpdateCartQuantity = (bookId, delta) => {
-    const id = String(bookId);
+    const id = String(bookId || '').trim();
+    if (!id) return;
     const existing = getCart();
-    const index = existing.findIndex((item) => String(item?.id) === id);
+    const index = existing.findIndex((item) => String(item?.id || item?._id || '').trim() === id);
     if (index < 0) return;
 
     const current = existing[index].quantity || 1;
     const nextQty = current + delta;
     if (nextQty < 1) {
-      handleRemoveBookFromCart(bookId);
+      handleRemoveBookFromCart(id);
       return;
     }
 
     const next = [...existing];
-    next[index] = { ...next[index], quantity: Math.min(99, nextQty) };
+    next[index] = { ...next[index], id, _id: id, quantity: Math.min(99, nextQty) };
     setCart(next);
   };
 
   const handleRemoveBookFromCart = (bookId) => {
-    const id = String(bookId);
-    setCart(getCart().filter((item) => String(item?.id) !== id));
+    const id = String(bookId || '').trim();
+    if (!id) return;
+    setCart(getCart().filter((item) => String(item?.id || item?._id || '').trim() !== id));
     if (justAddedId === id) setJustAddedId('');
   };
 
@@ -206,10 +216,11 @@ const Store = () => {
       state: {
         item: {
           type: 'book_cart',
-          title: 'Book cart',
+          title: items.length === 1 ? items[0].title : `${items.length} Books in Cart`,
           items,
+          books: items,
           price: total,
-          image: items[0]?.image,
+          image: items[0]?.image || items[0]?.thumbnail,
         },
         returnPath: '/store',
       },
@@ -220,6 +231,43 @@ const Store = () => {
   const handleHardcopyRequest = (book) => {
     setSelectedBook(book);
     setShowHardcopyModal(true);
+  };
+
+  const handleHardcopyInstantPay = (orderInfo) => {
+    if (!selectedBook) return;
+    setShowHardcopyModal(false);
+    const bookPrice =
+      selectedBook.hardcopyPrice != null && selectedBook.hardcopyPrice !== ''
+        ? Number(selectedBook.hardcopyPrice)
+        : Number(selectedBook.price ?? 0);
+    const fee = Number(orderInfo.deliveryFee || 0);
+    navigate('/checkout', {
+      state: {
+        item: {
+          type: 'book',
+          id: selectedBook._id,
+          _id: selectedBook._id,
+          title: `${selectedBook.title} (Physical Copy)`,
+          format: 'hardcopy',
+          deliveryType: orderInfo.deliveryType || 'instant_pay',
+          deliveryFee: fee,
+          estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+          shippingAddress: {
+            fullName: orderInfo.name,
+            phone: orderInfo.phone,
+            location: orderInfo.location,
+            deliveryType: orderInfo.deliveryType || 'instant_pay',
+            deliveryFee: fee,
+            estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+          },
+          price: bookPrice + fee,
+          image: selectedBook.thumbnail || selectedBook.image,
+          thumbnail: selectedBook.thumbnail || selectedBook.image,
+          author: selectedBook.author,
+        },
+        returnPath: '/store',
+      },
+    });
   };
 
   return (
@@ -439,66 +487,69 @@ const Store = () => {
                   Add e-books from the marketplace, then checkout here.
                 </li>
               ) : (
-                getCart().map((item) => (
-                  <li key={String(item.id)} className="flex gap-3 py-4">
-                    <img
-                      src={item.image || item.thumbnail || DEFAULT_BOOK_COVER}
-                      alt=""
-                      className="h-16 w-14 shrink-0 rounded-lg border border-slate-200 bg-slate-50 object-contain p-0.5"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = DEFAULT_BOOK_COVER;
-                      }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-semibold text-slate-900">{item.title}</p>
-                      {item.author ? (
-                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{item.author}</p>
-                      ) : null}
-                      <p className="mt-1 text-sm font-bold text-slate-900">
-                        {formatGhs(item.price)}
-                        {(item.quantity || 1) > 1 ? (
-                          <span className="ml-1 text-xs font-medium text-slate-500">
-                            × {item.quantity} = {formatGhs(Number(item.price || 0) * (item.quantity || 1))}
-                          </span>
+                getCart().map((item, index) => {
+                  const itemId = String(item.id || item._id || index);
+                  return (
+                    <li key={itemId} className="flex gap-3 py-4">
+                      <img
+                        src={item.image || item.thumbnail || DEFAULT_BOOK_COVER}
+                        alt=""
+                        className="h-16 w-14 shrink-0 rounded-lg border border-slate-200 bg-slate-50 object-contain p-0.5"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = DEFAULT_BOOK_COVER;
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm font-semibold text-slate-900">{item.title}</p>
+                        {item.author ? (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{item.author}</p>
                         ) : null}
-                      </p>
-                      <div
-                        className="mt-2 inline-flex items-center rounded-lg border border-slate-200 bg-slate-50"
-                        role="group"
-                        aria-label={`Quantity for ${item.title}`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateCartQuantity(item.id, -1)}
-                          className="rounded-l-lg p-2 text-slate-600 transition hover:bg-slate-100"
-                          aria-label="Decrease quantity"
+                        <p className="mt-1 text-sm font-bold text-slate-900">
+                          {formatGhs(item.price)}
+                          {(item.quantity || 1) > 1 ? (
+                            <span className="ml-1 text-xs font-medium text-slate-500">
+                              × {item.quantity} = {formatGhs(Number(item.price || 0) * (item.quantity || 1))}
+                            </span>
+                          ) : null}
+                        </p>
+                        <div
+                          className="mt-2 inline-flex items-center rounded-lg border border-slate-200 bg-slate-50"
+                          role="group"
+                          aria-label={`Quantity for ${item.title}`}
                         >
-                          <FiMinus className="h-4 w-4" aria-hidden />
-                        </button>
-                        <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-slate-900">
-                          {item.quantity || 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateCartQuantity(item.id, 1)}
-                          disabled={(item.quantity || 1) >= 99}
-                          className="rounded-r-lg p-2 text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
-                          aria-label="Increase quantity"
-                        >
-                          <FiPlus className="h-4 w-4" aria-hidden />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateCartQuantity(item.id || item._id, -1)}
+                            className="rounded-l-lg p-2 text-slate-600 transition hover:bg-slate-100"
+                            aria-label="Decrease quantity"
+                          >
+                            <FiMinus className="h-4 w-4" aria-hidden />
+                          </button>
+                          <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-slate-900">
+                            {item.quantity || 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateCartQuantity(item.id || item._id, 1)}
+                            disabled={(item.quantity || 1) >= 99}
+                            className="rounded-r-lg p-2 text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+                            aria-label="Increase quantity"
+                          >
+                            <FiPlus className="h-4 w-4" aria-hidden />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveBookFromCart(item.id)}
-                      className="shrink-0 self-start rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveBookFromCart(item.id || item._id)}
+                        className="shrink-0 self-start rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  );
+                })
               )}
             </ul>
 
@@ -527,6 +578,7 @@ const Store = () => {
         book={selectedBook}
         open={showHardcopyModal && Boolean(selectedBook)}
         onClose={() => setShowHardcopyModal(false)}
+        onSelectInstantPay={handleHardcopyInstantPay}
       />
     </div>
   );

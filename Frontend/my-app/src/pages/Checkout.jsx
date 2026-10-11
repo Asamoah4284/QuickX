@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiCreditCard, FiLock, FiArrowLeft, FiShoppingBag, FiPhone, FiChevronDown } from 'react-icons/fi';
+import { FiCreditCard, FiLock, FiArrowLeft, FiShoppingBag, FiPhone, FiChevronDown, FiTruck } from 'react-icons/fi';
 import { SiVisa, SiMastercard } from 'react-icons/si';
 import PaystackPop from '@paystack/inline-js';
 import axios from 'axios';
@@ -229,9 +229,43 @@ function Checkout() {
 
   const isBookCart = checkoutItem?.type === 'book_cart';
   const bookCartItems = useMemo(() => {
-    if (!isBookCart) return [];
-    return normalizeCart(Array.isArray(checkoutItem?.items) ? checkoutItem.items : []);
+    if (!checkoutItem) return [];
+    if (isBookCart) {
+      const list = Array.isArray(checkoutItem.items)
+        ? checkoutItem.items
+        : Array.isArray(checkoutItem.books)
+          ? checkoutItem.books
+          : [];
+      return normalizeCart(list);
+    }
+    return [];
   }, [checkoutItem, isBookCart]);
+
+  const bundleBooks = useMemo(() => {
+    if (checkoutItem?.type === 'book_offer' && Array.isArray(checkoutItem.books) && checkoutItem.books.length > 0) {
+      return checkoutItem.books.map((b) => ({
+        ...b,
+        id: String(b?.id ?? b?._id ?? '').trim(),
+        _id: String(b?._id ?? b?.id ?? '').trim(),
+        title: b.title,
+        author: b.author,
+        price: b.price,
+        thumbnail: b.thumbnail,
+        image: b.thumbnail || b.image,
+        format: b.format || 'ebook',
+      }));
+    }
+    return [];
+  }, [checkoutItem]);
+
+  const allCheckoutBooks = useMemo(() => {
+    if (isBookCart) return bookCartItems;
+    if (bundleBooks.length > 0) return bundleBooks;
+    if (checkoutItem?.type === 'book') return [checkoutItem];
+    return [];
+  }, [isBookCart, bookCartItems, bundleBooks, checkoutItem]);
+
+  const isMultiBookOrder = allCheckoutBooks.length > 1;
 
   const bookCartSubtotal = useMemo(() => {
     if (!isBookCart) return Number(checkoutItem?.price || 0);
@@ -467,9 +501,13 @@ function Checkout() {
                 : 'MTN',
         momoNumber: formData.phoneNumber,
         shippingAddress: {
-          fullName: formData.email.split('@')[0] || 'Customer',
-          phone: formData.phoneNumber || '',
+          fullName: checkoutItem?.shippingAddress?.fullName || formData.name || formData.email.split('@')[0] || 'Customer',
+          phone: checkoutItem?.shippingAddress?.phone || formData.phoneNumber || '',
           email: formData.email || '',
+          location: checkoutItem?.shippingAddress?.location || '',
+          deliveryType: checkoutItem?.deliveryType || '',
+          deliveryFee: Number(checkoutItem?.deliveryFee || 0),
+          estimatedDays: checkoutItem?.estimatedDays || '',
         },
         transactionId: referenceString,
         status: 'completed',
@@ -646,9 +684,13 @@ function Checkout() {
         paymentMethod: resolvedPaymentMethod,
         momoNumber: formData.phoneNumber || '',
         shippingAddress: {
-          fullName: formData.email.split('@')[0] || 'Customer',
-          phone: formData.phoneNumber || '',
-          email: formData.email || ''
+          fullName: checkoutItem?.shippingAddress?.fullName || formData.name || formData.email.split('@')[0] || 'Customer',
+          phone: checkoutItem?.shippingAddress?.phone || formData.phoneNumber || '',
+          email: formData.email || '',
+          location: checkoutItem?.shippingAddress?.location || '',
+          deliveryType: checkoutItem?.deliveryType || '',
+          deliveryFee: Number(checkoutItem?.deliveryFee || 0),
+          estimatedDays: checkoutItem?.estimatedDays || '',
         },
         transactionId: referenceString,
         status: 'completed',
@@ -1203,7 +1245,9 @@ function Checkout() {
   const isGuestEbookCheckout =
     Boolean(checkoutItem) &&
     !isUserLoggedIn() &&
-    (checkoutItem.type === 'book' || checkoutItem.type === 'book_offer');
+    (checkoutItem.type === 'book' ||
+      checkoutItem.type === 'book_offer' ||
+      checkoutItem.type === 'book_cart');
 
   const guestMoMoReady =
     formData.email &&
@@ -1253,6 +1297,8 @@ function Checkout() {
       <GuestEbookCheckoutView
         checkoutItem={checkoutItem}
         checkoutItemImageSrc={checkoutItemImageSrc}
+        books={allCheckoutBooks}
+        apiUrl={API_URL}
         total={calculateFinalPrice()}
         formData={formData}
         errors={errors}
@@ -1308,45 +1354,106 @@ function Checkout() {
               </h2>
               
               <div className="mb-6 mt-4">
-                {orderSummaryBookLine ? (
-                  checkoutItem.type === 'book_cart' && bookCartItems.length > 0 ? (
-                    <ul className="space-y-5">
-                      {bookCartItems.map((it) => (
+                {isMultiBookOrder ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+                      <span className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                        {checkoutItem.type === 'book_offer'
+                          ? 'Included Bundle Books'
+                          : 'Items in Order'} ({allCheckoutBooks.length} books)
+                      </span>
+                      <span className="rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-bold text-blue-700">
+                        {checkoutItem.type === 'book_offer' ? 'Package Offer' : 'Multi-Item Order'}
+                      </span>
+                    </div>
+
+                    <ul className="space-y-4">
+                      {allCheckoutBooks.map((it, idx) => (
                         <li
-                          key={String(it?.id ?? it?.title)}
-                          className="flex flex-col border-b border-blue-100/80 pb-5 last:border-0 last:pb-0"
+                          key={String(it?.id || it?._id || it?.title || idx)}
+                          className="flex items-start gap-3.5 border-b border-slate-100 pb-4 last:border-0 last:pb-0"
                         >
-                          <CheckoutBookCover item={it} apiUrl={API_URL} className="mb-3 w-full max-w-[220px]" />
-                          <h3 className="font-semibold text-gray-900">{it.title}</h3>
-                          {it.author ? (
-                            <p className="mt-0.5 text-sm text-gray-500">By {it.author}</p>
-                          ) : null}
-                          <p className="mt-1 text-sm text-gray-500">
-                            Digital book
-                            {(it.quantity || 1) > 1 ? ` · Qty ${it.quantity}` : ''}
-                          </p>
-                          <p className="mt-2 text-lg font-bold text-blue-600">
-                            GH₵{getCartLineTotal(it).toFixed(2)}
-                            {(it.quantity || 1) > 1 ? (
-                              <span className="ml-1 text-sm font-normal text-gray-500">
-                                ({it.quantity} × GH₵{Number(it.price || 0)})
-                              </span>
+                          <CheckoutBookCover
+                            item={it}
+                            apiUrl={API_URL}
+                            className="w-16 shrink-0 rounded-lg shadow-sm"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <h3 className="line-clamp-2 text-sm font-semibold text-gray-900">{it.title}</h3>
+                            {it.author ? (
+                              <p className="mt-0.5 text-xs text-gray-500">By {it.author}</p>
                             ) : null}
-                          </p>
+                            <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                              <span className="inline-flex items-center rounded bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-700">
+                                {it.format === 'hardcopy' ? 'Physical Copy' : 'Digital E-Book'}
+                                {(it.quantity || 1) > 1 ? ` · Qty ${it.quantity}` : ''}
+                              </span>
+                              {isBookCart ? (
+                                <span className="text-xs font-bold text-blue-600">
+                                  GH₵{getCartLineTotal(it).toFixed(2)}
+                                  {(it.quantity || 1) > 1 ? (
+                                    <span className="ml-1 text-[11px] font-normal text-gray-400">
+                                      ({it.quantity} × GH₵{Number(it.price || 0)})
+                                    </span>
+                                  ) : null}
+                                </span>
+                              ) : (
+                                <span className="text-[11px] font-semibold text-emerald-600">
+                                  Included in bundle
+                                </span>
+                              )}
+                            </div>
+                          </div>
                         </li>
                       ))}
                     </ul>
-                  ) : (
+
+                    {checkoutItem.type === 'book_offer' ? (
+                      <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
+                        <p className="text-xs font-semibold text-blue-900">{checkoutItem.title}</p>
+                        <p className="mt-0.5 text-base font-extrabold text-blue-700">
+                          Bundle Price: GH₵{Number(checkoutItem.price || 0)}
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
+                ) : orderSummaryBookLine ? (
                   <div className="flex flex-col">
                     <CheckoutBookCover item={orderSummaryBookLine} apiUrl={API_URL} />
-                    <div>
+                    <div className="mt-3">
                       <h3 className="font-semibold text-gray-900">{orderSummaryBookLine.title}</h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        {checkoutItem.type === 'book_offer' ? 'Book bundle / plan' : 'Digital book'}
+                      <p className="mt-0.5 text-xs text-gray-500">
+                        {orderSummaryBookLine.format === 'hardcopy'
+                          ? 'Physical Hardcopy'
+                          : checkoutItem.type === 'book_offer'
+                            ? 'Book bundle / plan'
+                            : 'Digital E-Book'}
                       </p>
                       {orderSummaryBookLine.author ? (
-                        <p className="text-sm text-gray-500">By {orderSummaryBookLine.author}</p>
+                        <p className="mt-0.5 text-sm text-gray-500">By {orderSummaryBookLine.author}</p>
                       ) : null}
+
+                      {/* Physical Delivery details if applicable */}
+                      {(orderSummaryBookLine.format === 'hardcopy' || checkoutItem.deliveryType) ? (
+                        <div className="mt-2.5 rounded-xl border border-blue-100 bg-blue-50/70 p-3 text-xs text-blue-950">
+                          <p className="font-semibold text-blue-900 flex items-center gap-1.5">
+                            <FiTruck className="h-3.5 w-3.5 text-blue-700" />
+                            Delivery Method:{' '}
+                            <span className="capitalize">
+                              {checkoutItem.deliveryType?.replace(/_/g, ' ') || 'Direct Dispatch'}
+                            </span>
+                          </p>
+                          <p className="mt-1 text-blue-800">
+                            Timeframe: {checkoutItem.estimatedDays || '2 - 4 business days'}
+                          </p>
+                          {checkoutItem.shippingAddress?.location ? (
+                            <p className="mt-0.5 text-blue-800">
+                              Destination: {checkoutItem.shippingAddress.location}
+                            </p>
+                          ) : null}
+                        </div>
+                      ) : null}
+
                       <p className="mt-2 text-xl font-bold text-blue-600">
                         GH₵
                         {checkoutItem.type === 'book_cart'
@@ -1360,7 +1467,6 @@ function Checkout() {
                       ) : null}
                     </div>
                   </div>
-                  )
                 ) : (
                   <div className="flex items-start">
                     <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-gray-100 shadow-sm sm:h-24 sm:w-32">

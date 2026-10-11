@@ -84,7 +84,20 @@ async function validatePurchaseIntent(body, userId) {
     if (itemType === 'book') {
         const book = await Book.findById(itemId);
         if (!book) throw new Error('Book not found');
-        if (Math.abs(Number(book.price) - amount) > 0.01) {
+        const ebookPrice = Number(book.price || 0);
+        const hardcopyBase =
+            book.hardcopyPrice != null && book.hardcopyPrice !== ''
+                ? Number(book.hardcopyPrice)
+                : ebookPrice;
+        const deliveryFee = Number(book.deliveryOptions?.deliveryFee ?? book.deliveryFee ?? 0);
+        const hardcopyDeliveredPrice = hardcopyBase + deliveryFee;
+
+        const isMatch =
+            Math.abs(ebookPrice - amount) <= 0.05 ||
+            Math.abs(hardcopyBase - amount) <= 0.05 ||
+            Math.abs(hardcopyDeliveredPrice - amount) <= 0.05;
+
+        if (!isMatch) {
             throw new Error('Invalid amount. Price mismatch detected.');
         }
         return { itemType, itemId, amount, purchaseItem: book };

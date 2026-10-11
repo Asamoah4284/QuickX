@@ -633,6 +633,38 @@ function BookDetails() {
     setShowHardcopyModal(true);
   };
 
+  const handleHardcopyInstantPay = (orderInfo) => {
+    if (!book) return;
+    setShowHardcopyModal(false);
+    const bookPrice =
+      book.hardcopyPrice != null && book.hardcopyPrice !== ''
+        ? Number(book.hardcopyPrice)
+        : Number(book.price ?? 0);
+    const fee = Number(orderInfo.deliveryFee || 0);
+    goToCheckout({
+      type: 'book',
+      id: book._id,
+      _id: book._id,
+      title: `${book.title} (Physical Copy)`,
+      format: 'hardcopy',
+      deliveryType: orderInfo.deliveryType || 'instant_pay',
+      deliveryFee: fee,
+      estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+      shippingAddress: {
+        fullName: orderInfo.name,
+        phone: orderInfo.phone,
+        location: orderInfo.location,
+        deliveryType: orderInfo.deliveryType || 'instant_pay',
+        deliveryFee: fee,
+        estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+      },
+      price: bookPrice + fee,
+      thumbnail: book.thumbnail,
+      image: book.thumbnail,
+      author: book.author,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-white text-slate-900">
       <MetaPixelNoscript />
@@ -813,6 +845,7 @@ function BookDetails() {
             book={book}
             open={showHardcopyModal}
             onClose={() => setShowHardcopyModal(false)}
+            onSelectInstantPay={handleHardcopyInstantPay}
           />
           </>
         )}

@@ -76,6 +76,25 @@ const bookSchema = new mongoose.Schema({
             return this.type === 'hardcopy' ? 0 : null;
         }
     },
+    deliveryOptions: {
+        availableTypes: {
+            type: [String],
+            enum: ['pickup', 'pay_on_delivery', 'instant_pay'],
+            default: ['pickup', 'pay_on_delivery', 'instant_pay']
+        },
+        estimatedDays: {
+            type: String,
+            default: '2 - 4 business days'
+        },
+        pickupLocations: {
+            type: String,
+            default: 'QuickX Distribution Center, Accra'
+        },
+        deliveryFee: {
+            type: Number,
+            default: 0
+        }
+    },
     watermarkTemplate: String,
     published: {
         type: Date,

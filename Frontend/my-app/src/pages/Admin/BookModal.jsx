@@ -16,7 +16,13 @@ const BookModal = ({ book, onClose, onSave }) => {
         isbn: '',
         deliveryFee: 0,
         watermarkTemplate: '',
-        published: new Date().toISOString().split('T')[0]
+        published: new Date().toISOString().split('T')[0],
+        deliveryOptions: {
+            availableTypes: ['pickup', 'pay_on_delivery', 'instant_pay'],
+            estimatedDays: '2 - 4 business days',
+            pickupLocations: '',
+            deliveryFee: 0,
+        },
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -24,6 +30,15 @@ const BookModal = ({ book, onClose, onSave }) => {
 
     useEffect(() => {
         if (book) {
+            const rawDelivery = book.deliveryOptions || {};
+            const availableTypes =
+                Array.isArray(rawDelivery.availableTypes) && rawDelivery.availableTypes.length > 0
+                    ? rawDelivery.availableTypes
+                    : ['pickup', 'pay_on_delivery', 'instant_pay'];
+            const estimatedDays = rawDelivery.estimatedDays || '2 - 4 business days';
+            const pickupLocations = rawDelivery.pickupLocations || '';
+            const deliveryFee = rawDelivery.deliveryFee != null ? rawDelivery.deliveryFee : (book.deliveryFee || 0);
+
             setFormData({
                 title: book.title || '',
                 author: book.author || '',
@@ -36,7 +51,13 @@ const BookModal = ({ book, onClose, onSave }) => {
                 isbn: book.isbn || '',
                 deliveryFee: book.deliveryFee || 0,
                 watermarkTemplate: book.watermarkTemplate || '',
-                published: book.published || new Date().toISOString().split('T')[0]
+                published: book.published || new Date().toISOString().split('T')[0],
+                deliveryOptions: {
+                    availableTypes,
+                    estimatedDays,
+                    pickupLocations,
+                    deliveryFee,
+                },
             });
             setPreviewImage(book.thumbnail || '');
         }
@@ -47,6 +68,32 @@ const BookModal = ({ book, onClose, onSave }) => {
         setFormData(prev => ({
             ...prev,
             [name]: value
+        }));
+    };
+
+    const handleDeliveryTypeToggle = (type) => {
+        setFormData(prev => {
+            const current = prev.deliveryOptions?.availableTypes || [];
+            const next = current.includes(type)
+                ? current.filter(t => t !== type)
+                : [...current, type];
+            return {
+                ...prev,
+                deliveryOptions: {
+                    ...prev.deliveryOptions,
+                    availableTypes: next.length > 0 ? next : [type],
+                }
+            };
+        });
+    };
+
+    const handleDeliveryOptionChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            deliveryOptions: {
+                ...prev.deliveryOptions,
+                [field]: value,
+            }
         }));
     };
 
@@ -143,7 +190,13 @@ const BookModal = ({ book, onClose, onSave }) => {
                 isbn: formData.isbn || '',
                 thumbnail: formData.thumbnail || '',
                 published: formData.published || new Date().toISOString().split('T')[0],
-                watermarkTemplate: formData.watermarkTemplate || ''
+                watermarkTemplate: formData.watermarkTemplate || '',
+                deliveryOptions: {
+                    availableTypes: formData.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                    estimatedDays: formData.deliveryOptions?.estimatedDays || '2 - 4 business days',
+                    pickupLocations: formData.deliveryOptions?.pickupLocations || '',
+                    deliveryFee: parseFloat(formData.deliveryOptions?.deliveryFee) || 0,
+                },
             };
 
             // Add conditional fields based on book type
@@ -151,7 +204,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 bookData.fileUrl = formData.fileUrl || '';
             } else if (formData.type === 'hardcopy') {
                 bookData.stock = parseInt(formData.stock) || 0;
-                bookData.deliveryFee = parseFloat(formData.deliveryFee) || 0;
+                bookData.deliveryFee = parseFloat(formData.deliveryOptions?.deliveryFee ?? formData.deliveryFee) || 0;
             }
 
             let response;
@@ -437,6 +490,110 @@ const BookModal = ({ book, onClose, onSave }) => {
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                                 placeholder="Watermark template"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Physical Delivery & Fulfillment Configuration */}
+                                <div className="bg-white rounded-xl p-6 border border-gray-200">
+                                    <h3 className="text-lg font-semibold text-gray-800 mb-1 flex items-center">
+                                        <FiTruck className="mr-2 text-blue-600" />
+                                        Physical Delivery &amp; Fulfillment
+                                    </h3>
+                                    <p className="text-xs text-gray-500 mb-4">
+                                        Configure physical order delivery types, days timeframe, and fulfillment details.
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wider">
+                                                Available Delivery Types (Customers can choose from selected)
+                                            </label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                <label className="flex items-start p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(formData.deliveryOptions?.availableTypes || []).includes('pickup')}
+                                                        onChange={() => handleDeliveryTypeToggle('pickup')}
+                                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <div className="ml-2.5">
+                                                        <span className="block text-sm font-medium text-gray-900">Station Pickup</span>
+                                                        <span className="block text-xs text-gray-500">Pick up at designated store</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-start p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(formData.deliveryOptions?.availableTypes || []).includes('pay_on_delivery')}
+                                                        onChange={() => handleDeliveryTypeToggle('pay_on_delivery')}
+                                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <div className="ml-2.5">
+                                                        <span className="block text-sm font-medium text-gray-900">Pay on Delivery</span>
+                                                        <span className="block text-xs text-gray-500">Pay courier on arrival</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-start p-3 border border-gray-200 rounded-xl hover:bg-gray-50 cursor-pointer transition">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(formData.deliveryOptions?.availableTypes || []).includes('instant_pay')}
+                                                        onChange={() => handleDeliveryTypeToggle('instant_pay')}
+                                                        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                    />
+                                                    <div className="ml-2.5">
+                                                        <span className="block text-sm font-medium text-gray-900">Instant Pay</span>
+                                                        <span className="block text-xs text-gray-500">Online checkout (MoMo/Card)</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                                    <FiCalendar className="mr-1 text-gray-500" />
+                                                    Delivery Timeframe (Days)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.deliveryOptions?.estimatedDays || ''}
+                                                    onChange={(e) => handleDeliveryOptionChange('estimatedDays', e.target.value)}
+                                                    placeholder="e.g. 2 - 4 business days"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+                                                    <FiDollarSign className="mr-1 text-gray-500" />
+                                                    Standard Delivery Fee (GH₵)
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={formData.deliveryOptions?.deliveryFee ?? ''}
+                                                    onChange={(e) => handleDeliveryOptionChange('deliveryFee', parseFloat(e.target.value) || 0)}
+                                                    placeholder="0 for free delivery"
+                                                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                Pickup Station Address &amp; Instructions
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.deliveryOptions?.pickupLocations || ''}
+                                                onChange={(e) => handleDeliveryOptionChange('pickupLocations', e.target.value)}
+                                                placeholder="e.g. QuickX Partner Hub, Accra Mall Shop 14"
+                                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                                             />
                                         </div>
                                     </div>
