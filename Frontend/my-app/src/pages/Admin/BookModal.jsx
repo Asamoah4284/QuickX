@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar } from 'react-icons/fi';
+import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar, FiTrash2, FiPlus, FiImage } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '@/config/api';
 
@@ -13,6 +13,7 @@ const BookModal = ({ book, onClose, onSave }) => {
         fileUrl: '',
         stock: 0,
         thumbnail: '',
+        galleryImages: [],
         isbn: '',
         deliveryFee: 0,
         watermarkTemplate: '',
@@ -48,6 +49,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 fileUrl: book.fileUrl || '',
                 stock: book.stock || 0,
                 thumbnail: book.thumbnail || '',
+                galleryImages: Array.isArray(book.galleryImages) ? book.galleryImages : [],
                 isbn: book.isbn || '',
                 deliveryFee: book.deliveryFee || 0,
                 watermarkTemplate: book.watermarkTemplate || '',
@@ -159,6 +161,58 @@ const BookModal = ({ book, onClose, onSave }) => {
         }
     };
 
+    const handleGalleryUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        try {
+            setLoading(true);
+            setError('');
+
+            const token = localStorage.getItem('adminToken');
+            if (!token) {
+                setError('Please login first');
+                return;
+            }
+
+            const uploadedUrls = [];
+            for (const file of files) {
+                const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+
+                if (!url) {
+                    throw new Error('Failed to get upload URL');
+                }
+
+                await axios.put(url, file, {
+                    headers: { 'Content-Type': file.type }
+                });
+
+                const fileUrl = url.split('?')[0];
+                uploadedUrls.push(fileUrl);
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                galleryImages: [...(prev.galleryImages || []), ...uploadedUrls]
+            }));
+        } catch (err) {
+            console.error('Error uploading gallery images:', err);
+            setError('Failed to upload gallery images. Please try again.');
+        } finally {
+            setLoading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveGalleryImage = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            galleryImages: (prev.galleryImages || []).filter((_, idx) => idx !== indexToRemove)
+        }));
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         
@@ -189,6 +243,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 type: formData.type || 'ebook',
                 isbn: formData.isbn || '',
                 thumbnail: formData.thumbnail || '',
+                galleryImages: formData.galleryImages || [],
                 published: formData.published || new Date().toISOString().split('T')[0],
                 watermarkTemplate: formData.watermarkTemplate || '',
                 deliveryOptions: {
@@ -295,6 +350,52 @@ const BookModal = ({ book, onClose, onSave }) => {
                                     </label>
                                     <p className="mt-2 text-xs text-gray-500">Recommended: 600x800px, JPG or PNG</p>
                                 </div>
+                            </div>
+
+                            {/* Book Gallery Photos */}
+                            <div className="mt-6 bg-gray-50 rounded-xl p-6 border border-gray-200">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 flex items-center gap-1.5">
+                                        <FiImage className="text-blue-600" />
+                                        Gallery Photos
+                                    </h3>
+                                    <span className="text-xs text-gray-500">
+                                        {formData.galleryImages?.length || 0} images
+                                    </span>
+                                </div>
+                                <p className="text-xs text-gray-500 mb-4 leading-relaxed">
+                                    Upload additional photos showing inside pages, table of contents, or 3D mockups.
+                                </p>
+
+                                {formData.galleryImages && formData.galleryImages.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2.5 mb-4">
+                                        {formData.galleryImages.map((imgUrl, idx) => (
+                                            <div key={`${imgUrl}-${idx}`} className="group relative aspect-[3/4] rounded-lg overflow-hidden border border-gray-200 bg-white shadow-sm">
+                                                <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveGalleryImage(idx)}
+                                                    className="absolute top-1.5 right-1.5 p-1 rounded-full bg-red-600 text-white opacity-90 hover:opacity-100 hover:scale-110 transition shadow"
+                                                    title="Remove image"
+                                                >
+                                                    <FiX size={13} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
+
+                                <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white border border-blue-500 text-blue-600 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors shadow-sm text-xs font-semibold">
+                                    <FiPlus size={15} />
+                                    <span>Add Gallery Photos</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleGalleryUpload}
+                                        className="hidden"
+                                    />
+                                </label>
                             </div>
                         </div>
 

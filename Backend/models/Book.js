@@ -69,6 +69,10 @@ const bookSchema = new mongoose.Schema({
         }
     },
     thumbnail: String,
+    galleryImages: [{
+        type: String,
+        trim: true
+    }],
     isbn: String,
     deliveryFee: {
         type: Number,

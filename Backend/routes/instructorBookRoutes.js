@@ -69,7 +69,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
     try {
         const {
             title, author, description, type, price,
-            fileUrl, stock, thumbnail, isbn,
+            fileUrl, stock, thumbnail, galleryImages, isbn,
             deliveryFee, watermarkTemplate, category,
             whatYoullLearn, afterReadingOutcomes, testimonials, hardcopyPrice
         } = req.body;
@@ -91,6 +91,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             fileUrl: ebookFileUrl || undefined,
             stock: type === 'hardcopy' ? (parseInt(stock) || 0) : undefined,
             thumbnail: String(thumbnail || '').trim() || undefined,
+            galleryImages: normalizeStringArray(galleryImages),
             isbn: String(isbn || '').trim() || undefined,
             deliveryFee: type === 'hardcopy' ? (parseFloat(deliveryFee) || 0) : undefined,
             watermarkTemplate: String(watermarkTemplate || '').trim() || undefined,
@@ -146,7 +147,7 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
 
         const allowed = [
             'title', 'author', 'description', 'type', 'price',
-            'fileUrl', 'stock', 'thumbnail', 'isbn',
+            'fileUrl', 'stock', 'thumbnail', 'galleryImages', 'isbn',
             'deliveryFee', 'watermarkTemplate', 'category',
             'whatYoullLearn', 'afterReadingOutcomes', 'testimonials', 'hardcopyPrice', 'deliveryOptions'
         ];

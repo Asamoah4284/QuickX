@@ -6,8 +6,13 @@ import {
   FiX,
   FiMinus,
   FiPlus,
+  FiUsers,
+  FiShield,
+  FiZap,
+  FiCheckCircle,
 } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { FaTelegramPlane } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import HardcopyRequestModal from '../../components/HardcopyRequestModal';
 import BookMarketplaceCard from '../../components/BookMarketplaceCard';
@@ -15,6 +20,7 @@ import { normalizeCart, getCartSubtotal, getCartItemCount } from '../../utils/bo
 import { formatGhs } from '../../utils/formatGhs';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
 
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
@@ -277,24 +283,43 @@ const Store = () => {
         <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8 lg:pb-20 lg:pt-12">
           <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
             <div className="max-w-xl space-y-4 sm:space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1B5EF5] ring-1 ring-slate-200/80 sm:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#1B5EF5]" aria-hidden />
-                Bookstore
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1B5EF5] ring-1 ring-slate-200/80 sm:text-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-[#1B5EF5]" aria-hidden />
+                  Official Bookstore
+                </div>
+                <a
+                  href={COMMUNITY_TELEGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1.5 text-[11px] font-bold text-[#0088cc] ring-1 ring-sky-200/80 transition hover:bg-sky-100 sm:text-xs"
+                >
+                  <FaTelegramPlane className="h-3.5 w-3.5 text-[#0088cc]" />
+                  <span>Join 5,000+ in Community &rarr;</span>
+                </a>
               </div>
               <h1 className="text-balance text-[1.85rem] font-bold leading-tight tracking-tight text-[#0B1F44] sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
                 Discover your next digital book
               </h1>
               <p className="max-w-md text-pretty text-sm leading-relaxed text-slate-500 sm:text-base">
-                Browse the marketplace for more titles and instant checkout—ebooks you can open right
-                away, plus hardcopy requests when you need print.
+                Browse our marketplace for top trading ebooks with instant mobile money download, plus physical delivery when you need print copies.
               </p>
-              <div className="pt-1">
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
                 <a
                   href="#store-books"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1552D6] sm:w-auto sm:py-3"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition hover:bg-[#1552D6] sm:py-3"
                 >
                   Browse collection
                   <FiArrowRight className="h-4 w-4" />
+                </a>
+                <a
+                  href={COMMUNITY_TELEGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-sky-300 bg-white px-5 py-3.5 text-sm font-bold text-[#0088cc] shadow-sm transition hover:bg-sky-50 hover:border-sky-400 sm:py-3"
+                >
+                  <FaTelegramPlane className="h-4 w-4 text-[#0088cc]" />
+                  Join Our Community
                 </a>
               </div>
             </div>
@@ -362,6 +387,50 @@ const Store = () => {
         </div>
       </div>
 
+      {/* Community Spotlight Banner - High converting mid-page feature */}
+      <div className="mx-auto -mt-6 max-w-7xl px-4 sm:-mt-8 sm:px-6 relative z-10">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#0B1F44] via-[#0D2866] to-[#0088cc] p-6 text-white shadow-xl ring-1 ring-black/5 sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+            <div className="max-w-2xl space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-200 backdrop-blur-sm">
+                <FiUsers className="h-3.5 w-3.5" />
+                Ghana&apos;s #1 Trading Community
+              </div>
+              <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
+                Trade With 5,000+ Active Traders in Our Community
+              </h3>
+              <p className="text-sm leading-relaxed text-sky-100/90 sm:text-base">
+                Get free daily market setups, discuss book strategies, connect with verified authors, and level up your trading journey together.
+              </p>
+              <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-sky-200 sm:text-sm">
+                <span className="flex items-center gap-1.5"><FiCheckCircle className="text-sky-300" /> Free Daily Forex/Crypto Setups</span>
+                <span className="flex items-center gap-1.5"><FiCheckCircle className="text-sky-300" /> Author Q&amp;A Sessions</span>
+                <span className="flex items-center gap-1.5"><FiCheckCircle className="text-sky-300" /> 24/7 Peer Support</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <a
+                href={COMMUNITY_TELEGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-white px-5 py-3.5 text-sm font-bold text-[#0B1F44] shadow-md transition hover:bg-sky-50 hover:shadow-lg"
+              >
+                <FaTelegramPlane className="h-4 w-4 text-[#0088cc]" />
+                Join Community Free
+              </a>
+              <Link
+                to="/community"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+              >
+                Community Hub
+                <FiArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Marketplace */}
       <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
@@ -374,6 +443,15 @@ const Store = () => {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <a
+              href={COMMUNITY_TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-sky-200 bg-sky-50 px-3 py-2 text-xs font-bold text-[#0088cc] shadow-sm transition hover:bg-sky-100 sm:px-4 sm:text-sm"
+            >
+              <FaTelegramPlane className="h-3.5 w-3.5 text-[#0088cc]" />
+              <span>Join Community</span>
+            </a>
             <button
               type="button"
               onClick={handleOpenCart}
@@ -448,6 +526,39 @@ const Store = () => {
           </div>
         ) : null}
       </main>
+
+      {/* Bottom Community CTA Card */}
+      <section className="border-t border-slate-100 bg-gradient-to-b from-white to-[#F7F9FC] py-16">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-sky-100 text-[#0088cc] shadow-sm mb-4">
+            <FaTelegramPlane className="h-6 w-6" />
+          </div>
+          <h3 className="text-2xl font-bold tracking-tight text-[#0B1F44] sm:text-3xl">
+            Never Trade Alone — Join Our Trader Community
+          </h3>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
+            Over 5,000 Ghanaian traders learn, ask questions about our authors&apos; books, and share daily profitable setups. Connect with peers today.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={COMMUNITY_TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0088cc] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition hover:bg-[#0077b5]"
+            >
+              <FaTelegramPlane className="h-4 w-4" />
+              Join Our Community on Telegram
+            </a>
+            <Link
+              to="/community"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3.5 text-sm font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50"
+            >
+              <FiUsers className="h-4 w-4 text-slate-500" />
+              Explore Web Community
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Cart modal */}
       {showCartModal ? (

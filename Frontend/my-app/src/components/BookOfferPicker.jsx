@@ -257,17 +257,26 @@ export default function BookOfferPicker({ offerGroup, onSelectOption }) {
       aria-labelledby="book-offer-picker-heading"
     >
       <div className="mx-auto max-w-6xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-[#1B5EF5] ring-1 ring-blue-200/80 mb-3">
+          <span>📱 Digital E-Book Edition</span>
+          <span className="h-1 w-1 rounded-full bg-blue-500" />
+          <span>Instant PDF Access</span>
+        </div>
         <h2
           id="book-offer-picker-heading"
           className="text-xl font-black uppercase tracking-wide text-[#0c2340] sm:text-2xl lg:text-3xl"
         >
-          {offerGroup.heading || 'PICK YOUR PLAN & START TODAY'}
+          {offerGroup.heading ? `${offerGroup.heading} (Digital E-Book)` : 'DIGITAL E-BOOK EDITION PLANS (INSTANT DOWNLOAD)'}
         </h2>
         {offerGroup.subheading ? (
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+          <p className="mx-auto mt-2 max-w-2xl text-xs sm:text-sm text-slate-500">
             {offerGroup.subheading}
           </p>
-        ) : null}
+        ) : (
+          <p className="mx-auto mt-2 max-w-2xl text-xs sm:text-sm text-slate-500">
+            Choose your preferred digital e-book package. Download immediately to your phone, tablet or PC upon payment.
+          </p>
+        )}
       </div>
 
       <div className={`mt-10 grid gap-6 sm:gap-7 lg:items-center ${gridClass}`}>

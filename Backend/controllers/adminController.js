@@ -230,6 +230,7 @@ exports.createBook = async (req, res) => {
             deliveryFee, 
             watermarkTemplate,
             thumbnail,
+            galleryImages,
             published,
             whatYoullLearn,
             afterReadingOutcomes,
@@ -276,6 +277,7 @@ exports.createBook = async (req, res) => {
             fileUrl: type === 'ebook' ? fileUrl : undefined,
             stock: type === 'hardcopy' ? (parseInt(stock) || 0) : undefined,
             thumbnail,
+            galleryImages: normalizeStringArray(galleryImages),
             isbn,
             deliveryFee: type === 'hardcopy' ? (parseFloat(deliveryFee) || 0) : undefined,
             watermarkTemplate,
@@ -325,6 +327,7 @@ exports.updateBook = async (req, res) => {
             deliveryFee, 
             watermarkTemplate,
             thumbnail, // Get thumbnail directly from request body
+            galleryImages,
             published,
             whatYoullLearn,
             afterReadingOutcomes,
@@ -360,6 +363,9 @@ exports.updateBook = async (req, res) => {
         if (deliveryFee !== undefined) book.deliveryFee = parseFloat(deliveryFee);
         if (watermarkTemplate) book.watermarkTemplate = watermarkTemplate;
         if (thumbnail) book.thumbnail = thumbnail; // Update with new thumbnail URL
+        if (galleryImages !== undefined) {
+            book.galleryImages = normalizeStringArray(galleryImages);
+        }
         if (published) book.published = published;
         if (whatYoullLearn !== undefined) book.whatYoullLearn = normalizeStringArray(whatYoullLearn);
         if (afterReadingOutcomes !== undefined) {
