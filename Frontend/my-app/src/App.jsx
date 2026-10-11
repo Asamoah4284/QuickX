@@ -31,6 +31,8 @@ import CoursePublicDetail from "./pages/CoursePublicDetail";
 import Courses from "./pages/Courses";
 import Events from "./pages/Events";
 import EventDetail from "./pages/EventDetail";
+import PTrading from "./pages/PTrading";
+import PieDetail from "./pages/PieDetail";
 import InstructorProfile from "./pages/InstructorProfile";
 import AdminLogin from "./pages/Admin/Login";
 import AdminDashboard from "./pages/Admin/Dashboard";
@@ -158,6 +160,14 @@ const router = createBrowserRouter([
       {
         path: "events/:id",
         element: <EventDetail />
+      },
+      {
+        path: "ptrading",
+        element: <PTrading />
+      },
+      {
+        path: "ptrading/:id",
+        element: <PieDetail />
       },
       {
         path: "instructors/:userId",

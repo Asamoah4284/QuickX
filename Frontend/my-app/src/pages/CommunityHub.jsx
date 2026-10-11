@@ -23,11 +23,13 @@ import {
   FiUsers,
   FiVideo,
   FiX,
+  FiPieChart,
 } from 'react-icons/fi';
 import { uploadFileToS3 } from '../utils/uploadToS3';
 import { mentionHint, resolveMentions } from '../utils/communityMentions';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { FaTelegramPlane } from 'react-icons/fa';
+import CommunityPTradingTab from '../components/ptrading/CommunityPTradingTab';
 
 const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
 
@@ -35,6 +37,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const TABS = [
   { id: 'feed', label: 'Feed', icon: FiMessageSquare },
+  { id: 'ptrading', label: 'Pie Trading', icon: FiPieChart },
   { id: 'qa', label: 'Q&A', icon: FiHash },
   { id: 'rooms', label: 'Rooms', icon: FiUsers },
   { id: 'resources', label: 'Resources', icon: FiBook },
@@ -1726,6 +1729,10 @@ export default function CommunityHub() {
               ) : null}
             </div>
           </div>
+        ) : null}
+
+        {tab === 'ptrading' ? (
+          <CommunityPTradingTab tutorId={tutorId} isTutor={access.isTutor} />
         ) : null}
       </main>
     </div>

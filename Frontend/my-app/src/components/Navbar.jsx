@@ -14,6 +14,7 @@ import {
   FiChevronRight,
   FiMonitor,
   FiCalendar,
+  FiPieChart,
 } from 'react-icons/fi';
 import NotificationBell from './NotificationBell';
 import { clearServerPushSubscription, ensurePushSubscription } from '../utils/webPush';
@@ -35,6 +36,7 @@ const Navbar = () => {
     pathname.startsWith('/creator') ||
     pathname.startsWith('/store') ||
     pathname.startsWith('/events') ||
+    pathname.startsWith('/ptrading') ||
     pathname.startsWith('/admin') ||
     pathname.startsWith('/checkout') ||
     pathname.startsWith('/community') ||
@@ -201,6 +203,7 @@ const Navbar = () => {
 
   const linkActive = (to) => {
     if (to === '/events') return pathname === '/events' || pathname.startsWith('/events');
+    if (to === '/ptrading') return pathname === '/ptrading' || pathname.startsWith('/ptrading');
     if (to === '/community') return pathname === '/community' || pathname.includes('/community');
     if (to === '/membership') return pathname === '/membership' || pathname.startsWith('/membership');
     if (to === '/creator/onboarding') return pathname.startsWith('/creator');
@@ -223,6 +226,7 @@ const Navbar = () => {
     { to: '/courses', label: 'Courses', Icon: FiGrid },
     { to: '/store', label: 'Books', Icon: FiBookOpen },
     { to: '/events', label: 'Events', Icon: FiCalendar },
+    { to: '/ptrading', label: 'Pie Trading', Icon: FiPieChart },
     ...(showCommunityLink ? [{ to: '/community', label: 'Community', Icon: FiUsers }] : []),
     { to: '/programs', label: 'Creator programs', Icon: FiZap },
   ];

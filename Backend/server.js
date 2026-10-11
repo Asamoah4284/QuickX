@@ -187,6 +187,7 @@ app.use('/api/instructor/books', require('./routes/instructorBookRoutes'));
 app.use('/api/instructor/book-offers', require('./routes/instructorOfferGroupRoutes'));
 app.use('/api', require('./routes/subscriptionRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
+app.use('/api/ptrading', require('./routes/ptradingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api', require('./routes/referralRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
