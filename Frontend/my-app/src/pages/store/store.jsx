@@ -20,7 +20,7 @@ import { normalizeCart, getCartSubtotal, getCartItemCount } from '../../utils/bo
 import { formatGhs } from '../../utils/formatGhs';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';

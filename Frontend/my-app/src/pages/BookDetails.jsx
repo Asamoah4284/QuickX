@@ -30,7 +30,7 @@ import { isMetaPixelEnabledForBook, trackMetaInitiateCheckout } from '../utils/m
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const API_FALLBACK = 'http://localhost:5000';
-const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 function BookImageGallery({ images = [], title = 'Book' }) {
   const allImages = (Array.isArray(images) ? images : []).filter(Boolean);

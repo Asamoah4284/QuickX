@@ -8,7 +8,7 @@ import { publicAssetUrl } from '../utils/publicAssetUrl';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 /** QuickX community Telegram invite */
-const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 function openCommunityTelegram() {
   window.open(COMMUNITY_TELEGRAM_URL, '_blank', 'noopener,noreferrer');

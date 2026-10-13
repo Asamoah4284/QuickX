@@ -31,7 +31,7 @@ import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { FaTelegramPlane } from 'react-icons/fa';
 import CommunityPTradingTab from '../components/ptrading/CommunityPTradingTab';
 
-const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 

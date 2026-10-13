@@ -4,7 +4,7 @@ import { FaTelegramPlane } from 'react-icons/fa';
 
 const HERO_BG = '/images/hero.png';
 
-const COMMUNITY_TELEGRAM_URL = 'https://t.me/quckxtrading';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 const LEARNERS = [
   'https://i.pravatar.cc/100?img=12',
