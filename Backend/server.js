@@ -91,9 +91,11 @@ mongoose.connect(process.env.MONGODB_URI, {
     connectTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     serverSelectionTimeoutMS: 30000,
-    retryWrites: true,
+    maxIdleTimeMS: 30000,
+    minPoolSize: 1,
     maxPoolSize: 10,
-    minPoolSize: 0,
+    retryWrites: true,
+    retryReads: true,
     heartbeatFrequencyMS: 10000
 })
 .then(() => {

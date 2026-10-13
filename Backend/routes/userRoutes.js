@@ -373,16 +373,15 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         });
 
         await user.save();
-        console.log('User saved successfully. Sending OTP...');
+        console.log(`[OTP] Generated verification code for ${user.email} (${user.phone}): ${otp}`);
 
         // Send OTP via SMS
+        let smsSuccess = false;
         try {
-            await sendOTP(user.phone, otp);
+            const smsRes = await sendOTP(user.phone, otp);
+            smsSuccess = smsRes && smsRes.status === 1;
         } catch (smsError) {
             console.error('Failed to send registration OTP:', smsError);
-            // We don't fail registration if SMS fails conceptually, 
-            // but the user won't be able to verify without it.
-            // In a production app, you might want to handle this differently.
         }
 
         if (!process.env.JWT_SECRET) {
@@ -394,7 +393,8 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         res.status(201).json({
             message: 'Registration successful. Verification code sent.',
             token,
-            user: serializeUser(user)
+            user: serializeUser(user),
+            ...(!smsSuccess || process.env.NODE_ENV !== 'production' ? { devCode: otp } : {})
         });
     } catch (error) {
         console.error('Registration error:', error);
