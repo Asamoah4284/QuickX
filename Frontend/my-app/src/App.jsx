@@ -319,7 +319,7 @@ const router = createBrowserRouter([
           { path: "books/review-queue", element: <BookReviewQueue /> },
           { path: "tutors/applications", element: <CreatorApplications /> },
           { path: "platform/settings", element: <CreatorSettings /> },
-          { path: "books", element: <Navigate to="/admin/books/review-queue" replace /> },
+          { path: "books", element: <AdminDashboard /> },
           { path: "upload", element: <Navigate to="/admin/dashboard" replace /> },
           { path: "settings", element: <AdminDashboard /> },
           { path: "coupons", element: <AdminDashboard /> },

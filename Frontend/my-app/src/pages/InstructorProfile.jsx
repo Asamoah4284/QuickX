@@ -6,6 +6,7 @@ import { FaTelegramPlane } from 'react-icons/fa';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
 import { buildSubscriptionPlans, getPlanDefinition, normalizePlanId } from '../utils/creatorSubscriptionPlans';
+import { formatCoursePriceLabel } from '../utils/coursePricing';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -357,13 +358,7 @@ function InstructorCourseCard({ course }) {
   const thumb = courseGridPosterUrl(course);
   const views = Number(course.totalStudents) || 0;
   const typeLabel = TYPE_LABEL[course.courseType] || course.courseType;
-  const basicPrice = Number(course.subscriptionPricing?.basic ?? course.subscriptionPricing?.month1);
-  const priceLabel =
-    Number.isFinite(basicPrice) && basicPrice > 0
-      ? `From GH₵${basicPrice.toFixed(0)}/mo`
-      : Number(course.price) === 0
-      ? 'Free'
-      : `GH₵${course.price}`;
+  const priceLabel = formatCoursePriceLabel(course);
 
   return (
     <Link

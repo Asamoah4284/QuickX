@@ -42,6 +42,7 @@ export default function AdminLayout() {
     pathname === '/admin/courses' ||
     pathname.startsWith('/admin/courses/add') ||
     pathname.startsWith('/admin/courses/edit');
+  const isBooks = pathname === '/admin/books';
   const isEvents = pathname.startsWith('/admin/events');
   const isSettingsTab = pathname.startsWith('/admin/settings') && !pathname.startsWith('/admin/platform');
   const isCoupons = pathname.startsWith('/admin/coupons');
@@ -96,6 +97,10 @@ export default function AdminLayout() {
             <NavLink to="/admin/books/review-queue" className={() => navClass(isBookReview)} onClick={close}>
               <FiClipboard className="mr-2 lg:mr-3" />
               Book review queue
+            </NavLink>
+            <NavLink to="/admin/books" className={() => navClass(isBooks)} onClick={close}>
+              <FiBookOpen className="mr-2 lg:mr-3" />
+              Books
             </NavLink>
             <NavLink to="/admin/platform/settings" className={() => navClass(isPlatformSettings)} onClick={close}>
               <FiSettings className="mr-2 lg:mr-3" />

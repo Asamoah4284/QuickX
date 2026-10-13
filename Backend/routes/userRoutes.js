@@ -1305,7 +1305,7 @@ router.get('/public/:userId/instructor', async (req, res) => {
 
         const coursesWithModules = await Course.find(visibility)
             .select(
-                'title thumbnail promoVideo shortDescription subtitle courseType category tags totalStudents averageRating createdAt learningOutcomes modules'
+                'title thumbnail promoVideo shortDescription subtitle courseType category tags totalStudents averageRating createdAt learningOutcomes modules price pricingType currency subscriptionPricing'
             )
             .sort({ createdAt: -1 })
             .lean();
@@ -1314,9 +1314,33 @@ router.get('/public/:userId/instructor', async (req, res) => {
         const previewLessons = profileLessons.filter((l) => l.isPreview);
         const videoContent = collectInstructorVideoContent(coursesWithModules);
         const videoCount = countLessonVideos(coursesWithModules);
-        const courses = coursesWithModules.map(({ modules, ...rest }) => rest);
+        const courses = coursesWithModules.map(({ modules, ...rest }) => {
+            let minModulePrice = null;
+            if (Array.isArray(modules)) {
+                const prices = modules
+                    .map((m) => Number(m.price))
+                    .filter((p) => Number.isFinite(p) && p > 0);
+                if (prices.length > 0) {
+                    minModulePrice = Math.min(...prices);
+                }
+            }
+            return {
+                ...rest,
+                minModulePrice,
+            };
+        });
 
-        const totalLearners = courses.reduce((sum, c) => sum + (Number(c.totalStudents) || 0), 0);
+        const courseIds = coursesWithModules.map((c) => c._id);
+        const [distinctLearners, activeSubscribers] = await Promise.all([
+            Enrollment.distinct('studentId', { courseId: { $in: courseIds } }),
+            TutorSubscription.countDocuments({
+                tutorId: userId,
+                status: 'active',
+                endsAt: { $gt: new Date() },
+            }),
+        ]);
+        const sumTotalStudents = courses.reduce((sum, c) => sum + (Number(c.totalStudents) || 0), 0);
+        const totalLearners = Math.max(distinctLearners.length, sumTotalStudents);
         const avgRating =
             courses.length > 0
                 ? courses.reduce((s, c) => s + (Number(c.averageRating) || 0), 0) / courses.length
@@ -1359,6 +1383,7 @@ router.get('/public/:userId/instructor', async (req, res) => {
                 courses: courses.length,
                 videos: videoCount,
                 learners: totalLearners,
+                subscribers: activeSubscribers,
                 avgRating: Math.round(avgRating * 10) / 10
             },
             categories: categoryList,

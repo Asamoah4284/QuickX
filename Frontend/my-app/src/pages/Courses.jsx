@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { FaTelegramPlane } from 'react-icons/fa';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import { formatCoursePriceLabel } from '../utils/coursePricing';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -264,13 +265,7 @@ export default function Courses() {
                       </div>
 
                       <div className="text-xs font-bold text-slate-900 shrink-0">
-                        {(() => {
-                          const basic = Number(c.subscriptionPricing?.basic ?? c.subscriptionPricing?.month1);
-                          if (Number.isFinite(basic) && basic > 0) {
-                            return `From GH₵${basic.toFixed(0)}/mo`;
-                          }
-                          return Number(c.price) === 0 ? 'Free' : `GH₵${c.price}`;
-                        })()}
+                        {formatCoursePriceLabel(c)}
                       </div>
                     </div>
                   </div>

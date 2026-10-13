@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Features from '../../components/Features';
 import axios from 'axios';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
+import { formatCoursePriceLabel } from '../../utils/coursePricing';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -369,13 +370,7 @@ const MainSchool = () => {
                           </div>
 
                           <div className="text-[15px] font-bold text-gray-900">
-                            {(() => {
-                              const basic = Number(c.subscriptionPricing?.basic ?? c.subscriptionPricing?.month1);
-                              if (Number.isFinite(basic) && basic > 0) {
-                                return `From GH₵${basic.toFixed(0)}/mo`;
-                              }
-                              return Number(c.price) === 0 ? 'Free' : `GH₵${c.price}`;
-                            })()}
+                            {formatCoursePriceLabel(c)}
                           </div>
                         </div>
                       </div>

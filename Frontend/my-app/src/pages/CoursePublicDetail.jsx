@@ -224,6 +224,11 @@ export default function CoursePublicDetail() {
   const students = Number(course.totalStudents) || 0;
   const typeName = TYPE_LABEL[course.courseType] || course.courseType || 'Courses';
   const currentPrice = Number(course.price) || 0;
+  const modulePrices = (course.modules || [])
+    .map((m) => Number(m.price))
+    .filter((p) => Number.isFinite(p) && p > 0);
+  const minModulePrice = modulePrices.length > 0 ? Math.min(...modulePrices) : 0;
+  const hasOneTimePrice = currentPrice > 0 || minModulePrice > 0;
   const outcomes = course.learningOutcomes?.length
     ? course.learningOutcomes
     : [course.shortDescription || course.description || 'Practical lessons you can apply right away.'].filter(Boolean);
@@ -429,8 +434,8 @@ export default function CoursePublicDetail() {
 
               <div className="p-7 space-y-6">
                 
-                <div className={`grid ${currentPrice > 0 ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
-                  {currentPrice > 0 && (
+                <div className={`grid ${hasOneTimePrice ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                  {hasOneTimePrice && (
                     <button
                       type="button"
                       onClick={() => setPurchaseMode('course')}
@@ -445,7 +450,11 @@ export default function CoursePublicDetail() {
                       )}
                       <span className={`block text-[13px] font-bold mb-1 ${purchaseMode === 'course' ? 'text-indigo-600' : 'text-gray-500'}`}>One-time</span>
                       <span className="block text-xl font-bold text-gray-900">
-                        {currentPrice === 0 ? 'Free' : `GH₵${currentPrice.toFixed(0)}`}
+                        {currentPrice > 0
+                          ? `GH₵${currentPrice.toFixed(0)}`
+                          : minModulePrice > 0
+                          ? `From GH₵${minModulePrice.toFixed(0)}`
+                          : 'Free'}
                       </span>
                     </button>
                   )}

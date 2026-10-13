@@ -73,6 +73,10 @@ const bookSchema = new mongoose.Schema({
         type: String,
         trim: true
     }],
+    salesCount: {
+        type: Number,
+        default: 0
+    },
     isbn: String,
     deliveryFee: {
         type: Number,

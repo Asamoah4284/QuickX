@@ -697,6 +697,13 @@ router.post('/:id/enroll', auth, async (req, res) => {
             return res.status(400).json({ message: 'This course requires payment before enrollment' });
         }
 
+        const existingEnrollment = await Enrollment.findOne({ studentId: req.user._id, courseId: course._id });
+        if (!existingEnrollment) {
+            await Course.findByIdAndUpdate(course._id, {
+                $inc: { totalStudents: 1, totalEnrollments: 1 }
+            });
+        }
+
         const enrollment = await Enrollment.findOneAndUpdate(
             { studentId: req.user._id, courseId: course._id },
             {

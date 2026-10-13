@@ -22,6 +22,7 @@ const EMPTY_FORM = {
   category: 'general',
   fileUrl: '',
   thumbnail: '',
+  galleryImages: [],
   isbn: '',
   stock: 0,
   deliveryFee: 0,
@@ -123,6 +124,8 @@ export default function CreatorBookWizard() {
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0 });
   const [testimonialUploads, setTestimonialUploads] = useState({});
   const thumbnailInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const testimonialInputRefs = useRef({});
   const offerSectionRef = useRef(null);
 
@@ -156,6 +159,7 @@ export default function CreatorBookWizard() {
           category: data.category || 'general',
           fileUrl: data.fileUrl || '',
           thumbnail: data.thumbnail || '',
+          galleryImages: Array.isArray(data.galleryImages) ? data.galleryImages : [],
           isbn: data.isbn || '',
           stock: data.stock ?? 0,
           deliveryFee: data.deliveryFee ?? data.deliveryOptions?.deliveryFee ?? 0,
@@ -327,6 +331,41 @@ export default function CreatorBookWizard() {
     } finally {
       setUploadProgress((cur) => ({ ...cur, thumbnail: 0 }));
     }
+  };
+
+  const handleGalleryUpload = async (files) => {
+    const fileList = Array.from(files || []);
+    if (!fileList.length) return;
+    setError('');
+    setSuccess('');
+    setGalleryUploading(true);
+    try {
+      const uploadedUrls = [];
+      for (const file of fileList) {
+        const url = await uploadFileToS3({
+          file,
+          token,
+          type: 'image',
+        });
+        if (url) uploadedUrls.push(url);
+      }
+      setForm((prev) => ({
+        ...prev,
+        galleryImages: [...(prev.galleryImages || []), ...uploadedUrls],
+      }));
+      setSuccess(`${uploadedUrls.length} gallery image(s) uploaded successfully.`);
+    } catch (e) {
+      setError(e.response?.data?.message || e.message);
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const handleRemoveGalleryImage = (idxToRemove) => {
+    setForm((prev) => ({
+      ...prev,
+      galleryImages: (prev.galleryImages || []).filter((_, i) => i !== idxToRemove),
+    }));
   };
 
   const handleSubmitForReview = async () => {
@@ -820,6 +859,57 @@ export default function CreatorBookWizard() {
                 className="sr-only"
                 readOnly={uploadProgress.thumbnail > 0}
               />
+          </div>
+
+          {/* Book Gallery Photos */}
+          <div className="mt-6 border-t border-slate-100 pt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <label className={labelCls}>Book Gallery Photos</label>
+              <span className="text-xs text-slate-400">
+                {form.galleryImages?.length || 0} image(s)
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-slate-500">
+              Upload multiple images (preview pages, book highlights, table of contents, physical angles) to display in the bookstore gallery.
+            </p>
+
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => handleGalleryUpload(e.target.files)}
+              className="sr-only"
+            />
+
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={galleryUploading}
+              className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+            >
+              {galleryUploading ? 'Uploading photos…' : '+ Add Gallery Photos'}
+            </button>
+
+            {form.galleryImages && form.galleryImages.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                {form.galleryImages.map((imgUrl, idx) => (
+                  <div key={`${imgUrl}-${idx}`} className="group relative aspect-square overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                    <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGalleryImage(idx)}
+                      title="Remove image"
+                      className="absolute right-1.5 top-1.5 rounded-full bg-rose-600 p-1 text-white opacity-90 transition hover:bg-rose-700 hover:opacity-100"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 

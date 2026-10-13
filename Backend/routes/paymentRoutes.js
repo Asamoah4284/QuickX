@@ -590,9 +590,11 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
 
         if (itemType === 'book' || itemType === 'book_cart' || itemType === 'book_offer') {
             const buyer = await User.findById(req.user._id);
+            const purchasedBookIds = [];
             if (buyer?.purchasedBooks) {
                 const addBookId = (bookId) => {
                     if (!bookId) return;
+                    purchasedBookIds.push(bookId);
                     const exists = buyer.purchasedBooks.some((b) => String(b) === String(bookId));
                     if (!exists) buyer.purchasedBooks.push(bookId);
                 };
@@ -605,6 +607,18 @@ router.post('/initialize', auth, validatePayment, handleValidationErrors, async 
                     ids.forEach(addBookId);
                 }
                 await buyer.save();
+            }
+
+            if (purchasedBookIds.length > 0) {
+                await Book.updateMany(
+                    { _id: { $in: purchasedBookIds } },
+                    { $inc: { salesCount: 1 } }
+                ).catch((err) => console.error('Book salesCount update failed:', err));
+
+                await Book.updateMany(
+                    { _id: { $in: purchasedBookIds }, type: 'hardcopy', stock: { $gt: 0 } },
+                    { $inc: { stock: -1 } }
+                ).catch((err) => console.error('Book stock update failed:', err));
             }
         }
 
@@ -783,6 +797,19 @@ router.post('/initialize-guest', validatePayment, handleValidationErrors, async 
         };
 
         const payment = await Payment.create(paymentRecord);
+
+        const guestBookIds =
+            itemType === 'book' && itemId
+                ? [itemId]
+                : Array.isArray(guestCartIds) && guestCartIds.length > 0
+                ? guestCartIds
+                : [];
+        if (guestBookIds.length > 0) {
+            await Book.updateMany(
+                { _id: { $in: guestBookIds } },
+                { $inc: { salesCount: 1 } }
+            ).catch((err) => console.error('Guest checkout book salesCount update failed:', err));
+        }
 
         res.json({
             success: true,
