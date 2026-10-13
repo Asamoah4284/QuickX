@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { SiMastercard, SiVisa } from 'react-icons/si';
+import { FaTelegramPlane } from 'react-icons/fa';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
 import { buildSubscriptionPlans, getPlanDefinition, normalizePlanId } from '../utils/creatorSubscriptionPlans';
@@ -276,6 +277,7 @@ function MediaThumb({ videoSrc, posterSrc, className }) {
 }
 
 /** Desktop showcase for a single free-preview lesson — opens video when available, else course page. */
+/** Compact desktop showcase for a single free-preview lesson */
 function SinglePreviewLessonDesktopShowcase({ preview, onOpenPreview }) {
   const thumb = courseGridPosterUrl({
     thumbnail: preview.courseThumbnail,
@@ -285,43 +287,40 @@ function SinglePreviewLessonDesktopShowcase({ preview, onOpenPreview }) {
   const typeLabel = TYPE_LABEL[preview.courseType];
   const videoSrc = resolvePreviewTileVideoSrc(preview);
   const showcaseClass =
-    'group relative hidden overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-200/80 transition hover:ring-blue-300/50 lg:grid lg:min-h-[220px] lg:grid-cols-[1.15fr_1fr] lg:gap-0 lg:shadow-lg lg:shadow-zinc-900/5';
+    'group relative hidden overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-800 transition hover:ring-blue-400/50 max-w-xl mx-auto lg:grid lg:grid-cols-[1.2fr_1fr] lg:gap-0 lg:shadow-md';
 
   const inner = (
     <>
-      <div className="relative aspect-[16/10] max-h-[280px] overflow-hidden lg:aspect-auto lg:max-h-none lg:min-h-[220px]">
+      <div className="relative aspect-video overflow-hidden">
         <MediaThumb
           videoSrc={videoSrc}
           posterSrc={thumb}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-black/40" />
-        <span className="absolute left-3 top-3 rounded-md bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
+        <span className="absolute left-2.5 top-2.5 rounded-md bg-blue-600 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
           Preview
         </span>
       </div>
-      <div className="flex flex-col justify-center bg-gradient-to-br from-zinc-900 to-zinc-800 p-6 lg:min-h-[220px] lg:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300/90">Free preview lesson</p>
-        <h3 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white lg:text-2xl">
+      <div className="flex flex-col justify-center bg-zinc-900 p-4">
+        <p className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Free preview lesson</p>
+        <h3 className="mt-1 text-sm font-bold leading-snug text-white line-clamp-2">
           {preview.lessonTitle}
         </h3>
-        <p className="mt-2 text-sm font-medium text-zinc-400">{preview.courseTitle}</p>
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-white">
-            <svg className="h-4 w-4 text-white/90" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <p className="mt-1 text-xs text-zinc-400 line-clamp-1">{preview.courseTitle}</p>
+        <div className="mt-3 flex items-center gap-2 text-xs">
+          <span className="inline-flex items-center gap-1 font-medium text-white/80">
+            <svg className="h-3.5 w-3.5 text-white/80" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
               <path d="M8 5v14l11-7z" />
             </svg>
-            {formatCompact(views)} learners
+            {formatCompact(views)}
           </span>
           {typeLabel ? (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{typeLabel}</span>
+            <span className="rounded-md bg-white/10 px-2 py-0.5 text-[10px] font-semibold text-white/90">{typeLabel}</span>
           ) : null}
         </div>
-        <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-300 transition group-hover:text-white">
-          {videoSrc && onOpenPreview ? 'Tap to watch preview' : 'Watch on course page'}
-          <span aria-hidden className="transition group-hover:translate-x-0.5">
-            →
-          </span>
+        <span className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-300 transition group-hover:text-white">
+          {videoSrc && onOpenPreview ? 'Play preview →' : 'View course →'}
         </span>
       </div>
     </>
@@ -353,59 +352,59 @@ function SinglePreviewLessonDesktopShowcase({ preview, onOpenPreview }) {
   );
 }
 
-/** Wide desktop preview when the creator only has one video — avoids a tiny tile in empty space */
-function SingleCourseDesktopShowcase({ course }) {
+/** Compact, modern course card for the instructor profile courses tab */
+function InstructorCourseCard({ course }) {
   const thumb = courseGridPosterUrl(course);
   const views = Number(course.totalStudents) || 0;
-  const typeLabel = TYPE_LABEL[course.courseType];
+  const typeLabel = TYPE_LABEL[course.courseType] || course.courseType;
+  const basicPrice = Number(course.subscriptionPricing?.basic ?? course.subscriptionPricing?.month1);
+  const priceLabel =
+    Number.isFinite(basicPrice) && basicPrice > 0
+      ? `From GH₵${basicPrice.toFixed(0)}/mo`
+      : Number(course.price) === 0
+      ? 'Free'
+      : `GH₵${course.price}`;
 
   return (
     <Link
       to={`/courses/${course._id}`}
-      className="group relative hidden overflow-hidden rounded-2xl bg-zinc-950 ring-1 ring-zinc-200/80 transition hover:ring-blue-300/50 lg:grid lg:min-h-[220px] lg:grid-cols-[1.15fr_1fr] lg:gap-0 lg:shadow-lg lg:shadow-zinc-900/5"
+      className="group flex flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white transition-all duration-200 hover:-translate-y-0.5 hover:border-zinc-300 hover:shadow-md"
     >
-      <div className="relative aspect-[16/10] max-h-[280px] overflow-hidden lg:aspect-auto lg:max-h-none lg:min-h-[220px]">
+      <div className="relative aspect-video w-full overflow-hidden bg-zinc-100">
         <img
           src={thumb}
-          alt=""
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.02]"
+          alt={course.title}
+          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
           onError={(e) => {
             e.currentTarget.onerror = null;
             e.currentTarget.src = FALLBACK_THUMB;
           }}
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent lg:bg-gradient-to-r lg:from-transparent lg:to-black/40" />
-        <span className="absolute left-3 top-3 rounded-md bg-blue-600 px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
-          Pinned
-        </span>
+        {typeLabel ? (
+          <span className="absolute left-2.5 top-2.5 rounded-md bg-zinc-900/80 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white backdrop-blur-sm">
+            {typeLabel}
+          </span>
+        ) : null}
       </div>
-      <div className="flex flex-col justify-center bg-gradient-to-br from-zinc-900 to-zinc-800 p-6 lg:min-h-[220px] lg:p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-300/90">Featured course</p>
-        <h3 className="mt-2 text-xl font-bold leading-tight tracking-tight text-white lg:text-2xl">
+
+      <div className="flex flex-1 flex-col p-3.5">
+        <h3 className="line-clamp-2 text-sm font-bold text-zinc-900 group-hover:text-blue-600 transition-colors">
           {course.title}
         </h3>
         {(course.shortDescription || course.subtitle) && (
-          <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-zinc-400">
+          <p className="mt-1 line-clamp-1 text-xs text-zinc-500">
             {course.shortDescription || course.subtitle}
           </p>
         )}
-        <div className="mt-5 flex flex-wrap items-center gap-3 text-sm">
-          <span className="inline-flex items-center gap-1.5 font-semibold text-white">
-            <svg className="h-4 w-4 text-white/90" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+        <div className="mt-auto pt-3 flex items-center justify-between border-t border-zinc-100 text-xs">
+          <span className="flex items-center gap-1 font-medium text-zinc-500">
+            <svg className="h-3.5 w-3.5 text-zinc-400" fill="currentColor" viewBox="0 0 24 24">
               <path d="M8 5v14l11-7z" />
             </svg>
-            {formatCompact(views)} learners
+            {formatCompact(views)} students
           </span>
-          {typeLabel ? (
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-white/90">{typeLabel}</span>
-          ) : null}
+          <span className="font-bold text-zinc-900">{priceLabel}</span>
         </div>
-        <span className="mt-6 inline-flex items-center gap-2 text-sm font-semibold text-blue-300 transition group-hover:text-white">
-          View course
-          <span aria-hidden className="transition group-hover:translate-x-0.5">
-            →
-          </span>
-        </span>
       </div>
     </Link>
   );
@@ -1133,23 +1132,10 @@ export default function InstructorProfile() {
     }
 
     if (filteredCourses.length === 0) return null;
-    if (filteredCourses.length === 1) {
-      const c = filteredCourses[0];
-      return (
-        <>
-          <div className="flex justify-center px-2 lg:hidden">
-            <div className="w-full max-w-[220px]">
-              <TikTokVideoTile course={c} pinned />
-            </div>
-          </div>
-          <SingleCourseDesktopShowcase course={c} />
-        </>
-      );
-    }
     return (
-      <div className={TIKTOK_PROFILE_GRID}>
-        {filteredCourses.map((c, index) => (
-          <TikTokVideoTile key={c._id} course={c} pinned={index === 0} />
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 px-2 sm:px-0">
+        {filteredCourses.map((c) => (
+          <InstructorCourseCard key={c._id} course={c} />
         ))}
       </div>
     );
@@ -1287,6 +1273,18 @@ export default function InstructorProfile() {
 
   const actionButtons = (
     <div className="flex w-full flex-col items-center gap-2 sm:items-start lg:items-end">
+      {/* Official Telegram Community */}
+      <a
+        href="https://t.me/quickxtrading"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="inline-flex min-h-[2.5rem] items-center justify-center gap-2 rounded-full border border-sky-200 bg-sky-50 px-4 text-xs font-bold text-[#0088cc] shadow-sm transition hover:bg-[#229ED9] hover:text-white"
+        title="Join QuickX Official Telegram Community"
+      >
+        <FaTelegramPlane className="h-3.5 w-3.5" />
+        <span>Join Community (5K+)</span>
+      </a>
+
       {communityAccess.canAccessCommunity || communityAccess.isTutor ? (
         <Link
           to={`/instructors/${userId}/community`}

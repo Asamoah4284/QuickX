@@ -16,6 +16,7 @@ import {
   FiCalendar,
   FiPieChart,
 } from 'react-icons/fi';
+import { FaTelegramPlane } from 'react-icons/fa';
 import NotificationBell from './NotificationBell';
 import { clearServerPushSubscription, ensurePushSubscription } from '../utils/webPush';
 
@@ -227,7 +228,7 @@ const Navbar = () => {
     { to: '/store', label: 'Books', Icon: FiBookOpen },
     { to: '/events', label: 'Events', Icon: FiCalendar },
     { to: '/ptrading', label: 'Pie Trading', Icon: FiPieChart },
-    ...(showCommunityLink ? [{ to: '/community', label: 'Community', Icon: FiUsers }] : []),
+    { to: '/community', label: 'Community', Icon: FiUsers },
     { to: '/programs', label: 'Creator programs', Icon: FiZap },
   ];
 
@@ -271,6 +272,21 @@ const Navbar = () => {
                 ) : null}
               </Link>
             ))}
+
+            <a
+              href="https://t.me/quickxtrading"
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`ml-1 inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold transition shadow-sm ${
+                navSolid
+                  ? 'bg-sky-50 text-sky-700 hover:bg-[#229ED9] hover:text-white border border-sky-200/70'
+                  : 'bg-white/15 text-white hover:bg-white hover:text-[#0B1F44] border border-white/20 backdrop-blur-md'
+              }`}
+              title="Join QuickX on Telegram"
+            >
+              <FaTelegramPlane className="h-3.5 w-3.5 text-[#229ED9]" />
+              <span>Join Community</span>
+            </a>
 
             <div
               className={`mx-2 h-5 w-px ${navSolid ? 'bg-slate-200' : 'bg-white/25'}`}
@@ -432,6 +448,28 @@ const Navbar = () => {
                 </div>
 
                 <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white px-3 py-4">
+                  {/* Telegram Community mobile card */}
+                  <a
+                    href="https://t.me/quickxtrading"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={closeMobile}
+                    className="mb-4 flex items-center justify-between rounded-2xl bg-gradient-to-r from-sky-500 via-[#1B5EF5] to-[#0B1F44] p-3.5 text-white shadow-md transition active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/20 backdrop-blur-sm">
+                        <FaTelegramPlane className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-sky-100">Telegram Community</p>
+                        <p className="text-[14px] font-bold leading-tight">Join 5,000+ Traders</p>
+                      </div>
+                    </div>
+                    <span className="rounded-xl bg-white/20 px-2.5 py-1 text-xs font-bold backdrop-blur-sm">
+                      Join Free →
+                    </span>
+                  </a>
+
                   <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-400">
                     Explore
                   </p>

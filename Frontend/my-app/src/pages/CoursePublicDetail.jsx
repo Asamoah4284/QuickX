@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { FaTelegramPlane } from 'react-icons/fa';
 import axios from 'axios';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
@@ -486,6 +487,21 @@ export default function CoursePublicDetail() {
                   <div className="flex items-center gap-3 text-[14px] text-gray-600">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                     <span>{course.certificateEnabled ? 'Certificate of completion' : 'No certificate included'}</span>
+                  </div>
+
+                  <div className="pt-2">
+                    <a
+                      href="https://t.me/quickxtrading"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-between rounded-2xl bg-sky-50 border border-sky-200/60 p-3 text-xs font-semibold text-sky-800 transition hover:bg-sky-100"
+                    >
+                      <div className="flex items-center gap-2">
+                        <FaTelegramPlane className="h-4 w-4 text-[#229ED9]" />
+                        <span>Join Course Community</span>
+                      </div>
+                      <span className="font-bold text-[#0088cc]">5K+ Members →</span>
+                    </a>
                   </div>
                 </div>
 

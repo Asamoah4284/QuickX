@@ -16,6 +16,7 @@ import {
   FiDownload,
   FiAward,
 } from 'react-icons/fi';
+import { FaTelegramPlane } from 'react-icons/fa';
 
 const CATEGORIES = [
   'All',
@@ -292,6 +293,30 @@ export default function Events() {
                 Reset filters
               </button>
             )}
+          </div>
+        </div>
+
+        {/* Telegram Community Banner */}
+        <div className="mt-6 rounded-2xl border border-sky-200/70 bg-gradient-to-r from-sky-50/90 via-blue-50/60 to-indigo-50/40 p-4 sm:p-5 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[#229ED9] text-white shadow-sm">
+                <FaTelegramPlane className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-slate-900">Never miss live trading workshops & free masterclasses</p>
+                <p className="text-xs text-slate-600 mt-0.5">Get early invites, recordings, and VIP perks inside our 5,000+ member Telegram group.</p>
+              </div>
+            </div>
+            <a
+              href="https://t.me/quickxtrading"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-[#229ED9] px-4 py-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#1e8cc0] shrink-0"
+            >
+              <FaTelegramPlane className="h-3.5 w-3.5" />
+              Join Community
+            </a>
           </div>
         </div>
       </div>

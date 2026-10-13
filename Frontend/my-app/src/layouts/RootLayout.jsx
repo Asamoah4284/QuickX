@@ -3,6 +3,7 @@ import { useEffect, useLayoutEffect } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import InstallAppBanner from '../components/InstallAppBanner';
+import CommunityFloatingPill from '../components/CommunityFloatingPill';
 import { Helmet } from 'react-helmet-async';
 import { Analytics } from '@vercel/analytics/react';
 
@@ -74,6 +75,7 @@ function RootLayout() {
         </main>
         {!hideFooter ? <Footer /> : null}
         <InstallAppBanner />
+        <CommunityFloatingPill />
       </div>
       <Analytics />
     </>

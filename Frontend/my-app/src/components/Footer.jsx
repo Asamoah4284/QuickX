@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { FiMail, FiPhone, FiMapPin, FiArrowUpRight } from 'react-icons/fi';
+import { FaTelegramPlane } from 'react-icons/fa';
 import '../styles/landing.css';
 
 export default function Footer() {
@@ -55,6 +56,41 @@ export default function Footer() {
             Explore the catalog
             <FiArrowUpRight className="h-4 w-4" />
           </Link>
+        </div>
+
+        {/* Telegram Community Strip */}
+        <div className="mb-14 rounded-3xl border border-white/10 bg-gradient-to-r from-white/[0.08] via-white/[0.04] to-transparent p-6 sm:p-8 backdrop-blur-md">
+          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="max-w-xl">
+              <div className="inline-flex items-center gap-2 rounded-full bg-[#229ED9]/20 px-3 py-1 text-xs font-bold uppercase tracking-wider text-[#7BA3FF]">
+                <FaTelegramPlane className="h-3.5 w-3.5 text-[#229ED9]" />
+                Official Community
+              </div>
+              <h3 className="mt-3 text-xl font-bold tracking-tight text-white sm:text-2xl">
+                Trade with 5,000+ Ghanaian traders & learners.
+              </h3>
+              <p className="mt-2 text-sm text-white/70">
+                Daily market analysis, live trade breakdowns, and direct tutor support on Telegram.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <a
+                href="https://t.me/quickxtrading"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-2xl bg-[#229ED9] px-5 py-3 text-sm font-bold text-white shadow-lg shadow-[#229ED9]/25 transition hover:bg-[#1e8cc0] hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <FaTelegramPlane className="h-4 w-4" />
+                Join on Telegram
+              </a>
+              <Link
+                to="/community"
+                className="inline-flex items-center gap-1.5 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white/90 backdrop-blur-sm transition hover:bg-white/10"
+              >
+                Community Hub
+              </Link>
+            </div>
+          </div>
         </div>
 
         <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
