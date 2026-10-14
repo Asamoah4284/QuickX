@@ -3,6 +3,7 @@ import { AnimatePresence } from 'framer-motion';
 import { FiArrowLeft, FiChevronDown, FiLock, FiShoppingBag, FiTruck, FiClock, FiCheck } from 'react-icons/fi';
 import PaymentSuccessModal from './PaymentSuccessModal';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
+import { getCurrency, getCurrencySymbol, convertToGhs } from '../utils/currencyStore';
 
 function resolveItemCover(item, apiUrl) {
   const raw = item?.thumbnail ?? item?.image;
@@ -83,7 +84,9 @@ export default function GuestEbookCheckoutView({
                   <h1 className="text-base font-bold text-slate-900">
                     {checkoutItem.title || 'Included Titles in this Order'}
                   </h1>
-                  <span className="text-xl font-black text-slate-900">GH₵{total}</span>
+                  <span className="text-xl font-black text-slate-900">
+                    {getCurrencySymbol()}{total}
+                  </span>
                 </div>
 
                 <div className="divide-y divide-slate-100 rounded-xl border border-slate-100 bg-slate-50/70 p-2">
@@ -112,7 +115,7 @@ export default function GuestEbookCheckoutView({
                             </span>
                             {b.price ? (
                               <span className="font-semibold text-slate-700">
-                                GH₵{Number(b.price || 0) * (b.quantity || 1)}
+                                {getCurrencySymbol()}{Number(b.price || 0) * (b.quantity || 1)}
                               </span>
                             ) : null}
                           </div>
@@ -142,7 +145,14 @@ export default function GuestEbookCheckoutView({
                   {checkoutItem.author ? (
                     <p className="mt-0.5 text-sm text-slate-500">By {checkoutItem.author}</p>
                   ) : null}
-                  <p className="mt-2 text-2xl font-black text-blue-700">GH₵{total}</p>
+                  <p className="mt-2 text-2xl font-black text-blue-700">
+                    {getCurrencySymbol()}{total}
+                  </p>
+                  {getCurrency() === 'USD' && (
+                    <p className="text-xs text-slate-500 font-medium mt-0.5">
+                      ≈ GH₵{convertToGhs(total).toFixed(2)} via Paystack
+                    </p>
+                  )}
                 </div>
               </div>
             )}
@@ -256,7 +266,9 @@ export default function GuestEbookCheckoutView({
                     isProcessing ? 'cursor-not-allowed opacity-70' : ''
                   }`}
                 >
-                  {`Pay GH₵${total}`}
+                  {getCurrency() === 'USD'
+                    ? `Pay $${total} (≈ GH₵${convertToGhs(total).toFixed(2)})`
+                    : `Pay GH₵${total}`}
                 </button>
               ) : (
                 <button

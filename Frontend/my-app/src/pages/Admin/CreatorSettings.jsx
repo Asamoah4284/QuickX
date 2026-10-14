@@ -1,15 +1,21 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
+import { setCurrencySettings } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
 export default function CreatorSettings() {
-  const adminToken = localStorage.getItem('adminToken');
+  const adminToken =
+    localStorage.getItem('adminToken') ||
+    localStorage.getItem('authToken') ||
+    localStorage.getItem('token');
   const [settings, setSettings] = useState({
     commissionRate: 15,
     courseAutoApproval: false,
     creatorAutoApproval: false,
+    defaultCurrency: 'USD',
+    exchangeRateUsdToGhs: 15.5,
   });
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '' });
@@ -34,11 +40,21 @@ export default function CreatorSettings() {
   }, []);
 
   const saveSettings = async () => {
-    const { data } = await axios.put(`${API_URL}/api/admin/platform/settings`, settings, {
-      headers: { Authorization: `Bearer ${adminToken}` },
-    });
-    setSettings(data);
-    setMessage('Platform settings saved.');
+    try {
+      const { data } = await axios.put(`${API_URL}/api/admin/platform/settings`, settings, {
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      setSettings(data);
+      if (data?.defaultCurrency) {
+        setCurrencySettings({
+          currency: data.defaultCurrency,
+          exchangeRateUsdToGhs: data.exchangeRateUsdToGhs,
+        });
+      }
+      setMessage('Platform settings saved successfully.');
+    } catch (err) {
+      setMessage(err.response?.data?.message || 'Failed to save settings.');
+    }
   };
 
   const saveCategory = async () => {
@@ -95,10 +111,80 @@ export default function CreatorSettings() {
               Auto-approve creator applications
             </label>
 
+            <div className="pt-2 border-t border-slate-100">
+              <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-2">
+                Platform Currency &amp; Pricing
+              </h3>
+              
+              <div className="space-y-3">
+                <label className="block text-sm font-medium text-slate-700">
+                  Default Display Currency
+                </label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSettings((current) => ({ ...current, defaultCurrency: 'USD' }))}
+                    className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-sm font-semibold transition ${
+                      (settings.defaultCurrency || 'USD') === 'USD'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-base font-bold">$</span>
+                    USD (United States Dollar)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setSettings((current) => ({ ...current, defaultCurrency: 'GHS' }))}
+                    className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-sm font-semibold transition ${
+                      settings.defaultCurrency === 'GHS'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                        : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className="text-base font-bold">GH₵</span>
+                    GHS (Ghana Cedi)
+                  </button>
+                </div>
+
+                <label className="block text-sm text-slate-600 mt-3">
+                  Conversion Rate (1 USD to GHS)
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0.1"
+                    value={settings.exchangeRateUsdToGhs ?? 15.5}
+                    onChange={(event) =>
+                      setSettings((current) => ({
+                        ...current,
+                        exchangeRateUsdToGhs: parseFloat(event.target.value) || 0,
+                      }))
+                    }
+                    className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none"
+                    placeholder="e.g. 15.50"
+                  />
+                </label>
+
+                <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5 text-xs text-blue-900 leading-relaxed">
+                  <p className="font-semibold text-blue-950 mb-1">How this works:</p>
+                  {(settings.defaultCurrency || 'USD') === 'USD' ? (
+                    <span>
+                      Storefront, books, and course prices display in <strong>USD ($)</strong>. At checkout, Paystack converts the charge to <strong>GH₵{(10 * (Number(settings.exchangeRateUsdToGhs) || 15.5)).toFixed(2)}</strong> for a $10.00 purchase so mobile money and local cards work smoothly.
+                    </span>
+                  ) : (
+                    <span>
+                      Prices across the platform and checkout display and charge directly in <strong>Ghana Cedis (GH₵)</strong>.
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+
             <button
               type="button"
               onClick={saveSettings}
-              className="rounded-2xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white hover:bg-slate-800"
+              className="w-full rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
             >
               Save settings
             </button>

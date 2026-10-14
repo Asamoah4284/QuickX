@@ -239,6 +239,23 @@ app.get('/', async (req, res) => {
     res.send('Hello World');
 });
 
+// Public platform settings (currency, exchange rates)
+app.get('/api/platform/settings', async (req, res) => {
+    try {
+        const PlatformSetting = require('./models/PlatformSetting');
+        let settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
+        if (!settings) {
+            settings = await PlatformSetting.create({});
+        }
+        res.json({
+            defaultCurrency: settings.defaultCurrency || 'USD',
+            exchangeRateUsdToGhs: Number(settings.exchangeRateUsdToGhs) || 15.5,
+        });
+    } catch (error) {
+        res.json({ defaultCurrency: 'USD', exchangeRateUsdToGhs: 15.5 });
+    }
+});
+
 // Add new endpoint to refresh video URL
 app.get('/api/courses/:courseId/video-url', async (req, res) => {
     try {

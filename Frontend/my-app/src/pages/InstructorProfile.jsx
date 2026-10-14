@@ -7,6 +7,7 @@ import { publicAssetUrl } from '../utils/publicAssetUrl';
 import { savePendingCheckout } from '../utils/pendingCheckout';
 import { buildSubscriptionPlans, getPlanDefinition, normalizePlanId } from '../utils/creatorSubscriptionPlans';
 import { formatCoursePriceLabel } from '../utils/coursePricing';
+import { formatCurrency } from '../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -73,8 +74,7 @@ function subscriptionSavingsPercent(price, compareAt) {
 }
 
 function formatGhs(amount) {
-  const n = Number(amount) || 0;
-  return `GH₵${n.toLocaleString('en-GH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+  return formatCurrency(amount);
 }
 
 function SubscriptionBenefitIcon({ name }) {

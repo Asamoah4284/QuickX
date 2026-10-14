@@ -17,6 +17,13 @@ import {
 } from '../utils/bookCart';
 import { ensureMetaPixel, trackMetaEvent } from '../utils/metaPixel';
 import { clearPendingCheckout, readPendingCheckout } from '../utils/pendingCheckout';
+import {
+  getCurrency,
+  getCurrencySymbol,
+  getExchangeRate,
+  convertToGhs,
+  formatCurrency,
+} from '../utils/currencyStore';
 
 const isMongoId = (id) => /^[a-f\d]{24}$/i.test(String(id || '').trim());
 
@@ -1038,7 +1045,9 @@ function Checkout() {
     }
 
     const finalPrice = calculateFinalPrice();
-    const amount = Math.round(Number(finalPrice) * 100);
+    const isUsd = getCurrency() === 'USD';
+    const chargedGhs = isUsd ? convertToGhs(finalPrice) : Number(finalPrice);
+    const amount = Math.round(Number(chargedGhs) * 100);
     if (!Number.isFinite(amount) || amount < 100) {
       alert('Invalid payment amount. Please refresh and try again.');
       return;
@@ -1094,6 +1103,9 @@ function Checkout() {
         discount_amount: discount,
         original_price: checkoutItem?.price,
         final_price: finalPrice,
+        currency: getCurrency(),
+        exchange_rate: getExchangeRate(),
+        charged_ghs: chargedGhs,
         custom_fields: [
           {
             display_name: 'Phone Number',
@@ -1390,10 +1402,10 @@ function Checkout() {
                               </span>
                               {isBookCart ? (
                                 <span className="text-xs font-bold text-blue-600">
-                                  GH₵{getCartLineTotal(it).toFixed(2)}
+                                  {getCurrencySymbol()}{getCartLineTotal(it).toFixed(2)}
                                   {(it.quantity || 1) > 1 ? (
                                     <span className="ml-1 text-[11px] font-normal text-gray-400">
-                                      ({it.quantity} × GH₵{Number(it.price || 0)})
+                                      ({it.quantity} × {getCurrencySymbol()}{Number(it.price || 0)})
                                     </span>
                                   ) : null}
                                 </span>
@@ -1412,7 +1424,7 @@ function Checkout() {
                       <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-3">
                         <p className="text-xs font-semibold text-blue-900">{checkoutItem.title}</p>
                         <p className="mt-0.5 text-base font-extrabold text-blue-700">
-                          Bundle Price: GH₵{Number(checkoutItem.price || 0)}
+                          Bundle Price: {getCurrencySymbol()}{Number(checkoutItem.price || 0)}
                         </p>
                       </div>
                     ) : null}
@@ -1455,14 +1467,14 @@ function Checkout() {
                       ) : null}
 
                       <p className="mt-2 text-xl font-bold text-blue-600">
-                        GH₵
+                        {getCurrencySymbol()}
                         {checkoutItem.type === 'book_cart'
                           ? getCartLineTotal(orderSummaryBookLine).toFixed(2)
                           : Number(checkoutItem.price || 0)}
                       </p>
                       {checkoutItem.type === 'book_cart' && (orderSummaryBookLine.quantity || 1) > 1 ? (
                         <p className="text-sm text-gray-500">
-                          Qty {orderSummaryBookLine.quantity} × GH₵{Number(orderSummaryBookLine.price || 0)}
+                          Qty {orderSummaryBookLine.quantity} × {getCurrencySymbol()}{Number(orderSummaryBookLine.price || 0)}
                         </p>
                       ) : null}
                     </div>
@@ -1513,7 +1525,7 @@ function Checkout() {
                       </div>
                     ) : null}
                     <p className="mt-1 font-bold text-[#1B5EF5]">
-                      GH₵{isBookCart ? bookCartSubtotal.toFixed(2) : checkoutItem.price}
+                      {getCurrencySymbol()}{isBookCart ? bookCartSubtotal.toFixed(2) : checkoutItem.price}
                     </p>
                   </div>
                 </div>
@@ -1574,19 +1586,26 @@ function Checkout() {
                 <div className="space-y-3">
                     <div className="flex justify-between text-sm">
                         <p className="text-slate-500">Subtotal</p>
-                        <p className="font-medium text-slate-900">GH₵{checkoutSubtotal().toFixed(2)}</p>
+                        <p className="font-medium text-slate-900">{getCurrencySymbol()}{checkoutSubtotal().toFixed(2)}</p>
                     </div>
                     {couponApplied ? (
                         <div className="flex justify-between text-sm">
                             <p className="text-slate-500">Discount ({discount}%)</p>
                             <p className="font-medium text-emerald-600">
-                                -GH₵{discountAmount().toFixed(2)}
+                                -{getCurrencySymbol()}{discountAmount().toFixed(2)}
                             </p>
                         </div>
                     ) : null}
-                    <div className="flex justify-between border-t border-slate-100 pt-3">
+                    <div className="flex justify-between border-t border-slate-100 pt-3 items-baseline">
                         <p className="text-base font-semibold text-slate-900">Total</p>
-                        <p className="text-base font-semibold text-slate-900">GH₵{calculateFinalPrice().toFixed(2)}</p>
+                        <div className="text-right">
+                          <p className="text-lg font-bold text-slate-900">{getCurrencySymbol()}{calculateFinalPrice().toFixed(2)}</p>
+                          {getCurrency() === 'USD' && (
+                            <p className="text-xs text-slate-500 font-medium">
+                              ≈ GH₵{convertToGhs(calculateFinalPrice()).toFixed(2)} via Paystack
+                            </p>
+                          )}
+                        </div>
                     </div>
                 </div>
               </div>

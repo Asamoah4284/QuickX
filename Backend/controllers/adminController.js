@@ -709,7 +709,9 @@ exports.updatePlatformSettings = async (req, res) => {
         const payload = {
             commissionRate: Number(req.body.commissionRate ?? 15),
             courseAutoApproval: Boolean(req.body.courseAutoApproval),
-            creatorAutoApproval: Boolean(req.body.creatorAutoApproval)
+            creatorAutoApproval: Boolean(req.body.creatorAutoApproval),
+            defaultCurrency: req.body.defaultCurrency === 'GHS' ? 'GHS' : 'USD',
+            exchangeRateUsdToGhs: Number(req.body.exchangeRateUsdToGhs) > 0 ? Number(req.body.exchangeRateUsdToGhs) : 15.5
         };
 
         const current = await PlatformSetting.findOne().sort({ createdAt: -1 });
