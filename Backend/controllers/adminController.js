@@ -294,6 +294,8 @@ exports.createBook = async (req, res) => {
                 pickupLocations: req.body.deliveryOptions.pickupLocations || 'QuickX Distribution Center, Accra',
                 deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? deliveryFee) || 0,
             } : undefined,
+            listingStatus: req.body.listingStatus || 'published',
+            source: 'admin',
         });
 
         await newBook.save();
@@ -383,6 +385,9 @@ exports.updateBook = async (req, res) => {
                 deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? book.deliveryOptions?.deliveryFee ?? deliveryFee ?? 0),
             };
         }
+        if (req.body.listingStatus) {
+            book.listingStatus = req.body.listingStatus;
+        }
         if (book.type === 'hardcopy') {
             book.hardcopyPrice = null;
         }
@@ -421,9 +426,38 @@ exports.getAllBooks = async (req, res) => {
     try {
         const books = await Book.find().sort({ createdAt: -1 });
         const enriched = await enrichAdminBookThumbnails(books);
-        res.json(enriched);
+        const normalized = enriched.map((b) => {
+            const doc = b.toObject ? b.toObject() : { ...b };
+            if (!doc.listingStatus) {
+                doc.listingStatus = 'published';
+            }
+            return doc;
+        });
+        res.json(normalized);
     } catch (error) {
         console.error('Get all books error:', error);
+        res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// Quick toggle / update book status
+exports.updateBookStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['draft', 'pending_review', 'published', 'rejected'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid listing status' });
+        }
+        const book = await Book.findByIdAndUpdate(
+            req.params.id,
+            { listingStatus: status },
+            { new: true }
+        );
+        if (!book) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
+        res.json({ message: 'Book status updated successfully', book });
+    } catch (error) {
+        console.error('Update book status error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 };

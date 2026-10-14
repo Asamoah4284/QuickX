@@ -20,6 +20,7 @@ const BookModal = ({ book, onClose, onSave }) => {
         deliveryFee: 0,
         watermarkTemplate: '',
         published: new Date().toISOString().split('T')[0],
+        listingStatus: 'published',
         deliveryOptions: {
             availableTypes: ['pickup', 'pay_on_delivery', 'instant_pay'],
             estimatedDays: '2 - 4 business days',
@@ -58,6 +59,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 deliveryFee: book.deliveryFee || 0,
                 watermarkTemplate: book.watermarkTemplate || '',
                 published: book.published || new Date().toISOString().split('T')[0],
+                listingStatus: book.listingStatus || 'published',
                 deliveryOptions: {
                     availableTypes,
                     estimatedDays,
@@ -199,6 +201,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 galleryImages: formData.galleryImages || [],
                 published: formData.published || new Date().toISOString().split('T')[0],
                 watermarkTemplate: formData.watermarkTemplate || '',
+                listingStatus: formData.listingStatus || 'published',
                 deliveryOptions: {
                     availableTypes: formData.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
                     estimatedDays: formData.deliveryOptions?.estimatedDays || '2 - 4 business days',
@@ -349,6 +352,69 @@ const BookModal = ({ book, onClose, onSave }) => {
                                         className="hidden"
                                     />
                                 </label>
+                            </div>
+
+                            {/* Book Status & Store Visibility */}
+                            <div className="mt-6 bg-gray-50 rounded-xl p-5 border border-gray-200">
+                                <h3 className="text-sm font-bold uppercase tracking-wider text-gray-700 mb-1.5 flex items-center gap-1.5">
+                                    Store Status
+                                </h3>
+                                <p className="text-xs text-gray-500 mb-3.5 leading-relaxed">
+                                    Control whether this book is live for buyers on the storefront.
+                                </p>
+                                <div className="space-y-2.5">
+                                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                                        (formData.listingStatus || 'published') === 'published'
+                                            ? 'border-emerald-500 bg-emerald-50/70 ring-2 ring-emerald-500/20'
+                                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                                    }`}>
+                                        <input
+                                            type="radio"
+                                            name="listingStatus"
+                                            value="published"
+                                            checked={(formData.listingStatus || 'published') === 'published'}
+                                            onChange={() => setFormData(prev => ({ ...prev, listingStatus: 'published' }))}
+                                            className="mt-1 text-emerald-600 focus:ring-emerald-500"
+                                        />
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-emerald-900">Live (Published)</span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                    Active
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-emerald-700/80 mt-0.5">
+                                                Visible to buyers in the store and ready for purchase.
+                                            </p>
+                                        </div>
+                                    </label>
+
+                                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                                        formData.listingStatus === 'draft'
+                                            ? 'border-slate-500 bg-slate-100 ring-2 ring-slate-400/20'
+                                            : 'border-gray-200 bg-white hover:bg-gray-50'
+                                    }`}>
+                                        <input
+                                            type="radio"
+                                            name="listingStatus"
+                                            value="draft"
+                                            checked={formData.listingStatus === 'draft'}
+                                            onChange={() => setFormData(prev => ({ ...prev, listingStatus: 'draft' }))}
+                                            className="mt-1 text-slate-600 focus:ring-slate-500"
+                                        />
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-slate-800">Draft (Hidden)</span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-200 text-slate-700">
+                                                    Hidden
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-slate-500 mt-0.5">
+                                                Hidden from buyers. Only visible to admins in the dashboard.
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
                             </div>
                         </div>
 

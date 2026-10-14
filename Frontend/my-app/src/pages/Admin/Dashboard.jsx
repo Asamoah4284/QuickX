@@ -5,12 +5,15 @@ import {
     FiUsers, FiBook, FiVideo, FiSettings, 
     FiBarChart2, FiUpload, FiEdit2, 
     FiTrash2, FiPlus, FiTrendingUp, FiDollarSign,
-    FiX, FiBookOpen, FiTag, FiStar, FiImage, FiAlertTriangle
+    FiX, FiBookOpen, FiTag, FiStar, FiImage, FiAlertTriangle,
+    FiEye, FiEyeOff
 } from 'react-icons/fi';
 import CourseModal from './CourseModal';
 import BookModal from './BookModal';
 import CourseManagement from './CourseManagement';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
+import { formatCurrency } from '../../utils/currencyStore';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 import {
     Chart as ChartJS,
     CategoryScale,
@@ -133,6 +136,7 @@ const AdminDashboard = () => {
     });
     const [showBookModal, setShowBookModal] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
+    const [bookStatusFilter, setBookStatusFilter] = useState('all');
     const [coupons, setCoupons] = useState([]);
     const [newCoupon, setNewCoupon] = useState({
         code: '',
@@ -307,43 +311,30 @@ const AdminDashboard = () => {
 
     const fetchBooks = async () => {
         try {
-            const token = localStorage.getItem('adminToken');
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken') || localStorage.getItem('token');
             const response = await axios.get(`${API_URL}/api/admin/books`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBooks(Array.isArray(response.data) ? response.data : []);
         } catch (err) {
             console.error('Error fetching books:', err);
-            // Mock data for books if the API fails
-            setBooks([
-                {
-                    _id: '1',
-                    title: 'The Complete Guide to Forex Trading',
-                    author: 'John Smith',
-                    description: 'A comprehensive guide to forex trading strategies',
-                    price: 49.99,
-                    coverImage: 'https://via.placeholder.com/150',
-                    published: '2022-01-15'
-                },
-                {
-                    _id: '2',
-                    title: 'Technical Analysis Fundamentals',
-                    author: 'Sarah Johnson',
-                    description: 'Learn the basics of chart analysis and patterns',
-                    price: 39.99,
-                    coverImage: 'https://via.placeholder.com/150',
-                    published: '2021-11-10'
-                },
-                {
-                    _id: '3',
-                    title: 'Risk Management for Traders',
-                    author: 'Michael Brown',
-                    description: 'Essential risk management techniques for all traders',
-                    price: 44.99,
-                    coverImage: 'https://via.placeholder.com/150',
-                    published: '2022-03-22'
-                }
-            ]);
+        }
+    };
+
+    const handleToggleBookStatus = async (book) => {
+        try {
+            const currentStatus = book.listingStatus || 'published';
+            const nextStatus = currentStatus === 'published' ? 'draft' : 'published';
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken') || localStorage.getItem('token');
+            await axios.patch(
+                `${API_URL}/api/admin/books/${book._id}/status`,
+                { status: nextStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setBooks(prev => prev.map(b => b._id === book._id ? { ...b, listingStatus: nextStatus } : b));
+        } catch (err) {
+            console.error('Error toggling book status:', err);
+            alert(err.response?.data?.message || 'Failed to update book status');
         }
     };
 
@@ -1538,76 +1529,205 @@ const AdminDashboard = () => {
             case 'books':
                 return (
                     <div className="space-y-6">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                            <h2 className="text-xl font-bold">Books Management</h2>
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-gray-900">Books Management</h2>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    Manage store publications, set live status, and monitor inventory.
+                                </p>
+                            </div>
                             <button
                                 onClick={handleAddBook}
-                                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm w-full sm:w-auto mt-3 sm:mt-0"
+                                className="flex items-center px-4 py-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 text-sm font-semibold shadow-sm transition"
                             >
                                 <FiPlus className="mr-2" />
                                 Add New Book
                             </button>
                         </div>
+
+                        {/* Status Filter Tabs */}
+                        <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
+                            {[
+                                { key: 'all', label: 'All Books', count: books.length },
+                                {
+                                    key: 'live',
+                                    label: 'Live (Published)',
+                                    count: books.filter(b => (b.listingStatus || 'published') === 'published').length,
+                                    badgeColor: 'bg-emerald-100 text-emerald-800'
+                                },
+                                {
+                                    key: 'draft',
+                                    label: 'Drafts (Hidden)',
+                                    count: books.filter(b => b.listingStatus === 'draft').length,
+                                    badgeColor: 'bg-slate-100 text-slate-700'
+                                },
+                                {
+                                    key: 'review',
+                                    label: 'In Review',
+                                    count: books.filter(b => b.listingStatus === 'pending_review').length,
+                                    badgeColor: 'bg-amber-100 text-amber-800'
+                                }
+                            ].map(tab => (
+                                <button
+                                    key={tab.key}
+                                    type="button"
+                                    onClick={() => setBookStatusFilter(tab.key)}
+                                    className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                        bookStatusFilter === tab.key
+                                            ? 'bg-blue-600 text-white shadow-sm'
+                                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                                    }`}
+                                >
+                                    <span>{tab.label}</span>
+                                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                                        bookStatusFilter === tab.key
+                                            ? 'bg-white/20 text-white'
+                                            : tab.badgeColor || 'bg-gray-200 text-gray-700'
+                                    }`}>
+                                        {tab.count}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
                         
-                        <div className="bg-white rounded-xl shadow-sm">
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                             <div className="overflow-x-auto">
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                                 Cover
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Title
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                Title &amp; Type
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                                 Author
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                                 Price
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                                Store Status
+                                            </th>
+                                            <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {books.map((book) => (
-                                            <tr key={book._id} className="hover:bg-gray-50">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <img 
-                                                        src={book.thumbnail} 
-                                                        alt={book.title} 
-                                                        className="h-16 w-12 object-cover rounded"
-                                                    />
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{book.title}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-500">{book.author}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-500">${book.price}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <button
-                                                        onClick={() => handleEditBook(book)}
-                                                        className="text-blue-600 hover:text-blue-900 mr-4"
-                                                    >
-                                                        <FiEdit2 className="inline mr-1" />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteBookRequest(book._id)}
-                                                        className="text-red-600 hover:text-red-900"
-                                                    >
-                                                        <FiTrash2 className="inline mr-1" />
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
+                                    <tbody className="bg-white divide-y divide-gray-100">
+                                        {books
+                                            .filter(book => {
+                                                const st = book.listingStatus || 'published';
+                                                if (bookStatusFilter === 'live') return st === 'published';
+                                                if (bookStatusFilter === 'draft') return st === 'draft';
+                                                if (bookStatusFilter === 'review') return st === 'pending_review';
+                                                return true;
+                                            })
+                                            .map((book) => {
+                                                const status = book.listingStatus || 'published';
+                                                const isLive = status === 'published';
+                                                const cover = book.thumbnail ? publicAssetUrl(book.thumbnail) : '/images/bk-1.jpg';
+
+                                                return (
+                                                    <tr key={book._id} className="hover:bg-slate-50/80 transition-colors">
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            <div className="h-16 w-12 rounded-lg overflow-hidden bg-slate-100 border border-slate-200 flex items-center justify-center shadow-xs">
+                                                                <img 
+                                                                    src={cover} 
+                                                                    alt={book.title} 
+                                                                    className="h-full w-full object-cover"
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = '/images/bk-1.jpg';
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5">
+                                                            <div className="text-sm font-semibold text-gray-900 line-clamp-1">{book.title}</div>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <span className="text-[11px] font-medium text-slate-500 capitalize">
+                                                                    {book.type === 'hardcopy' ? 'Physical Copy' : 'Digital E-Book'}
+                                                                </span>
+                                                                {book.galleryImages?.length > 0 ? (
+                                                                    <span className="text-[10px] text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded font-semibold">
+                                                                        +{book.galleryImages.length} gallery
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            <div className="text-sm text-gray-600 font-medium">{book.author}</div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            <div className="text-sm font-bold text-gray-900">
+                                                                {formatCurrency(book.price)}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            {isLive ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 ring-1 ring-emerald-600/20">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                                    Live
+                                                                </span>
+                                                            ) : status === 'draft' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-slate-100 text-slate-700 ring-1 ring-slate-300">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-slate-400" />
+                                                                    Draft (Hidden)
+                                                                </span>
+                                                            ) : status === 'pending_review' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 ring-1 ring-amber-500/20">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                                                    In Review
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-rose-50 text-rose-700 ring-1 ring-rose-500/20">
+                                                                    Rejected
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap text-right text-xs font-medium space-x-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleBookStatus(book)}
+                                                                title={isLive ? 'Unpublish and hide from store' : 'Publish and make live on store'}
+                                                                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-semibold transition ${
+                                                                    isLive
+                                                                        ? 'border-slate-200 text-slate-700 hover:bg-slate-100'
+                                                                        : 'border-emerald-500 text-emerald-700 hover:bg-emerald-50'
+                                                                }`}
+                                                            >
+                                                                {isLive ? (
+                                                                    <>
+                                                                        <FiEyeOff className="text-slate-500" />
+                                                                        Hide
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <FiEye className="text-emerald-600" />
+                                                                        Make Live
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleEditBook(book)}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-blue-200 text-blue-700 hover:bg-blue-50 font-semibold transition"
+                                                            >
+                                                                <FiEdit2 />
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteBookRequest(book._id)}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 font-semibold transition"
+                                                            >
+                                                                <FiTrash2 />
+                                                                Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                     </tbody>
                                 </table>
                             </div>

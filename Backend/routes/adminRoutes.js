@@ -85,6 +85,7 @@ router.get('/books', adminAuth, adminController.getAllBooks);
 router.get('/books/review-queue/list', adminAuth, adminController.getBookReviewQueue);
 router.get('/books/:id', adminAuth, adminController.getBookById);
 router.patch('/books/:id/review', adminAuth, adminController.reviewInstructorBook);
+router.patch('/books/:id/status', adminAuth, adminController.updateBookStatus);
 
 // Content upload route
 router.post('/upload-content', (req, res) => {
