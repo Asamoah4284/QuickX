@@ -91,7 +91,7 @@ router.delete('/api/admin/advertisements/:id', adminAuth, async (req, res) => {
             return res.status(404).json({ message: 'Advertisement not found' });
         }
 
-        await advertisement.remove();
+        await Advertisement.findByIdAndDelete(req.params.id);
         res.json({ message: 'Advertisement deleted' });
     } catch (error) {
         res.status(500).json({ message: error.message });

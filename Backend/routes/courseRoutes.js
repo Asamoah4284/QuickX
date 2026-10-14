@@ -1137,7 +1137,7 @@ router.delete('/admin/courses/:courseId/modules/:moduleId/sections/:sectionId/le
                 }).promise();
             }
 
-            lesson.remove();
+            course.lessons.pull(lesson._id);
             await course.save();
             res.json({ message: 'Lesson deleted successfully' });
         } catch (error) {

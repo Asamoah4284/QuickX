@@ -407,7 +407,7 @@ exports.deleteBook = async (req, res) => {
         }
         
         // Remove book
-        await book.remove();
+        await Book.findByIdAndDelete(req.params.id);
         
         res.json({ message: 'Book removed' });
     } catch (error) {
