@@ -4,8 +4,13 @@ import { publicAssetUrl } from './publicAssetUrl';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 function getHeaders(token) {
+  const resolvedToken =
+    token ||
+    localStorage.getItem('authToken') ||
+    localStorage.getItem('adminToken') ||
+    localStorage.getItem('token');
   return {
-    Authorization: `Bearer ${token}`,
+    Authorization: `Bearer ${resolvedToken}`,
   };
 }
 
@@ -14,12 +19,94 @@ function getPublicUrlFromSignedUrl(url) {
 }
 
 /**
+ * Mobile phones (especially iPhones) take 10-25MB photos or HEIC/HEIF files.
+ * This helper resizes oversized camera photos and converts them to crisp, web-safe JPEGs
+ * so mobile uploads are fast, reliable, and never trigger timeout/network aborts.
+ */
+async function optimizeImageForUpload(file) {
+  if (!file || typeof window === 'undefined') return file;
+
+  const rawType = (file.type || '').toLowerCase();
+  const name = (file.name || '').toLowerCase();
+
+  // Keep GIF animations or SVG vector as is
+  if (rawType === 'image/gif' || rawType === 'image/svg+xml' || name.endsWith('.gif') || name.endsWith('.svg')) {
+    return file;
+  }
+
+  // If not an image (e.g. video, pdf), return unchanged
+  const isImage = rawType.startsWith('image/') || /\.(png|jpe?g|webp|heic|heif|bmp|tiff)$/i.test(name);
+  if (!isImage) {
+    return file;
+  }
+
+  try {
+    return await new Promise((resolve) => {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+
+      img.onload = () => {
+        URL.revokeObjectURL(objectUrl);
+        const maxDimension = 2048; // crisp 2K for book covers and gallery
+        let { width, height } = img;
+
+        if (width > maxDimension || height > maxDimension) {
+          if (width > height) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          } else {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve(file);
+          return;
+        }
+
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(file);
+              return;
+            }
+            const cleanName = (file.name || 'photo.jpg').replace(/\.[^/.]+$/, '') + '.jpg';
+            const optimized = new File([blob], cleanName, {
+              type: 'image/jpeg',
+              lastModified: Date.now(),
+            });
+            resolve(optimized);
+          },
+          'image/jpeg',
+          0.85
+        );
+      };
+
+      img.onerror = () => {
+        URL.revokeObjectURL(objectUrl);
+        resolve(file);
+      };
+
+      img.src = objectUrl;
+    });
+  } catch {
+    return file;
+  }
+}
+
+/**
  * Presigned PUT must use the exact same Content-Type as S3 was signed with.
- * Videos are often WebM/MOV/MP4 — backend now signs per MIME (not only video/mp4).
+ * Videos are often WebM/MOV/MP4 — backend signs per MIME (not only video/mp4).
  */
 function resolveContentType(file, type) {
   const name = (file.name || '').toLowerCase();
-  const raw = (file.type || '').trim();
+  const raw = (file.type || '').trim().toLowerCase();
 
   if (type === 'file') {
     if (raw.length > 0 && raw !== 'application/octet-stream') {
@@ -46,13 +133,10 @@ function resolveContentType(file, type) {
     return 'video/mp4';
   }
 
-  if (raw.length > 0) {
-    return raw;
-  }
-  if (name.endsWith('.png')) return 'image/png';
-  if (name.endsWith('.webp')) return 'image/webp';
-  if (name.endsWith('.gif')) return 'image/gif';
-  if (name.endsWith('.jpg') || name.endsWith('.jpeg')) return 'image/jpeg';
+  // Normal image types
+  if (raw === 'image/png' || name.endsWith('.png')) return 'image/png';
+  if (raw === 'image/webp' || name.endsWith('.webp')) return 'image/webp';
+  if (raw === 'image/gif' || name.endsWith('.gif')) return 'image/gif';
   return 'image/jpeg';
 }
 
@@ -86,14 +170,22 @@ export async function uploadFileToS3({ file, token, type = 'image', onProgress }
     return '';
   }
 
-  const contentType = resolveContentType(file, type);
+  // Optimize mobile and large images to avoid mobile network drops
+  const uploadableFile = type === 'image' ? await optimizeImageForUpload(file) : file;
+  const contentType = resolveContentType(uploadableFile, type);
   const endpoint = type === 'video' ? '/s3VideoUrl' : '/s3Url';
+
   const { data } = await axios.get(`${API_URL}${endpoint}`, {
     params: { contentType },
     headers: getHeaders(token),
   });
 
-  await putToPresignedUrl(data.url, file, contentType, onProgress);
+  if (!data?.url) {
+    throw new Error('Failed to retrieve secure upload URL from server');
+  }
 
+  await putToPresignedUrl(data.url, uploadableFile, contentType, onProgress);
+
+  // Return the public CloudFront CDN URL (never direct S3 bucket which is private)
   return publicAssetUrl(getPublicUrlFromSignedUrl(data.url));
 }

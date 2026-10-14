@@ -111,7 +111,10 @@ const labelCls = 'block text-sm font-medium text-slate-700 dark:text-slate-300';
 export default function CreatorBookWizard() {
   const { bookId } = useParams();
   const navigate = useNavigate();
-  const token = localStorage.getItem('authToken');
+  const token =
+    localStorage.getItem('authToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('adminToken');
   const isEditing = Boolean(bookId);
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -330,6 +333,7 @@ export default function CreatorBookWizard() {
       setError(e.response?.data?.message || e.message);
     } finally {
       setUploadProgress((cur) => ({ ...cur, thumbnail: 0 }));
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
     }
   };
 
@@ -358,6 +362,7 @@ export default function CreatorBookWizard() {
       setError(e.response?.data?.message || e.message);
     } finally {
       setGalleryUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
     }
   };
 

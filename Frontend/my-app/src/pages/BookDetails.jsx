@@ -27,13 +27,16 @@ import MetaPixelNoscript from '../components/MetaPixelNoscript';
 import BookOfferPicker from '../components/BookOfferPicker';
 import HardcopyRequestModal from '../components/HardcopyRequestModal';
 import { isMetaPixelEnabledForBook, trackMetaInitiateCheckout } from '../utils/metaPixel';
+import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const API_FALLBACK = 'http://localhost:5000';
 const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 function BookImageGallery({ images = [], title = 'Book' }) {
-  const allImages = (Array.isArray(images) ? images : []).filter(Boolean);
+  const allImages = (Array.isArray(images) ? images : [])
+    .filter(Boolean)
+    .map((img) => publicAssetUrl(String(img).trim()));
   const displayImages = allImages.length > 0 ? allImages : [DEFAULT_BOOK_COVER];
   const [activeIndex, setActiveIndex] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -73,7 +76,7 @@ function BookImageGallery({ images = [], title = 'Book' }) {
 
   return (
     <div
-      className="w-full max-w-[320px] sm:max-w-[360px] lg:max-w-[400px]"
+      className="w-full max -w-[320px] sm:max-w-[360px] lg:max-w-[400px]"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -150,7 +153,15 @@ function BookImageGallery({ images = [], title = 'Book' }) {
                   : 'border-slate-200 opacity-60 hover:opacity-100 hover:border-slate-300'
               }`}
             >
-              <img src={img} alt="" className="h-full w-full object-cover" />
+              <img
+                src={img}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = DEFAULT_BOOK_COVER;
+                }}
+              />
             </button>
           ))}
         </div>

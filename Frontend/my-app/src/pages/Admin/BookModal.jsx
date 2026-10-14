@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar, FiTrash2, FiPlus, FiImage } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '@/config/api';
+import { uploadFileToS3 } from '../../utils/uploadToS3';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const BookModal = ({ book, onClose, onSave }) => {
     const [formData, setFormData] = useState({
@@ -48,8 +50,10 @@ const BookModal = ({ book, onClose, onSave }) => {
                 type: book.type || 'ebook',
                 fileUrl: book.fileUrl || '',
                 stock: book.stock || 0,
-                thumbnail: book.thumbnail || '',
-                galleryImages: Array.isArray(book.galleryImages) ? book.galleryImages : [],
+                thumbnail: book.thumbnail ? publicAssetUrl(book.thumbnail) : '',
+                galleryImages: Array.isArray(book.galleryImages)
+                    ? book.galleryImages.map(publicAssetUrl).filter(Boolean)
+                    : [],
                 isbn: book.isbn || '',
                 deliveryFee: book.deliveryFee || 0,
                 watermarkTemplate: book.watermarkTemplate || '',
@@ -107,57 +111,20 @@ const BookModal = ({ book, onClose, onSave }) => {
             setLoading(true);
             setError('');
 
-            // Create a preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+            const fileUrl = await uploadFileToS3({ file, token, type: 'image' });
 
-            // Get token for authentication
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-            
-            // Get pre-signed URL from server
-            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!url) {
-                throw new Error('Failed to get upload URL');
-            }
-
-            // Upload the file directly to S3 using the secure URL
-            await axios.put(url, file, {
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-
-            // Extract the file URL from the S3 URL (remove the query parameters)
-            const fileUrl = url.split('?')[0];
-            console.log('S3 thumbnail URL:', fileUrl);
-            
-            // Update form data with the S3 URL
             setFormData(prev => ({
                 ...prev,
                 thumbnail: fileUrl
             }));
-
+            setPreviewImage(fileUrl);
         } catch (err) {
             console.error('Error uploading image:', err);
-            if (err.response) {
-                setError(`Upload failed: ${err.response.data?.message || 'Server error'}`);
-            } else if (err.request) {
-                setError('Could not connect to server. Please check if the server is running.');
-            } else {
-                setError('Failed to upload image. Please try again.');
-            }
+            setError(err.message || 'Failed to upload image. Please try again.');
         } finally {
             setLoading(false);
+            e.target.value = '';
         }
     };
 
@@ -169,28 +136,11 @@ const BookModal = ({ book, onClose, onSave }) => {
             setLoading(true);
             setError('');
 
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
             const uploadedUrls = [];
             for (const file of files) {
-                const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-
-                if (!url) {
-                    throw new Error('Failed to get upload URL');
-                }
-
-                await axios.put(url, file, {
-                    headers: { 'Content-Type': file.type }
-                });
-
-                const fileUrl = url.split('?')[0];
-                uploadedUrls.push(fileUrl);
+                const fileUrl = await uploadFileToS3({ file, token, type: 'image' });
+                if (fileUrl) uploadedUrls.push(fileUrl);
             }
 
             setFormData(prev => ({
@@ -199,7 +149,7 @@ const BookModal = ({ book, onClose, onSave }) => {
             }));
         } catch (err) {
             console.error('Error uploading gallery images:', err);
-            setError('Failed to upload gallery images. Please try again.');
+            setError(err.message || 'Failed to upload gallery images. Please try again.');
         } finally {
             setLoading(false);
             e.target.value = '';
@@ -227,7 +177,10 @@ const BookModal = ({ book, onClose, onSave }) => {
                 return;
             }
 
-            const token = localStorage.getItem('adminToken');
+            const token =
+                localStorage.getItem('adminToken') ||
+                localStorage.getItem('authToken') ||
+                localStorage.getItem('token');
             if (!token) {
                 setError('Authentication required');
                 setLoading(false);

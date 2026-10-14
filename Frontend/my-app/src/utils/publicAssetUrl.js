@@ -5,7 +5,9 @@
  */
 export function publicAssetUrl(url) {
   if (!url || typeof url !== 'string') return url;
-  const cdn = import.meta.env.VITE_CLOUDFRONT_URL?.trim().replace(/\/$/, '');
+  const cdn = (import.meta.env.VITE_CLOUDFRONT_URL || 'https://d3mvqd2a72xwvk.cloudfront.net')
+    .trim()
+    .replace(/\/$/, '');
   if (!cdn) return url;
 
   const trimmed = url.trim();
