@@ -14,46 +14,98 @@ export default function CreatorSettings() {
     commissionRate: 15,
     courseAutoApproval: false,
     creatorAutoApproval: false,
-    defaultCurrency: 'USD',
-    exchangeRateUsdToGhs: 15.5,
+    defaultCurrency: localStorage.getItem('quickx_currency') || 'USD',
+    exchangeRateUsdToGhs: localStorage.getItem('quickx_exchange_rate') || '15.5',
   });
   const [categories, setCategories] = useState([]);
   const [newCategory, setNewCategory] = useState({ name: '', slug: '', description: '' });
   const [message, setMessage] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const loadPage = async () => {
-    const [settingsResponse, categoriesResponse] = await Promise.all([
-      axios.get(`${API_URL}/api/admin/platform/settings`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      }),
-      axios.get(`${API_URL}/api/admin/platform/categories`, {
-        headers: { Authorization: `Bearer ${adminToken}` },
-      }),
-    ]);
+    try {
+      const [settingsResponse, categoriesResponse] = await Promise.all([
+        axios.get(`${API_URL}/api/admin/platform/settings`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+        axios.get(`${API_URL}/api/admin/platform/categories`, {
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }),
+      ]);
 
-    setSettings(settingsResponse.data);
-    setCategories(categoriesResponse.data);
+      const backendSettings = settingsResponse.data || {};
+      const savedCurrency = localStorage.getItem('quickx_currency');
+      const savedRate = localStorage.getItem('quickx_exchange_rate');
+
+      setSettings((prev) => ({
+        ...prev,
+        ...backendSettings,
+        defaultCurrency: backendSettings.defaultCurrency || savedCurrency || prev.defaultCurrency || 'USD',
+        exchangeRateUsdToGhs: backendSettings.exchangeRateUsdToGhs != null
+          ? String(backendSettings.exchangeRateUsdToGhs)
+          : (savedRate || prev.exchangeRateUsdToGhs || '15.5'),
+      }));
+      setCategories(categoriesResponse.data || []);
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+    }
   };
 
   useEffect(() => {
     loadPage();
   }, []);
 
+  const handleCurrencyChange = (curr) => {
+    setSettings((current) => ({ ...current, defaultCurrency: curr }));
+    const parsedRate = parseFloat(settings.exchangeRateUsdToGhs);
+    const safeRate = Number.isFinite(parsedRate) && parsedRate > 0 ? parsedRate : 15.5;
+    setCurrencySettings({
+      currency: curr,
+      exchangeRateUsdToGhs: safeRate,
+    });
+  };
+
   const saveSettings = async () => {
+    setIsSaving(true);
+    setMessage('');
     try {
-      const { data } = await axios.put(`${API_URL}/api/admin/platform/settings`, settings, {
+      const parsedRate = parseFloat(settings.exchangeRateUsdToGhs);
+      const safeRate = Number.isFinite(parsedRate) && parsedRate > 0 ? parsedRate : 15.5;
+      const safeCurrency = settings.defaultCurrency === 'GHS' ? 'GHS' : 'USD';
+
+      const payload = {
+        commissionRate: Number(settings.commissionRate) || 0,
+        courseAutoApproval: Boolean(settings.courseAutoApproval),
+        creatorAutoApproval: Boolean(settings.creatorAutoApproval),
+        defaultCurrency: safeCurrency,
+        exchangeRateUsdToGhs: safeRate,
+      };
+
+      const { data } = await axios.put(`${API_URL}/api/admin/platform/settings`, payload, {
         headers: { Authorization: `Bearer ${adminToken}` },
       });
-      setSettings(data);
-      if (data?.defaultCurrency) {
-        setCurrencySettings({
-          currency: data.defaultCurrency,
-          exchangeRateUsdToGhs: data.exchangeRateUsdToGhs,
-        });
-      }
+
+      setSettings((prev) => ({
+        ...prev,
+        ...(data || {}),
+        defaultCurrency: data?.defaultCurrency || payload.defaultCurrency,
+        exchangeRateUsdToGhs: data?.exchangeRateUsdToGhs != null
+          ? String(data.exchangeRateUsdToGhs)
+          : String(payload.exchangeRateUsdToGhs),
+      }));
+
+      setCurrencySettings({
+        currency: data?.defaultCurrency || payload.defaultCurrency,
+        exchangeRateUsdToGhs: data?.exchangeRateUsdToGhs != null
+          ? data.exchangeRateUsdToGhs
+          : payload.exchangeRateUsdToGhs,
+      });
+
       setMessage('Platform settings saved successfully.');
     } catch (err) {
       setMessage(err.response?.data?.message || 'Failed to save settings.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -123,10 +175,10 @@ export default function CreatorSettings() {
                 <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
-                    onClick={() => setSettings((current) => ({ ...current, defaultCurrency: 'USD' }))}
+                    onClick={() => handleCurrencyChange('USD')}
                     className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-sm font-semibold transition ${
                       (settings.defaultCurrency || 'USD') === 'USD'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm ring-2 ring-blue-500/20'
                         : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -136,10 +188,10 @@ export default function CreatorSettings() {
 
                   <button
                     type="button"
-                    onClick={() => setSettings((current) => ({ ...current, defaultCurrency: 'GHS' }))}
+                    onClick={() => handleCurrencyChange('GHS')}
                     className={`flex items-center justify-center gap-2 rounded-2xl border p-3.5 text-sm font-semibold transition ${
                       settings.defaultCurrency === 'GHS'
-                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm'
+                        ? 'border-blue-600 bg-blue-50 text-blue-700 shadow-sm ring-2 ring-blue-500/20'
                         : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
                     }`}
                   >
@@ -152,25 +204,40 @@ export default function CreatorSettings() {
                   Conversion Rate (1 USD to GHS)
                   <input
                     type="number"
-                    step="0.01"
-                    min="0.1"
-                    value={settings.exchangeRateUsdToGhs ?? 15.5}
-                    onChange={(event) =>
+                    step="any"
+                    min="0.01"
+                    value={settings.exchangeRateUsdToGhs ?? ''}
+                    onChange={(event) => {
+                      const val = event.target.value;
                       setSettings((current) => ({
                         ...current,
-                        exchangeRateUsdToGhs: parseFloat(event.target.value) || 0,
-                      }))
-                    }
+                        exchangeRateUsdToGhs: val,
+                      }));
+                    }}
                     className="mt-1.5 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-gray-900 shadow-sm focus:border-blue-500 focus:outline-none"
                     placeholder="e.g. 15.50"
                   />
                 </label>
 
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <span className="text-xs text-slate-400">Quick presets:</span>
+                  {[14.5, 15.0, 15.5, 16.0].map((rate) => (
+                    <button
+                      key={rate}
+                      type="button"
+                      onClick={() => setSettings((current) => ({ ...current, exchangeRateUsdToGhs: String(rate) }))}
+                      className="text-xs px-2.5 py-1 rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 transition"
+                    >
+                      {rate.toFixed(1)}
+                    </button>
+                  ))}
+                </div>
+
                 <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-3.5 text-xs text-blue-900 leading-relaxed">
                   <p className="font-semibold text-blue-950 mb-1">How this works:</p>
                   {(settings.defaultCurrency || 'USD') === 'USD' ? (
                     <span>
-                      Storefront, books, and course prices display in <strong>USD ($)</strong>. At checkout, Paystack converts the charge to <strong>GH₵{(10 * (Number(settings.exchangeRateUsdToGhs) || 15.5)).toFixed(2)}</strong> for a $10.00 purchase so mobile money and local cards work smoothly.
+                      Storefront, books, and course prices display in <strong>USD ($)</strong>. At checkout, Paystack converts the charge to <strong>GH₵{(10 * (parseFloat(settings.exchangeRateUsdToGhs) || 15.5)).toFixed(2)}</strong> for a $10.00 purchase so mobile money and local cards work smoothly.
                     </span>
                   ) : (
                     <span>
@@ -183,10 +250,11 @@ export default function CreatorSettings() {
 
             <button
               type="button"
+              disabled={isSaving}
               onClick={saveSettings}
-              className="w-full rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white hover:bg-slate-800 transition"
+              className="w-full rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50 transition"
             >
-              Save settings
+              {isSaving ? 'Saving settings...' : 'Save settings'}
             </button>
           </div>
         </section>

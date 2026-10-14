@@ -31,24 +31,14 @@ const Navbar = () => {
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
-  /** Navbar is scroll-only on marketing pages, always visible in app flows. */
-  const alwaysVisible =
-    pathname === '/membership' ||
-    pathname.startsWith('/creator') ||
-    pathname.startsWith('/store') ||
-    pathname.startsWith('/events') ||
-    pathname.startsWith('/ptrading') ||
-    pathname.startsWith('/admin') ||
-    pathname.startsWith('/checkout') ||
-    pathname.startsWith('/community') ||
-    pathname.includes('/community') ||
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/register') ||
-    pathname.startsWith('/forgot-password') ||
-    pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/verify');
-
-  const navSolid = scrolled || alwaysVisible;
+  /**
+   * Only the landing page (/) has the dark cinematic hero where a transparent
+   * navbar with white text is used before scrolling.
+   * Every other page across the platform has a light/white background and
+   * requires a solid, readable navbar at all times.
+   */
+  const isHomePage = pathname === '/';
+  const navSolid = !isHomePage || scrolled;
   const creatorDestination =
     user?.role === 'tutor' && user?.creatorStatus === 'approved'
       ? '/creator/dashboard'

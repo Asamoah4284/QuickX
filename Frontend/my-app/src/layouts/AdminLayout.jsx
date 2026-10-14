@@ -102,17 +102,13 @@ export default function AdminLayout() {
               <FiBookOpen className="mr-2 lg:mr-3" />
               Books
             </NavLink>
-            <NavLink to="/admin/platform/settings" className={() => navClass(isPlatformSettings)} onClick={close}>
+            <NavLink to="/admin/platform/settings" className={() => navClass(isPlatformSettings || isSettingsTab)} onClick={close}>
               <FiSettings className="mr-2 lg:mr-3" />
               Platform settings
             </NavLink>
             <NavLink to="/admin/courses" className={() => navClass(isCourses)} onClick={close}>
               <FiBook className="mr-2 lg:mr-3" />
               Courses
-            </NavLink>
-            <NavLink to="/admin/settings" className={() => navClass(isSettingsTab)} onClick={close}>
-              <FiSettings className="mr-2 lg:mr-3" />
-              Settings
             </NavLink>
             <NavLink to="/admin/coupons" className={() => navClass(isCoupons)} onClick={close}>
               <FiTag className="mr-2 lg:mr-3" />

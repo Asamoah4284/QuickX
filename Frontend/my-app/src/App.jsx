@@ -321,7 +321,7 @@ const router = createBrowserRouter([
           { path: "platform/settings", element: <CreatorSettings /> },
           { path: "books", element: <AdminDashboard /> },
           { path: "upload", element: <Navigate to="/admin/dashboard" replace /> },
-          { path: "settings", element: <AdminDashboard /> },
+          { path: "settings", element: <Navigate to="/admin/platform/settings" replace /> },
           { path: "coupons", element: <AdminDashboard /> },
           { path: "mentorship", element: <Navigate to="/admin/dashboard" replace /> },
           { path: "advertisements", element: <AdminDashboard /> },
