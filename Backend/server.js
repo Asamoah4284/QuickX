@@ -13,6 +13,9 @@ const flexibleAuth = require('./middleware/flexibleAuth');
 const { securityHeaders, requestSizeLimiter, preventParamPollution } = require('./middleware/security');
 
 const app = express();
+// Enable trust proxy so Express & express-rate-limit read client IP from X-Forwarded-For behind Nginx
+app.set('trust proxy', 1);
+
 
 // CORS must run before rate limiting / routes so every response (incl. 429 & OPTIONS preflight) gets CORS headers
 const corsOptions = {
