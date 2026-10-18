@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
 import StatusBadge from '../../components/creator/StatusBadge';
+import { formatCurrency } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -32,7 +33,7 @@ export default function CreatorPayouts() {
           payouts.map((payout) => (
             <div key={payout._id} className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 p-4">
               <div>
-                <p className="font-semibold text-slate-950">GH₵{Number(payout.amount || 0).toFixed(2)}</p>
+                <p className="font-semibold text-slate-950">{formatCurrency(payout.amount || 0)}</p>
                 <p className="text-sm text-slate-500">Requested {new Date(payout.requestedAt || payout.createdAt).toLocaleDateString()}</p>
               </div>
               <StatusBadge status={payout.status} />

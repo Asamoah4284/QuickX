@@ -2,6 +2,7 @@ import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useSta
 import axios from 'axios';
 import { FiFileText, FiImage, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
+import { getCurrencySymbol } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 export const CURRENT_BOOK_SENTINEL = '__CURRENT__';
@@ -83,13 +84,14 @@ function hydratePlanBooks(opt, bookId, currentBook, myBooks) {
   }
 
   if (opt.type === 'bundle') {
+    const bookTitle = currentBook?.title || '';
     return [
       newPlanBook({
         bookId: bookId || CURRENT_BOOK_SENTINEL,
-        title: currentBook?.title ? `${currentBook.title} - BOOK 1` : 'Book 1',
+        title: bookTitle || '',
         fileUrl: currentBook?.fileUrl || '',
       }),
-      newPlanBook({ title: currentBook?.title ? `${currentBook.title} - BOOK 2` : 'Book 2' }),
+      newPlanBook({ title: bookTitle ? `${bookTitle} (Part 2)` : '' }),
     ];
   }
 
@@ -290,7 +292,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
       ...prev,
       {
         ...emptyOption(null, 'single'),
-        planBooks: [newPlanBook({ title: 'Book' })],
+        planBooks: [newPlanBook({ title: currentBook?.title || '' })],
         cardTitle: '',
         price: Number(currentBook?.price) || 0,
         sortOrder: prev.length,
@@ -306,21 +308,21 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
         planBooks: [
           newPlanBook({
             bookId: bookId || CURRENT_BOOK_SENTINEL,
-            title: currentBook?.title ? `${currentBook.title} - BOOK 1` : 'Book 1',
+            title: currentBook?.title || '',
             fileUrl: currentBook?.fileUrl || '',
           }),
           newPlanBook({
-            title: currentBook?.title ? `${currentBook.title} - BOOK 2` : 'Book 2',
+            title: currentBook?.title ? `${currentBook.title} (Part 2)` : '',
           }),
         ],
         cardTitle: 'Complete bundle',
-        headline: 'Course 1 + Course 2',
+        headline: 'Volume 1 + Volume 2',
         label: 'COMPLETE BUNDLE',
         price: Math.round(Number(currentBook?.price || 0) * 1.4) || 0,
         compareAtPrice: Number(currentBook?.price || 0) * 2,
         badge: 'MOST POPULAR — BEST VALUE',
         highlighted: true,
-        features: 'Everything in Course 1\nFull advanced strategy system\nInstant PDF for both books',
+        features: 'Complete foundation module\nFull advanced strategy system\nInstant PDF for both books',
         sortOrder: prev.length,
       },
     ]);
@@ -336,8 +338,8 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
       {
         ...emptyOption(bookId ? String(bookId) : null, 'single'),
         label: 'STARTER',
-        headline: 'Course 1 Only',
-        cardTitle: currentBook?.title || 'Course 1',
+        headline: 'Core Book Only',
+        cardTitle: currentBook?.title || 'Core Book',
         price: book1Price,
         compareAtPrice: '',
         badge: '',
@@ -349,7 +351,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
         planBooks: [
           newPlanBook({
             bookId: bookId || CURRENT_BOOK_SENTINEL,
-            title: currentBook?.title || 'Course 1',
+            title: currentBook?.title || '',
             fileUrl: currentBook?.fileUrl || '',
           }),
         ],
@@ -358,24 +360,24 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
       {
         ...emptyOption(null, 'bundle'),
         label: 'COMPLETE BUNDLE',
-        headline: 'Course 1 + Course 2',
-        cardTitle: 'Both courses',
+        headline: 'Volume 1 + Volume 2',
+        cardTitle: 'Both books',
         price: bundlePrice,
         compareAtPrice: book1Price + book2Price,
         badge: 'MOST POPULAR — BEST VALUE',
         highlighted: true,
         footnote: '',
         features:
-          'Everything in Course 1\nTriple X Strategy — full system\nX Hack Up & X Hack Down entries\nFTR, FTB & Break & Close methods\nLiquidity zones & order flow\nAdvanced risk-to-reward optimization\nPsychology of a winning trader',
+          'Everything in Volume 1\nTriple X Strategy — full system\nX Hack Up & X Hack Down entries\nFTR, FTB & Break & Close methods\nLiquidity zones & order flow\nAdvanced risk-to-reward optimization\nPsychology of a winning trader',
         sortOrder: 1,
         planBooks: [
           newPlanBook({
             bookId: bookId || CURRENT_BOOK_SENTINEL,
-            title: currentBook?.title ? `${currentBook.title} — Course 1` : 'Course 1',
+            title: currentBook?.title || '',
             fileUrl: currentBook?.fileUrl || '',
           }),
           newPlanBook({
-            title: currentBook?.title ? `${currentBook.title} — Course 2` : 'Course 2',
+            title: currentBook?.title ? `${currentBook.title} (Part 2)` : '',
           }),
         ],
         bookIds: bookId ? [String(bookId)] : [],
@@ -441,7 +443,8 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
     try {
       const pb = options[optIndex].planBooks[pbIndex];
       const url = await uploadFileToS3({ file, token, type: 'file' });
-      const title = pb.title || `Book ${pbIndex + 1}`;
+      const isMainBook = !pb.bookId || pb.bookId === CURRENT_BOOK_SENTINEL || (bookId && String(pb.bookId) === String(bookId));
+      const resolvedTitle = pb.title?.trim() || currentBook?.title?.trim() || (isMainBook ? (currentBook?.title || '') : `Volume ${pbIndex + 1}`);
 
       if (!pb.bookId || pb.bookId === CURRENT_BOOK_SENTINEL) {
         if (!bookId) {
@@ -449,26 +452,31 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
           updatePlanBook(optIndex, pbIndex, {
             fileUrl: url,
             bookId: CURRENT_BOOK_SENTINEL,
-            title: title || currentBook?.title,
+            title: currentBook?.title || resolvedTitle,
           });
           return;
         }
         if (pb.bookId === CURRENT_BOOK_SENTINEL) {
+          // Never overwrite existing book title with generic "Book 1"
+          const patchPayload = { fileUrl: url, type: 'ebook' };
+          if (!currentBook?.title?.trim() && resolvedTitle && resolvedTitle !== 'Book 1') {
+            patchPayload.title = resolvedTitle;
+          }
           await axios.patch(
             `${API_URL}/api/instructor/books/${bookId}`,
-            { fileUrl: url, type: 'ebook', title },
+            patchPayload,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           onCurrentBookFileChange?.(url);
           updatePlanBook(optIndex, pbIndex, {
             bookId: String(bookId),
             fileUrl: url,
-            title,
+            title: currentBook?.title || resolvedTitle,
           });
           return;
         }
-        const newId = await ensureBookRecord(pb, title, url);
-        updatePlanBook(optIndex, pbIndex, { bookId: newId, fileUrl: url, title });
+        const newId = await ensureBookRecord(pb, resolvedTitle || `Volume ${pbIndex + 1}`, url);
+        updatePlanBook(optIndex, pbIndex, { bookId: newId, fileUrl: url, title: resolvedTitle || `Volume ${pbIndex + 1}` });
         return;
       }
 
@@ -594,11 +602,11 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                         const type = e.target.value;
                         let planBooks = opt.planBooks || [];
                         if (type === 'single') {
-                          planBooks = [planBooks[0] || newPlanBook()];
+                          planBooks = [planBooks[0] || newPlanBook({ title: currentBook?.title || '' })];
                         } else if (planBooks.length < 2) {
                           planBooks = [
-                            planBooks[0] || newPlanBook({ title: 'Book 1' }),
-                            newPlanBook({ title: 'Book 2' }),
+                            planBooks[0] || newPlanBook({ title: currentBook?.title || '' }),
+                            newPlanBook({ title: currentBook?.title ? `${currentBook.title} - Book 2` : '' }),
                           ];
                         }
                         updateOption(index, {
@@ -771,7 +779,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>Price (GH₵)</label>
+                    <label className={labelCls}>Price ({getCurrencySymbol()})</label>
                     <input
                       type="number"
                       min={0}

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { FiCheck, FiLock, FiStar } from 'react-icons/fi';
+import { formatCurrency, getCurrencySymbol } from '../utils/currencyStore';
 
 /** Starter | Bundle (center) | Advanced — bundle always in the middle when there are 3 tiers. */
 function orderOptionsForDisplay(options) {
@@ -33,17 +34,19 @@ function formatCompareLine(option, allOptions) {
   if (option.type === 'bundle') {
     const fromPlans = getBundleCompareFromPlans(option, allOptions);
     if (fromPlans) {
-      const priceParts = fromPlans.parts.map((price) => `GH₵${price}`);
-      return `${priceParts.join(' + ')} = GH₵${fromPlans.total}`;
+      const sym = getCurrencySymbol();
+      const priceParts = fromPlans.parts.map((price) => `${sym}${price}`);
+      return `${priceParts.join(' + ')} = ${sym}${fromPlans.total}`;
     }
   }
 
   if (!option.compareAtPrice || option.compareAtPrice <= option.price) return null;
   if (option.type === 'bundle' && option.books?.length > 1) {
-    const parts = option.books.map((b) => `GH₵${Number(b.price || 0)}`);
-    return `${parts.join(' + ')} = GH₵${Number(option.compareAtPrice)}`;
+    const sym = getCurrencySymbol();
+    const parts = option.books.map((b) => `${sym}${Number(b.price || 0)}`);
+    return `${parts.join(' + ')} = ${sym}${Number(option.compareAtPrice)}`;
   }
-  return `GH₵${Number(option.compareAtPrice)}`;
+  return `${getCurrencySymbol()}${Number(option.compareAtPrice)}`;
 }
 
 function formatSavings(option, allOptions) {
@@ -64,7 +67,7 @@ function getCtaLabel(option) {
     return custom;
   }
   if (option.type === 'bundle') {
-    return `Buy Now — GH₵${Number(option.price || 0)}`;
+    return `Buy Now — ${formatCurrency(Number(option.price || 0))}`;
   }
   return 'Buy Now';
 }
@@ -81,11 +84,12 @@ function getDeliveryLine(option, highlighted) {
 
 function getPromoPill(option, savings) {
   if (option.promoBadge) return option.promoBadge;
+  const sym = getCurrencySymbol();
   if (savings > 0 && option.highlighted && option.type === 'bundle') {
-    return `Save GH₵${savings} — Course 1 almost free!`;
+    return `Save ${sym}${savings} — Course 1 almost free!`;
   }
   if (savings > 0 && option.highlighted) {
-    return `Save GH₵${savings}`;
+    return `Save ${sym}${savings}`;
   }
   return null;
 }
@@ -157,7 +161,7 @@ function PlanCard({ option, allOptions, onSelect }) {
           compareLine ? 'mt-2 text-center' : 'mt-4'
         } ${highlighted ? 'text-4xl text-white sm:text-5xl' : 'text-4xl text-[#0c2340] sm:text-5xl'}`}
       >
-        GH₵{Number(option.price || 0)}
+        {formatCurrency(Number(option.price || 0))}
       </p>
 
       <p

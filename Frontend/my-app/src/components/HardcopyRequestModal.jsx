@@ -1,6 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { FiX, FiMapPin, FiTruck, FiCreditCard, FiClock, FiCheckCircle } from 'react-icons/fi';
 import { formatGhs } from '../utils/formatGhs';
+import { getCurrencySymbol } from '../utils/currencyStore';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const WHATSAPP_NUMBER = '233559037872';
@@ -85,16 +86,17 @@ export default function HardcopyRequestModal({ book, open, onClose, onSelectInst
           ? 'Instant Pay (Online)'
           : 'Pay on Delivery';
 
+    const sym = getCurrencySymbol();
     const lines = [
       '📦 *New Physical Book Order*',
       '',
       `📖 *Book:* ${book.title}`,
       book.author ? `✍️ *Author:* ${book.author}` : null,
-      `💵 *Book Price:* GHS ${hardcopyAmount}`,
+      `💵 *Book Price:* ${sym}${hardcopyAmount}`,
       `🚚 *Delivery Type:* ${deliveryTypeLabel}`,
       `⏱️ *Estimated Delivery:* ${deliveryOptions.estimatedDays}`,
-      `🏷️ *Delivery Fee:* ${activeFee > 0 ? `GHS ${activeFee}` : 'Free'}`,
-      `💰 *Total to Pay:* GHS ${totalAmount}`,
+      `🏷️ *Delivery Fee:* ${activeFee > 0 ? `${sym}${activeFee}` : 'Free'}`,
+      `💰 *Total to Pay:* ${sym}${totalAmount}`,
       '',
       `👤 *Customer Name:* ${name.trim()}`,
       phone.trim() ? `📞 *Phone:* ${phone.trim()}` : null,

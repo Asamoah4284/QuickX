@@ -76,7 +76,7 @@ function BookImageGallery({ images = [], title = 'Book' }) {
 
   return (
     <div
-      className="w-full max -w-[320px] sm:max-w-[360px] lg:max-w-[400px]"
+      className="w-full max-w-[260px] xs:max-w-[290px] sm:max-w-[340px] lg:max-w-[400px] mx-auto"
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
@@ -86,12 +86,12 @@ function BookImageGallery({ images = [], title = 'Book' }) {
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
       >
-        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-slate-50 flex items-center justify-center">
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-slate-50 flex items-center justify-center p-2 sm:p-3">
           <img
             key={displayImages[activeIndex]}
             src={displayImages[activeIndex]}
             alt={`${title} - view ${activeIndex + 1}`}
-            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
             onError={(e) => {
               e.target.onerror = null;
               e.target.src = DEFAULT_BOOK_COVER;
@@ -677,7 +677,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
                         <img
                           src={item.thumbnail || DEFAULT_BOOK_COVER}
                           alt=""
-                          className="h-full w-full object-cover sm:transition sm:duration-700 sm:group-hover:scale-[1.04]"
+                          className="h-full w-full object-contain p-1 bg-slate-900/40 sm:transition sm:duration-700 sm:group-hover:scale-[1.03]"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = DEFAULT_BOOK_COVER;

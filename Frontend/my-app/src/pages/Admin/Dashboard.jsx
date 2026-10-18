@@ -1109,7 +1109,7 @@ const AdminDashboard = () => {
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-sm text-gray-500">Total Revenue</p>
-                                        <p className="text-xl font-bold">${analytics.totalRevenue || '0'}</p>
+                                        <p className="text-xl font-bold">{formatCurrency(Number(analytics.totalRevenue || 0))}</p>
                                     </div>
                                     <div className="bg-purple-100 p-2 rounded-full">
                                         <FiDollarSign className="text-purple-600 text-lg" />
@@ -2110,7 +2110,7 @@ const AdminDashboard = () => {
                                                         <div className="text-sm text-gray-500">{request.user?.email || 'N/A'}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">GH₵{request.amount}</div>
+                                                        <div className="text-sm font-medium text-gray-900">{formatCurrency(request.amount)}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm text-gray-900">{request.momoNumber}</div>

@@ -15,6 +15,7 @@ import {
 } from 'chart.js';
 import { Line, Doughnut } from 'react-chartjs-2';
 import OverviewCard from '../../components/creator/OverviewCard';
+import { formatCurrency, getCurrencySymbol } from '../../utils/currencyStore';
 
 ChartJS.register(
   CategoryScale,
@@ -43,7 +44,7 @@ const trendChartOptions = {
       callbacks: {
         label(ctx) {
           const v = ctx.parsed.y;
-          if (ctx.datasetIndex === 0) return ` Revenue: GH₵${Number(v).toFixed(2)}`;
+          if (ctx.datasetIndex === 0) return ` Revenue: ${formatCurrency(v)}`;
           return ` Enrollments: ${v}`;
         },
       },
@@ -57,9 +58,9 @@ const trendChartOptions = {
     y: {
       type: 'linear',
       position: 'left',
-      title: { display: true, text: 'Revenue (GH₵)', color: '#64748b', font: { size: 10 } },
+      title: { display: true, text: `Revenue (${getCurrencySymbol()})`, color: '#64748b', font: { size: 10 } },
       grid: { color: 'rgba(148, 163, 184, 0.2)' },
-      ticks: { callback: (v) => `₵${v}` },
+      ticks: { callback: (v) => `${getCurrencySymbol()}${v}` },
     },
     y1: {
       type: 'linear',
@@ -229,7 +230,7 @@ export default function CreatorDashboardOverview() {
         <OverviewCard label="Students enrolled" value={stats.totalStudents || 0} hint="Unique learners across your catalog" />
         <OverviewCard
           label="Total revenue"
-          value={`GH₵${Number(stats.totalRevenue || 0).toFixed(2)}`}
+          value={formatCurrency(stats.totalRevenue || 0)}
           hint="Net tutor earnings tracked so far"
         />
         <OverviewCard label="Average rating" value={stats.averageRating || 0} hint="Average of all course reviews" />

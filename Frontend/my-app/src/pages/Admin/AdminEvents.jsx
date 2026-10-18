@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
+import { formatCurrency, getCurrencySymbol } from '../../utils/currencyStore';
 import {
   FiCalendar,
   FiPlus,
@@ -299,7 +300,7 @@ export default function AdminEvents() {
             <FiDollarSign className="h-5 w-5 text-emerald-500" />
           </div>
           <p className="mt-3 text-2xl font-black text-slate-900">
-            GH₵{Number(stats.totalRevenue).toFixed(2)}
+            {formatCurrency(Number(stats.totalRevenue || 0))}
           </p>
           <span className="text-[11px] text-slate-500">Paid ticket sales</span>
         </div>
@@ -410,7 +411,7 @@ export default function AdminEvents() {
                         {evt.isFree || Number(evt.price) === 0 ? (
                           <span className="text-emerald-600">Free</span>
                         ) : (
-                          `GH₵${Number(evt.price).toFixed(2)}`
+                          formatCurrency(Number(evt.price || 0))
                         )}
                       </span>
                       <span className="text-slate-500 text-[11px]">
@@ -628,7 +629,7 @@ export default function AdminEvents() {
                   {!formData.isFree && (
                     <div>
                       <label className="block text-xs font-bold text-slate-700 mb-1">
-                        Price (GH₵)
+                        Price ({getCurrencySymbol()})
                       </label>
                       <input
                         type="number"
@@ -823,7 +824,7 @@ export default function AdminEvents() {
                           {att.isFree ? (
                             <span className="text-emerald-600">Free</span>
                           ) : (
-                            `GH₵${att.pricePaid}`
+                            formatCurrency(Number(att.pricePaid || 0))
                           )}
                         </td>
                         <td className="py-3 px-3 text-slate-500 text-[11px]">

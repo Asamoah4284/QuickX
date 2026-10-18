@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { formatCurrency } from '../../utils/currencyStore';
 import {
   FiBook,
   FiEdit3,
@@ -109,10 +110,10 @@ function BookRowActions({ book, navigate, runAction }) {
 }
 
 function formatBookPrices(book) {
-  const ebookPrice = `GH₵${Number(book.price || 0).toLocaleString()}`;
+  const ebookPrice = formatCurrency(book.price || 0);
   if (book.type !== 'ebook') return ebookPrice;
   if (book.hardcopyPrice == null || book.hardcopyPrice === '') return ebookPrice;
-  return `${ebookPrice} · Hardcopy GH₵${Number(book.hardcopyPrice).toLocaleString()}`;
+  return `${ebookPrice} · Hardcopy ${formatCurrency(book.hardcopyPrice)}`;
 }
 
 export default function CreatorBooks() {

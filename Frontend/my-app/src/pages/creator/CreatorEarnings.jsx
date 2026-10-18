@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { formatCurrency } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -22,15 +23,15 @@ export default function CreatorEarnings() {
       <div className="grid gap-4 md:grid-cols-3">
         <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
           <p className="text-sm text-slate-500">Gross revenue</p>
-          <p className="mt-3 text-3xl font-semibold text-slate-950">GH₵{Number(data?.totalRevenue || 0).toFixed(2)}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-950">{formatCurrency(data?.totalRevenue || 0)}</p>
         </div>
         <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
           <p className="text-sm text-slate-500">Net earnings</p>
-          <p className="mt-3 text-3xl font-semibold text-slate-950">GH₵{Number(data?.totalEarnings || 0).toFixed(2)}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-950">{formatCurrency(data?.totalEarnings || 0)}</p>
         </div>
         <div className="rounded-3xl border border-slate-200/80 bg-white p-5">
           <p className="text-sm text-slate-500">Available balance</p>
-          <p className="mt-3 text-3xl font-semibold text-slate-950">GH₵{Number(data?.availableBalance || 0).toFixed(2)}</p>
+          <p className="mt-3 text-3xl font-semibold text-slate-950">{formatCurrency(data?.availableBalance || 0)}</p>
         </div>
       </div>
 
@@ -48,7 +49,7 @@ export default function CreatorEarnings() {
                   <p className="font-semibold text-slate-950">Reference {transaction.paymentReference || 'N/A'}</p>
                   <p className="text-sm text-slate-500">{new Date(transaction.createdAt).toLocaleDateString()}</p>
                 </div>
-                <p className="text-sm font-semibold text-slate-950">GH₵{Number(transaction.tutorEarning || 0).toFixed(2)}</p>
+                <p className="text-sm font-semibold text-slate-950">{formatCurrency(transaction.tutorEarning || 0)}</p>
               </div>
             ))
           )}

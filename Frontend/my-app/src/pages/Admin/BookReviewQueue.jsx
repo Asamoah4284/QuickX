@@ -4,6 +4,7 @@ import { FiBook } from 'react-icons/fi';
 import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
 import StatusBadge from '../../components/creator/StatusBadge';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
+import { formatCurrency } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -125,9 +126,9 @@ export default function BookReviewQueue() {
                     <p className="mt-1 text-sm text-slate-500">
                       {book.author} · {book.type} · {book.category || 'general'}
                       {' · '}
-                      GH₵{Number(book.price || 0).toLocaleString()}
+                      {formatCurrency(book.price || 0)}
                       {book.type === 'ebook' && book.hardcopyPrice != null && book.hardcopyPrice !== ''
-                        ? ` · Hardcopy GH₵${Number(book.hardcopyPrice).toLocaleString()}`
+                        ? ` · Hardcopy ${formatCurrency(book.hardcopyPrice)}`
                         : ''}
                     </p>
                     <p className="mt-1 text-xs text-slate-400">

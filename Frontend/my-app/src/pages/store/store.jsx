@@ -10,6 +10,8 @@ import {
   FiShield,
   FiZap,
   FiCheckCircle,
+  FiSearch,
+  FiSliders,
 } from 'react-icons/fi';
 import { FaTelegramPlane } from 'react-icons/fa';
 import { useNavigate, Link } from 'react-router-dom';
@@ -64,6 +66,14 @@ const HERO_BOOK_COVERS = [
   },
 ];
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'title_asc', label: 'Title: A–Z' },
+];
+
 const Store = () => {
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -75,6 +85,10 @@ const Store = () => {
   const [error, setError] = useState(null);
   const [justAddedId, setJustAddedId] = useState('');
   const [fanReady, setFanReady] = useState(false);
+  // Search / Sort / Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [typeFilter, setTypeFilter] = useState('all');
   const navigate = useNavigate();
 
   // Fetch books from API
@@ -433,6 +447,7 @@ const Store = () => {
 
       {/* Marketplace */}
       <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
+        {/* Header row */}
         <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold tracking-tight text-[#0B1F44] sm:text-2xl md:text-3xl">
@@ -458,30 +473,89 @@ const Store = () => {
               className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:hidden"
               aria-label="View cart"
             >
-                    <span className="relative">
-                      <FiShoppingCart className="h-5 w-5" />
-                      {cartCount > 0 ? (
+              <span className="relative">
+                <FiShoppingCart className="h-5 w-5" />
+                {cartCount > 0 ? (
                   <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1B5EF5] px-1.5 text-[11px] font-bold leading-none text-white">
-                          {cartCount}
-                        </span>
-                      ) : null}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleOpenCart}
+                    {cartCount}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenCart}
               className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex"
-                  >
-                    <FiShoppingCart className="h-4 w-4" />
-                    View cart
-                    {cartCount > 0 ? (
+            >
+              <FiShoppingCart className="h-4 w-4" />
+              View cart
+              {cartCount > 0 ? (
                 <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#1B5EF5] px-2 text-xs font-bold text-white">
-                        {cartCount}
-                      </span>
-                    ) : null}
-                  </button>
-              </div>
-            </div>
+                  {cartCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+        </div>
+
+        {/* Search / Sort / Filter bar */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              id="store-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title or author…"
+              className="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-800 shadow-sm placeholder:text-slate-400 focus:border-[#1B5EF5] focus:outline-none focus:ring-2 focus:ring-[#1B5EF5]/20"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                aria-label="Clear search"
+              >
+                <FiX className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Type filter */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-1 shadow-sm">
+            {[{ value: 'all', label: 'All' }, { value: 'ebook', label: 'E-Book' }, { value: 'hardcopy', label: 'Print' }].map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setTypeFilter(f.value)}
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                  typeFilter === f.value
+                    ? 'bg-[#1B5EF5] text-white shadow-sm'
+                    : 'text-slate-600 hover:bg-slate-100'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort */}
+          <div className="relative shrink-0">
+            <FiSliders className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <select
+              id="store-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="appearance-none rounded-xl border border-slate-200 bg-white py-2.5 pl-9 pr-8 text-sm font-medium text-slate-700 shadow-sm focus:border-[#1B5EF5] focus:outline-none focus:ring-2 focus:ring-[#1B5EF5]/20"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -503,8 +577,50 @@ const Store = () => {
         ) : null}
 
         {!isLoading && !error && books.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5">
-                {books.map((book) => (
+          (() => {
+            // Apply search / type filter / sort
+            const q = searchQuery.toLowerCase().trim();
+            let filtered = books.filter((b) => {
+              if (typeFilter !== 'all' && b.type !== typeFilter) return false;
+              if (q) {
+                const inTitle = (b.title || '').toLowerCase().includes(q);
+                const inAuthor = (b.author || '').toLowerCase().includes(q);
+                return inTitle || inAuthor;
+              }
+              return true;
+            });
+
+            filtered = [...filtered].sort((a, b) => {
+              if (sortBy === 'price_asc') return Number(a.price || 0) - Number(b.price || 0);
+              if (sortBy === 'price_desc') return Number(b.price || 0) - Number(a.price || 0);
+              if (sortBy === 'title_asc') return (a.title || '').localeCompare(b.title || '');
+              if (sortBy === 'oldest') return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+              // newest (default)
+              return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="py-12 text-center">
+                  <FiSearch className="mx-auto h-10 w-10 text-slate-300" />
+                  <h3 className="mt-3 text-sm font-medium text-[#0B1F44]">No results found</h3>
+                  <p className="mt-1 text-sm text-slate-500">
+                    Try a different search term or clear your filters.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(''); setTypeFilter('all'); setSortBy('newest'); }}
+                    className="mt-4 text-sm font-semibold text-[#1B5EF5] hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5">
+                {filtered.map((book) => (
                   <BookMarketplaceCard
                     key={book._id}
                     book={book}
@@ -516,6 +632,8 @@ const Store = () => {
                   />
                 ))}
               </div>
+            );
+          })()
         ) : null}
 
         {!isLoading && !error && books.length === 0 ? (

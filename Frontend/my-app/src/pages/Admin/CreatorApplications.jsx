@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import axios from 'axios';
 import AdminSectionHeader from '../../components/admin/AdminSectionHeader';
 import StatusBadge from '../../components/creator/StatusBadge';
+import { getCurrency } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -50,7 +51,7 @@ function PricingEditor({ application, onSaved }) {
 
   return (
     <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-sm font-semibold text-slate-900">Subscription plan prices (GHS)</p>
+      <p className="text-sm font-semibold text-slate-900">Subscription plan prices ({getCurrency()})</p>
       <p className="mt-1 text-xs text-slate-500">
         Basic, Premium, and Diamond — feature tiers students can buy.
       </p>

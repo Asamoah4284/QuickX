@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { formatCurrency } from '../utils/currencyStore';
 import {
   FiCalendar,
   FiClock,
@@ -454,7 +455,7 @@ export default function EventDetail() {
                     {event.isFree || Number(event.price) === 0 ? (
                       <span className="text-emerald-600">FREE</span>
                     ) : (
-                      <span>GH₵{Number(event.price).toFixed(2)}</span>
+                      <span>{formatCurrency(Number(event.price || 0))}</span>
                     )}
                   </div>
                 </div>
@@ -682,7 +683,7 @@ export default function EventDetail() {
                   <div className="rounded-xl bg-slate-50 p-3 text-xs text-slate-600 flex justify-between items-center">
                     <span>Total Due:</span>
                     <span className="font-extrabold text-slate-900 text-sm">
-                      GH₵{Number(event.price).toFixed(2)}
+                      {formatCurrency(Number(event.price || 0))}
                     </span>
                   </div>
 
@@ -691,7 +692,7 @@ export default function EventDetail() {
                     disabled={submitting}
                     className="w-full rounded-2xl bg-[#1B5EF5] py-3.5 text-xs font-bold text-white shadow-md hover:bg-[#1552D6] transition disabled:opacity-50"
                   >
-                    {submitting ? 'Processing Payment...' : `Pay GH₵${Number(event.price).toFixed(2)} & Get Ticket`}
+                    {submitting ? 'Processing Payment...' : `Pay ${formatCurrency(Number(event.price || 0))} & Get Ticket`}
                   </button>
                 </form>
               )}

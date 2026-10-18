@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '@/config/api';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
+import { getCurrencySymbol } from '../../utils/currencyStore';
 
 const BookModal = ({ book, onClose, onSave }) => {
     const [formData, setFormData] = useState({
@@ -494,7 +495,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                                             </label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span className="text-gray-500">$</span>
+                                                    <span className="text-gray-500">{getCurrencySymbol()}</span>
                                                 </div>
                                                 <input
                                                     type="number"
@@ -584,7 +585,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                                             </label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span className="text-gray-500">$</span>
+                                                    <span className="text-gray-500">{getCurrencySymbol()}</span>
                                                 </div>
                                                 <input
                                                     type="number"
@@ -690,7 +691,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
                                                     <FiDollarSign className="mr-1 text-gray-500" />
-                                                    Standard Delivery Fee (GH₵)
+                                                    Standard Delivery Fee ({getCurrencySymbol()})
                                                 </label>
                                                 <input
                                                     type="number"

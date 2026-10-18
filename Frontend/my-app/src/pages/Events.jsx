@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { formatCurrency } from '../utils/currencyStore';
 import {
   FiCalendar,
   FiClock,
@@ -508,7 +509,7 @@ export default function Events() {
                           {evt.isFree || Number(evt.price) === 0 ? (
                             <span className="text-emerald-600 font-bold">Free</span>
                           ) : (
-                            <span>GH₵{Number(evt.price).toFixed(2)}</span>
+                            <span>{formatCurrency(Number(evt.price || 0))}</span>
                           )}
                         </div>
                       </div>

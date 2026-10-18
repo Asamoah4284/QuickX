@@ -21,18 +21,32 @@ app.set('trust proxy', 1);
 const corsOptions = {
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
+    // Support common headers and range requests for media/downloads
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Range',
+        'Cache-Control',
+        'Pragma',
+        'If-Modified-Since',
+        'x-auth-token'
+    ],
+    exposedHeaders: ['Content-Range', 'Content-Length', 'ETag', 'Accept-Ranges'],
 };
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+app.options('/*', cors(corsOptions));
 
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: false, // We use our custom CSP
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false // Prevent Helmet from sending Cross-Origin-Resource-Policy: same-origin
 }));
 
 // Apply custom security headers
@@ -47,7 +61,7 @@ app.use(preventParamPollution);
 // Rate limiting - general API limit
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: process.env.API_RATE_LIMIT ? parseInt(process.env.API_RATE_LIMIT) : 1000, // Generous limit so normal page navigation does not block users
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,

@@ -105,7 +105,11 @@ async function upsertPlanBooksForOption(anchorBook, planBooks, userId) {
             }
             const isStorefront =
                 String(book._id) === String(anchorBook._id);
-            book.title = title;
+            if (isStorefront) {
+                book.title = String(anchorBook.title || '').trim() || title;
+            } else {
+                book.title = title;
+            }
             book.type = 'ebook';
             book.fileUrl = effectiveUrl;
             book.isPlanDeliverable = !isStorefront;

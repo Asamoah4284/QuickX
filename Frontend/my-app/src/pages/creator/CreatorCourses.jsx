@@ -13,6 +13,7 @@ import {
 } from 'react-icons/fi';
 import StatusBadge from '../../components/creator/StatusBadge';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
+import { formatCurrency } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -22,12 +23,12 @@ const filterOptions = ['all', 'published', 'draft', 'under_review', 'rejected', 
 function formatCreatorCoursePrice(course, subscriptionPricing) {
   const month1 = Number(subscriptionPricing?.month1);
   if (Number.isFinite(month1) && month1 > 0) {
-    return `From GH₵${month1.toLocaleString()}/mo`;
+    return `From ${formatCurrency(month1)}/mo`;
   }
   if (course.pricingType === 'free' || Number(course.price) === 0) {
     return 'Free';
   }
-  return `GH₵${Number(course.price).toLocaleString()}`;
+  return formatCurrency(course.price);
 }
 
 function courseThumbnailUrl(course) {
@@ -360,7 +361,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                           </div>
                           <div>
                             <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Revenue</dt>
-                            <dd className="tabular-nums">GH₵{revenue}</dd>
+                            <dd className="tabular-nums">{formatCurrency(revenue)}</dd>
                           </div>
                           <div>
                             <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Rating</dt>
@@ -429,7 +430,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                           {rating}
                         </td>
                         <td className="hidden md:table-cell px-3 py-4 text-right tabular-nums text-slate-600">
-                          GH₵{revenue}
+                          {formatCurrency(revenue)}
                         </td>
                         <td className="px-3 py-4 whitespace-nowrap text-slate-600">
                           {new Date(course.updatedAt).toLocaleDateString(undefined, {
