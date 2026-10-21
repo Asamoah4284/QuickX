@@ -15,7 +15,7 @@ import {
   getCartItemCount,
   expandCartItemsForPayment,
 } from '../utils/bookCart';
-import { ensureMetaPixel, trackMetaEvent } from '../utils/metaPixel';
+import { ensureMetaPixel, isMetaPixelEnabledForBook, trackMetaEvent } from '../utils/metaPixel';
 import { clearPendingCheckout, readPendingCheckout } from '../utils/pendingCheckout';
 import {
   getCurrency,
@@ -55,20 +55,16 @@ function isBookCheckoutItem(item) {
   return item?.type === 'book' || item?.type === 'book_cart' || item?.type === 'book_offer';
 }
 
-/** Store listing https://www.quickxlearn.com/store/6a09f6cbeae4b7e962bdb49d — Meta Pixel Purchase only for this title. */
-const META_PIXEL_TRACKED_BOOK_ID = '6a09f6cbeae4b7e962bdb49d';
-
-/** Meta Pixel Purchase payload only for the tracked store book; otherwise null. */
+/** Meta Pixel Purchase payload only for tracked store books; otherwise null. */
 function getMetaPixelPurchasePayloadForTrackedBook(checkoutItem, finalPrice) {
   if (!checkoutItem) return null;
-  const tid = META_PIXEL_TRACKED_BOOK_ID;
 
   if (checkoutItem.type === 'book') {
     const id = String(checkoutItem.id ?? checkoutItem._id ?? '');
-    if (id !== tid) return null;
+    if (!isMetaPixelEnabledForBook(id)) return null;
     return {
       content_name: checkoutItem.title || 'Book',
-      content_ids: [tid],
+      content_ids: [id],
       content_type: 'product',
       value: finalPrice,
       currency: 'GHS',
@@ -77,8 +73,9 @@ function getMetaPixelPurchasePayloadForTrackedBook(checkoutItem, finalPrice) {
 
   if (checkoutItem.type === 'book_cart') {
     const items = normalizeCart(Array.isArray(checkoutItem.items) ? checkoutItem.items : []);
-    const line = items.find((it) => String(it.id ?? it._id ?? '') === tid);
+    const line = items.find((it) => isMetaPixelEnabledForBook(String(it.id ?? it._id ?? '')));
     if (!line) return null;
+    const tid = String(line.id ?? line._id ?? '');
     return {
       content_name: line.title || checkoutItem.title || 'Book',
       content_ids: [tid],
@@ -90,12 +87,13 @@ function getMetaPixelPurchasePayloadForTrackedBook(checkoutItem, finalPrice) {
 
   if (checkoutItem.type === 'book_offer') {
     const ids = (checkoutItem.bookIds || []).map((id) => String(id));
-    if (!ids.includes(tid)) return null;
+    const matchedId = ids.find((id) => isMetaPixelEnabledForBook(id));
+    if (!matchedId) return null;
     const books = Array.isArray(checkoutItem.books) ? checkoutItem.books : [];
-    const book = books.find((b) => String(b._id ?? b.id ?? '') === tid);
+    const book = books.find((b) => String(b._id ?? b.id ?? '') === matchedId);
     return {
       content_name: book?.title || checkoutItem.title || 'Book',
-      content_ids: [tid],
+      content_ids: [matchedId],
       content_type: 'product',
       value: finalPrice,
       currency: 'GHS',

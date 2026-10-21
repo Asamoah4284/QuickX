@@ -5,8 +5,11 @@
  * Test mode: set VITE_META_TEST_EVENT_CODE to route events to Events Manager → Test Events.
  */
 
+const rawPixelId = import.meta.env.VITE_META_PIXEL_ID?.trim();
 const PIXEL_ID =
-  import.meta.env.VITE_META_PIXEL_ID?.trim() || '2191629668086090';
+  rawPixelId && rawPixelId !== '1307907077820624' && rawPixelId !== '1187997587726082'
+    ? rawPixelId
+    : '2191629668086090';
 
 const TEST_EVENT_CODE =
   import.meta.env.VITE_META_TEST_EVENT_CODE?.trim() || '';
