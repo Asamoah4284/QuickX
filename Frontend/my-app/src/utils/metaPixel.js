@@ -1,12 +1,12 @@
 /**
  * Meta (Facebook) Pixel — official loader + fbq API.
- * Default pixel: 1307907077820624 (override with VITE_META_PIXEL_ID).
+ * Default pixel: 2191629668086090 (override with VITE_META_PIXEL_ID).
  * Book pages: optional allowlist via VITE_META_PIXEL_BOOK_IDS (comma-separated Mongo ids).
  * Test mode: set VITE_META_TEST_EVENT_CODE to route events to Events Manager → Test Events.
  */
 
 const PIXEL_ID =
-  import.meta.env.VITE_META_PIXEL_ID?.trim() || '1307907077820624';
+  import.meta.env.VITE_META_PIXEL_ID?.trim() || '2191629668086090';
 
 const TEST_EVENT_CODE =
   import.meta.env.VITE_META_TEST_EVENT_CODE?.trim() || '';

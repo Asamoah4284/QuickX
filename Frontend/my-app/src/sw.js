@@ -19,7 +19,7 @@ const hasIndexHtml = manifest.some((entry) => {
 if (hasIndexHtml) {
   registerRoute(
     new NavigationRoute(createHandlerBoundToURL('/index.html'), {
-      denylist: [/^\/api\//],
+      denylist: [/^\/api\//, /^\/@/, /^\/src\//, /^\/node_modules\//],
     })
   );
 }

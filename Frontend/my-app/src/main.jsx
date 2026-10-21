@@ -14,6 +14,20 @@ if (import.meta.env.PROD) {
       registerSW({ immediate: true })
     })
     .catch(() => {})
+} else if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  // In development, automatically unregister any leftover service workers and clear workbox caches
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    for (const registration of registrations) {
+      registration.unregister();
+    }
+  });
+  if ('caches' in window) {
+    caches.keys().then((keys) => {
+      for (const key of keys) {
+        caches.delete(key);
+      }
+    });
+  }
 }
 
 createRoot(document.getElementById('root')).render(

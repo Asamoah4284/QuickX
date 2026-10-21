@@ -3,6 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script>
+      if (typeof window !== 'undefined' && (location.hostname === 'localhost' || location.hostname === '127.0.0.1')) {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function(regs) {
+            regs.forEach(function(reg) { reg.unregister(); });
+          });
+        }
+      }
+    </script>
     <!-- Allow Payment Request / Apple Pay / browser payment autofill on this origin -->
     <meta http-equiv="Permissions-Policy" content="payment=(self), publickey-credentials-get=(self)" />
     
