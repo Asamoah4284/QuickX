@@ -50,25 +50,7 @@ router.put('/courses/:id',
 
 router.delete('/courses/:id', adminAuth, adminController.deleteCourse);
 router.get('/courses', adminAuth, adminController.getAllCourses);
-router.get('/courses/review-queue/list', adminAuth, adminController.getCourseReviewQueue);
 router.get('/courses/:id', adminAuth, adminController.getCourseById);
-
-router.patch('/courses/:id/listing-review', adminAuth, adminController.reviewUserCourse);
-
-router.get('/tutors/applications', adminAuth, adminController.getTutorApplications);
-router.patch('/tutors/applications/:id/review', adminAuth, adminController.reviewTutorApplication);
-router.patch(
-    '/tutors/applications/:id/subscription-pricing',
-    adminAuth,
-    adminController.updateTutorSubscriptionPricing
-);
-router.get('/platform/settings', adminAuth, adminController.getPlatformSettings);
-router.put('/platform/settings', adminAuth, adminController.updatePlatformSettings);
-router.get('/platform/categories', adminAuth, adminController.getCourseCategories);
-router.post('/platform/categories', adminAuth, adminController.upsertCourseCategory);
-router.put('/platform/categories/:id', adminAuth, adminController.upsertCourseCategory);
-router.delete('/platform/categories/:id', adminAuth, adminController.deleteCourseCategory);
-router.get('/analytics/creator', adminAuth, adminController.getCreatorAnalytics);
 
 // Book management routes
 router.post('/books', 
@@ -83,9 +65,7 @@ router.put('/books/:id',
 
 router.delete('/books/:id', adminAuth, adminController.deleteBook);
 router.get('/books', adminAuth, adminController.getAllBooks);
-router.get('/books/review-queue/list', adminAuth, adminController.getBookReviewQueue);
 router.get('/books/:id', adminAuth, adminController.getBookById);
-router.patch('/books/:id/review', adminAuth, adminController.reviewInstructorBook);
 
 // Content upload route
 router.post('/upload-content', (req, res) => {
@@ -102,6 +82,35 @@ router.post('/upload-content', (req, res) => {
     } catch (error) {
         console.error('Content upload error:', error);
         res.status(500).json({ message: 'Content upload failed', error: error.message });
+    }
+});
+
+/**
+ * One login for the mentor: an admin can open the Studio (course and book
+ * authoring) as the owner account without knowing that account's password.
+ */
+router.post('/owner-session', adminAuth, async (req, res) => {
+    try {
+        const jwt = require('jsonwebtoken');
+        const { getOwnerId } = require('../services/ownerService');
+        const { serializeUser } = require('../utils/serializeUser');
+        const ownerId = await getOwnerId();
+        if (!ownerId) {
+            return res.status(404).json({ message: 'No owner account is set. Set OWNER_USER_ID on the server.' });
+        }
+        const owner = await User.findById(ownerId).select('-password');
+        if (!owner) return res.status(404).json({ message: 'Owner account not found' });
+
+        const token = jwt.sign(
+            { userId: owner._id, role: owner.role || 'tutor', creatorStatus: owner.creatorStatus || 'approved' },
+            process.env.JWT_SECRET,
+            { expiresIn: '12h' }
+        );
+        console.log(`[admin] ${req.admin.email} opened a Studio session as owner ${owner._id}`);
+        res.json({ token, user: serializeUser(owner) });
+    } catch (error) {
+        console.error('owner-session:', error);
+        res.status(500).json({ message: 'Could not open the Studio' });
     }
 });
 

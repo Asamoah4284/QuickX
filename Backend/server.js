@@ -107,7 +107,6 @@ const db = mongoose.connection;
 db.on('error', (err) => {
     console.error('MongoDB connection error:', err);
 });
-const { seedPrograms } = require('./scripts/seedPrograms');
 const Book = require('./models/Book');
 const BookOfferGroup = require('./models/BookOfferGroup');
 const {
@@ -173,9 +172,14 @@ db.once('open', async () => {
         console.error('subscription → entitlement migration:', e.message);
     }
     try {
-        await seedPrograms();
+        // Courses created before listings existed count as published admin courses.
+        const Course = require('./models/Course');
+        await Course.updateMany(
+            { $or: [{ source: { $exists: false } }, { listingStatus: { $exists: false } }] },
+            { $set: { source: 'admin', listingStatus: 'published' } }
+        );
     } catch (e) {
-        console.error('seedPrograms:', e.message);
+        console.error('course listing backfill:', e.message);
     }
 });
 
@@ -190,7 +194,6 @@ app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api', require('./routes/couponRoutes'));
 app.use('/api/mentorships', require('./routes/mentorshipRoutes'));
-app.use('/api/programs', require('./routes/programRoutes'));
 app.use('/api/instructor/courses', require('./routes/instructorCourseRoutes'));
 app.use('/api/instructor/books', require('./routes/instructorBookRoutes'));
 app.use('/api/instructor/book-offers', require('./routes/instructorOfferGroupRoutes'));
@@ -200,7 +203,6 @@ app.use('/api/signals', require('./routes/signalRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
-app.use('/', require('./routes/advertisementRoutes'));
 
 // Serve static files from 'public' folder
 app.use(express.static(path.join(__dirname, 'public')));

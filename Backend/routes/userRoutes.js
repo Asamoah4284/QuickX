@@ -4,7 +4,6 @@ const mongoose = require('mongoose');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 const Course = require('../models/Course');
-const ProgramEnrollment = require('../models/ProgramEnrollment');
 const TutorProfile = require('../models/TutorProfile');
 const PlatformSetting = require('../models/PlatformSetting');
 const auth = require('../middleware/auth');
@@ -16,103 +15,19 @@ const sgMail = require('@sendgrid/mail');
 const { serializeUser } = require('../utils/serializeUser');
 const { sendOTP } = require('../services/sms');
 
-const { isLessonPreview } = require('../utils/lessonAccess');
+const requireApprovedCreator = require('../middleware/requireApprovedCreator');
 
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
-/**
- * Flatten curriculum lessons for the public instructor profile grid.
- * Includes all video lessons; only preview/free lessons expose playable URLs.
- */
-function countLessonVideos(courseDocs) {
-    let n = 0;
-    for (const c of courseDocs) {
-        for (const mod of c.modules || []) {
-            for (const sec of mod.sections || []) {
-                for (const les of sec.lessons || []) {
-                    const v = les.videoUrl != null && String(les.videoUrl).trim();
-                    if (v) n += 1;
-                }
-            }
-        }
-    }
-    return n;
-}
-
-function collectPublicProfileLessons(courseDocs) {
-    const out = [];
-    for (const c of courseDocs) {
-        const modules = c.modules || [];
-        modules.forEach((mod, mi) => {
-            (mod.sections || []).forEach((sec, si) => {
-                (sec.lessons || []).forEach((les, li) => {
-                    const isPreview = isLessonPreview(les);
-                    const lessonType = String(les.lessonType || les.type || 'video').toLowerCase();
-                    if (lessonType !== 'video' && !isPreview) return;
-
-                    const lessonKey = les._id != null ? String(les._id) : `m${mi}-s${si}-l${li}`;
-                    const videoUrl = String(les.videoUrl || les.filePath || '').trim();
-                    out.push({
-                        key: `${String(c._id)}-${lessonKey}`,
-                        courseId: String(c._id),
-                        courseTitle: String(c.title || '').trim(),
-                        courseThumbnail: c.thumbnail || '',
-                        coursePromoVideo: isPreview ? c.promoVideo || '' : '',
-                        lessonTitle: String(les.title || 'Lesson').trim(),
-                        /** Playable only for free-preview lessons — never leak locked URLs */
-                        previewVideoUrl: isPreview ? videoUrl : '',
-                        isPreview,
-                        isLocked: !isPreview,
-                        category: c.category || '',
-                        courseType: c.courseType,
-                        tags: Array.isArray(c.tags) ? c.tags : [],
-                        totalStudents: Number(c.totalStudents) || 0,
-                    });
-                });
-            });
-        });
-    }
-    return out;
-}
-
-function collectInstructorVideoContent(courseDocs) {
-    const out = [];
-    for (const c of courseDocs) {
-        const modules = c.modules || [];
-        modules.forEach((mod, mi) => {
-            (mod.sections || []).forEach((sec, si) => {
-                (sec.lessons || []).forEach((les, li) => {
-                    const lessonType = les.lessonType || les.type || 'video';
-                    if (lessonType !== 'video') return;
-                    const lessonKey = les._id != null ? String(les._id) : `m${mi}-s${si}-l${li}`;
-                    const isPreview = isLessonPreview(les);
-                    const isLocked = !isPreview;
-                    out.push({
-                        key: `${String(c._id)}-${lessonKey}`,
-                        courseId: String(c._id),
-                        courseTitle: String(c.title || '').trim(),
-                        lessonTitle: String(les.title || 'Lesson').trim(),
-                        duration: String(les.duration || '').trim(),
-                        isPreview,
-                        isLocked
-                    });
-                });
-            });
-        });
-    }
-    return out;
-}
-
-// Rate limiter for auth endpoints
+// Rate limiter for auth endpoints (failed attempts only)
 const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 10, // Limit each IP to 5 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 10,
     message: 'Too many authentication attempts, please try again later.',
     skipSuccessfulRequests: true,
 });
 
-// Validation middleware
 const validateRegistration = [
     body('email')
         .isEmail()
@@ -655,25 +570,6 @@ router.get('/profile', auth, async (req, res) => {
     }
 });
 
-/** Active program (creator) enrollments — same data as GET /api/programs/user/me */
-router.get('/me/programs', auth, async (req, res) => {
-    try {
-        const now = new Date();
-        const enrollments = await ProgramEnrollment.find({
-            userId: req.user._id,
-            status: 'active',
-            $or: [{ endsAt: null }, { endsAt: { $gt: now } }]
-        })
-            .populate('programId')
-            .sort({ createdAt: -1 });
-        res.json(enrollments);
-    } catch (error) {
-        console.error('me/programs:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-});
-
-// Get current user data
 router.get('/me', auth, async (req, res) => {
     try {
         const user = await User.findById(req.user._id)
@@ -753,7 +649,7 @@ router.patch('/me/account', auth, async (req, res) => {
     }
 });
 
-router.get('/creator/profile', auth, async (req, res) => {
+router.get('/creator/profile', auth, requireApprovedCreator, async (req, res) => {
     try {
         const [user, tutorProfile, settings] = await Promise.all([
             User.findById(req.user._id).select('-password'),
@@ -780,7 +676,7 @@ router.get('/creator/profile', auth, async (req, res) => {
     }
 });
 
-router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) => {
+router.put('/creator/profile', auth, requireApprovedCreator, creatorProfileValidation, async (req, res) => {
     try {
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
@@ -855,56 +751,6 @@ router.put('/creator/profile', auth, creatorProfileValidation, async (req, res) 
         });
     } catch (error) {
         console.error('PUT /creator/profile:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-});
-
-router.post('/creator/profile/submit', auth, async (req, res) => {
-    try {
-        const [user, tutorProfile, settings] = await Promise.all([
-            User.findById(req.user._id),
-            TutorProfile.findOne({ userId: req.user._id }),
-            PlatformSetting.findOne().sort({ createdAt: -1 })
-        ]);
-
-        if (!user) {
-            return res.status(404).json({ message: 'User not found' });
-        }
-
-        if (!tutorProfile) {
-            return res.status(400).json({ message: 'Complete your tutor profile before submitting' });
-        }
-
-        if (!tutorProfile.headline || !tutorProfile.bio || tutorProfile.teachingCategories.length === 0) {
-            return res.status(400).json({
-                message: 'Tutor profile is incomplete',
-                details: {
-                    headline: !tutorProfile.headline,
-                    bio: !tutorProfile.bio,
-                    teachingCategories: tutorProfile.teachingCategories.length === 0
-                }
-            });
-        }
-
-        const autoApprove = Boolean(settings?.creatorAutoApproval);
-        tutorProfile.applicationStatus = autoApprove ? 'approved' : 'pending';
-        tutorProfile.reviewNotes = autoApprove ? 'Auto-approved by platform settings' : '';
-        await tutorProfile.save();
-
-        user.creatorStatus = autoApprove ? 'approved' : 'pending';
-        user.role = autoApprove ? 'tutor' : user.role;
-        user.creatorApplicationSubmittedAt = new Date();
-        user.creatorReviewNotes = tutorProfile.reviewNotes || '';
-        await user.save();
-        console.log(`[API] Creator application submitted/processed for user: ${req.user._id}. Status: ${user.creatorStatus}`);
-
-        res.json({
-            message: autoApprove ? 'Creator application approved automatically' : 'Creator application submitted',
-            user: serializeUser(user),
-            tutorProfile
-        });
-    } catch (error) {
-        console.error('POST /creator/profile/submit:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
@@ -1049,329 +895,6 @@ router.post('/reset-password', authLimiter, [
             message: 'Server error', 
             error: process.env.NODE_ENV === 'development' ? error.message : undefined 
         });
-    }
-});
-
-/**
- * Public marketplace list of approved tutors / creators.
- */
-router.get('/tutors', async (req, res) => {
-    try {
-        const search = String(req.query.search || '').trim();
-        const category = String(req.query.category || '').trim();
-
-        let profiles = await TutorProfile.find({ applicationStatus: 'approved' })
-            .populate(
-                'userId',
-                'fullName avatar profilePicture creatorHeadline creatorBio role creatorStatus expertise languagesSpoken'
-            )
-            .sort({ updatedAt: -1 })
-            .lean();
-
-        profiles = profiles.filter((p) => p.userId && p.userId._id);
-        const profileUserIds = new Set(profiles.map((p) => String(p.userId._id)));
-
-        // Include creators / tutors with published courses even without an approved TutorProfile row
-        const publishedTutorIds = await Course.distinct('createdBy', {
-            $and: [
-                { createdBy: { $ne: null } },
-                {
-                    $or: [
-                        { source: { $ne: 'user' } },
-                        { listingStatus: 'published' },
-                    ],
-                },
-            ],
-        });
-        const publishedInstructorIds = await Course.distinct('instructor', {
-            $and: [
-                { instructor: { $ne: null } },
-                { instructorModel: 'User' },
-                {
-                    $or: [
-                        { source: { $ne: 'user' } },
-                        { listingStatus: 'published' },
-                    ],
-                },
-            ],
-        });
-
-        const extraIds = [...new Set([...publishedTutorIds, ...publishedInstructorIds].map(String))]
-            .filter((id) => mongoose.Types.ObjectId.isValid(id) && !profileUserIds.has(id));
-
-        if (extraIds.length) {
-            const users = await User.find({ _id: { $in: extraIds } })
-                .select(
-                    'fullName avatar profilePicture creatorHeadline creatorBio expertise languagesSpoken creatorStatus role'
-                )
-                .lean();
-            const looseProfiles = await TutorProfile.find({ userId: { $in: extraIds } }).lean();
-            const looseByUser = Object.fromEntries(
-                looseProfiles.map((p) => [String(p.userId), p])
-            );
-
-            users.forEach((user) => {
-                const loose = looseByUser[String(user._id)] || {};
-                profiles.push({
-                    userId: user,
-                    headline: loose.headline || user.creatorHeadline || '',
-                    bio: loose.bio || user.creatorBio || '',
-                    expertise: loose.expertise || user.expertise || [],
-                    experienceYears: Number(loose.experienceYears || 0),
-                    teachingCategories: loose.teachingCategories || [],
-                    languages: loose.languages || user.languagesSpoken || [],
-                    avatar: loose.avatar || user.avatar || '',
-                    profilePicture: loose.profilePicture || user.profilePicture || '',
-                    offersMentorship: Boolean(loose.offersMentorship),
-                    subscriptionPricing: loose.subscriptionPricing || null,
-                    applicationStatus: loose.applicationStatus || 'approved',
-                });
-            });
-        }
-
-        // Final fallback: role/creatorStatus if still empty
-        if (!profiles.length) {
-            const users = await User.find({
-                $or: [{ role: 'tutor' }, { creatorStatus: 'approved' }],
-            })
-                .select(
-                    'fullName avatar profilePicture creatorHeadline creatorBio expertise languagesSpoken creatorStatus role'
-                )
-                .lean();
-
-            profiles = users.map((user) => ({
-                userId: user,
-                headline: user.creatorHeadline || '',
-                bio: user.creatorBio || '',
-                expertise: user.expertise || [],
-                experienceYears: 0,
-                teachingCategories: [],
-                languages: user.languagesSpoken || [],
-                avatar: user.avatar || '',
-                profilePicture: user.profilePicture || '',
-                applicationStatus: 'approved',
-            }));
-        }
-
-        profiles = profiles.filter((p) => p.userId && p.userId._id);
-
-        const userIds = profiles.map((p) => p.userId._id);
-        const courseStats = await Course.aggregate([
-            {
-                $match: {
-                    $and: [
-                        {
-                            $or: [
-                                { createdBy: { $in: userIds } },
-                                { instructor: { $in: userIds } },
-                            ],
-                        },
-                        {
-                            $or: [
-                                { source: { $ne: 'user' } },
-                                { listingStatus: 'published' },
-                            ],
-                        },
-                    ],
-                },
-            },
-            {
-                $addFields: {
-                    tutorKey: { $ifNull: ['$createdBy', '$instructor'] },
-                },
-            },
-            {
-                $group: {
-                    _id: '$tutorKey',
-                    courseCount: { $sum: 1 },
-                    students: { $sum: { $ifNull: ['$totalStudents', 0] } },
-                    avgRating: { $avg: { $ifNull: ['$averageRating', 0] } },
-                    categories: { $addToSet: '$category' },
-                    courseTypes: { $addToSet: '$courseType' },
-                },
-            },
-        ]);
-
-        const statsByUser = Object.fromEntries(
-            courseStats.map((row) => [String(row._id), row])
-        );
-
-        let tutors = profiles.map((profile) => {
-            const user = profile.userId;
-            const stats = statsByUser[String(user._id)] || {};
-            const expertise = [
-                ...(Array.isArray(profile.expertise) ? profile.expertise : []),
-                ...(Array.isArray(profile.teachingCategories) ? profile.teachingCategories : []),
-                ...(Array.isArray(user.expertise) ? user.expertise : []),
-            ]
-                .map((item) => String(item || '').trim())
-                .filter(Boolean);
-            const uniqueExpertise = [...new Set(expertise)];
-            const categoryHints = [
-                ...uniqueExpertise,
-                ...(stats.categories || []),
-                ...(stats.courseTypes || []),
-            ]
-                .map((item) => String(item || '').trim().toLowerCase())
-                .filter(Boolean);
-
-            return {
-                id: String(user._id),
-                name: user.fullName || 'Tutor',
-                title: profile.headline || user.creatorHeadline || 'QuickX Tutor',
-                bio: profile.bio || user.creatorBio || '',
-                expertise: uniqueExpertise.slice(0, 8),
-                experienceYears: Number(profile.experienceYears || 0),
-                experience: profile.experienceYears
-                    ? `${profile.experienceYears} years`
-                    : '',
-                rating: Math.round((Number(stats.avgRating) || 0) * 10) / 10,
-                students: Number(stats.students || 0),
-                courseCount: Number(stats.courseCount || 0),
-                avatar:
-                    profile.avatar ||
-                    profile.profilePicture ||
-                    user.avatar ||
-                    user.profilePicture ||
-                    '',
-                languages: profile.languages || user.languagesSpoken || [],
-                teachingCategories: profile.teachingCategories || [],
-                category: (profile.teachingCategories || [])[0] || categoryHints[0] || '',
-                categoryHints,
-                offersMentorship: Boolean(profile.offersMentorship),
-                subscriptionPricing: profile.subscriptionPricing || null,
-            };
-        });
-
-        if (search) {
-            const q = search.toLowerCase();
-            tutors = tutors.filter(
-                (t) =>
-                    t.name.toLowerCase().includes(q) ||
-                    t.title.toLowerCase().includes(q) ||
-                    t.bio.toLowerCase().includes(q) ||
-                    t.expertise.some((e) => e.toLowerCase().includes(q))
-            );
-        }
-
-        if (category && category !== 'all') {
-            const cat = category.toLowerCase();
-            tutors = tutors.filter(
-                (t) =>
-                    t.categoryHints.some((h) => h.includes(cat)) ||
-                    String(t.category).toLowerCase().includes(cat)
-            );
-        }
-
-        // Prefer tutors with published courses first
-        tutors.sort((a, b) => b.courseCount - a.courseCount || b.students - a.students);
-
-        res.json(tutors);
-    } catch (error) {
-        console.error('GET /tutors:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-});
-
-/**
- * Public instructor profile + published courses (same visibility rules as the course catalog).
- */
-router.get('/public/:userId/instructor', async (req, res) => {
-    try {
-        const { userId } = req.params;
-        if (!mongoose.Types.ObjectId.isValid(userId)) {
-            return res.status(400).json({ message: 'Invalid instructor id' });
-        }
-
-        const user = await User.findById(userId).select(
-            'fullName avatar profilePicture creatorHeadline creatorBio socialLinks role creatorStatus'
-        );
-        if (!user) {
-            return res.status(404).json({ message: 'Instructor not found' });
-        }
-
-        const tutorProfile = await TutorProfile.findOne({ userId }).lean();
-
-        // Any course authored by this user OR whose instructor ref is this user id
-        // (instructorModel is still User for normal UGC; admin-created User-assigned courses match via instructor id)
-        const visibility = {
-            $and: [
-                {
-                    $or: [{ source: { $ne: 'user' } }, { listingStatus: 'published' }]
-                },
-                {
-                    $or: [{ createdBy: userId }, { instructor: userId }]
-                }
-            ]
-        };
-
-        const coursesWithModules = await Course.find(visibility)
-            .select(
-                'title thumbnail promoVideo shortDescription subtitle courseType category tags totalStudents averageRating createdAt learningOutcomes modules'
-            )
-            .sort({ createdAt: -1 })
-            .lean();
-
-        const profileLessons = collectPublicProfileLessons(coursesWithModules);
-        const previewLessons = profileLessons.filter((l) => l.isPreview);
-        const videoContent = collectInstructorVideoContent(coursesWithModules);
-        const videoCount = countLessonVideos(coursesWithModules);
-        const courses = coursesWithModules.map(({ modules, ...rest }) => rest);
-
-        const totalLearners = courses.reduce((sum, c) => sum + (Number(c.totalStudents) || 0), 0);
-        const avgRating =
-            courses.length > 0
-                ? courses.reduce((s, c) => s + (Number(c.averageRating) || 0), 0) / courses.length
-                : 0;
-
-        const categories = new Set();
-        if (tutorProfile?.teachingCategories?.length) {
-            tutorProfile.teachingCategories.forEach((t) => categories.add(String(t).trim()));
-        }
-        courses.forEach((c) => {
-            if (c.category) categories.add(String(c.category).trim());
-            const typeLabels = { forex: 'Forex', crypto: 'Crypto', webdev: 'Web dev' };
-            if (c.courseType && typeLabels[c.courseType]) {
-                categories.add(typeLabels[c.courseType]);
-            }
-            (c.tags || []).forEach((t) => categories.add(String(t).trim()));
-        });
-        const categoryList = Array.from(categories).filter(Boolean).slice(0, 16);
-
-        res.json({
-            user: {
-                _id: user._id,
-                fullName: user.fullName,
-                avatar: user.avatar,
-                profilePicture: user.profilePicture,
-                creatorHeadline: user.creatorHeadline,
-                creatorBio: user.creatorBio,
-                socialLinks: user.socialLinks || {}
-            },
-            tutorProfile: tutorProfile
-                ? {
-                      headline: tutorProfile.headline,
-                      bio: tutorProfile.bio,
-                      teachingCategories: tutorProfile.teachingCategories || [],
-                      socialLinks: tutorProfile.socialLinks || {},
-                      subscriptionPricing: tutorProfile.subscriptionPricing || null
-                  }
-                : null,
-            stats: {
-                courses: courses.length,
-                videos: videoCount,
-                learners: totalLearners,
-                avgRating: Math.round(avgRating * 10) / 10
-            },
-            categories: categoryList,
-            profileLessons,
-            previewLessons,
-            videoContent,
-            courses
-        });
-    } catch (error) {
-        console.error('GET /public/:userId/instructor:', error);
-        res.status(500).json({ message: 'Server error', error: error.message });
     }
 });
 

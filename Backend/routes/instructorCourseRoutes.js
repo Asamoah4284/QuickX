@@ -479,10 +479,9 @@ router.delete('/:id', auth, requireApprovedCreator, async (req, res) => {
     }
 });
 
-/** Submit for admin review */
+/** Publish (kept as /submit for the Studio client) */
 router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
     try {
-        const settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
         const course = await Course.findById(req.params.id);
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
@@ -497,21 +496,13 @@ router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
             return res.status(400).json({ message: 'Course cannot be submitted from current status' });
         }
 
-        const autoApprovalEnabled = Boolean(settings?.courseAutoApproval);
-        course.listingStatus = autoApprovalEnabled ? 'published' : 'under_review';
-        course.isPublished = autoApprovalEnabled;
-        course.publishedAt = autoApprovalEnabled ? new Date() : course.publishedAt;
-        course.reviewMetadata = {
-            ...course.reviewMetadata,
-            submittedAt: new Date(),
-            reviewedAt: autoApprovalEnabled ? new Date() : null,
-            notes: autoApprovalEnabled ? 'Auto-approved by platform settings' : ''
-        };
+        // There is no review step any more: the mentor's courses go live straight away.
+        course.listingStatus = 'published';
+        course.isPublished = true;
+        course.publishedAt = course.publishedAt || new Date();
+        course.rejectionReason = '';
         await course.save();
-        res.json({
-            message: autoApprovalEnabled ? 'Course published successfully' : 'Submitted for review',
-            course
-        });
+        res.json({ message: 'Course published successfully', course });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
@@ -519,11 +510,6 @@ router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
 
 router.post('/:id/publish', auth, requireApprovedCreator, async (req, res) => {
     try {
-        const settings = await PlatformSetting.findOne().sort({ createdAt: -1 });
-        if (!settings?.courseAutoApproval) {
-            return res.status(403).json({ message: 'Direct publishing is disabled by admin' });
-        }
-
         const course = await Course.findById(req.params.id);
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });

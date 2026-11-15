@@ -1,14 +1,12 @@
 const Payment = require('../models/Payment');
 const Course = require('../models/Course');
 const Book = require('../models/Book');
-const Program = require('../models/Program');
 const User = require('../models/User');
 const {
     validateOfferPaymentAmount,
     validateBookCartPayment,
 } = require('../utils/bookOfferHelpers');
 const { grantCourseAccess } = require('./coursePurchaseService');
-const { createEnrollmentFromPayment } = require('./programEnrollmentService');
 
 async function validatePurchaseIntent(body, userId) {
     const itemType = body.itemType;
@@ -61,15 +59,6 @@ async function validatePurchaseIntent(body, userId) {
             offerOptionId: body.offerOptionId,
             offerBookIds: validation.books.map((b) => b._id),
         };
-    }
-
-    if (itemType === 'program') {
-        const program = await Program.findById(itemId);
-        if (!program || !program.isActive) throw new Error('Program not found or inactive');
-        if (Math.abs(Number(program.price) - amount) > 0.02) {
-            throw new Error('Invalid amount. Price mismatch.');
-        }
-        return { itemType, itemId, amount, purchaseItem: program };
     }
 
     if (itemType === 'creator_subscription') {
@@ -201,15 +190,6 @@ async function grantPurchasedItems(payment) {
             amount: payment.originalAmount,
             transactionId: payment.transactionId,
             paymentMethod: payment.paymentMethod || 'moolre',
-        });
-    }
-
-    if (itemType === 'program' && itemId) {
-        await createEnrollmentFromPayment({
-            userId,
-            programId: itemId,
-            transactionId: payment.transactionId,
-            paymentId: payment._id,
         });
     }
 

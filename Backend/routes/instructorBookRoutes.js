@@ -243,7 +243,7 @@ router.delete('/:id', auth, requireApprovedCreator, async (req, res) => {
     }
 });
 
-// ── Submit for admin review ───────────────────────────────────────────────────
+// ── Publish (kept as /submit for the Studio client) ───────────────────────────────────────────────────
 router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);
@@ -259,11 +259,12 @@ router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
             return res.status(400).json({ message: 'Book cannot be submitted from its current status' });
         }
 
-        book.listingStatus = 'pending_review';
+        // No review step: the mentor's books go on sale straight away.
+        book.listingStatus = 'published';
         book.rejectionReason = '';
         await book.save();
 
-        res.json({ message: 'Book submitted for admin review', book });
+        res.json({ message: 'Book published', book });
     } catch (err) {
         res.status(500).json({ message: 'Server error', error: err.message });
     }
