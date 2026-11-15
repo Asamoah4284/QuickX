@@ -137,9 +137,9 @@ async function userHasCourseAccess(userId, course) {
         return { allowed: true, via: 'purchase', purchase, enrollment };
     }
 
-    // Free course: enrolling is enough.
-    if (enrollment && Number(course.price || 0) <= 0) {
-        return { allowed: true, via: 'enrollment', purchase, enrollment };
+    // A course explicitly published as free is open to any signed-in member.
+    if (course.pricingType === 'free' && Number(course.price || 0) <= 0) {
+        return { allowed: true, via: 'free', purchase, enrollment };
     }
 
     // Otherwise the member needs current Courses access. An enrollment row alone
@@ -199,7 +199,10 @@ function sanitizeCourseModulesForPublicPreview(courseObj) {
             })
         }))
     }));
-    return { ...courseObj, modules };
+    // Member lists and revenue are not public either.
+    // eslint-disable-next-line no-unused-vars
+    const { enrolledStudents, totalRevenue, ...publicFields } = courseObj;
+    return { ...publicFields, modules };
 }
 
 // Get user's purchased courses
@@ -358,7 +361,8 @@ router.get('/', async (req, res) => {
             .sort(sortSpec)
             .populate('instructor', 'fullName');
 
-        const courseDocs = courses.map((c) => c.toObject());
+        // Public list: never include playable media for locked lessons.
+        const courseDocs = courses.map((c) => sanitizeCourseModulesForPublicPreview(c.toObject()));
         const tutorIds = [
             ...new Set(
                 courseDocs

@@ -1,329 +1,174 @@
-import { createBrowserRouter, RouterProvider, Navigate } from "react-router-dom";
-
-import RootLayout from "./layouts/RootLayout";
-import Home from "./pages/Home";
-import About from "./pages/About";
-
-import UserDashboard from "./pages/UserDashboard";
-import Analysis from "./pages/Analysis";
-import PremiumAnalysis from "./pages/PremiumAnalysis";
-
-import Community from "./pages/Community";
-import CommunityHub from "./pages/CommunityHub";
-import Profile from "./pages/Profile";
-import BookDetails from "./pages/BookDetails";
-import Checkout from "./pages/Checkout";
-import BookGuestDownload from "./pages/BookGuestDownload";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import VerifyAccount from "./pages/auth/VerifyAccount";
-import ProtectedRoute from "./components/ProtectedRoute";
-import MainSchool from "./pages/School/MainSchool";
-import CryptoSchool from "./pages/School/CryptoSchool";
-import WebDevSchool from "./pages/School/WebDevSchool";
-import CourseDetail from "./pages/School/CourseDetail";
-import Store from "./pages/store/store";
-import Pricing from "./pages/School/Pricing";
-import Membership from "./pages/Membership";
-import CoursePublicDetail from "./pages/CoursePublicDetail";
-import InstructorProfile from "./pages/InstructorProfile";
-import AdminLogin from "./pages/Admin/Login";
-import AdminDashboard from "./pages/Admin/Dashboard";
-import AdminProtectedRoute from "./components/AdminProtectedRoute";
-import AddCourse from './pages/Admin/AddCourse';
-import EditCourse from './pages/Admin/EditCourse';
+import { lazy, Suspense } from 'react';
+import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
-import CreatorProtectedRoute from "./components/CreatorProtectedRoute";
-import CreatorLayout from "./layouts/CreatorLayout";
-import CreatorEntry from "./pages/creator/CreatorEntry";
-import CreatorOnboarding from "./pages/creator/CreatorOnboarding";
-import CreatorDashboardOverview from "./pages/creator/CreatorDashboardOverview";
-import CreatorCourses from "./pages/creator/CreatorCourses";
-import CreatorCourseWizard from "./pages/creator/CreatorCourseWizard";
-import CreatorStudents from "./pages/creator/CreatorStudents";
-import CreatorReviews from "./pages/creator/CreatorReviews";
-import CreatorEarnings from "./pages/creator/CreatorEarnings";
-import CreatorPayouts from "./pages/creator/CreatorPayouts";
-import CreatorProfileSettings from "./pages/creator/CreatorProfileSettings";
-import CreatorCommunity from "./pages/creator/CreatorCommunity";
-import CreatorPrograms from "./pages/CreatorPrograms";
-import CreatorApplications from "./pages/Admin/CreatorApplications";
-import CourseReviewQueue from "./pages/Admin/CourseReviewQueue";
-import CreatorSettings from "./pages/Admin/CreatorSettings";
-import AdminLayout from "./layouts/AdminLayout";
-import BookReviewQueue from "./pages/Admin/BookReviewQueue";
-import CreatorBooks from "./pages/creator/CreatorBooks";
-import CreatorBookWizard from "./pages/creator/CreatorBookWizard";
+import { AuthProvider, RequireAuth } from './lib/auth';
+import { PageLoader } from './ui/primitives';
+import SiteLayout from './layouts/SiteLayout';
+import Landing from './features/marketing/Landing';
 
+/* New design */
+const Pricing = lazy(() => import('./features/billing/Pricing'));
+const ProductCheckout = lazy(() => import('./features/billing/ProductCheckout'));
+const Signals = lazy(() => import('./features/signals/Signals'));
+const Courses = lazy(() => import('./features/courses/Courses'));
+const CourseDetail = lazy(() => import('./features/courses/CourseDetail'));
+const Mentorship = lazy(() => import('./features/mentorship/Mentorship'));
+const CommunityEntry = lazy(() => import('./features/community/CommunityEntry'));
+const Account = lazy(() => import('./features/account/Account'));
 
-// Define router with scrolling behavior
+/* Pages still on the previous design (rendered on a light sheet via handle.legacy) */
+const About = lazy(() => import('./pages/About'));
+const CoursePlayer = lazy(() => import('./pages/School/CourseDetail'));
+const CommunityHub = lazy(() => import('./pages/CommunityHub'));
+const Store = lazy(() => import('./pages/store/store'));
+const BookDetails = lazy(() => import('./pages/BookDetails'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+const BookGuestDownload = lazy(() => import('./pages/BookGuestDownload'));
+const Membership = lazy(() => import('./pages/Membership'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
+const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
+const VerifyAccount = lazy(() => import('./pages/auth/VerifyAccount'));
+
+/* Owner studio (course and book authoring) */
+const CreatorProtectedRoute = lazy(() => import('./components/CreatorProtectedRoute'));
+const CreatorLayout = lazy(() => import('./layouts/CreatorLayout'));
+const CreatorDashboardOverview = lazy(() => import('./pages/creator/CreatorDashboardOverview'));
+const CreatorCourses = lazy(() => import('./pages/creator/CreatorCourses'));
+const CreatorCourseWizard = lazy(() => import('./pages/creator/CreatorCourseWizard'));
+const CreatorStudents = lazy(() => import('./pages/creator/CreatorStudents'));
+const CreatorReviews = lazy(() => import('./pages/creator/CreatorReviews'));
+const CreatorCommunity = lazy(() => import('./pages/creator/CreatorCommunity'));
+const CreatorProfileSettings = lazy(() => import('./pages/creator/CreatorProfileSettings'));
+const CreatorBooks = lazy(() => import('./pages/creator/CreatorBooks'));
+const CreatorBookWizard = lazy(() => import('./pages/creator/CreatorBookWizard'));
+
+/* Admin */
+const AdminLogin = lazy(() => import('./pages/Admin/Login'));
+const AdminProtectedRoute = lazy(() => import('./components/AdminProtectedRoute'));
+const AdminLayout = lazy(() => import('./layouts/AdminLayout'));
+const AdminDashboard = lazy(() => import('./pages/Admin/Dashboard'));
+const AddCourse = lazy(() => import('./pages/Admin/AddCourse'));
+const EditCourse = lazy(() => import('./pages/Admin/EditCourse'));
+const AdminSignals = lazy(() => import('./features/admin/AdminSignals'));
+const AdminPricing = lazy(() => import('./features/admin/AdminPricing'));
+const AdminMembers = lazy(() => import('./features/admin/AdminMembers'));
+const AdminSessions = lazy(() => import('./features/admin/AdminSessions'));
+
+const legacy = { legacy: true };
+const authed = (element) => <RequireAuth>{element}</RequireAuth>;
+const go = (to) => <Navigate to={to} replace />;
+
 const router = createBrowserRouter([
   {
-    path: "/",
-    element: <RootLayout />,
+    path: '/',
+    element: <SiteLayout />,
     children: [
+      { index: true, element: <Landing /> },
+      { path: 'pricing', element: <Pricing /> },
+      { path: 'checkout/plan/:productKey', element: authed(<ProductCheckout />) },
+      { path: 'signals', element: <Signals /> },
+      { path: 'courses', element: <Courses /> },
+      { path: 'courses/:courseId', element: <CourseDetail /> },
+      { path: 'mentorship', element: <Mentorship /> },
+      { path: 'community', element: <CommunityEntry /> },
+      { path: 'account', element: authed(<Account />) },
+
+      // Previous design, still in use
+      { path: 'about', element: <About />, handle: legacy },
+      { path: 'school/course/:courseId', element: <CoursePlayer />, handle: { legacy: true, bare: true } },
+      { path: 'instructors/:tutorId/community', element: authed(<CommunityHub />), handle: { legacy: true, bare: true } },
+      { path: 'store', element: <Store />, handle: legacy },
+      { path: 'store/:bookId', element: <BookDetails />, handle: legacy },
+      { path: 'checkout', element: <Checkout />, handle: legacy },
+      { path: 'download/book', element: <BookGuestDownload />, handle: legacy },
+      { path: 'membership', element: authed(<Membership />), handle: legacy },
+      { path: 'profile', element: authed(<Profile />), handle: legacy },
+      { path: 'login', element: <Login />, handle: legacy },
+      { path: 'register', element: <Register />, handle: legacy },
+      { path: 'forgot-password', element: <ForgotPassword />, handle: legacy },
+      { path: 'reset-password/:token', element: <ResetPassword />, handle: legacy },
+      { path: 'verify-account', element: <VerifyAccount />, handle: legacy },
+
+      // Owner studio
       {
-        index: true,
-        element: <Home />
-      },
-      {
-        path: "about",
-        element: <About />
-      },
-      {
-        path: "premium-analysis",
-        element: <PremiumAnalysis />
-      },
-      {
-        path: "school",
+        path: 'creator/dashboard',
+        handle: { legacy: true, bare: true },
+        element: (
+          <CreatorProtectedRoute>
+            <CreatorLayout />
+          </CreatorProtectedRoute>
+        ),
         children: [
-          {
-            index: true,
-            element: <MainSchool />
-          },
-          {
-            path: "forex",
-            element: <Navigate to="/school" replace />
-          },
-          {
-            path: "crypto",
-            element: <CryptoSchool/>
-          },
-          {
-            path: "webdev",
-            element: <WebDevSchool/>
-          },
-          {
-            path: "pricing",
-            element: <Pricing/>
-          },
-          
-          {
-            path: "course/:courseId",
-            element: <CourseDetail />
-          }
-        ]
+          { index: true, element: <CreatorDashboardOverview /> },
+          { path: 'courses', element: <CreatorCourses /> },
+          { path: 'courses/new', element: <CreatorCourseWizard /> },
+          { path: 'courses/:courseId/edit', element: <CreatorCourseWizard /> },
+          { path: 'drafts', element: <CreatorCourses statusFilter="draft" /> },
+          { path: 'students', element: <CreatorStudents /> },
+          { path: 'community', element: <CreatorCommunity /> },
+          { path: 'reviews', element: <CreatorReviews /> },
+          { path: 'settings', element: <CreatorProfileSettings /> },
+          { path: 'books', element: <CreatorBooks /> },
+          { path: 'books/new', element: <CreatorBookWizard /> },
+          { path: 'books/:bookId/edit', element: <CreatorBookWizard /> },
+          { path: '*', element: go('/creator/dashboard') },
+        ],
       },
-      {
-        path: "store",
-        children: [
-          {
-            index: true,
-            element: <Store/>
-          },
-          {
-            path: ":bookId",
-            element: <BookDetails />
-          }
-        ]
-      },
-      {
-        path: "dashboard",
-        element: <ProtectedRoute><UserDashboard /></ProtectedRoute>
-      },
-      {
-        path: "profile",
-        element: <ProtectedRoute><Profile /></ProtectedRoute>
-      },
-      {
-        path: "checkout",
-        element: <Checkout />
-      },
-      {
-        path: "download/book",
-        element: <BookGuestDownload />
-      },
-      {
-        path: "membership",
-        element: <Membership />
-      },
-      {
-        path: "courses",
-        element: <MainSchool />
-      },
-      {
-        path: "courses/:courseId",
-        element: <CoursePublicDetail />
-      },
-      {
-        path: "instructors/:userId",
-        element: <InstructorProfile />
-      },
-      {
-        path: "instructors/:tutorId/community",
-        element: <ProtectedRoute><CommunityHub /></ProtectedRoute>
-      },
-      {
-        path: "programs",
-        element: <CreatorPrograms />
-      },
-      {
-        path: "instructor",
-        element: <ProtectedRoute><CreatorEntry /></ProtectedRoute>
-      },
-      {
-        path: "creator",
-        children: [
-          {
-            path: "onboarding",
-            element: <ProtectedRoute><CreatorOnboarding /></ProtectedRoute>
-          },
-          {
-            path: "dashboard",
-            element: <CreatorProtectedRoute><CreatorLayout /></CreatorProtectedRoute>,
-            children: [
-              {
-                index: true,
-                element: <CreatorDashboardOverview />
-              },
-              {
-                path: "courses",
-                element: <CreatorCourses />
-              },
-              {
-                path: "courses/new",
-                element: <CreatorCourseWizard />
-              },
-              {
-                path: "courses/:courseId/edit",
-                element: <CreatorCourseWizard />
-              },
-              {
-                path: "drafts",
-                element: <CreatorCourses statusFilter="draft" />
-              },
-              {
-                path: "students",
-                element: <CreatorStudents />
-              },
-              {
-                path: "community",
-                element: <CreatorCommunity />
-              },
-              {
-                path: "reviews",
-                element: <CreatorReviews />
-              },
-              {
-                path: "earnings",
-                element: <CreatorEarnings />
-              },
-              {
-                path: "payouts",
-                element: <CreatorPayouts />
-              },
-              {
-                path: "settings",
-                element: <CreatorProfileSettings />
-              },
-              {
-                path: "books",
-                element: <CreatorBooks />
-              },
-              {
-                path: "books/new",
-                element: <CreatorBookWizard />
-              },
-              {
-                path: "books/:bookId/edit",
-                element: <CreatorBookWizard />
-              }
-            ]
-          }
-        ]
-      },
-      {
-        path: "analysis",
-        children: [
-          {
-            index: true,
-            element: <Analysis />
-          },
-          {
-            path: "premium",
-            element: <ProtectedRoute><Analysis premium={true} /></ProtectedRoute>
-          },
-          {
-            path: "premium-analysis",
-            element: <PremiumAnalysis />
-          }
-        ]
-      },
-      {
-        path: "community",
-        element: <ProtectedRoute><Community /></ProtectedRoute>
-      },
-      {
-        path: "login",
-        element: <Login />
-      },
-      {
-        path: "register",
-        element: <Register />
-      },
-      {
-        path: "forgot-password",
-        element: <ForgotPassword />
-      },
-      {
-        path: "reset-password/:token",
-        element: <ResetPassword />
-      },
-      {
-        path: "verify-account",
-        element: <VerifyAccount />
-      }
-    ]
+
+      // Old addresses → new homes
+      { path: 'dashboard', element: go('/account') },
+      { path: 'school', element: go('/courses') },
+      { path: 'school/*', element: go('/courses') },
+      { path: 'programs', element: go('/pricing') },
+      { path: 'instructor', element: go('/account') },
+      { path: 'instructors/:userId', element: go('/pricing') },
+      { path: 'creator/*', element: go('/account') },
+      { path: 'analysis/*', element: go('/signals') },
+      { path: 'premium-analysis', element: go('/signals') },
+      { path: '*', element: go('/') },
+    ],
   },
   {
-    path: "/admin",
+    path: '/admin',
     children: [
+      { path: 'login', element: <AdminLogin /> },
       {
-        path: "login",
-        element: <AdminLogin />
-      },
-      {
-        element: <AdminProtectedRoute><AdminLayout /></AdminProtectedRoute>,
+        element: (
+          <AdminProtectedRoute>
+            <AdminLayout />
+          </AdminProtectedRoute>
+        ),
         children: [
-          { index: true, element: <Navigate to="dashboard" replace /> },
-          { path: "dashboard", element: <AdminDashboard /> },
-          { path: "courses/add", element: <AddCourse /> },
-          { path: "courses/edit/:courseId", element: <EditCourse /> },
-          { path: "courses/review-queue", element: <CourseReviewQueue /> },
-          { path: "courses", element: <AdminDashboard /> },
-          { path: "books/review-queue", element: <BookReviewQueue /> },
-          { path: "tutors/applications", element: <CreatorApplications /> },
-          { path: "platform/settings", element: <CreatorSettings /> },
-          { path: "books", element: <Navigate to="/admin/books/review-queue" replace /> },
-          { path: "upload", element: <Navigate to="/admin/dashboard" replace /> },
-          { path: "settings", element: <AdminDashboard /> },
-          { path: "coupons", element: <AdminDashboard /> },
-          { path: "mentorship", element: <Navigate to="/admin/dashboard" replace /> },
-          { path: "advertisements", element: <AdminDashboard /> },
-          { path: "withdrawals", element: <AdminDashboard /> }
-        ]
-      }
-    ]
-  }
-], {});
+          { index: true, element: go('/admin/dashboard') },
+          { path: 'dashboard', element: <AdminDashboard />, handle: legacy },
+          { path: 'signals', element: <AdminSignals /> },
+          { path: 'pricing', element: <AdminPricing /> },
+          { path: 'members', element: <AdminMembers /> },
+          { path: 'sessions', element: <AdminSessions /> },
+          { path: 'courses', element: <AdminDashboard />, handle: legacy },
+          { path: 'courses/add', element: <AddCourse />, handle: legacy },
+          { path: 'courses/edit/:courseId', element: <EditCourse />, handle: legacy },
+          { path: 'settings', element: <AdminDashboard />, handle: legacy },
+          { path: 'coupons', element: <AdminDashboard />, handle: legacy },
+          { path: 'withdrawals', element: <AdminDashboard />, handle: legacy },
+          { path: '*', element: go('/admin/dashboard') },
+        ],
+      },
+    ],
+  },
+]);
 
-
-
-
-function App() {
-
-  
-  
-
+export default function App() {
   return (
     <HelmetProvider>
-      
-      <RouterProvider router={router} />
+      <AuthProvider>
+        <Suspense fallback={<PageLoader />}>
+          <RouterProvider router={router} />
+        </Suspense>
+      </AuthProvider>
     </HelmetProvider>
-  )
-  
+  );
 }
-
-export default App;

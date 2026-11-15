@@ -39,6 +39,30 @@ router.get('/products', async (req, res) => {
     }
 });
 
+/** The mentor's public profile (the client needs his id for community URLs). */
+router.get('/owner', async (req, res) => {
+    try {
+        const { getOwnerId } = require('../services/ownerService');
+        const ownerId = await getOwnerId();
+        if (!ownerId) return res.json({ owner: null });
+        const owner = await User.findById(ownerId)
+            .select('fullName profilePicture avatar creatorHeadline creatorBio')
+            .lean();
+        if (!owner) return res.json({ owner: null });
+        res.json({
+            owner: {
+                id: String(owner._id),
+                fullName: owner.fullName,
+                profilePicture: owner.profilePicture || owner.avatar || '',
+                headline: owner.creatorHeadline || '',
+                bio: owner.creatorBio || '',
+            },
+        });
+    } catch (err) {
+        fail(res, err);
+    }
+});
+
 /** Price the server will charge, with an optional coupon. */
 router.get('/products/:key/quote', async (req, res) => {
     try {

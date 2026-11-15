@@ -1,51 +1,174 @@
 @import "tailwindcss";
 
+/*
+ * QuickX design tokens. Everything visual in the app is built from these:
+ * use the generated utilities (bg-ink-900, text-fg-muted, border-line,
+ * text-brand-400, text-up, text-down …) instead of raw hex values.
+ */
 @theme {
-  --font-sans: "Montserrat", ui-sans-serif, system-ui, sans-serif;
-  --font-serif: "Lora", ui-serif, Georgia, serif;
-}
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  /* Older pages ask for a serif display face; keep them on the one family. */
+  --font-serif: var(--font-sans);
 
-:root {
-  font-family: var(--font-sans);
-}
+  /* Surfaces, darkest to lightest */
+  --color-ink-950: #05080f;
+  --color-ink-900: #090d18;
+  --color-ink-850: #0d1322;
+  --color-ink-800: #121a2c;
+  --color-ink-700: #1a2438;
+  --color-ink-600: #263250;
 
-body {
-  font-family: var(--font-sans);
-  margin: 0;
-  padding: 0;
-  overflow-x: hidden;
-  width: 100%;
-}
+  /* Text */
+  --color-fg: #e9eef8;
+  --color-fg-muted: #94a1bb;
+  --color-fg-subtle: #64708a;
 
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-  font-family: var(--font-serif);
+  /* Hairlines */
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-line-strong: rgb(255 255 255 / 0.16);
+
+  /* Brand (QuickX blue) */
+  --color-brand-300: #8fb4ff;
+  --color-brand-400: #5b8fff;
+  --color-brand-500: #2f6bff;
+  --color-brand-600: #1b5ef5;
+  --color-brand-700: #1246c4;
+
+  /* Market semantics — only for buy/sell, profit/loss, success/error */
+  --color-up: #2fd08c;
+  --color-down: #ff5d6c;
+  --color-warn: #f5b84a;
+
+  --radius-card: 1.25rem;
+  --shadow-glow: 0 0 0 1px rgb(91 143 255 / 0.25), 0 18px 60px -18px rgb(47 107 255 / 0.55);
+  --shadow-card: 0 1px 0 0 rgb(255 255 255 / 0.04) inset, 0 20px 40px -24px rgb(0 0 0 / 0.7);
+
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --animate-shimmer: shimmer 1.6s linear infinite;
+  --animate-pulse-dot: pulse-dot 1.8s ease-out infinite;
+  --animate-float: float 9s ease-in-out infinite;
+
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes pulse-dot {
+    0% { box-shadow: 0 0 0 0 rgb(47 208 140 / 0.55); }
+    70%, 100% { box-shadow: 0 0 0 10px rgb(47 208 140 / 0); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -14px, 0); }
+  }
 }
 
 * {
   box-sizing: border-box;
 }
 
-/* Soft card elevation (marketplace / instructor dashboards) */
+html {
+  color-scheme: dark;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  width: 100%;
+  overflow-x: hidden;
+  font-family: var(--font-sans);
+  background: var(--color-ink-950);
+  color: var(--color-fg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgb(47 107 255 / 0.4);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-brand-400);
+  outline-offset: 2px;
+}
+
+/* Pages not yet moved to the new design render on a light sheet so their
+   existing dark-on-white styles stay readable. */
+.qx-legacy {
+  color-scheme: light;
+  background: #ffffff;
+  color: #0f172a;
+}
+
 @layer utilities {
+  /* Numbers that should line up: prices, levels, pips, timers */
+  .tabular {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  /* Card surface with a faint top highlight */
+  .surface {
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.035), rgb(255 255 255 / 0.01)) , var(--color-ink-850);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card);
+  }
+
+  .glass {
+    background: rgb(9 13 24 / 0.72);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+  }
+
+  .text-gradient {
+    background: linear-gradient(100deg, #ffffff 0%, var(--color-brand-300) 55%, var(--color-brand-500) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  /* Soft grid used behind hero sections */
+  .bg-grid {
+    background-image:
+      linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),
+      linear-gradient(to bottom, rgb(255 255 255 / 0.045) 1px, transparent 1px);
+    background-size: 56px 56px;
+    mask-image: radial-gradient(ellipse 75% 65% at 50% 30%, #000 25%, transparent 78%);
+    -webkit-mask-image: radial-gradient(ellipse 75% 65% at 50% 30%, #000 25%, transparent 78%);
+  }
+
+  .skeleton {
+    background: linear-gradient(90deg, rgb(255 255 255 / 0.04) 25%, rgb(255 255 255 / 0.09) 37%, rgb(255 255 255 / 0.04) 63%);
+    background-size: 400% 100%;
+    animation: var(--animate-shimmer);
+    border-radius: 0.75rem;
+  }
+
+  /* Kept for older pages that still reference them */
   .shadow-creator {
-    box-shadow:
-      0 1px 2px rgba(15, 23, 42, 0.04),
-      0 4px 14px rgba(15, 23, 42, 0.06);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 14px rgba(15, 23, 42, 0.06);
   }
   .shadow-creator-lg {
-    box-shadow:
-      0 1px 3px rgba(15, 23, 42, 0.05),
-      0 8px 28px rgba(15, 23, 42, 0.08);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.05), 0 8px 28px rgba(15, 23, 42, 0.08);
   }
   .font-display {
-    font-family: var(--font-serif);
+    font-family: var(--font-sans);
   }
   .font-body {
     font-family: var(--font-sans);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
