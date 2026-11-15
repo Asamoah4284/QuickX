@@ -10,6 +10,7 @@ import { clearServerPushSubscription } from '../../utils/webPush';
 import { Avatar, Badge, Button, Card, Container, EmptyState, Skeleton } from '../../ui/primitives';
 import { Reveal, Stagger, StaggerItem } from '../../ui/motion';
 import { Link } from 'react-router-dom';
+import WalletPanel from './WalletPanel';
 
 function AccessCard({ feature }) {
   const { has, expiryOf, isOwner } = useAuth();
@@ -142,6 +143,11 @@ export default function Account() {
               </StaggerItem>
             ))}
           </Stagger>
+        </section>
+
+        <section>
+          <h2 className="mb-5 text-xl font-bold text-fg">Wallet and referrals</h2>
+          <WalletPanel />
         </section>
 
         <section>

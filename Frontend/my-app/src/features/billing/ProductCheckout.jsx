@@ -5,6 +5,7 @@ import PaystackPop from '@paystack/inline-js';
 import { FiArrowLeft, FiCheck, FiCheckCircle, FiLock, FiTag } from 'react-icons/fi';
 import { api, errorMessage } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
+import { useApi } from '../../lib/useApi';
 import { FEATURES } from '../../lib/features';
 import { durationLabel, formatDate, money } from '../../lib/format';
 import { Alert, Button, Card, Container, Field, Input, PageLoader } from '../../ui/primitives';
@@ -64,6 +65,8 @@ export default function ProductCheckout() {
   /** A reference Paystack accepted but we could not yet confirm — lets the member retry without paying twice. */
   const [pendingReference, setPendingReference] = useState('');
   const [done, setDone] = useState(null);
+  const wallet = useApi('/api/wallet');
+  const walletBalance = Number(wallet.data?.balance || 0);
 
   const loadQuote = useCallback(
     async (coupon) => {
@@ -131,6 +134,22 @@ export default function ProductCheckout() {
       setPayError(
         `${errorMessage(err, 'We could not confirm your payment yet.')} If you were charged, tap "Check payment again" — you will not be charged twice. Reference: ${reference}`
       );
+    } finally {
+      setPaying(false);
+    }
+  };
+
+  const payFromWallet = async () => {
+    setPaying(true);
+    setPayError('');
+    try {
+      const { data } = await api.post(`/api/products/${productKey}/purchase/wallet`, {
+        couponCode: quote.couponCode || undefined,
+      });
+      await finish(data);
+    } catch (err) {
+      setPayError(errorMessage(err, 'Could not pay from your wallet.'));
+      wallet.reload();
     } finally {
       setPaying(false);
     }
@@ -298,9 +317,16 @@ export default function ProductCheckout() {
                     Activate for free
                   </Button>
                 ) : (
-                  <Button className="w-full" size="lg" loading={paying} onClick={pay}>
-                    Pay {money(quote.amount)}
-                  </Button>
+                  <>
+                    <Button className="w-full" size="lg" loading={paying} onClick={pay}>
+                      Pay {money(quote.amount)}
+                    </Button>
+                    {walletBalance >= quote.amount ? (
+                      <Button className="w-full" variant="secondary" disabled={paying} onClick={payFromWallet}>
+                        Pay from wallet · <span className="tabular">{money(walletBalance)}</span> available
+                      </Button>
+                    ) : null}
+                  </>
                 )}
                 <p className="flex items-center justify-center gap-2 text-xs text-fg-subtle">
                   <FiLock className="h-3.5 w-3.5" />

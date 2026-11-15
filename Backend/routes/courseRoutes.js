@@ -719,46 +719,34 @@ router.post('/:id/enroll', auth, async (req, res) => {
     }
 });
 
-// Purchase course (authenticated) — idempotent; prefer /payments/initialize which also grants access
+/**
+ * Kept for older clients that call this after paying. It never grants anything
+ * new: it only restores access for a course payment that really completed.
+ */
 router.post('/:id/purchase', auth, async (req, res) => {
     try {
-        console.log('Processing course purchase:', {
-            courseId: req.params.id,
-            userId: req.user._id,
-            body: req.body
-        });
-
-        const { grantCourseAccess } = require('../services/coursePurchaseService');
-        const result = await grantCourseAccess({
+        const { repairCourseAccessFromPayments } = require('../services/coursePurchaseService');
+        await repairCourseAccessFromPayments(req.user._id);
+        const purchase = await Purchase.findOne({
             userId: req.user._id,
             courseId: req.params.id,
-            amount: req.body.amount,
-            transactionId: req.body.reference || req.body.transactionId || '',
-            paymentMethod: req.body.paymentMethod || 'paystack',
+            status: 'completed',
         });
-
+        if (!purchase) {
+            return res.status(402).json({
+                success: false,
+                message: 'No completed payment found for this course.',
+                code: 'PAYMENT_REQUIRED',
+            });
+        }
         res.json({
             success: true,
-            message: result.createdPurchase
-                ? 'Course purchased successfully'
-                : 'Course access already on your account',
-            purchase: {
-                id: result.purchaseId,
-                courseId: result.courseId,
-                amount: req.body.amount,
-                status: 'completed',
-            }
+            message: 'Course access is on your account',
+            purchase: { id: purchase._id, courseId: purchase.courseId, status: 'completed' },
         });
     } catch (error) {
-        if (error.status === 404) {
-            return res.status(404).json({ message: error.message || 'Course not found' });
-        }
         console.error('Error in course purchase:', error);
-        res.status(500).json({ 
-            success: false,
-            message: 'Failed to process course purchase',
-            error: error.message
-        });
+        res.status(500).json({ success: false, message: 'Failed to process course purchase' });
     }
 });
 

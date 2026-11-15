@@ -183,7 +183,6 @@ db.once('open', async () => {
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));
 app.use('/api/books', require('./routes/bookRoutes'));
-app.use('/api/affiliate', require('./routes/affiliateRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/payments/moolre', require('./routes/moolrePaymentRoutes'));
@@ -200,7 +199,6 @@ app.use('/api', require('./routes/productRoutes'));
 app.use('/api/signals', require('./routes/signalRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
-app.use('/api', require('./routes/referralRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
 app.use('/', require('./routes/advertisementRoutes'));
 

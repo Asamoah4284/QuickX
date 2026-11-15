@@ -17,9 +17,16 @@ const withdrawalRequestSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'completed', 'failed'],
+        enum: ['pending', 'completed', 'failed', 'rejected'],
         default: 'pending'
     },
+    /** Balance the money was taken from (and returns to if rejected). */
+    source: {
+        type: String,
+        enum: ['referral', 'wallet']
+    },
+    /** Matching WalletTransaction.reference for wallet withdrawals. */
+    walletRef: String,
     requestedAt: {
         type: Date,
         default: Date.now

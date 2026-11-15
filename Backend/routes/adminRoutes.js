@@ -1,4 +1,5 @@
 const express = require('express');
+const walletService = require('../services/walletService');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { check } = require('express-validator');
@@ -104,108 +105,36 @@ router.post('/upload-content', (req, res) => {
     }
 });
 
-// Get all withdrawal requests
+// Withdrawal requests (referral earnings and wallet). ?status=pending|completed|rejected
 router.get('/withdrawals', adminAuth, async (req, res) => {
     try {
-        // Find all users who have pending withdrawal requests
-        const users = await User.find({
-            'withdrawalRequests.status': 'pending'
-        });
-
-        // Extract and format withdrawal requests
-        const withdrawalRequests = [];
-        users.forEach(user => {
-            user.withdrawalRequests.forEach(request => {
-                if (request.status === 'pending') {
-                    withdrawalRequests.push({
-                        _id: request._id,
-                        user: {
-                            _id: user._id,
-                            fullName: user.fullName,
-                            email: user.email
-                        },
-                        amount: request.amount,
-                        momoNumber: request.momoNumber,
-                        network: request.network,
-                        status: request.status,
-                        requestedAt: request.requestedAt
-                    });
-                }
-            });
-        });
-
-        res.json(withdrawalRequests);
+        const status = ['pending', 'completed', 'rejected'].includes(req.query.status) ? req.query.status : 'pending';
+        res.json(await walletService.listWithdrawals({ status }));
     } catch (error) {
         console.error('Error fetching withdrawal requests:', error);
         res.status(500).json({ message: 'Error fetching withdrawal requests' });
     }
 });
 
-// Approve withdrawal request
+/** Mark as paid: the money was already taken from the member's balance when they asked. */
 router.post('/withdrawals/:requestId/approve', adminAuth, async (req, res) => {
     try {
-        const { requestId } = req.params;
-
-        // Find user with the withdrawal request
-        const user = await User.findOne({
-            'withdrawalRequests._id': requestId
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: 'Withdrawal request not found' });
-        }
-
-        // Update the withdrawal request status
-        const withdrawalRequest = user.withdrawalRequests.id(requestId);
-        if (!withdrawalRequest) {
-            return res.status(404).json({ message: 'Withdrawal request not found' });
-        }
-
-        withdrawalRequest.status = 'completed';
-        withdrawalRequest.processedAt = new Date();
-
-        // Reset referral earnings after successful withdrawal
-        user.referralEarnings = 0;
-
-        await user.save();
-        res.json({ message: 'Withdrawal request approved successfully' });
+        await walletService.resolveWithdrawal(req.params.requestId, 'completed', req.body?.remarks);
+        res.json({ message: 'Withdrawal marked as paid' });
     } catch (error) {
-        console.error('Error approving withdrawal:', error);
-        res.status(500).json({ message: 'Error approving withdrawal request' });
+        if (!error.status) console.error('Error approving withdrawal:', error);
+        res.status(error.status || 500).json({ message: error.status ? error.message : 'Error approving withdrawal request' });
     }
 });
 
-// Reject withdrawal request
+/** Reject: the amount goes back to the balance it came from. */
 router.post('/withdrawals/:requestId/reject', adminAuth, async (req, res) => {
     try {
-        const { requestId } = req.params;
-
-        // Find user with the withdrawal request
-        const user = await User.findOne({
-            'withdrawalRequests._id': requestId
-        });
-
-        if (!user) {
-            return res.status(404).json({ message: 'Withdrawal request not found' });
-        }
-
-        // Update the withdrawal request status
-        const withdrawalRequest = user.withdrawalRequests.id(requestId);
-        if (!withdrawalRequest) {
-            return res.status(404).json({ message: 'Withdrawal request not found' });
-        }
-
-        // Add the amount back to user's referral earnings
-        user.referralEarnings += withdrawalRequest.amount;
-
-        withdrawalRequest.status = 'rejected';
-        withdrawalRequest.processedAt = new Date();
-
-        await user.save();
-        res.json({ message: 'Withdrawal request rejected successfully' });
+        await walletService.resolveWithdrawal(req.params.requestId, 'rejected', req.body?.remarks);
+        res.json({ message: 'Withdrawal rejected and the amount returned to the member' });
     } catch (error) {
-        console.error('Error rejecting withdrawal:', error);
-        res.status(500).json({ message: 'Error rejecting withdrawal request' });
+        if (!error.status) console.error('Error rejecting withdrawal:', error);
+        res.status(error.status || 500).json({ message: error.status ? error.message : 'Error rejecting withdrawal request' });
     }
 });
 

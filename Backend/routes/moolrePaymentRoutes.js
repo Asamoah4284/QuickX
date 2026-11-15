@@ -13,6 +13,8 @@ const {
     isConfigured,
 } = require('../services/moolrePayments');
 
+const { allowSimulatedPayments } = require('../config/paymentMode');
+
 const router = express.Router();
 
 function entitlementsPayload(rows) {
@@ -102,6 +104,11 @@ router.post('/initiate', auth, validateInitiate, async (req, res) => {
         }
 
         if (!isConfigured() || moolre.simulated) {
+            if (!allowSimulatedPayments()) {
+                payment.status = 'failed';
+                await payment.save();
+                return res.status(503).json({ message: 'Mobile money payments are not available right now.' });
+            }
             const result = await completePendingPaymentByTransactionId(transactionId, req.user._id);
             return res.json({
                 success: true,

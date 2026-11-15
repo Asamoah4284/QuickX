@@ -162,6 +162,50 @@ router.post('/products/:key/purchase/paystack', auth, async (req, res) => {
     }
 });
 
+/**
+ * Pay for a plan from the wallet balance. The balance is taken first (it can
+ * never go negative) and returned in full if the plan cannot be switched on.
+ */
+router.post('/products/:key/purchase/wallet', auth, async (req, res) => {
+    const walletService = require('../services/walletService');
+    try {
+        const quote = await quoteProduct(req.params.key, req.body.couponCode);
+        if (quote.amount < 0.01) {
+            return res.status(400).json({ message: 'Nothing to pay — redeem this coupon instead', code: 'USE_REDEEM' });
+        }
+
+        const transactionId = `qx_wallet_plan_${req.user._id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+        const balance = await walletService.debitWallet(req.user._id, quote.amount, {
+            type: 'payment',
+            label: `${quote.product.name} plan`,
+            reference: transactionId,
+        });
+
+        try {
+            const { entitlements } = await recordAndFulfil({
+                userId: req.user._id,
+                quote,
+                transactionId,
+                paymentMethod: 'wallet',
+            });
+            return res.json({ success: true, balance, entitlements: entitlementsPayload(entitlements) });
+        } catch (grantErr) {
+            console.error('Wallet plan purchase failed after debit — refunding:', grantErr);
+            await walletService.creditWallet(req.user._id, quote.amount, {
+                type: 'refund',
+                label: `${quote.product.name} plan — refunded`,
+                reference: transactionId,
+            });
+            return res.status(500).json({ message: 'Could not activate the plan. Your wallet was not charged.' });
+        }
+    } catch (err) {
+        if (err.code === 'INSUFFICIENT_BALANCE') {
+            return res.status(400).json({ message: err.message, code: err.code, balance: err.balance });
+        }
+        fail(res, err, 'Could not complete purchase');
+    }
+});
+
 /** A 100% coupon leaves nothing to charge — grant without a payment provider. */
 router.post('/products/:key/redeem', auth, async (req, res) => {
     try {

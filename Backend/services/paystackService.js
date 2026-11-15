@@ -1,4 +1,5 @@
 const axios = require('axios');
+const { allowSimulatedPayments } = require('../config/paymentMode');
 
 function secretKey() {
     const key = String(process.env.PAYSTACK_SECRET_KEY || '').trim();
@@ -16,6 +17,10 @@ function isConfigured() {
  */
 async function verifyPayment(reference, expectedAmount) {
     const key = secretKey();
+    if (!key && allowSimulatedPayments()) {
+        console.warn('ALLOW_SIMULATED_PAYMENTS is on — accepting a payment without checking Paystack.');
+        return { ok: true, simulated: true, paidAmount: Number(expectedAmount), channel: 'simulated', email: '' };
+    }
     if (!key) {
         return { ok: false, code: 'NOT_CONFIGURED', message: 'Card payments are not available right now.' };
     }

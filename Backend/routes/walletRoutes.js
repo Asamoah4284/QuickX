@@ -2,6 +2,7 @@ const express = require('express');
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const User = require('../models/User');
+const Payment = require('../models/Payment');
 const WalletTransaction = require('../models/WalletTransaction');
 const {
     buildPendingPaymentRecord,
@@ -13,6 +14,8 @@ const {
     verifyCollection,
     isConfigured,
 } = require('../services/moolrePayments');
+const wallet = require('../services/walletService');
+const { allowSimulatedPayments } = require('../config/paymentMode');
 
 const router = express.Router();
 
@@ -27,18 +30,42 @@ function handleValidationErrors(req, res, next) {
     next();
 }
 
+/** Balances, recent activity and any withdrawal in progress. */
 router.get('/', auth, async (req, res) => {
     try {
-        const user = await User.findById(req.user._id).select('walletBalance referralEarnings');
+        const user = await User.findById(req.user._id)
+            .select('walletBalance referralEarnings referralCode withdrawalRequests momoDetails')
+            .lean();
         const transactions = await WalletTransaction.find({ userId: req.user._id })
             .sort({ createdAt: -1 })
             .limit(50)
             .lean();
+        const requests = (user?.withdrawalRequests || [])
+            .slice()
+            .sort((a, b) => new Date(b.requestedAt) - new Date(a.requestedAt))
+            .slice(0, 20)
+            .map((r) => ({
+                id: String(r._id),
+                amount: r.amount,
+                status: r.status,
+                source: wallet.withdrawalSource(r),
+                momoNumber: r.momoNumber,
+                network: r.network,
+                requestedAt: r.requestedAt,
+                processedAt: r.processedAt || null,
+            }));
 
         res.json({
             balance: Number(user?.walletBalance || 0),
             referralEarnings: Number(user?.referralEarnings || 0),
+            referralCode: user?.referralCode || '',
+            referralRatePercent: wallet.REFERRAL_RATE * 100,
+            minReferralWithdrawal: wallet.MIN_REFERRAL_WITHDRAWAL,
+            minWalletWithdrawal: wallet.MIN_WALLET_WITHDRAWAL,
+            momoDetails: user?.momoDetails || null,
             currency: 'GHS',
+            withdrawals: requests,
+            hasPendingWithdrawal: requests.some((r) => r.status === 'pending'),
             transactions: transactions.map((tx) => ({
                 id: String(tx._id),
                 type: tx.type,
@@ -57,7 +84,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 router.post('/topup/initiate', auth, [
-    body('amount').isFloat({ min: 1 }).toFloat(),
+    body('amount').isFloat({ min: 1, max: 20000 }).toFloat(),
     body('momoNumber').matches(/^0\d{9}$/),
     body('network').optional().isIn(['MTN', 'Vodafone', 'AirtelTigo']),
     handleValidationErrors,
@@ -80,7 +107,6 @@ router.post('/topup/initiate', auth, [
             req.user._id
         );
 
-        const Payment = require('../models/Payment');
         const payment = new Payment(paymentRecord);
         await payment.save();
 
@@ -100,6 +126,12 @@ router.post('/topup/initiate', auth, [
         }
 
         if (!isConfigured() || moolre.simulated) {
+            // Never hand out free balance on a live server just because the provider is not set up.
+            if (!allowSimulatedPayments()) {
+                payment.status = 'failed';
+                await payment.save();
+                return res.status(503).json({ message: 'Wallet top-up is not available right now.' });
+            }
             const result = await completePendingPaymentByTransactionId(transactionId, req.user._id);
             return res.json({
                 success: true,
@@ -127,7 +159,6 @@ router.post('/topup/verify', auth, [
     handleValidationErrors,
 ], async (req, res) => {
     try {
-        const Payment = require('../models/Payment');
         const payment = await Payment.findOne({
             transactionId: req.body.transactionId,
             userId: req.user._id,
@@ -165,52 +196,7 @@ router.post('/topup/verify', auth, [
     }
 });
 
-router.post('/pay', auth, [
-    body('amount').isFloat({ min: 0.01 }).toFloat(),
-    body('label').optional().isString(),
-    handleValidationErrors,
-], async (req, res) => {
-    try {
-        const amount = Number(req.body.amount);
-        const user = await User.findById(req.user._id);
-        const balance = Number(user.walletBalance || 0);
-        if (balance < amount) {
-            return res.status(400).json({
-                message: 'Insufficient wallet balance',
-                balance,
-            });
-        }
-
-        const nextBalance = Number((balance - amount).toFixed(2));
-        user.walletBalance = nextBalance;
-        await user.save();
-
-        const tx = await WalletTransaction.create({
-            userId: req.user._id,
-            type: 'payment',
-            amount: -amount,
-            balanceAfter: nextBalance,
-            label: req.body.label || 'Wallet payment',
-            reference: `qx_wallet_pay_${Date.now()}`,
-            status: 'completed',
-        });
-
-        res.json({
-            success: true,
-            balance: nextBalance,
-            transaction: {
-                id: String(tx._id),
-                type: tx.type,
-                amount: tx.amount,
-                label: tx.label,
-                date: tx.createdAt,
-            },
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message || 'Wallet payment failed' });
-    }
-});
-
+/** Withdraw from the wallet to mobile money. An admin sends the money and marks it done. */
 router.post('/withdraw', auth, [
     body('amount').isFloat({ min: 1 }).toFloat(),
     body('momoNumber').matches(/^0\d{9}$/),
@@ -218,54 +204,24 @@ router.post('/withdraw', auth, [
     handleValidationErrors,
 ], async (req, res) => {
     try {
-        const amount = Number(req.body.amount);
-        const user = await User.findById(req.user._id);
-        const balance = Number(user.walletBalance || 0);
-        if (balance < amount) {
-            return res.status(400).json({ message: 'Insufficient wallet balance', balance });
-        }
-
-        const nextBalance = Number((balance - amount).toFixed(2));
-        user.walletBalance = nextBalance;
-        user.momoDetails = {
-            momoNumber: req.body.momoNumber,
-            network: req.body.network,
-            lastUpdated: new Date(),
-        };
-        user.withdrawalRequests.push({
-            amount,
-            momoNumber: req.body.momoNumber,
-            network: req.body.network,
-            status: 'pending',
-            requestedAt: new Date(),
-            remarks: 'QuickX Wallet withdrawal',
-        });
-        await user.save();
-
-        const tx = await WalletTransaction.create({
+        const result = await wallet.requestWithdrawal({
             userId: req.user._id,
-            type: 'withdraw',
-            amount: -amount,
-            balanceAfter: nextBalance,
-            label: 'Wallet withdrawal',
-            reference: `qx_wallet_wd_${Date.now()}`,
-            status: 'pending',
+            source: 'wallet',
+            amount: req.body.amount,
+            momoNumber: req.body.momoNumber,
+            network: req.body.network,
         });
-
         res.json({
             success: true,
-            balance: nextBalance,
+            balance: result.walletBalance,
             message: 'Withdrawal request submitted',
-            transaction: {
-                id: String(tx._id),
-                type: tx.type,
-                amount: tx.amount,
-                label: tx.label,
-                status: tx.status,
-            },
+            withdrawal: { amount: result.request.amount, status: 'pending' },
         });
     } catch (error) {
-        res.status(500).json({ message: error.message || 'Withdrawal failed' });
+        res.status(error.status || 500).json({
+            message: error.status ? error.message : 'Withdrawal failed',
+            ...(error.currentBalance != null ? { balance: error.currentBalance } : {}),
+        });
     }
 });
 

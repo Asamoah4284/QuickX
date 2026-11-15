@@ -34,6 +34,16 @@ const paymentSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    /** Referral commission for this payment has been handled (paid or not owed). */
+    commissionCredited: {
+        type: Boolean,
+        default: false,
+    },
+    /** Wallet top-up for this payment has been added to the balance. */
+    walletCredited: {
+        type: Boolean,
+        default: false,
+    },
     itemId: {
         type: mongoose.Schema.Types.ObjectId,
         required: function () {

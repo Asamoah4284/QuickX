@@ -3,64 +3,12 @@ const Course = require('../models/Course');
 const Book = require('../models/Book');
 const Program = require('../models/Program');
 const User = require('../models/User');
-const WalletTransaction = require('../models/WalletTransaction');
 const {
     validateOfferPaymentAmount,
     validateBookCartPayment,
 } = require('../utils/bookOfferHelpers');
 const { grantCourseAccess } = require('./coursePurchaseService');
 const { createEnrollmentFromPayment } = require('./programEnrollmentService');
-
-async function creditReferralCommission({ buyerId, itemId, amount, checkoutCode }) {
-    const checkout = String(checkoutCode || '').trim().toUpperCase();
-    let referringUser = null;
-
-    if (checkout) {
-        referringUser = await User.findOne({ referralCode: checkout });
-        if (referringUser && referringUser._id.toString() === String(buyerId)) {
-            throw new Error('Cannot use own referral code');
-        }
-    } else {
-        const buyer = await User.findById(buyerId).select('referredBy');
-        if (buyer?.referredBy) {
-            referringUser = await User.findById(buyer.referredBy);
-        }
-    }
-
-    if (!referringUser || referringUser._id.toString() === String(buyerId)) {
-        return { commissionAmount: 0, finalAmount: Number(amount), referringUserId: null };
-    }
-
-    const commissionAmount = Number((Number(amount) * 0.05).toFixed(2));
-    const finalAmount = Number((Number(amount) - commissionAmount).toFixed(2));
-
-    try {
-        await User.findByIdAndUpdate(
-            referringUser._id,
-            {
-                $inc: { referralEarnings: commissionAmount },
-                $push: {
-                    referralHistory: {
-                        referredUser: buyerId,
-                        courseId: itemId,
-                        amount: commissionAmount,
-                        date: new Date(),
-                    },
-                },
-            },
-            { new: true }
-        );
-    } catch (err) {
-        console.error('Referral credit failed:', err);
-        return { commissionAmount: 0, finalAmount: Number(amount), referringUserId: null };
-    }
-
-    return {
-        commissionAmount,
-        finalAmount,
-        referringUserId: referringUser._id,
-    };
-}
 
 async function validatePurchaseIntent(body, userId) {
     const itemType = body.itemType;
@@ -175,14 +123,15 @@ async function validatePurchaseIntent(body, userId) {
 
 async function buildPendingPaymentRecord(body, userId) {
     const validated = await validatePurchaseIntent(body, userId);
-    const referral = ['course', 'book', 'book_cart', 'book_offer'].includes(validated.itemType)
-        ? await creditReferralCommission({
-              buyerId: userId,
-              itemId: validated.itemId,
-              amount: validated.amount,
-              checkoutCode: body.referralCode,
-          })
-        : { commissionAmount: 0, finalAmount: validated.amount, referringUserId: null };
+
+    // Commission is paid when the payment completes (see fulfillCompletedPayment), not here.
+    const checkoutCode = String(body.referralCode || '').trim().toUpperCase();
+    if (checkoutCode) {
+        const codeOwner = await User.findOne({ referralCode: checkoutCode }).select('_id');
+        if (codeOwner && String(codeOwner._id) === String(userId)) {
+            throw new Error('Cannot use own referral code');
+        }
+    }
 
     const offerBookIds = validated.offerBookIds || [];
     const cartItemIds =
@@ -206,21 +155,21 @@ async function buildPendingPaymentRecord(body, userId) {
             couponCode: validated.couponCode || '',
             // Moolre charges originalAmount; for products this is the server-quoted price.
             originalAmount: validated.amount,
-            finalAmount: referral.finalAmount,
-            commissionAmount: referral.commissionAmount,
-            referringUserId: referral.referringUserId,
+            finalAmount: validated.amount,
+            commissionAmount: 0,
+            referringUserId: null,
             transactionId: body.transactionId,
             paymentMethod: body.paymentMethod || 'moolre',
             momoNumber: body.momoNumber,
             shippingAddress: body.shippingAddress,
-            referralCode: body.referralCode || '',
+            referralCode: checkoutCode,
             status: 'pending',
             createdAt: new Date(),
         },
     };
 }
 
-async function fulfillCompletedPayment(payment) {
+async function grantPurchasedItems(payment) {
     const userId = payment.userId;
     const itemType = payment.itemType;
     const itemId = payment.itemId;
@@ -289,23 +238,36 @@ async function fulfillCompletedPayment(payment) {
     }
 
     if (itemType === 'wallet_topup') {
-        const user = await User.findById(userId);
-        const nextBalance = Number((Number(user.walletBalance || 0) + Number(payment.originalAmount)).toFixed(2));
-        user.walletBalance = nextBalance;
-        await user.save();
-        await WalletTransaction.create({
-            userId,
-            type: 'deposit',
-            amount: Number(payment.originalAmount),
-            balanceAfter: nextBalance,
-            label: 'Wallet top-up',
-            reference: payment.transactionId,
-            status: 'completed',
-        });
-        return { courseAccess, walletBalance: nextBalance };
+        const walletService = require('./walletService');
+        const claimed = await Payment.updateOne(
+            { _id: payment._id, walletCredited: { $ne: true } },
+            { $set: { walletCredited: true } }
+        );
+        if (claimed.modifiedCount) {
+            const walletBalance = await walletService.creditWallet(userId, payment.originalAmount, {
+                type: 'deposit',
+                label: 'Wallet top-up',
+                reference: payment.transactionId,
+            });
+            return { courseAccess, walletBalance };
+        }
+        const user = await User.findById(userId).select('walletBalance').lean();
+        return { courseAccess, walletBalance: Number(user?.walletBalance || 0) };
     }
 
     return { courseAccess };
+}
+
+/** Give the buyer what they paid for and settle referral commission. Safe to call repeatedly. */
+async function fulfillCompletedPayment(payment) {
+    const result = await grantPurchasedItems(payment);
+    try {
+        const { creditReferralForPayment } = require('./walletService');
+        await creditReferralForPayment(payment);
+    } catch (err) {
+        console.error('Referral credit failed (purchase is unaffected):', err.message);
+    }
+    return result;
 }
 
 async function completePendingPaymentByTransactionId(transactionId, userId) {

@@ -107,3 +107,20 @@ test('a lesson is only a free preview when isPreview is true', () => {
     assert.equal(lessonAccess.isLessonPreview({ isPreview: true }), true);
     assert.deepEqual(lessonAccess.previewFlags(false), { isPreview: false, free: false, isLocked: true });
 });
+
+const { commissionFor, withdrawalSource } = require('../services/walletService');
+
+test('referral commission is 5% of what was actually paid, rounded to pesewas', () => {
+    assert.equal(commissionFor(100), 5);
+    assert.equal(commissionFor(49.99), 2.5);
+    assert.equal(commissionFor(0), 0);
+    assert.equal(commissionFor(-10), 0);
+    assert.equal(commissionFor('abc'), 0);
+});
+
+test('a withdrawal returns to the balance it came from, including older requests', () => {
+    assert.equal(withdrawalSource({ source: 'wallet' }), 'wallet');
+    assert.equal(withdrawalSource({ source: 'referral', remarks: 'QuickX Wallet withdrawal' }), 'referral');
+    assert.equal(withdrawalSource({ remarks: 'QuickX Wallet withdrawal' }), 'wallet');
+    assert.equal(withdrawalSource({}), 'referral');
+});

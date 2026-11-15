@@ -139,45 +139,4 @@ router.get('/:id/content', auth, async (req, res) => {
     }
 });
 
-// Purchase book (authenticated)
-router.post('/:id/purchase', auth, async (req, res) => {
-    try {
-        const { shippingAddress } = req.body;
-        const user = req.user;
-        const book = await Book.findById(req.params.id);
-        
-        if (!book) {
-            return res.status(404).json({ message: 'Book not found' });
-        }
-
-        // For hardcopy books, require shipping address
-        if (book.type === 'hardcopy' && !shippingAddress) {
-            return res.status(400).json({ 
-                message: 'Shipping address is required for hardcopy books' 
-            });
-        }
-
-        // Check stock for hardcopy books
-        if (book.type === 'hardcopy' && book.stock < 1) {
-            return res.status(400).json({ message: 'Book is out of stock' });
-        }
-
-        // Add to user's purchased books
-        if (!user.purchasedBooks.includes(book._id)) {
-            user.purchasedBooks.push(book._id);
-            await user.save();
-
-            // Update stock for hardcopy books
-            if (book.type === 'hardcopy') {
-                book.stock -= 1;
-                await book.save();
-            }
-        }
-        
-        res.json({ message: 'Book purchased successfully' });
-    } catch (error) {
-        res.status(500).json({ message: 'Server error', error: error.message });
-    }
-});
-
 module.exports = router;

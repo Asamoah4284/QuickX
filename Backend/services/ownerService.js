@@ -22,7 +22,21 @@ async function resolveOwnerId() {
     const tutors = await User.find({ role: 'tutor', creatorStatus: 'approved' }).select('_id').limit(2).lean();
     if (tutors.length === 1) return String(tutors[0]._id);
     if (tutors.length > 1) {
-        console.warn('ownerService: more than one approved tutor found — set OWNER_USER_ID to pick the owner.');
+        // Several tutor accounts exist from the old marketplace: default to Maxwell.
+        const ownerName = String(process.env.OWNER_NAME || 'Maxwell').trim();
+        const escaped = ownerName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const named = await User.find({
+            role: 'tutor',
+            creatorStatus: 'approved',
+            fullName: new RegExp(escaped, 'i'),
+        })
+            .select('_id fullName')
+            .limit(2)
+            .lean();
+        if (named.length === 1) return String(named[0]._id);
+        console.warn(
+            `ownerService: ${named.length} approved tutors match "${ownerName}" — set OWNER_USER_ID to pick the owner.`
+        );
     }
     return null;
 }
