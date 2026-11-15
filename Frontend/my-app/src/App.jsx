@@ -23,13 +23,12 @@ const Store = lazy(() => import('./pages/store/store'));
 const BookDetails = lazy(() => import('./pages/BookDetails'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const BookGuestDownload = lazy(() => import('./pages/BookGuestDownload'));
-const Membership = lazy(() => import('./pages/Membership'));
-const Profile = lazy(() => import('./pages/Profile'));
-const Login = lazy(() => import('./pages/auth/Login'));
-const Register = lazy(() => import('./pages/auth/Register'));
-const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
-const ResetPassword = lazy(() => import('./pages/auth/ResetPassword'));
-const VerifyAccount = lazy(() => import('./pages/auth/VerifyAccount'));
+const Profile = lazy(() => import('./features/account/Profile'));
+const Login = lazy(() => import('./features/auth/Login'));
+const Register = lazy(() => import('./features/auth/Register'));
+const ForgotPassword = lazy(() => import('./features/auth/PasswordReset').then((m) => ({ default: m.ForgotPassword })));
+const ResetPassword = lazy(() => import('./features/auth/PasswordReset').then((m) => ({ default: m.ResetPassword })));
+const VerifyAccount = lazy(() => import('./features/auth/VerifyAccount'));
 
 /* Owner studio (course and book authoring) */
 const CreatorProtectedRoute = lazy(() => import('./components/CreatorProtectedRoute'));
@@ -81,13 +80,12 @@ const router = createBrowserRouter([
       { path: 'store/:bookId', element: <BookDetails />, handle: legacy },
       { path: 'checkout', element: <Checkout />, handle: legacy },
       { path: 'download/book', element: <BookGuestDownload />, handle: legacy },
-      { path: 'membership', element: authed(<Membership />), handle: legacy },
-      { path: 'profile', element: authed(<Profile />), handle: legacy },
-      { path: 'login', element: <Login />, handle: legacy },
-      { path: 'register', element: <Register />, handle: legacy },
-      { path: 'forgot-password', element: <ForgotPassword />, handle: legacy },
-      { path: 'reset-password/:token', element: <ResetPassword />, handle: legacy },
-      { path: 'verify-account', element: <VerifyAccount />, handle: legacy },
+      { path: 'profile', element: authed(<Profile />) },
+      { path: 'login', element: <Login /> },
+      { path: 'register', element: <Register /> },
+      { path: 'forgot-password', element: <ForgotPassword /> },
+      { path: 'reset-password/:token', element: <ResetPassword /> },
+      { path: 'verify-account', element: <VerifyAccount /> },
 
       // Owner studio
       {
@@ -117,6 +115,7 @@ const router = createBrowserRouter([
 
       // Old addresses → new homes
       { path: 'dashboard', element: go('/account') },
+      { path: 'membership', element: go('/account') },
       { path: 'school', element: go('/courses') },
       { path: 'school/*', element: go('/courses') },
       { path: 'programs', element: go('/pricing') },

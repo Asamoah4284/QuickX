@@ -11,6 +11,7 @@ import { Avatar, Badge, Button, Card, Container, EmptyState, Skeleton } from '..
 import { Reveal, Stagger, StaggerItem } from '../../ui/motion';
 import { Link } from 'react-router-dom';
 import WalletPanel from './WalletPanel';
+import DevicePanel from './DevicePanel';
 
 function AccessCard({ feature }) {
   const { has, expiryOf, isOwner } = useAuth();
@@ -153,9 +154,8 @@ export default function Account() {
         <section>
           <div className="mb-5 flex items-end justify-between gap-4">
             <h2 className="text-xl font-bold text-fg">Continue learning</h2>
-            <Link to="/membership" state={{ activeTab: 'downloads' }} className="flex items-center gap-2 text-sm font-semibold text-brand-400 hover:underline">
-              <FiDownload className="h-4 w-4" />
-              Offline downloads
+            <Link to="/courses" className="text-sm font-semibold text-brand-400 hover:underline">
+              All courses
             </Link>
           </div>
           {courses.loading ? (
@@ -227,6 +227,10 @@ export default function Account() {
               }
             />
           )}
+        </section>
+        <section>
+          <h2 className="mb-5 text-xl font-bold text-fg">This device</h2>
+          <DevicePanel />
         </section>
       </Container>
     </>
