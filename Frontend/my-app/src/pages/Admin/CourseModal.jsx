@@ -61,29 +61,29 @@ const CourseModal = ({ course, onClose, onSave }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full">
-            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div className="fixed inset-0 bg-ink-600 bg-opacity-50 overflow-y-auto h-full w-full">
+            <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-ink-850">
                 <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium text-gray-900">
+                    <h3 className="text-lg font-medium text-fg">
                         {course ? 'Edit Course' : 'Add Course'}
                     </h3>
                     <button
                         onClick={onClose}
-                        className="text-gray-400 hover:text-gray-500"
+                        className="text-fg-subtle hover:text-fg-subtle"
                     >
                         <FiX size={24} />
                     </button>
                 </div>
 
                 {error && (
-                    <div className="mb-4 bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                    <div className="mb-4 bg-down/10 border border-down/30 text-down px-4 py-3 rounded">
                         {error}
                     </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                        <label className="block text-fg-muted text-sm font-bold mb-2">
                             Title
                         </label>
                         <input
@@ -91,27 +91,27 @@ const CourseModal = ({ course, onClose, onSave }) => {
                             name="title"
                             value={formData.title}
                             onChange={handleChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-fg-muted leading-tight focus:outline-none focus:shadow-outline"
                             required
                         />
                     </div>
 
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                        <label className="block text-fg-muted text-sm font-bold mb-2">
                             Description
                         </label>
                         <textarea
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-fg-muted leading-tight focus:outline-none focus:shadow-outline"
                             rows="4"
                             required
                         />
                     </div>
 
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                        <label className="block text-fg-muted text-sm font-bold mb-2">
                             Price
                         </label>
                         <input
@@ -119,7 +119,7 @@ const CourseModal = ({ course, onClose, onSave }) => {
                             name="price"
                             value={formData.price}
                             onChange={handleChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-fg-muted leading-tight focus:outline-none focus:shadow-outline"
                             required
                             min="0"
                             step="0.01"
@@ -127,14 +127,14 @@ const CourseModal = ({ course, onClose, onSave }) => {
                     </div>
 
                     <div className="mb-4">
-                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                        <label className="block text-fg-muted text-sm font-bold mb-2">
                             Level
                         </label>
                         <select
                             name="level"
                             value={formData.level}
                             onChange={handleChange}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            className="shadow appearance-none border rounded w-full py-2 px-3 text-fg-muted leading-tight focus:outline-none focus:shadow-outline"
                             required
                         >
                             <option value="beginner">Beginner</option>
@@ -147,14 +147,14 @@ const CourseModal = ({ course, onClose, onSave }) => {
                         <button
                             type="button"
                             onClick={onClose}
-                            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded mr-2"
+                            className="bg-ink-600 hover:bg-ink-600 text-fg font-bold py-2 px-4 rounded mr-2"
                         >
                             Cancel
                         </button>
                         <button
                             type="submit"
                             disabled={loading}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                            className="bg-brand-600 hover:bg-brand-700 text-white font-bold py-2 px-4 rounded"
                         >
                             {loading ? 'Saving...' : 'Save'}
                         </button>

@@ -95,11 +95,11 @@ function TopBadge({ children, highlighted }) {
     <div
       className={`absolute -top-3.5 left-1/2 z-20 flex -translate-x-1/2 items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1.5 text-[9px] font-bold uppercase tracking-wide shadow-md sm:text-[10px] ${
         highlighted
-          ? 'border border-slate-200 bg-white text-[#0c2340]'
-          : 'bg-amber-400 text-slate-900'
+          ? 'border border-line bg-ink-850 text-fg'
+          : 'bg-amber-400 text-fg'
       }`}
     >
-      {highlighted ? <FiStar className="h-3 w-3 shrink-0 text-amber-500" aria-hidden /> : null}
+      {highlighted ? <FiStar className="h-3 w-3 shrink-0 text-warn" aria-hidden /> : null}
       {children}
     </div>
   );
@@ -118,8 +118,8 @@ function PlanCard({ option, allOptions, onSelect }) {
     <article
       className={`relative flex flex-col rounded-2xl p-6 sm:p-7 ${
         highlighted
-          ? 'z-10 border border-[#0c2340] bg-[#0c2340] text-white shadow-xl shadow-[#0c2340]/25 lg:-mt-2 lg:mb-2 lg:scale-[1.03] lg:px-8 lg:py-9'
-          : 'border border-slate-200/90 bg-white text-slate-900 shadow-sm'
+          ? 'z-10 border border-line-strong bg-ink-800 text-white shadow-xl shadow-[#0c2340]/25 lg:-mt-2 lg:mb-2 lg:scale-[1.03] lg:px-8 lg:py-9'
+          : 'border border-line bg-ink-850 text-fg shadow-sm'
       }`}
     >
       {option.badge ? <TopBadge highlighted={highlighted}>{option.badge}</TopBadge> : null}
@@ -127,7 +127,7 @@ function PlanCard({ option, allOptions, onSelect }) {
       {option.label ? (
         <p
           className={`text-[10px] font-bold uppercase tracking-[0.22em] sm:text-xs ${
-            highlighted ? 'text-sky-200/90' : 'text-slate-500'
+            highlighted ? 'text-brand-300' : 'text-fg-subtle'
           }`}
         >
           {option.label}
@@ -136,7 +136,7 @@ function PlanCard({ option, allOptions, onSelect }) {
 
       <h3
         className={`mt-2 text-xl font-bold leading-snug sm:text-2xl ${
-          highlighted ? 'text-white' : 'text-[#0c2340]'
+          highlighted ? 'text-white' : 'text-fg'
         }`}
       >
         {option.headline || option.cardTitle || 'Plan'}
@@ -145,7 +145,7 @@ function PlanCard({ option, allOptions, onSelect }) {
       {compareLine ? (
         <p
           className={`mt-4 text-center text-xs sm:text-sm ${
-            highlighted ? 'text-sky-200/80 line-through' : 'text-slate-400 line-through'
+            highlighted ? 'text-brand-300 line-through' : 'text-fg-subtle line-through'
           }`}
         >
           {compareLine}
@@ -155,14 +155,14 @@ function PlanCard({ option, allOptions, onSelect }) {
       <p
         className={`font-black leading-none ${
           compareLine ? 'mt-2 text-center' : 'mt-4'
-        } ${highlighted ? 'text-4xl text-white sm:text-5xl' : 'text-4xl text-[#0c2340] sm:text-5xl'}`}
+        } ${highlighted ? 'text-4xl text-white sm:text-5xl' : 'text-4xl text-fg sm:text-5xl'}`}
       >
         GH₵{Number(option.price || 0)}
       </p>
 
       <p
         className={`mt-2 text-center text-xs sm:text-sm ${
-          highlighted ? 'text-sky-100/90' : 'text-slate-500'
+          highlighted ? 'text-brand-300' : 'text-fg-subtle'
         }`}
       >
         {deliveryLine}
@@ -172,8 +172,8 @@ function PlanCard({ option, allOptions, onSelect }) {
         <p
           className={`mx-auto mt-3 max-w-[280px] rounded-full border px-3 py-1.5 text-center text-[11px] font-semibold leading-snug sm:text-xs ${
             highlighted
-              ? 'border-sky-400/40 bg-[#0a1c33] text-sky-100'
-              : 'border-amber-200 bg-amber-50 text-amber-900'
+              ? 'border-brand-500/40 bg-ink-800 text-brand-300'
+              : 'border-warn/30 bg-warn/10 text-warn'
           }`}
         >
           ✨ {promoPill}
@@ -183,7 +183,7 @@ function PlanCard({ option, allOptions, onSelect }) {
       {option.footnote ? (
         <p
           className={`mt-2 text-center text-xs font-medium ${
-            highlighted ? 'text-amber-200' : 'text-amber-700'
+            highlighted ? 'text-warn' : 'text-warn'
           }`}
         >
           ⚠️ {option.footnote}
@@ -191,7 +191,7 @@ function PlanCard({ option, allOptions, onSelect }) {
       ) : null}
 
       <hr
-        className={`my-5 border-t ${highlighted ? 'border-sky-400/25' : 'border-slate-100'}`}
+        className={`my-5 border-t ${highlighted ? 'border-brand-500/25' : 'border-line'}`}
         aria-hidden
       />
 
@@ -199,10 +199,10 @@ function PlanCard({ option, allOptions, onSelect }) {
         {features.map((feature) => (
           <li key={feature} className="flex gap-2.5 text-xs leading-snug sm:text-sm">
             <FiCheck
-              className={`mt-0.5 h-4 w-4 shrink-0 ${highlighted ? 'text-sky-300' : 'text-[#2563eb]'}`}
+              className={`mt-0.5 h-4 w-4 shrink-0 ${highlighted ? 'text-brand-300' : 'text-brand-400'}`}
               aria-hidden
             />
-            <span className={highlighted ? 'text-sky-50/95' : 'text-slate-700'}>{feature}</span>
+            <span className={highlighted ? 'text-brand-300' : 'text-fg-muted'}>{feature}</span>
           </li>
         ))}
       </ul>
@@ -212,8 +212,8 @@ function PlanCard({ option, allOptions, onSelect }) {
         onClick={() => onSelect(option)}
         className={`mt-6 w-full rounded-xl py-3.5 text-sm font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${
           highlighted
-            ? 'bg-white text-[#0c2340] shadow-md hover:bg-sky-50 focus-visible:ring-white'
-            : 'border-2 border-[#0c2340] bg-white text-[#0c2340] hover:bg-slate-50 focus-visible:ring-[#0c2340]'
+            ? 'bg-ink-850 text-fg shadow-md hover:bg-brand-500/10 focus-visible:ring-ink-850'
+            : 'border-2 border-line-strong bg-ink-850 text-fg hover:bg-ink-900 focus-visible:ring-line-strong'
         }`}
       >
         {highlighted ? '🚀 ' : '💳 '}
@@ -222,7 +222,7 @@ function PlanCard({ option, allOptions, onSelect }) {
 
       <p
         className={`mt-4 flex items-center justify-center gap-1.5 text-center text-[11px] sm:text-xs ${
-          highlighted ? 'text-sky-200/80' : 'text-slate-400'
+          highlighted ? 'text-brand-300' : 'text-fg-subtle'
         }`}
       >
         <FiLock className="h-3 w-3 shrink-0" aria-hidden />
@@ -253,18 +253,18 @@ export default function BookOfferPicker({ offerGroup, onSelectOption }) {
 
   return (
     <section
-      className="mt-16 rounded-3xl bg-gradient-to-b from-slate-50 to-white px-4 py-14 sm:px-6 sm:py-16 lg:mt-20 lg:py-20"
+      className="mt-16 rounded-3xl bg-gradient-to-b from-ink-900 to-ink-850 px-4 py-14 sm:px-6 sm:py-16 lg:mt-20 lg:py-20"
       aria-labelledby="book-offer-picker-heading"
     >
       <div className="mx-auto max-w-6xl text-center">
         <h2
           id="book-offer-picker-heading"
-          className="text-xl font-black uppercase tracking-wide text-[#0c2340] sm:text-2xl lg:text-3xl"
+          className="text-xl font-black uppercase tracking-wide text-fg sm:text-2xl lg:text-3xl"
         >
           {offerGroup.heading || 'PICK YOUR PLAN & START TODAY'}
         </h2>
         {offerGroup.subheading ? (
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-slate-600 sm:text-base">
+          <p className="mx-auto mt-3 max-w-2xl text-sm text-fg-muted sm:text-base">
             {offerGroup.subheading}
           </p>
         ) : null}

@@ -223,27 +223,27 @@ const Store = () => {
   };
 
   return (
-    <div className="min-h-screen overflow-x-hidden bg-white">
+    <div className="min-h-screen overflow-x-hidden bg-ink-850">
       {/* Hero — static copy + book image collection */}
-      <div className="border-b border-slate-100 bg-[#F7F9FC] pt-20 sm:pt-24">
+      <div className="border-b border-line bg-ink-900 pt-20 sm:pt-24">
         <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8 lg:pb-20 lg:pt-12">
           <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
             <div className="max-w-xl space-y-4 sm:space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-[#1B5EF5] ring-1 ring-slate-200/80 sm:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#1B5EF5]" aria-hidden />
+              <div className="inline-flex items-center gap-2 rounded-full bg-ink-850 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-400 ring-1 ring-line sm:text-xs">
+                <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden />
                 Bookstore
               </div>
-              <h1 className="text-balance text-[1.85rem] font-bold leading-tight tracking-tight text-[#0B1F44] sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
+              <h1 className="text-balance text-[1.85rem] font-bold leading-tight tracking-tight text-fg sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
                 Discover your next digital book
               </h1>
-              <p className="max-w-md text-pretty text-sm leading-relaxed text-slate-500 sm:text-base">
+              <p className="max-w-md text-pretty text-sm leading-relaxed text-fg-subtle sm:text-base">
                 Browse the marketplace for more titles and instant checkout—ebooks you can open right
                 away, plus hardcopy requests when you need print.
               </p>
               <div className="pt-1">
                 <a
                   href="#store-books"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[#1B5EF5] px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-[#1552D6] sm:w-auto sm:py-3"
+                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-600 sm:w-auto sm:py-3"
                 >
                   Browse collection
                   <FiArrowRight className="h-4 w-4" />
@@ -288,7 +288,7 @@ const Store = () => {
                 {HERO_BOOK_COVERS.map((cover, i) => (
                   <div
                     key={cover.src}
-                    className="store-book-fan__card absolute top-[18%] w-[30%] max-w-[108px] overflow-hidden rounded-lg bg-white shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-black/5 sm:top-[20%] sm:w-[34%] sm:max-w-[168px]"
+                    className="store-book-fan__card absolute top-[18%] w-[30%] max-w-[108px] overflow-hidden rounded-lg bg-ink-850 shadow-[0_10px_24px_rgba(15,23,42,0.14)] ring-1 ring-line sm:top-[20%] sm:w-[34%] sm:max-w-[168px]"
                     style={{
                       zIndex: cover.z,
                       '--book-x': cover.x,
@@ -318,10 +318,10 @@ const Store = () => {
       <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
         <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
           <div className="min-w-0 flex-1">
-            <h2 className="text-xl font-bold tracking-tight text-[#0B1F44] sm:text-2xl md:text-3xl">
+            <h2 className="text-xl font-bold tracking-tight text-fg sm:text-2xl md:text-3xl">
               Marketplace
             </h2>
-            <p className="mt-1 text-sm leading-relaxed text-slate-500">
+            <p className="mt-1 text-sm leading-relaxed text-fg-subtle">
               Buy digital books instantly. Hardcopy requests are handled via WhatsApp.
             </p>
           </div>
@@ -329,13 +329,13 @@ const Store = () => {
             <button
               type="button"
               onClick={handleOpenCart}
-              className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white p-2.5 text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:hidden"
+              className="inline-flex items-center justify-center rounded-xl border border-line bg-ink-850 p-2.5 text-fg transition hover:border-line hover:bg-ink-900 sm:hidden"
               aria-label="View cart"
             >
                     <span className="relative">
                       <FiShoppingCart className="h-5 w-5" />
                       {cartCount > 0 ? (
-                  <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-[#1B5EF5] px-1.5 text-[11px] font-bold leading-none text-white">
+                  <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold leading-none text-white">
                           {cartCount}
                         </span>
                       ) : null}
@@ -344,12 +344,12 @@ const Store = () => {
                   <button
                     type="button"
                     onClick={handleOpenCart}
-              className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-[#0B1F44] transition hover:border-slate-300 hover:bg-slate-50 sm:inline-flex"
+              className="hidden items-center gap-2 rounded-xl border border-line bg-ink-850 px-4 py-2 text-sm font-semibold text-fg transition hover:border-line hover:bg-ink-900 sm:inline-flex"
                   >
                     <FiShoppingCart className="h-4 w-4" />
                     View cart
                     {cartCount > 0 ? (
-                <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-[#1B5EF5] px-2 text-xs font-bold text-white">
+                <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-600 px-2 text-xs font-bold text-white">
                         {cartCount}
                       </span>
                     ) : null}
@@ -359,17 +359,17 @@ const Store = () => {
 
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-[#1B5EF5] border-t-transparent" />
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-brand-500 border-t-transparent" />
               </div>
         ) : null}
 
         {error ? (
           <div className="py-12 text-center">
-            <p className="mb-3 text-sm font-medium text-rose-600">{error}</p>
+            <p className="mb-3 text-sm font-medium text-down">{error}</p>
                 <button 
               type="button"
                   onClick={() => window.location.reload()}
-              className="text-sm font-semibold text-[#1B5EF5] hover:underline"
+              className="text-sm font-semibold text-brand-400 hover:underline"
                 >
                   Try again
                 </button>
@@ -394,9 +394,9 @@ const Store = () => {
 
         {!isLoading && !error && books.length === 0 ? (
           <div className="py-12 text-center">
-            <FiBook className="mx-auto h-12 w-12 text-slate-300" />
-            <h3 className="mt-2 text-sm font-medium text-[#0B1F44]">No books found</h3>
-            <p className="mt-1 text-sm text-slate-500">Check back later for new titles.</p>
+            <FiBook className="mx-auto h-12 w-12 text-fg-muted" />
+            <h3 className="mt-2 text-sm font-medium text-fg">No books found</h3>
+            <p className="mt-1 text-sm text-fg-subtle">Check back later for new titles.</p>
           </div>
         ) : null}
       </main>
@@ -404,38 +404,38 @@ const Store = () => {
       {/* Cart modal */}
       {showCartModal ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/60 p-4 sm:items-center"
+          className="fixed inset-0 z-50 flex items-end justify-center bg-ink-950/60 p-4 sm:items-center"
           role="dialog"
           aria-modal="true"
           aria-labelledby="store-cart-title"
           onClick={() => setShowCartModal(false)}
         >
           <div
-            className="w-full max-w-lg overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+            className="w-full max-w-lg overflow-hidden rounded-2xl border border-line bg-ink-850 shadow-xl"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+            <div className="flex items-center justify-between border-b border-line px-5 py-4">
               <div>
-                <h3 id="store-cart-title" className="text-lg font-semibold text-slate-950">
+                <h3 id="store-cart-title" className="text-lg font-semibold text-fg">
                   Your cart
                 </h3>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-fg-subtle">
                   {cartCount === 0 ? 'No books yet' : `${cartCount} item${cartCount === 1 ? '' : 's'}`}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => setShowCartModal(false)}
-                className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+                className="rounded-lg p-2 text-fg-subtle hover:bg-ink-900 hover:text-fg-muted"
                 aria-label="Close cart"
               >
                 <FiX className="h-5 w-5" />
               </button>
             </div>
 
-            <ul className="max-h-[min(50vh,320px)] divide-y divide-slate-100 overflow-y-auto px-5">
+            <ul className="max-h-[min(50vh,320px)] divide-y divide-line overflow-y-auto px-5">
               {getCart().length === 0 ? (
-                <li className="py-8 text-center text-sm text-slate-500">
+                <li className="py-8 text-center text-sm text-fg-subtle">
                   Add e-books from the marketplace, then checkout here.
                 </li>
               ) : (
@@ -444,46 +444,46 @@ const Store = () => {
                     <img
                       src={item.image || item.thumbnail || DEFAULT_BOOK_COVER}
                       alt=""
-                      className="h-16 w-14 shrink-0 rounded-lg border border-slate-200 bg-slate-50 object-contain p-0.5"
+                      className="h-16 w-14 shrink-0 rounded-lg border border-line bg-ink-900 object-contain p-0.5"
                       onError={(e) => {
                         e.target.onerror = null;
                         e.target.src = DEFAULT_BOOK_COVER;
                       }}
                     />
                     <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-semibold text-slate-900">{item.title}</p>
+                      <p className="line-clamp-2 text-sm font-semibold text-fg">{item.title}</p>
                       {item.author ? (
-                        <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{item.author}</p>
+                        <p className="mt-0.5 line-clamp-1 text-xs text-fg-subtle">{item.author}</p>
                       ) : null}
-                      <p className="mt-1 text-sm font-bold text-slate-900">
+                      <p className="mt-1 text-sm font-bold text-fg">
                         {formatGhs(item.price)}
                         {(item.quantity || 1) > 1 ? (
-                          <span className="ml-1 text-xs font-medium text-slate-500">
+                          <span className="ml-1 text-xs font-medium text-fg-subtle">
                             × {item.quantity} = {formatGhs(Number(item.price || 0) * (item.quantity || 1))}
                           </span>
                         ) : null}
                       </p>
                       <div
-                        className="mt-2 inline-flex items-center rounded-lg border border-slate-200 bg-slate-50"
+                        className="mt-2 inline-flex items-center rounded-lg border border-line bg-ink-900"
                         role="group"
                         aria-label={`Quantity for ${item.title}`}
                       >
                         <button
                           type="button"
                           onClick={() => handleUpdateCartQuantity(item.id, -1)}
-                          className="rounded-l-lg p-2 text-slate-600 transition hover:bg-slate-100"
+                          className="rounded-l-lg p-2 text-fg-muted transition hover:bg-ink-800"
                           aria-label="Decrease quantity"
                         >
                           <FiMinus className="h-4 w-4" aria-hidden />
                         </button>
-                        <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-slate-900">
+                        <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-fg">
                           {item.quantity || 1}
                         </span>
                         <button
                           type="button"
                           onClick={() => handleUpdateCartQuantity(item.id, 1)}
                           disabled={(item.quantity || 1) >= 99}
-                          className="rounded-r-lg p-2 text-slate-600 transition hover:bg-slate-100 disabled:opacity-40"
+                          className="rounded-r-lg p-2 text-fg-muted transition hover:bg-ink-800 disabled:opacity-40"
                           aria-label="Increase quantity"
                         >
                           <FiPlus className="h-4 w-4" aria-hidden />
@@ -493,7 +493,7 @@ const Store = () => {
                     <button
                       type="button"
                       onClick={() => handleRemoveBookFromCart(item.id)}
-                      className="shrink-0 self-start rounded-lg border border-rose-200 px-2.5 py-1.5 text-xs font-semibold text-rose-700 hover:bg-rose-50"
+                      className="shrink-0 self-start rounded-lg border border-down/30 px-2.5 py-1.5 text-xs font-semibold text-down hover:bg-down/10"
                     >
                       Remove
                     </button>
@@ -502,10 +502,10 @@ const Store = () => {
               )}
             </ul>
 
-            <div className="border-t border-slate-200 px-5 py-4">
+            <div className="border-t border-line px-5 py-4">
               <div className="mb-3 flex items-center justify-between text-sm">
-                <span className="text-slate-600">Subtotal</span>
-                <span className="font-bold text-slate-900">
+                <span className="text-fg-muted">Subtotal</span>
+                <span className="font-bold text-fg">
                   {formatGhs(getCartSubtotal(getCart()))}
                 </span>
               </div>
@@ -513,7 +513,7 @@ const Store = () => {
                 type="button"
                 onClick={handleGoToCheckout}
                 disabled={cartCount === 0}
-                className="w-full rounded-xl bg-indigo-600 py-3 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-brand-600 py-3 text-sm font-semibold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Go to checkout
               </button>

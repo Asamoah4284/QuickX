@@ -65,14 +65,14 @@ const EditCourse = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500"></div>
             </div>
         );
     }
 
     return (
         <div className="max-w-4xl mx-auto p-6">
-            <h1 className="text-2xl font-bold text-gray-800 mb-6">Edit Course</h1>
+            <h1 className="text-2xl font-bold text-fg mb-6">Edit Course</h1>
             <CourseForm
                 initialValues={course || {}}
                 onSubmit={handleUpdateCourse}

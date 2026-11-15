@@ -49,28 +49,28 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink-950/70 p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="hardcopy-modal-title"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-md overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+        className="w-full max-w-md overflow-hidden rounded-2xl border border-line bg-ink-850 shadow-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+        <div className="flex items-center justify-between border-b border-line px-6 py-4">
           <div>
-            <h3 id="hardcopy-modal-title" className="text-lg font-semibold tracking-tight text-slate-950">
+            <h3 id="hardcopy-modal-title" className="text-lg font-semibold tracking-tight text-fg">
               Request hardcopy
             </h3>
-            <p className="mt-0.5 text-sm text-slate-500">
+            <p className="mt-0.5 text-sm text-fg-subtle">
               Prefer a printed book? Free delivery — we&apos;ll confirm on WhatsApp.
             </p>
           </div>
           <button
             type="button"
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600"
+            className="rounded-lg p-2 text-fg-subtle hover:bg-ink-900 hover:text-fg-muted"
             onClick={onClose}
             aria-label="Close"
           >
@@ -83,17 +83,17 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
             <img
               src={book.thumbnail || DEFAULT_BOOK_COVER}
               alt=""
-              className="h-20 w-16 shrink-0 rounded-xl border border-slate-200 object-cover"
+              className="h-20 w-16 shrink-0 rounded-xl border border-line object-cover"
               onError={(e) => {
                 e.target.onerror = null;
                 e.target.src = DEFAULT_BOOK_COVER;
               }}
             />
             <div>
-              <h4 className="text-base font-semibold text-slate-950">{book.title}</h4>
-              {book.author ? <p className="mt-0.5 text-sm text-slate-600">{book.author}</p> : null}
-              <p className="mt-1 text-sm font-semibold text-blue-700">{formatGhs(hardcopyAmount)}</p>
-              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-emerald-50 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-emerald-800 ring-1 ring-emerald-200">
+              <h4 className="text-base font-semibold text-fg">{book.title}</h4>
+              {book.author ? <p className="mt-0.5 text-sm text-fg-muted">{book.author}</p> : null}
+              <p className="mt-1 text-sm font-semibold text-brand-300">{formatGhs(hardcopyAmount)}</p>
+              <span className="mt-2 inline-flex items-center gap-1.5 rounded-full bg-up/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-up ring-1 ring-up/30">
                 Free delivery nationwide
               </span>
             </div>
@@ -101,7 +101,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="hardcopy-name" className="block text-sm font-semibold text-slate-800">
+              <label htmlFor="hardcopy-name" className="block text-sm font-semibold text-fg">
                 Your name
               </label>
               <input
@@ -111,11 +111,11 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Asamoah Richard"
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-line bg-ink-850 px-4 py-3 text-fg placeholder:text-fg-subtle focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label htmlFor="hardcopy-phone" className="block text-sm font-semibold text-slate-800">
+              <label htmlFor="hardcopy-phone" className="block text-sm font-semibold text-fg">
                 Phone number
               </label>
               <input
@@ -125,11 +125,11 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="e.g. 024 123 4567"
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-line bg-ink-850 px-4 py-3 text-fg placeholder:text-fg-subtle focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
             <div>
-              <label htmlFor="hardcopy-location" className="block text-sm font-semibold text-slate-800">
+              <label htmlFor="hardcopy-location" className="block text-sm font-semibold text-fg">
                 Delivery location
               </label>
               <input
@@ -139,7 +139,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 placeholder="e.g. Accra, East Legon"
-                className="mt-1 block w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="mt-1 block w-full rounded-xl border border-line bg-ink-850 px-4 py-3 text-fg placeholder:text-fg-subtle focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           </div>
@@ -147,7 +147,7 @@ export default function HardcopyRequestModal({ book, open, onClose }) {
           <div className="mt-6 flex justify-end gap-3">
             <button
               type="button"
-              className="rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="rounded-xl border border-line bg-ink-850 px-4 py-2.5 text-sm font-semibold text-fg-muted hover:bg-ink-900"
               onClick={onClose}
             >
               Cancel

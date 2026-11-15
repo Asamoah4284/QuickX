@@ -90,8 +90,8 @@ function readApiError(err) {
 }
 
 const inputCls =
-  'mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20';
-const labelCls = 'block text-sm font-medium text-slate-700 dark:text-slate-300';
+  'mt-1 w-full rounded-xl border border-line bg-ink-850 px-3 py-2.5 text-sm text-fg outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20';
+const labelCls = 'block text-sm font-medium text-fg-muted dark:text-fg-muted';
 
 export default function CreatorBookWizard() {
   const { bookId } = useParams();
@@ -333,41 +333,41 @@ export default function CreatorBookWizard() {
 
   if (loading) {
     return (
-      <div className="p-8 text-sm text-slate-500">Loading book…</div>
+      <div className="p-8 text-sm text-fg-subtle">Loading book…</div>
     );
   }
 
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
+      <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
         <button
           type="button"
           onClick={() => navigate('/creator/dashboard/books')}
-          className="mb-4 inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-900 transition"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm text-fg-subtle hover:text-fg transition"
         >
           <FiArrowLeft className="h-4 w-4" aria-hidden />
           Back to My Books
         </button>
-        <h2 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">
+        <h2 className="text-xl font-semibold tracking-tight text-fg sm:text-2xl">
           {isEditing ? 'Edit Book' : 'Add New Book'}
         </h2>
-        <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+        <p className="mt-1 text-xs text-fg-subtle sm:text-sm">
           Fill in the details below. Save as a draft first, then submit for review when ready.
         </p>
       </div>
 
       {/* Form */}
       <form onSubmit={handleSave} className="space-y-4 sm:space-y-6">
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Basic Information</h3>
+        <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
+          <h3 className="mb-4 text-base font-semibold text-fg">Basic Information</h3>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className={labelCls}>Title <span className="text-rose-500">*</span></label>
+              <label className={labelCls}>Title <span className="text-down">*</span></label>
               <input name="title" value={form.title} onChange={handleChange} required className={inputCls} placeholder="e.g. Mastering Forex Trading" />
             </div>
             <div>
-              <label className={labelCls}>Author <span className="text-rose-500">*</span></label>
+              <label className={labelCls}>Author <span className="text-down">*</span></label>
               <input name="author" value={form.author} onChange={handleChange} required className={inputCls} placeholder="Your full name or pen name" />
             </div>
             <div>
@@ -375,7 +375,7 @@ export default function CreatorBookWizard() {
               <input name="isbn" value={form.isbn} onChange={handleChange} className={inputCls} placeholder="978-3-16-148410-0" />
             </div>
             <div className="sm:col-span-2">
-              <label className={labelCls}>Description <span className="text-rose-500">*</span></label>
+              <label className={labelCls}>Description <span className="text-down">*</span></label>
               <textarea
                 name="description"
                 value={form.description}
@@ -389,18 +389,18 @@ export default function CreatorBookWizard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
+        <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
           <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold text-slate-900">Reader testimonials</h3>
-              <p className="mt-1 text-xs text-slate-500 sm:text-sm">
+              <h3 className="text-base font-semibold text-fg">Reader testimonials</h3>
+              <p className="mt-1 text-xs text-fg-subtle sm:text-sm">
                 Optional quotes shown on your book&apos;s store page. Add one card per reader review.
               </p>
             </div>
             <button
               type="button"
               onClick={addTestimonial}
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted transition hover:bg-ink-900"
             >
               <FiPlus className="h-4 w-4" aria-hidden />
               Add testimonial
@@ -408,7 +408,7 @@ export default function CreatorBookWizard() {
           </div>
 
           {(form.testimonials || []).length === 0 ? (
-            <p className="rounded-xl border border-dashed border-slate-200 bg-slate-50/80 px-4 py-6 text-center text-sm text-slate-500">
+            <p className="rounded-xl border border-dashed border-line bg-ink-900/80 px-4 py-6 text-center text-sm text-fg-subtle">
               No testimonials yet. Click &quot;Add testimonial&quot; to add a reader quote.
             </p>
           ) : (
@@ -416,14 +416,14 @@ export default function CreatorBookWizard() {
               {(form.testimonials || []).map((t, index) => (
                 <li
                   key={`testimonial-${index}`}
-                  className="rounded-2xl border border-slate-200 bg-slate-50/50 p-4 sm:p-5"
+                  className="rounded-2xl border border-line bg-ink-900/50 p-4 sm:p-5"
                 >
                   <div className="mb-3 flex items-center justify-between gap-2">
-                    <p className="text-sm font-semibold text-slate-800">Testimonial {index + 1}</p>
+                    <p className="text-sm font-semibold text-fg">Testimonial {index + 1}</p>
                     <button
                       type="button"
                       onClick={() => removeTestimonial(index)}
-                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                      className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-medium text-down transition hover:bg-down/10"
                       aria-label={`Remove testimonial ${index + 1}`}
                     >
                       <FiTrash2 className="h-3.5 w-3.5" aria-hidden />
@@ -442,7 +442,7 @@ export default function CreatorBookWizard() {
                     </div>
                     <div className="sm:col-span-2">
                       <label className={labelCls}>
-                        Quote <span className="text-rose-500">*</span>
+                        Quote <span className="text-down">*</span>
                       </label>
                       <textarea
                         value={t.quote}
@@ -488,11 +488,11 @@ export default function CreatorBookWizard() {
                           <img
                             src={t.image}
                             alt={t.name ? `${t.name} avatar` : 'Reader avatar'}
-                            className="h-14 w-14 rounded-full border border-slate-200 object-cover"
+                            className="h-14 w-14 rounded-full border border-line object-cover"
                             onError={(e) => (e.currentTarget.style.display = 'none')}
                           />
                         ) : (
-                          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-dashed border-slate-300 bg-slate-100 text-slate-400">
+                          <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border border-dashed border-line bg-ink-800 text-fg-subtle">
                             <FiImage className="h-5 w-5" aria-hidden />
                           </span>
                         )}
@@ -500,7 +500,7 @@ export default function CreatorBookWizard() {
                           type="button"
                           onClick={() => testimonialInputRefs.current[index]?.click()}
                           disabled={Boolean(testimonialUploads[index])}
-                          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50 disabled:opacity-50"
+                          className="rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted transition hover:bg-ink-900 disabled:opacity-50"
                         >
                           {t.image ? 'Replace photo' : 'Upload photo'}
                         </button>
@@ -508,14 +508,14 @@ export default function CreatorBookWizard() {
                           <button
                             type="button"
                             onClick={() => updateTestimonial(index, 'image', '')}
-                            className="inline-flex items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium text-rose-600 transition hover:bg-rose-50"
+                            className="inline-flex items-center gap-1 rounded-xl px-2 py-2 text-xs font-medium text-down transition hover:bg-down/10"
                           >
                             <FiX className="h-3.5 w-3.5" aria-hidden />
                             Remove
                           </button>
                         ) : null}
                         {testimonialUploads[index] ? (
-                          <span className="text-xs font-medium text-slate-600">
+                          <span className="text-xs font-medium text-fg-muted">
                             Uploading… {testimonialUploads[index]}%
                           </span>
                         ) : null}
@@ -528,9 +528,9 @@ export default function CreatorBookWizard() {
           )}
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
-          <h3 className="mb-1 text-base font-semibold text-slate-900">What readers will learn</h3>
-          <p className="mb-4 text-xs text-slate-500 sm:text-sm">
+        <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
+          <h3 className="mb-1 text-base font-semibold text-fg">What readers will learn</h3>
+          <p className="mb-4 text-xs text-fg-subtle sm:text-sm">
             These appear on your book&apos;s store page. Add one point per line.
           </p>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -559,10 +559,10 @@ export default function CreatorBookWizard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
-          <h3 className="mb-1 text-base font-semibold text-slate-900">Pricing & Type</h3>
+        <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
+          <h3 className="mb-1 text-base font-semibold text-fg">Pricing & Type</h3>
           {form.type === 'ebook' ? (
-            <p className="mb-4 text-xs text-slate-500 sm:text-sm">
+            <p className="mb-4 text-xs text-fg-subtle sm:text-sm">
               Set your single e-book price and an optional hardcopy price. If you use purchase plans below,
               update bundle or extra tier prices there — then click <strong>Save</strong> at the bottom so
               the store updates.
@@ -570,7 +570,7 @@ export default function CreatorBookWizard() {
           ) : null}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             <div>
-              <label className={labelCls}>Book Type <span className="text-rose-500">*</span></label>
+              <label className={labelCls}>Book Type <span className="text-down">*</span></label>
               <select name="type" value={form.type} onChange={handleChange} className={inputCls}>
                 <option value="ebook">E-book</option>
                 <option value="hardcopy">Hardcopy</option>
@@ -579,7 +579,7 @@ export default function CreatorBookWizard() {
             <div>
               <label className={labelCls}>
                 {form.type === 'ebook' ? 'E-book price (GHS)' : 'Hardcopy price (GHS)'}{' '}
-                <span className="text-rose-500">*</span>
+                <span className="text-down">*</span>
               </label>
               <input type="number" name="price" min={0} step={0.01} value={form.price} onChange={handleChange} className={inputCls} />
             </div>
@@ -633,9 +633,9 @@ export default function CreatorBookWizard() {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
-          <h3 className="mb-1 text-base font-semibold text-slate-900">Purchase plans &amp; bundles</h3>
-          <p className="mb-4 text-xs text-slate-500 sm:text-sm">
+        <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
+          <h3 className="mb-1 text-base font-semibold text-fg">Purchase plans &amp; bundles</h3>
+          <p className="mb-4 text-xs text-fg-subtle sm:text-sm">
             Upload each book&apos;s PDF here. Optional cover image per plan. Saved when you click Save below.
           </p>
           <CreatorBookOfferSection
@@ -658,9 +658,9 @@ export default function CreatorBookWizard() {
           />
         </div>
 
-        <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
-          <h3 className="mb-4 text-base font-semibold text-slate-900">Book cover</h3>
-          <p className="mb-4 text-xs text-slate-500">
+        <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
+          <h3 className="mb-4 text-base font-semibold text-fg">Book cover</h3>
+          <p className="mb-4 text-xs text-fg-subtle">
             Listing image for the store. Upload each book&apos;s PDF under Purchase plans above.
           </p>
           <div>
@@ -676,12 +676,12 @@ export default function CreatorBookWizard() {
                 <button
                   type="button"
                   onClick={() => thumbnailInputRef.current?.click()}
-                  className="w-fit rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                  className="w-fit rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-ink-900"
                 >
                   Upload thumbnail
                 </button>
                 {uploadProgress.thumbnail > 0 ? (
-                  <p className="text-xs font-medium text-slate-600">
+                  <p className="text-xs font-medium text-fg-muted">
                     Uploading… {uploadProgress.thumbnail}%
                   </p>
                 ) : null}
@@ -690,19 +690,19 @@ export default function CreatorBookWizard() {
                     <img
                       src={form.thumbnail}
                       alt="Thumbnail preview"
-                      className="h-28 w-24 rounded-xl border border-slate-200 object-cover"
+                      className="h-28 w-24 rounded-xl border border-line object-cover"
                       onError={(e) => (e.currentTarget.style.display = 'none')}
                     />
                     <button
                       type="button"
                       onClick={() => setForm((prev) => ({ ...prev, thumbnail: '' }))}
-                      className="w-fit rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                      className="w-fit rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-ink-900"
                     >
                       Remove thumbnail
                     </button>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400">Upload a JPG/PNG/WebP. The URL will be filled in automatically.</p>
+                  <p className="text-xs text-fg-subtle">Upload a JPG/PNG/WebP. The URL will be filled in automatically.</p>
                 )}
               </div>
               <input
@@ -716,15 +716,15 @@ export default function CreatorBookWizard() {
         </div>
 
         {/* Feedback messages */}
-        {error   && <div className="rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>}
-        {success && <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>}
+        {error   && <div className="rounded-2xl bg-down/10 px-4 py-3 text-sm text-down">{error}</div>}
+        {success && <div className="rounded-2xl bg-up/10 px-4 py-3 text-sm text-up">{success}</div>}
 
         {/* Action buttons */}
         <div className="flex flex-wrap gap-3">
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink-800 disabled:opacity-50"
           >
             <FiSave className="h-4 w-4" aria-hidden />
             {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save Draft'}
@@ -745,7 +745,7 @@ export default function CreatorBookWizard() {
           <button
             type="button"
             onClick={() => navigate('/creator/dashboard/books')}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-2xl border border-line bg-ink-850 px-5 py-3 text-sm font-semibold text-fg-muted transition hover:bg-ink-900"
           >
             Cancel
           </button>

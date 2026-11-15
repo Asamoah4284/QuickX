@@ -18,7 +18,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
   const thumbHref = resolveAssetUrl(book.thumbnail || fallbackThumbnail, apiUrl);
 
   return (
-    <article className="rounded-2xl border border-slate-200/90 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-line bg-ink-850 p-5 shadow-sm">
       <div className="flex gap-5">
         <div className="shrink-0">
           {thumbHref ? (
@@ -26,7 +26,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
               <img
                 src={thumbHref}
                 alt={book.title ? `Cover: ${book.title}` : 'Book cover'}
-                className="h-[7.5rem] w-[5.5rem] rounded-xl object-cover bg-slate-50 ring-1 ring-slate-100"
+                className="h-[7.5rem] w-[5.5rem] rounded-xl object-cover bg-ink-900 ring-1 ring-line"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.nextElementSibling;
@@ -34,7 +34,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
                 }}
               />
               <div
-                className="hidden h-[7.5rem] w-[5.5rem] items-center justify-center rounded-xl bg-slate-50 text-slate-300 ring-1 ring-slate-100"
+                className="hidden h-[7.5rem] w-[5.5rem] items-center justify-center rounded-xl bg-ink-900 text-fg-muted ring-1 ring-line"
                 aria-hidden
               >
                 <FiBookOpen className="h-9 w-9" />
@@ -42,7 +42,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
             </>
           ) : (
             <div
-              className="flex h-[7.5rem] w-[5.5rem] items-center justify-center rounded-xl bg-slate-50 text-slate-300 ring-1 ring-slate-100"
+              className="flex h-[7.5rem] w-[5.5rem] items-center justify-center rounded-xl bg-ink-900 text-fg-muted ring-1 ring-line"
               aria-hidden
             >
               <FiBookOpen className="h-9 w-9" />
@@ -51,9 +51,9 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
         </div>
 
         <div className="flex min-w-0 flex-1 flex-col justify-center">
-          <h2 className="text-lg font-semibold tracking-tight text-slate-900">{book.title}</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-fg">{book.title}</h2>
           {book.author ? (
-            <p className="mt-1 text-sm text-slate-500">By {book.author}</p>
+            <p className="mt-1 text-sm text-fg-subtle">By {book.author}</p>
           ) : null}
 
           <div className="mt-4 flex flex-wrap gap-2.5">
@@ -61,7 +61,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
               href={fileHref}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-ink-850 px-4 py-2.5 text-sm font-medium text-fg-muted transition hover:border-line hover:bg-ink-900"
             >
               <FiExternalLink className="h-4 w-4 opacity-60" aria-hidden />
               View
@@ -69,7 +69,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
             <a
               href={fileHref}
               download
-              className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-blue-700"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-700"
             >
               <FiDownload className="h-4 w-4" aria-hidden />
               Download
@@ -138,42 +138,42 @@ export default function BookGuestDownload() {
       : 'Your ebook is ready to download.';
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-[#f4f7fb] px-4 py-12 sm:py-16">
+    <div className="min-h-[calc(100vh-4rem)] bg-ink-900 px-4 py-12 sm:py-16">
       <div className="mx-auto w-full max-w-md">
-        <div className="overflow-hidden rounded-3xl bg-white shadow-[0_8px_40px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-200/60">
+        <div className="overflow-hidden rounded-3xl bg-ink-850 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.12)] ring-1 ring-line">
           {/* Header */}
-          <header className="border-b border-slate-100 px-6 pb-8 pt-10 text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100">
+          <header className="border-b border-line px-6 pb-8 pt-10 text-center">
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-up/10 text-up ring-1 ring-up/30">
               <FiCheck className="h-6 w-6 stroke-[2.5]" aria-hidden />
             </div>
-            <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+            <h1 className="text-2xl font-semibold tracking-tight text-fg">
               Payment successful
             </h1>
-            <p className="mt-2 text-sm text-slate-500">{subtitle}</p>
+            <p className="mt-2 text-sm text-fg-subtle">{subtitle}</p>
           </header>
 
           <div className="px-6 pb-8 pt-6 sm:px-8">
             {loading ? (
               <div className="flex flex-col items-center py-12">
                 <div
-                  className="h-9 w-9 animate-spin rounded-full border-2 border-slate-200 border-t-blue-600"
+                  className="h-9 w-9 animate-spin rounded-full border-2 border-line border-t-blue-600"
                   aria-hidden
                 />
-                <p className="mt-4 text-sm text-slate-500">Loading your book…</p>
+                <p className="mt-4 text-sm text-fg-subtle">Loading your book…</p>
               </div>
             ) : null}
 
             {!loading && error ? (
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 px-5 py-6 text-center">
-                <FiAlertCircle className="mx-auto h-8 w-8 text-amber-500" aria-hidden />
-                <p className="mt-3 font-medium text-slate-900">Unable to load download</p>
-                <p className="mt-1.5 text-sm leading-relaxed text-slate-600">{error}</p>
+              <div className="rounded-2xl border border-line bg-ink-900 px-5 py-6 text-center">
+                <FiAlertCircle className="mx-auto h-8 w-8 text-warn" aria-hidden />
+                <p className="mt-3 font-medium text-fg">Unable to load download</p>
+                <p className="mt-1.5 text-sm leading-relaxed text-fg-muted">{error}</p>
                 {reference ? (
-                  <p className="mt-3 break-all font-mono text-xs text-slate-400">{reference}</p>
+                  <p className="mt-3 break-all font-mono text-xs text-fg-subtle">{reference}</p>
                 ) : null}
                 <Link
                   to="/store"
-                  className="mt-5 inline-block text-sm font-medium text-blue-600 hover:text-blue-700"
+                  className="mt-5 inline-block text-sm font-medium text-brand-400 hover:text-brand-300"
                 >
                   Back to store
                 </Link>
@@ -199,14 +199,14 @@ export default function BookGuestDownload() {
             ) : null}
 
             {!loading && !error ? (
-              <footer className="mt-8 space-y-4 border-t border-slate-100 pt-6 text-center">
-                <p className="text-sm leading-relaxed text-slate-500">
+              <footer className="mt-8 space-y-4 border-t border-line pt-6 text-center">
+                <p className="text-sm leading-relaxed text-fg-subtle">
                   Save this page or your payment reference to download again later.
                 </p>
-                <p className="text-sm text-slate-500">
+                <p className="text-sm text-fg-subtle">
                   <Link
                     to="/register"
-                    className="font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
+                    className="font-medium text-brand-400 underline-offset-2 hover:text-brand-300 hover:underline"
                   >
                     Create an account
                   </Link>{' '}
@@ -214,7 +214,7 @@ export default function BookGuestDownload() {
                 </p>
                 <Link
                   to="/store"
-                  className="inline-block text-sm font-semibold text-slate-800 transition hover:text-slate-950"
+                  className="inline-block text-sm font-semibold text-fg transition hover:text-fg"
                 >
                   Browse more books
                 </Link>

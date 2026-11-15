@@ -165,7 +165,7 @@ export default function CreatorDashboardOverview() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-slate-200/80 bg-white px-4 py-5 text-sm text-slate-500">
+      <div className="rounded-2xl border border-line bg-ink-850 px-4 py-5 text-sm text-fg-subtle">
         Loading creator overview...
       </div>
     );
@@ -173,7 +173,7 @@ export default function CreatorDashboardOverview() {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-rose-200/80 bg-rose-50 px-4 py-5 text-sm text-rose-700">{error}</div>
+      <div className="rounded-2xl border border-down/30 bg-down/10 px-4 py-5 text-sm text-down">{error}</div>
     );
   }
 
@@ -181,25 +181,25 @@ export default function CreatorDashboardOverview() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
+      <section className="rounded-2xl border border-line bg-ink-850 p-4 sm:p-5">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold text-slate-950">Creator program tracks</h2>
-            <p className="mt-0.5 text-xs text-slate-500">
+            <h2 className="text-base font-semibold text-fg">Creator program tracks</h2>
+            <p className="mt-0.5 text-xs text-fg-subtle">
               Active enrollments unlock publishing in each category.
             </p>
           </div>
           <Link
             to="/programs"
-            className="text-xs font-semibold text-blue-700 hover:text-blue-800"
+            className="text-xs font-semibold text-brand-300 hover:text-brand-300"
           >
             Manage programs
           </Link>
         </div>
         {enrollments.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
+          <p className="mt-4 rounded-xl border border-dashed border-line bg-ink-900 px-4 py-3 text-sm text-fg-muted">
             No active program enrollments yet.{' '}
-            <Link to="/programs" className="font-medium text-blue-700 hover:underline">
+            <Link to="/programs" className="font-medium text-brand-300 hover:underline">
               Join a creator track
             </Link>{' '}
             to publish courses in forex, crypto, or web development.
@@ -211,10 +211,10 @@ export default function CreatorDashboardOverview() {
               return (
                 <li
                   key={entry._id}
-                  className="rounded-xl border border-emerald-200/80 bg-emerald-50/70 px-4 py-3"
+                  className="rounded-xl border border-up/30 bg-up/10 px-4 py-3"
                 >
-                  <p className="font-semibold text-slate-950">{program?.name || 'Creator program'}</p>
-                  <p className="mt-1 text-xs text-slate-600">
+                  <p className="font-semibold text-fg">{program?.name || 'Creator program'}</p>
+                  <p className="mt-1 text-xs text-fg-muted">
                     Active · {program?.courseType || 'creator track'}
                   </p>
                 </li>
@@ -238,19 +238,19 @@ export default function CreatorDashboardOverview() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-1 xl:grid-cols-3">
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5 xl:col-span-2">
-          <h2 className="text-base font-semibold text-slate-950">Revenue &amp; enrollments</h2>
-          <p className="mt-0.5 text-xs text-slate-500">Last 6 months — completed payouts to you and new student enrollments.</p>
+        <section className="rounded-2xl border border-line bg-ink-850 p-4 sm:p-5 xl:col-span-2">
+          <h2 className="text-base font-semibold text-fg">Revenue &amp; enrollments</h2>
+          <p className="mt-0.5 text-xs text-fg-subtle">Last 6 months — completed payouts to you and new student enrollments.</p>
           <div className="mt-3 h-[220px] w-full sm:h-[240px]">
             <Line data={trendChartData} options={trendChartOptions} />
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:p-5">
-          <h2 className="text-base font-semibold text-slate-950">Courses by status</h2>
-          <p className="mt-0.5 text-xs text-slate-500">How your catalog is distributed across listing states.</p>
+        <section className="rounded-2xl border border-line bg-ink-850 p-4 sm:p-5">
+          <h2 className="text-base font-semibold text-fg">Courses by status</h2>
+          <p className="mt-0.5 text-xs text-fg-subtle">How your catalog is distributed across listing states.</p>
           {totalStatusCount === 0 ? (
-            <div className="mt-4 flex h-[180px] items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50 text-xs text-slate-500">
+            <div className="mt-4 flex h-[180px] items-center justify-center rounded-xl border border-dashed border-line bg-ink-900 text-xs text-fg-subtle">
               No courses yet — create a course to see this chart.
             </div>
           ) : (

@@ -156,15 +156,15 @@ const CourseManagement = () => {
 
     const UploadModal = () => (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-md">
+            <div className="bg-ink-850 rounded-xl p-6 w-full max-w-md">
                 <h3 className="text-xl font-semibold mb-4">Upload Content</h3>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Content Type</label>
+                    <label className="block text-sm font-medium text-fg-muted mb-2">Content Type</label>
                     <div className="flex gap-4">
                         <button
                             onClick={() => setUploadType('video')}
                             className={`flex-1 p-3 rounded-lg border ${
-                                uploadType === 'video' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                                uploadType === 'video' ? 'border-brand-500 bg-brand-500/10' : 'border-line'
                             }`}
                         >
                             <FiVideo className="mx-auto mb-2" />
@@ -173,7 +173,7 @@ const CourseManagement = () => {
                         <button
                             onClick={() => setUploadType('document')}
                             className={`flex-1 p-3 rounded-lg border ${
-                                uploadType === 'document' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                                uploadType === 'document' ? 'border-brand-500 bg-brand-500/10' : 'border-line'
                             }`}
                         >
                             <FiFile className="mx-auto mb-2" />
@@ -182,7 +182,7 @@ const CourseManagement = () => {
                         <button
                             onClick={() => setUploadType('image')}
                             className={`flex-1 p-3 rounded-lg border ${
-                                uploadType === 'image' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                                uploadType === 'image' ? 'border-brand-500 bg-brand-500/10' : 'border-line'
                             }`}
                         >
                             <FiImage className="mx-auto mb-2" />
@@ -191,7 +191,7 @@ const CourseManagement = () => {
                     </div>
                 </div>
                 <div className="mb-4">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">File</label>
+                    <label className="block text-sm font-medium text-fg-muted mb-2">File</label>
                     <input
                         type="file"
                         accept={uploadType === 'video' ? 'video/*' : uploadType === 'image' ? 'image/*' : '.pdf,.doc,.docx'}
@@ -206,7 +206,7 @@ const CourseManagement = () => {
                 <div className="flex justify-end gap-2">
                     <button
                         onClick={() => setShowUploadModal(false)}
-                        className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                        className="px-4 py-2 text-fg-muted hover:text-fg"
                     >
                         Cancel
                     </button>
@@ -216,35 +216,35 @@ const CourseManagement = () => {
     );
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-ink-900 p-6">
             <div className="max-w-7xl mx-auto">
                 <div className="flex justify-between items-center mb-8">
                     <div>
-                        <h1 className="text-3xl font-bold text-gray-900">Course Management</h1>
-                        <p className="text-gray-600 mt-1">Manage your courses, students, and content</p>
+                        <h1 className="text-3xl font-bold text-fg">Course Management</h1>
+                        <p className="text-fg-muted mt-1">Manage your courses, students, and content</p>
                     </div>
                 </div>
 
                 {error && (
-                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-lg">
+                    <div className="bg-warn/10 border-l-4 border-warn text-warn p-4 mb-6 rounded-lg">
                         {error}
                     </div>
                 )}
 
                 {loading ? (
                     <div className="flex items-center justify-center h-64">
-                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+                        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500"></div>
                     </div>
                 ) : (
-                    <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-                        <div className="border-b border-gray-200">
+                    <div className="bg-ink-850 rounded-xl shadow-lg overflow-hidden">
+                        <div className="border-b border-line">
                             <nav className="flex -mb-px">
                                 <button
                                     onClick={() => setActiveTab('courses')}
                                     className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center gap-2 ${
                                         activeTab === 'courses'
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                            ? 'border-brand-500 text-brand-400'
+                                            : 'border-transparent text-fg-subtle hover:text-fg-muted hover:border-line'
                                     }`}
                                 >
                                     <FiBook />
@@ -259,7 +259,7 @@ const CourseManagement = () => {
                                     {Array.isArray(courses) && courses.map(course => (
                                         <div
                                             key={course._id}
-                                            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+                                            className="bg-ink-850 rounded-xl border border-line overflow-hidden"
                                         >
                                             <div className="relative h-48">
                                                 <img
@@ -270,8 +270,8 @@ const CourseManagement = () => {
                                                 <div className="absolute top-2 right-2">
                                                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                                                         course.isPublished
-                                                            ? 'bg-green-100 text-green-800'
-                                                            : 'bg-yellow-100 text-yellow-800'
+                                                            ? 'bg-up/10 text-up'
+                                                            : 'bg-warn/10 text-warn'
                                                     }`}>
                                                         {course.isPublished ? 'Published' : 'Draft'}
                                                     </span>
@@ -279,7 +279,7 @@ const CourseManagement = () => {
                                             </div>
                                             <div className="p-4">
                                                 <h3 className="text-lg font-semibold mb-2">{course.title}</h3>
-                                                <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                                                <div className="flex items-center gap-4 text-sm text-fg-muted mb-4">
                                                     <div className="flex items-center gap-1">
                                                         <FiBarChart2 />
                                                         {course.level}
@@ -296,8 +296,8 @@ const CourseManagement = () => {
                                                 <div className="flex items-center gap-2 text-xs mb-4">
                                                     <span className={`px-2 py-1 rounded-full ${
                                                         course.courseType === 'crypto'
-                                                            ? 'bg-purple-100 text-purple-800'
-                                                            : 'bg-blue-100 text-blue-800'
+                                                            ? 'bg-brand-500/10 text-brand-300'
+                                                            : 'bg-brand-500/10 text-brand-300'
                                                     }`}>
                                                         {course.courseType === 'crypto' ? 'Crypto' : 'Forex'}
                                                     </span>
@@ -318,64 +318,64 @@ const CourseManagement = () => {
                                             <input
                                                 type="text"
                                                 placeholder="Search students..."
-                                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                                className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand-500"
                                             />
-                                            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg">
+                                            <button className="bg-brand-600 text-white px-4 py-2 rounded-lg">
                                                 Export
                                             </button>
                                         </div>
                                     </div>
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
+                                        <table className="min-w-full divide-y divide-line">
+                                            <thead className="bg-ink-900">
                                                 <tr>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                         Student
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                         Enrollment Date
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                         Progress
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                         Status
                                                     </th>
-                                                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                         Actions
                                                     </th>
                                                 </tr>
                                             </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
+                                            <tbody className="bg-ink-850 divide-y divide-line">
                                                 {students.map((student) => (
-                                                    <tr key={student._id} className="hover:bg-gray-50">
+                                                    <tr key={student._id} className="hover:bg-ink-900">
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="flex items-center">
-                                                                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium">
+                                                                <div className="h-10 w-10 rounded-full bg-ink-700 flex items-center justify-center text-fg-muted font-medium">
                                                                     {student.name.charAt(0)}
                                                                 </div>
                                                                 <div className="ml-4">
-                                                                    <div className="text-sm font-medium text-gray-900">
+                                                                    <div className="text-sm font-medium text-fg">
                                                                         {student.name}
                                                                     </div>
-                                                                    <div className="text-sm text-gray-500">
+                                                                    <div className="text-sm text-fg-subtle">
                                                                         {student.email}
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-fg-subtle">
                                                             {new Date(student.enrolledAt).toLocaleDateString()}
                                                         </td>
                                                         <td className="px-6 py-4 whitespace-nowrap">
                                                             <div className="flex items-center gap-2">
-                                                                <div className="w-32 bg-gray-200 rounded-full h-2">
+                                                                <div className="w-32 bg-ink-700 rounded-full h-2">
                                                                     <div
-                                                                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                                                                        className="bg-brand-600 h-2 rounded-full transition-all duration-300"
                                                                         style={{ width: `${student.progress}%` }}
                                                                     ></div>
                                                                 </div>
-                                                                <span className="text-sm text-gray-600">
+                                                                <span className="text-sm text-fg-muted">
                                                                     {student.progress}%
                                                                 </span>
                                                             </div>
@@ -384,10 +384,10 @@ const CourseManagement = () => {
                                                             <span
                                                                 className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                                                                     student.status === 'active'
-                                                                        ? 'bg-green-100 text-green-800'
+                                                                        ? 'bg-up/10 text-up'
                                                                         : student.status === 'completed'
-                                                                        ? 'bg-blue-100 text-blue-800'
-                                                                        : 'bg-red-100 text-red-800'
+                                                                        ? 'bg-brand-500/10 text-brand-300'
+                                                                        : 'bg-down/10 text-down'
                                                                 }`}
                                                             >
                                                                 {student.status}
@@ -402,7 +402,7 @@ const CourseManagement = () => {
                                                                         student.progress + 10
                                                                     )
                                                                 }
-                                                                className="text-blue-600 hover:text-blue-900"
+                                                                className="text-brand-400 hover:text-brand-300"
                                                             >
                                                                 Update Progress
                                                             </button>
@@ -426,7 +426,7 @@ const CourseManagement = () => {
                                                 setSelectedModule(selectedCourse.modules[0]);
                                                 setShowUploadModal(true);
                                             }}
-                                            className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-blue-700"
+                                            className="bg-brand-600 text-white px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-brand-700"
                                         >
                                             <FiPlus />
                                             Add Content
@@ -434,10 +434,10 @@ const CourseManagement = () => {
                                     </div>
                                     <div className="space-y-6">
                                         {selectedCourse.modules.map((module) => (
-                                            <div key={module._id} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                                                <div className="p-4 border-b border-gray-200">
+                                            <div key={module._id} className="bg-ink-850 rounded-xl border border-line overflow-hidden">
+                                                <div className="p-4 border-b border-line">
                                                     <h3 className="text-lg font-medium">{module.title}</h3>
-                                                    <p className="text-gray-600 text-sm">{module.description}</p>
+                                                    <p className="text-fg-muted text-sm">{module.description}</p>
                                                 </div>
                                                 <div className="p-4">
                                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -448,21 +448,21 @@ const CourseManagement = () => {
                                                             >
                                                                 <div className="flex items-center gap-3 mb-3">
                                                                     {item.type === 'video' ? (
-                                                                        <FiVideo className="text-blue-600 text-xl" />
+                                                                        <FiVideo className="text-brand-400 text-xl" />
                                                                     ) : item.type === 'document' ? (
-                                                                        <FiFile className="text-gray-600 text-xl" />
+                                                                        <FiFile className="text-fg-muted text-xl" />
                                                                     ) : (
-                                                                        <FiImage className="text-green-600 text-xl" />
+                                                                        <FiImage className="text-up text-xl" />
                                                                     )}
                                                                     <div>
                                                                         <h4 className="font-medium">{item.title}</h4>
-                                                                        <p className="text-sm text-gray-500">
+                                                                        <p className="text-sm text-fg-subtle">
                                                                             {item.type.charAt(0).toUpperCase() + item.type.slice(1)}
                                                                         </p>
                                                                     </div>
                                                                 </div>
                                                                 <div className="flex justify-end gap-2">
-                                                                    <button className="text-blue-600 hover:text-blue-900 p-2 rounded-lg hover:bg-blue-50">
+                                                                    <button className="text-brand-400 hover:text-brand-300 p-2 rounded-lg hover:bg-brand-500/10">
                                                                         <FiDownload />
                                                                     </button>
                                                                     <button
@@ -472,7 +472,7 @@ const CourseManagement = () => {
                                                                                 item._id
                                                                             )
                                                                         }
-                                                                        className="text-red-600 hover:text-red-900 p-2 rounded-lg hover:bg-red-50"
+                                                                        className="text-down hover:text-down p-2 rounded-lg hover:bg-down/10"
                                                                     >
                                                                         <FiTrash2 />
                                                                     </button>

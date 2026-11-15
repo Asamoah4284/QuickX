@@ -22,10 +22,10 @@ function notificationIcon(type = '', title = '') {
 
 function notificationAccent(type = '', title = '') {
   const key = `${type} ${title}`.toLowerCase();
-  if (key.includes('like')) return 'bg-rose-50 text-rose-600';
-  if (key.includes('comment') || key.includes('reply')) return 'bg-sky-50 text-[#1B5EF5]';
-  if (key.includes('mention')) return 'bg-violet-50 text-violet-600';
-  return 'bg-slate-100 text-slate-600';
+  if (key.includes('like')) return 'bg-down/10 text-down';
+  if (key.includes('comment') || key.includes('reply')) return 'bg-brand-500/10 text-brand-400';
+  if (key.includes('mention')) return 'bg-brand-500/10 text-brand-300';
+  return 'bg-ink-800 text-fg-muted';
 }
 
 function timeAgo(date) {
@@ -160,11 +160,11 @@ export default function NotificationBell() {
           setOpen((o) => !o);
           load();
         }}
-        className="relative rounded-xl p-2 text-current opacity-80 transition hover:bg-black/5 hover:opacity-100"
+        className="relative rounded-xl p-2 text-current opacity-80 transition hover:bg-white/5 hover:opacity-100"
       >
         <FiBell className="h-[18px] w-[18px]" />
         {unreadCount > 0 ? (
-          <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-white">
+          <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-ink-850">
             {unreadCount > 9 ? '9+' : unreadCount}
           </span>
         ) : null}
@@ -172,17 +172,17 @@ export default function NotificationBell() {
 
       {open ? (
         <div className="fixed left-1/2 top-[4.25rem] z-50 mt-2 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:w-[min(22rem,calc(100vw-1.5rem))] sm:translate-x-0">
-          <div className="origin-top overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-[0_16px_48px_rgba(15,23,42,0.14)] [animation:notifPanelIn_0.2s_ease-out] sm:origin-top-right">
+          <div className="origin-top overflow-hidden rounded-2xl border border-line bg-ink-850 shadow-[0_16px_48px_rgba(15,23,42,0.14)] [animation:notifPanelIn_0.2s_ease-out] sm:origin-top-right">
           <style>{`
             @keyframes notifPanelIn {
               from { opacity: 0; transform: translateY(-6px) scale(0.98); }
               to { opacity: 1; transform: translateY(0) scale(1); }
             }
           `}</style>
-          <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-line px-4 py-3">
             <div>
-              <p className="text-sm font-bold tracking-tight text-[#0B1F44]">Notifications</p>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-sm font-bold tracking-tight text-fg">Notifications</p>
+              <p className="text-[11px] text-fg-subtle">
                 {unreadCount > 0 ? `${unreadCount} unread` : 'You are all caught up'}
               </p>
             </div>
@@ -190,7 +190,7 @@ export default function NotificationBell() {
               <button
                 type="button"
                 disabled={markingAll}
-                className="rounded-lg px-2 py-1 text-xs font-semibold text-[#1B5EF5] transition hover:bg-[#1B5EF5]/8 disabled:opacity-50"
+                className="rounded-lg px-2 py-1 text-xs font-semibold text-brand-400 transition hover:bg-brand-600/8 disabled:opacity-50"
                 onClick={markAllRead}
               >
                 Mark all read
@@ -199,17 +199,17 @@ export default function NotificationBell() {
           </div>
 
           {showPushCta ? (
-            <div className="border-b border-slate-100 bg-[#F5F8FF] px-4 py-3">
-              <p className="text-xs font-semibold text-[#0B1F44]">Enable lock-screen notifications</p>
-              <p className="mt-0.5 text-[11px] leading-relaxed text-slate-500">
+            <div className="border-b border-line bg-ink-900 px-4 py-3">
+              <p className="text-xs font-semibold text-fg">Enable lock-screen notifications</p>
+              <p className="mt-0.5 text-[11px] leading-relaxed text-fg-subtle">
                 The bell only shows inside the app. Turn this on to get phone alerts when Quick-X is closed.
               </p>
               {isIosDevice() && !isStandaloneDisplay() ? (
-                <p className="mt-2 text-[11px] leading-relaxed text-amber-800">
+                <p className="mt-2 text-[11px] leading-relaxed text-warn">
                   On iPhone: open Quick-X from your <strong>Home Screen</strong> icon (not Safari), then tap Turn on.
                 </p>
               ) : permission === 'denied' ? (
-                <p className="mt-2 text-[11px] leading-relaxed text-rose-600">
+                <p className="mt-2 text-[11px] leading-relaxed text-down">
                   Notifications are blocked. Enable them in your phone Settings for Quick-X / this browser.
                 </p>
               ) : (
@@ -217,12 +217,12 @@ export default function NotificationBell() {
                   type="button"
                   disabled={pushBusy}
                   onClick={enablePush}
-                  className="mt-2 rounded-lg bg-[#1B5EF5] px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-[#1549c4] disabled:opacity-50"
+                  className="mt-2 rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-brand-600 disabled:opacity-50"
                 >
                   {pushBusy ? 'Enabling…' : 'Turn on notifications'}
                 </button>
               )}
-              {pushError ? <p className="mt-1.5 text-[11px] text-rose-600">{pushError}</p> : null}
+              {pushError ? <p className="mt-1.5 text-[11px] text-down">{pushError}</p> : null}
             </div>
           ) : null}
 
@@ -232,12 +232,12 @@ export default function NotificationBell() {
               const accent = notificationAccent(n.type, n.title);
               const unread = !n.readAt;
               return (
-                <li key={n._id} className="border-b border-slate-50 last:border-0">
+                <li key={n._id} className="border-b border-line last:border-0">
                   <button
                     type="button"
                     className={`flex w-full gap-3 px-4 py-3 text-left transition ${
-                      unread ? 'bg-[#F5F8FF]' : 'bg-white'
-                    } hover:bg-slate-50`}
+                      unread ? 'bg-ink-900' : 'bg-ink-850'
+                    } hover:bg-ink-900`}
                     onClick={() => openNotification(n)}
                   >
                     <span
@@ -248,22 +248,22 @@ export default function NotificationBell() {
                     <span className="min-w-0 flex-1">
                       <span className="flex items-start justify-between gap-2">
                         <span
-                          className={`text-[13px] font-semibold leading-snug text-[#0B1F44] ${
+                          className={`text-[13px] font-semibold leading-snug text-fg ${
                             unread ? '' : 'font-medium'
                           }`}
                         >
                           {n.title || n.type}
                         </span>
                         {unread ? (
-                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-[#1B5EF5]" />
+                          <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-brand-600" />
                         ) : null}
                       </span>
                       {n.body ? (
-                        <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-slate-500">
+                        <span className="mt-0.5 line-clamp-2 block text-xs leading-relaxed text-fg-subtle">
                           {n.body}
                         </span>
                       ) : null}
-                      <span className="mt-1.5 block text-[11px] font-medium text-slate-400">
+                      <span className="mt-1.5 block text-[11px] font-medium text-fg-subtle">
                         {timeAgo(n.createdAt)}
                       </span>
                     </span>
@@ -274,21 +274,21 @@ export default function NotificationBell() {
 
             {!items.length ? (
               <li className="flex flex-col items-center px-4 py-10 text-center">
-                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-50 text-slate-300">
+                <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ink-900 text-fg-muted">
                   <FiInbox className="h-6 w-6" />
                 </span>
-                <p className="mt-3 text-sm font-semibold text-[#0B1F44]">No notifications yet</p>
-                <p className="mt-1 max-w-[14rem] text-xs leading-relaxed text-slate-400">
+                <p className="mt-3 text-sm font-semibold text-fg">No notifications yet</p>
+                <p className="mt-1 max-w-[14rem] text-xs leading-relaxed text-fg-subtle">
                   Likes, comments, and mentions will show up here.
                 </p>
               </li>
             ) : null}
           </ul>
 
-          <div className="border-t border-slate-100 bg-slate-50/80 px-4 py-2.5">
+          <div className="border-t border-line bg-ink-900/80 px-4 py-2.5">
             <Link
               to="/membership"
-              className="block text-center text-xs font-semibold text-slate-500 transition hover:text-[#1B5EF5]"
+              className="block text-center text-xs font-semibold text-fg-subtle transition hover:text-brand-400"
               onClick={() => setOpen(false)}
             >
               Go to dashboard

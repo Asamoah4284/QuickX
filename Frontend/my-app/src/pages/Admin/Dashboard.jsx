@@ -1084,62 +1084,62 @@ const AdminDashboard = () => {
                     <div className="space-y-6">
                         {/* Stats Overview */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-500">Total Users</p>
+                                        <p className="text-sm text-fg-subtle">Total Users</p>
                                         <p className="text-xl font-bold">{analytics.totalUsers || ''}</p>
                                     </div>
-                                    <div className="bg-slate-100 p-2 rounded-full">
-                                        <FiUsers className="text-blue-600 text-lg" />
+                                    <div className="bg-ink-800 p-2 rounded-full">
+                                        <FiUsers className="text-brand-400 text-lg" />
                                     </div>
                                 </div>
-                                <div className="mt-2 flex items-center text-green-500 text-sm">
+                                <div className="mt-2 flex items-center text-up text-sm">
                                     <FiTrendingUp className="mr-1" />
                                     <span>+12% from last month</span>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-500">Total Courses</p>
+                                        <p className="text-sm text-fg-subtle">Total Courses</p>
                                         <p className="text-xl font-bold">{courses.length || '15'}</p>
                                     </div>
-                                    <div className="bg-green-100 p-2 rounded-full">
-                                        <FiBook className="text-green-600 text-lg" />
+                                    <div className="bg-up/10 p-2 rounded-full">
+                                        <FiBook className="text-up text-lg" />
                                     </div>
                                 </div>
-                                <div className="mt-2 flex items-center text-green-500 text-sm">
+                                <div className="mt-2 flex items-center text-up text-sm">
                                     <FiTrendingUp className="mr-1" />
                                     <span>+3 new courses</span>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-500">Total Revenue</p>
+                                        <p className="text-sm text-fg-subtle">Total Revenue</p>
                                         <p className="text-xl font-bold">${analytics.totalRevenue || '0'}</p>
                                     </div>
-                                    <div className="bg-purple-100 p-2 rounded-full">
-                                        <FiDollarSign className="text-purple-600 text-lg" />
+                                    <div className="bg-brand-500/10 p-2 rounded-full">
+                                        <FiDollarSign className="text-brand-300 text-lg" />
                                     </div>
                                 </div>
-                                <div className="mt-2 flex items-center text-green-500 text-sm">
+                                <div className="mt-2 flex items-center text-up text-sm">
                                     <FiTrendingUp className="mr-1" />
                                     <span>+8% from last month</span>
                                 </div>
                             </div>
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <div className="flex items-center justify-between">
                                     <div>
-                                        <p className="text-sm text-gray-500">Active Users</p>
+                                        <p className="text-sm text-fg-subtle">Active Users</p>
                                         <p className="text-xl font-bold">{analytics.totalUsers || '4'}</p>
                                     </div>
-                                    <div className="bg-yellow-100 p-2 rounded-full">
-                                        <FiBarChart2 className="text-yellow-600 text-lg" />
+                                    <div className="bg-warn/10 p-2 rounded-full">
+                                        <FiBarChart2 className="text-warn text-lg" />
                                     </div>
                                 </div>
-                                <div className="mt-2 flex items-center text-green-500 text-sm">
+                                <div className="mt-2 flex items-center text-up text-sm">
                                     <FiTrendingUp className="mr-1" />
                                     <span>+5% from last week</span>
                                 </div>
@@ -1148,13 +1148,13 @@ const AdminDashboard = () => {
 
                         {/* Charts Section */}
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <h3 className="text-lg font-semibold mb-4">User Growth</h3>
                                 <div className="h-64">
                                     <Line data={userGrowthData} options={chartOptions} />
                                 </div>
                             </div>
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <h3 className="text-lg font-semibold mb-4">Revenue Overview</h3>
                                 <div className="h-64">
                                     <Bar data={revenueData} options={chartOptions} />
@@ -1164,27 +1164,27 @@ const AdminDashboard = () => {
 
                         {/* Course Analytics */}
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-white rounded-xl shadow-sm p-4">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
                                 <h3 className="text-lg font-semibold mb-4">Course Enrollment</h3>
                                 <div className="h-64">
                                     <Doughnut data={courseEnrollmentData} options={doughnutOptions} />
                                 </div>
                             </div>
-                            <div className="bg-white rounded-xl shadow-sm p-4 lg:col-span-2">
+                            <div className="bg-ink-850 rounded-xl shadow-sm p-4 lg:col-span-2">
                                 <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
                                 <div className="space-y-4">
                                     {[1, 2, 3, 4].map((item) => (
-                                        <div key={item} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                        <div key={item} className="flex items-center justify-between p-3 bg-ink-900 rounded-lg">
                                             <div className="flex items-center">
-                                                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center mr-3">
-                                                    <FiUsers className="text-blue-600" />
+                                                <div className="w-10 h-10 bg-ink-800 rounded-full flex items-center justify-center mr-3">
+                                                    <FiUsers className="text-brand-400" />
                                                 </div>
                                                 <div>
                                                     <p className="font-medium">New user enrolled</p>
-                                                    <p className="text-sm text-gray-500">2 hours ago</p>
+                                                    <p className="text-sm text-fg-subtle">2 hours ago</p>
                                                 </div>
                                             </div>
-                                            <span className="text-green-500 text-sm">Completed</span>
+                                            <span className="text-up text-sm">Completed</span>
                                         </div>
                                     ))}
                                 </div>
@@ -1195,12 +1195,12 @@ const AdminDashboard = () => {
             case 'courses':
                 if (showAddCourse) {
                     return (
-                        <div className="bg-white rounded-xl shadow-sm p-4 lg:p-6">
+                        <div className="bg-ink-850 rounded-xl shadow-sm p-4 lg:p-6">
                             <div className="flex justify-between items-center mb-4 lg:mb-6">
                                 <h2 className="text-lg lg:text-xl font-bold">Add New Course</h2>
                                 <button
                                     onClick={() => setShowAddCourse(false)}
-                                    className="p-2 rounded-lg hover:bg-gray-100 text-gray-500 hover:text-gray-700"
+                                    className="p-2 rounded-lg hover:bg-ink-800 text-fg-subtle hover:text-fg-muted"
                                 >
                                     <FiX className="text-xl" />
                                 </button>
@@ -1208,7 +1208,7 @@ const AdminDashboard = () => {
                             <form className="space-y-4 lg:space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Course Title
                                         </label>
                                         <input
@@ -1216,12 +1216,12 @@ const AdminDashboard = () => {
                                             name="title"
                                             value={formData.title}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                             placeholder="Enter course title"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Subtitle
                                         </label>
                                         <input
@@ -1229,21 +1229,21 @@ const AdminDashboard = () => {
                                             name="subtitle"
                                             value={formData.subtitle}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                             placeholder="Enter course subtitle"
                                         />
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">
                                         Description
                                     </label>
                                     <textarea
                                         name="description"
                                         value={formData.description}
                                         onChange={handleFormChange}
-                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                         rows="4"
                                         placeholder="Enter course description"
                                     />
@@ -1251,7 +1251,7 @@ const AdminDashboard = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Instructor
                                         </label>
                                         <input
@@ -1259,12 +1259,12 @@ const AdminDashboard = () => {
                                             name="instructor"
                                             value={formData.instructor}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                             placeholder="Enter instructor name"
                                         />
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Instructor Title
                                         </label>
                                         <input
@@ -1272,7 +1272,7 @@ const AdminDashboard = () => {
                                             name="instructorTitle"
                                             value={formData.instructorTitle}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                             placeholder="Enter instructor title"
                                         />
                                     </div>
@@ -1280,14 +1280,14 @@ const AdminDashboard = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 lg:gap-6">
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Level
                                         </label>
                                         <select
                                             name="level"
                                             value={formData.level}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                         >
                                             <option value="beginner">Beginner</option>
                                             <option value="intermediate">Intermediate</option>
@@ -1295,22 +1295,22 @@ const AdminDashboard = () => {
                                         </select>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Course Type
                                         </label>
                                         <select
                                             name="courseType"
                                             value={formData.courseType}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-400 focus:border-slate-400 bg-white"
+                                            className="w-full px-3 lg:px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-line-strong focus:border-line-strong bg-ink-850"
                                         >
                                             <option value="forex">Forex</option>
                                             <option value="crypto">Crypto</option>
                                         </select>
-                                        <p className="mt-1 text-xs text-slate-500">Select whether this is a Forex or Crypto course</p>
+                                        <p className="mt-1 text-xs text-fg-subtle">Select whether this is a Forex or Crypto course</p>
                                     </div>
                                     <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                             Price
                                         </label>
                                         <input
@@ -1318,21 +1318,21 @@ const AdminDashboard = () => {
                                             name="price"
                                             value={formData.price}
                                             onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                             placeholder="Enter course price"
                                         />
                                     </div>
                                 </div>
 
                                 <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">
                                         Thumbnail
                                     </label>
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleThumbnailUpload}
-                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                     />
                                 </div>
 
@@ -1342,7 +1342,7 @@ const AdminDashboard = () => {
                                         <button
                                             type="button"
                                             onClick={addModule}
-                                            className="flex items-center px-3 lg:px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                                            className="flex items-center px-3 lg:px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700"
                                         >
                                             <FiPlus className="mr-1 lg:mr-2" />
                                             Add Module
@@ -1353,39 +1353,39 @@ const AdminDashboard = () => {
                                         <div key={module.id} className="border rounded-lg p-3 lg:p-4">
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 lg:gap-6 mb-4">
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    <label className="block text-sm font-medium text-fg-muted mb-1">
                                                         Module Title
                                                     </label>
                                                     <input
                                                         type="text"
                                                         value={module.title}
                                                         onChange={(e) => handleModuleChange(moduleIndex, 'title', e.target.value)}
-                                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                         placeholder="Enter module title"
                                                     />
                                                 </div>
                                                 <div>
-                                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                    <label className="block text-sm font-medium text-fg-muted mb-1">
                                                         Module Price
                                                     </label>
                                                     <input
                                                         type="number"
                                                         value={module.price}
                                                         onChange={(e) => handleModuleChange(moduleIndex, 'price', e.target.value)}
-                                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                         placeholder="Enter module price"
                                                     />
                                                 </div>
                                             </div>
 
                                             <div className="mb-4">
-                                                <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                <label className="block text-sm font-medium text-fg-muted mb-1">
                                                     Module Description
                                                 </label>
                                                 <textarea
                                                     value={module.description}
                                                     onChange={(e) => handleModuleChange(moduleIndex, 'description', e.target.value)}
-                                                    className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                     rows="2"
                                                     placeholder="Enter module description"
                                                 />
@@ -1397,7 +1397,7 @@ const AdminDashboard = () => {
                                                     <button
                                                         type="button"
                                                         onClick={() => addSection(moduleIndex)}
-                                                        className="flex items-center px-3 lg:px-4 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                                        className="flex items-center px-3 lg:px-4 py-1 bg-ink-800 text-fg-muted rounded-lg hover:bg-ink-700"
                                                     >
                                                         <FiPlus className="mr-1 lg:mr-2" />
                                                         Add Section
@@ -1405,16 +1405,16 @@ const AdminDashboard = () => {
                                                 </div>
 
                                                 {module.sections.map((section, sectionIndex) => (
-                                                    <div key={section.id} className="border rounded-lg p-3 lg:p-4 bg-gray-50">
+                                                    <div key={section.id} className="border rounded-lg p-3 lg:p-4 bg-ink-900">
                                                         <div className="mb-4">
-                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                            <label className="block text-sm font-medium text-fg-muted mb-1">
                                                                 Section Title
                                                             </label>
                                                             <input
                                                                 type="text"
                                                                 value={section.title}
                                                                 onChange={(e) => handleSectionChange(moduleIndex, sectionIndex, 'title', e.target.value)}
-                                                                className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                                 placeholder="Enter section title"
                                                             />
                                                         </div>
@@ -1425,7 +1425,7 @@ const AdminDashboard = () => {
                                                                 <button
                                                                     type="button"
                                                                     onClick={() => addLesson(moduleIndex, sectionIndex)}
-                                                                    className="flex items-center px-3 lg:px-4 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+                                                                    className="flex items-center px-3 lg:px-4 py-1 bg-ink-800 text-fg-muted rounded-lg hover:bg-ink-700"
                                                                 >
                                                                     <FiPlus className="mr-1 lg:mr-2" />
                                                                     Add Lesson
@@ -1433,41 +1433,41 @@ const AdminDashboard = () => {
                                                             </div>
 
                                                             {section.lessons.map((lesson, lessonIndex) => (
-                                                                <div key={lesson.id} className="border rounded-lg p-3 lg:p-4 bg-white">
+                                                                <div key={lesson.id} className="border rounded-lg p-3 lg:p-4 bg-ink-850">
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                                         <div>
-                                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                            <label className="block text-sm font-medium text-fg-muted mb-1">
                                                                                 Lesson Title
                                                                             </label>
                                                                             <input
                                                                                 type="text"
                                                                                 value={lesson.title}
                                                                                 onChange={(e) => handleLessonChange(moduleIndex, sectionIndex, lessonIndex, 'title', e.target.value)}
-                                                                                className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                                className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                                                 placeholder="Enter lesson title"
                                                                             />
                                                                         </div>
                                                                         <div>
-                                                                            <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                            <label className="block text-sm font-medium text-fg-muted mb-1">
                                                                                 Duration
                                                                             </label>
                                                                             <input
                                                                                 type="text"
                                                                                 value={lesson.duration}
                                                                                 onChange={(e) => handleLessonChange(moduleIndex, sectionIndex, lessonIndex, 'duration', e.target.value)}
-                                                                                className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                                className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                                                 placeholder="e.g., 30 min"
                                                                             />
                                                                         </div>
                                                                     </div>
                                                                     <div className="mt-4">
-                                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                                                             Lesson Type
                                                                         </label>
                                                                         <select
                                                                             value={lesson.type}
                                                                             onChange={(e) => handleLessonChange(moduleIndex, sectionIndex, lessonIndex, 'type', e.target.value)}
-                                                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                                         >
                                                                             <option value="video">Video</option>
                                                                             <option value="workshop">Workshop</option>
@@ -1481,20 +1481,20 @@ const AdminDashboard = () => {
                                                                                 type="checkbox"
                                                                                 checked={lesson.free}
                                                                                 onChange={(e) => handleLessonChange(moduleIndex, sectionIndex, lessonIndex, 'free', e.target.checked)}
-                                                                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                                                                className="rounded border-line text-brand-400 focus:ring-brand-500"
                                                                             />
-                                                                            <span className="ml-2 text-sm text-gray-700">Free Preview</span>
+                                                                            <span className="ml-2 text-sm text-fg-muted">Free Preview</span>
                                                                         </label>
                                                                     </div>
                                                                     <div>
-                                                                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                                                                        <label className="block text-sm font-medium text-fg-muted mb-1">
                                                                             Content
                                                                         </label>
                                                                         <input
                                                                             type="file"
                                                                             accept=".pdf,.mp4,.doc,.docx"
                                                                             onChange={(e) => handleContentUpload(e, moduleIndex, sectionIndex, lessonIndex)}
-                                                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                                            className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                                                         />
                                                                     </div>
                                                                 </div>
@@ -1511,14 +1511,14 @@ const AdminDashboard = () => {
                                     <button
                                         type="button"
                                         onClick={() => setShowAddCourse(false)}
-                                        className="px-4 py-2 border rounded-lg hover:bg-gray-50 w-full sm:w-auto"
+                                        className="px-4 py-2 border rounded-lg hover:bg-ink-900 w-full sm:w-auto"
                                     >
                                         Cancel
                                     </button>
                                     <button
                                         type="submit"
                                         onClick={handleFormSubmit}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 w-full sm:w-auto"
+                                        className="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 w-full sm:w-auto"
                                     >
                                         Save Course
                                     </button>
@@ -1542,38 +1542,38 @@ const AdminDashboard = () => {
                             <h2 className="text-xl font-bold">Books Management</h2>
                             <button
                                 onClick={handleAddBook}
-                                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm w-full sm:w-auto mt-3 sm:mt-0"
+                                className="flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm w-full sm:w-auto mt-3 sm:mt-0"
                             >
                                 <FiPlus className="mr-2" />
                                 Add New Book
                             </button>
                         </div>
                         
-                        <div className="bg-white rounded-xl shadow-sm">
+                        <div className="bg-ink-850 rounded-xl shadow-sm">
                             <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-gray-200">
-                                    <thead className="bg-gray-50">
+                                <table className="min-w-full divide-y divide-line">
+                                    <thead className="bg-ink-900">
                                         <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                 Cover
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                 Title
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                 Author
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                 Price
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                 Actions
                                             </th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-ink-850 divide-y divide-line">
                                         {books.map((book) => (
-                                            <tr key={book._id} className="hover:bg-gray-50">
+                                            <tr key={book._id} className="hover:bg-ink-900">
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <img 
                                                         src={book.thumbnail} 
@@ -1582,25 +1582,25 @@ const AdminDashboard = () => {
                                                     />
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-gray-900">{book.title}</div>
+                                                    <div className="text-sm font-medium text-fg">{book.title}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-500">{book.author}</div>
+                                                    <div className="text-sm text-fg-subtle">{book.author}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-gray-500">${book.price}</div>
+                                                    <div className="text-sm text-fg-subtle">${book.price}</div>
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                     <button
                                                         onClick={() => handleEditBook(book)}
-                                                        className="text-blue-600 hover:text-blue-900 mr-4"
+                                                        className="text-brand-400 hover:text-brand-300 mr-4"
                                                     >
                                                         <FiEdit2 className="inline mr-1" />
                                                         Edit
                                                     </button>
                                                     <button
                                                         onClick={() => handleDeleteBookRequest(book._id)}
-                                                        className="text-red-600 hover:text-red-900"
+                                                        className="text-down hover:text-down"
                                                     >
                                                         <FiTrash2 className="inline mr-1" />
                                                         Delete
@@ -1618,14 +1618,14 @@ const AdminDashboard = () => {
                 return (
                     <div className="space-y-6">
                         <h2 className="text-xl font-bold">Upload Course Content</h2>
-                        <div className="bg-white rounded-xl shadow-sm p-6">
-                            <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                <FiUpload className="mx-auto h-12 w-12 text-gray-400" />
-                                <h3 className="mt-2 text-sm font-medium text-gray-900">Upload Course Content</h3>
-                                <p className="mt-1 text-sm text-gray-500">
+                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
+                            <div className="border-2 border-dashed border-line rounded-lg p-8 text-center">
+                                <FiUpload className="mx-auto h-12 w-12 text-fg-subtle" />
+                                <h3 className="mt-2 text-sm font-medium text-fg">Upload Course Content</h3>
+                                <p className="mt-1 text-sm text-fg-subtle">
                                     Drag and drop files here, or click to select files
                                 </p>
-                                <button className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg">
+                                <button className="mt-4 bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 px-4 rounded-lg">
                                     Select Files
                                 </button>
                             </div>
@@ -1636,26 +1636,26 @@ const AdminDashboard = () => {
                 return (
                     <div className="space-y-6">
                         <h2 className="text-xl font-bold">Settings</h2>
-                        <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Platform Name</label>
-                                    <input type="text" className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                    <label className="block text-sm font-medium text-fg-muted">Platform Name</label>
+                                    <input type="text" className="mt-1 block w-full rounded-md border-line shadow-sm focus:border-brand-500 focus:ring-brand-500" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Email Notifications</label>
+                                    <label className="block text-sm font-medium text-fg-muted">Email Notifications</label>
                                     <div className="mt-2">
                                         <label className="inline-flex items-center">
-                                            <input type="checkbox" className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                            <input type="checkbox" className="rounded border-line text-brand-400 shadow-sm focus:border-brand-500 focus:ring-brand-500" />
                                             <span className="ml-2">Enable email notifications</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700">Maintenance Mode</label>
+                                    <label className="block text-sm font-medium text-fg-muted">Maintenance Mode</label>
                                     <div className="mt-2">
                                         <label className="inline-flex items-center">
-                                            <input type="checkbox" className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500" />
+                                            <input type="checkbox" className="rounded border-line text-brand-400 shadow-sm focus:border-brand-500 focus:ring-brand-500" />
                                             <span className="ml-2">Enable maintenance mode</span>
                                         </label>
                                     </div>
@@ -1667,13 +1667,13 @@ const AdminDashboard = () => {
             case 'coupons':
                 return (
                     <div className="space-y-6">
-                        <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
                             <h2 className="text-xl font-semibold mb-4">Coupon Management</h2>
                             
                             {/* Add New Coupon Form */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-gray-600">Coupon code</label>
+                                    <label className="mb-1 block text-xs font-medium text-fg-muted">Coupon code</label>
                                     <input
                                         type="text"
                                         placeholder="e.g. ELMAX"
@@ -1683,7 +1683,7 @@ const AdminDashboard = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-gray-600">Discount %</label>
+                                    <label className="mb-1 block text-xs font-medium text-fg-muted">Discount %</label>
                                     <input
                                         type="number"
                                         placeholder="e.g. 30"
@@ -1695,7 +1695,7 @@ const AdminDashboard = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-gray-600">Valid until</label>
+                                    <label className="mb-1 block text-xs font-medium text-fg-muted">Valid until</label>
                                     <input
                                         type="date"
                                         className="w-full border rounded-lg px-4 py-2"
@@ -1704,7 +1704,7 @@ const AdminDashboard = () => {
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-1 block text-xs font-medium text-gray-600">Max uses</label>
+                                    <label className="mb-1 block text-xs font-medium text-fg-muted">Max uses</label>
                                     <input
                                         type="number"
                                         placeholder="e.g. 20"
@@ -1718,7 +1718,7 @@ const AdminDashboard = () => {
                                     <button
                                         type="button"
                                         onClick={handleAddCoupon}
-                                        className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                                        className="w-full bg-brand-600 text-white px-4 py-2 rounded-lg hover:bg-brand-700"
                                     >
                                         Add Coupon
                                     </button>
@@ -1729,16 +1729,16 @@ const AdminDashboard = () => {
                             <div className="overflow-x-auto">
                                 <table className="min-w-full">
                                     <thead>
-                                        <tr className="bg-gray-50">
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Code</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Discount</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valid Until</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Uses</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                                        <tr className="bg-ink-900">
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">Code</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">Discount</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">Valid Until</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">Uses</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">Status</th>
+                                            <th className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
+                                    <tbody className="bg-ink-850 divide-y divide-line">
                                         {coupons.map((coupon) => (
                                             <tr key={coupon._id || coupon.id}>
                                                 <td className="px-6 py-4 whitespace-nowrap">{coupon.code}</td>
@@ -1747,7 +1747,7 @@ const AdminDashboard = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">{coupon.uses}/{coupon.maxUses}</td>
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                        coupon.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                        coupon.isActive ? 'bg-up/10 text-up' : 'bg-down/10 text-down'
                                                     }`}>
                                                         {coupon.isActive ? 'Active' : 'Inactive'}
                                                     </span>
@@ -1755,7 +1755,7 @@ const AdminDashboard = () => {
                                                 <td className="px-6 py-4 whitespace-nowrap">
                                                     <button
                                                         onClick={() => handleDeleteCoupon(coupon._id || coupon.id)}
-                                                        className="text-red-600 hover:text-red-900"
+                                                        className="text-down hover:text-down"
                                                     >
                                                         Delete
                                                     </button>
@@ -1772,22 +1772,22 @@ const AdminDashboard = () => {
                 return (
                     <div className="space-y-6">
                         <h2 className="text-xl font-bold mb-4">Add Mentorship Session</h2>
-                        <form onSubmit={handleMentorshipSubmit} className="bg-white rounded-xl shadow-sm p-6 space-y-4 max-w-lg">
+                        <form onSubmit={handleMentorshipSubmit} className="bg-ink-850 rounded-xl shadow-sm p-6 space-y-4 max-w-lg">
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                <label className="block text-sm font-medium text-fg-muted mb-1">Title</label>
                                 <input type="text" name="title" value={mentorshipForm.title} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Summary</label>
+                                <label className="block text-sm font-medium text-fg-muted mb-1">Summary</label>
                                 <textarea name="summary" value={mentorshipForm.summary} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Session Image</label>
+                                <label className="block text-sm font-medium text-fg-muted mb-1">Session Image</label>
                                 <input
                                     type="file"
                                     accept="image/*"
                                     onChange={handleMentorshipImageUpload}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                 />
                                 {mentorshipForm.imageUrl && (
                                     <div className="mt-2">
@@ -1801,29 +1801,29 @@ const AdminDashboard = () => {
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Date</label>
                                     <input type="text" name="date" value={mentorshipForm.date} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. June 15, 2023" required />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Time</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Time</label>
                                     <input type="text" name="time" value={mentorshipForm.time} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. 10:00 AM EST" required />
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-gray-700 mb-1">Mentor</label>
+                                <label className="block text-sm font-medium text-fg-muted mb-1">Mentor</label>
                                 <input type="text" name="mentor" value={mentorshipForm.mentor} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
                             </div>
                             <div className="flex items-center gap-4">
                                 <label className="flex items-center">
-                                    <input type="checkbox" name="isPremium" checked={mentorshipForm.isPremium} onChange={handleMentorshipInput} className="rounded border-gray-300 text-blue-600" />
-                                    <span className="ml-2 text-sm text-gray-700">Premium Session</span>
+                                    <input type="checkbox" name="isPremium" checked={mentorshipForm.isPremium} onChange={handleMentorshipInput} className="rounded border-line text-brand-400" />
+                                    <span className="ml-2 text-sm text-fg-muted">Premium Session</span>
                                 </label>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Icon</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Icon</label>
                                     <input type="text" name="icon" value={mentorshipForm.icon} onChange={handleMentorshipInput} className="w-32 px-3 py-2 border rounded-lg" />
                                 </div>
                             </div>
-                            <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">Add Session</button>
+                            <button type="submit" className="bg-brand-600 text-white px-6 py-2 rounded-lg hover:bg-brand-700">Add Session</button>
                         </form>
                     </div>
                 );
@@ -1832,40 +1832,40 @@ const AdminDashboard = () => {
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
                             <h2 className="text-xl font-bold">Advertisement Management</h2>
-                            <p className="text-sm text-gray-500">Maximum 3 active advertisements</p>
+                            <p className="text-sm text-fg-subtle">Maximum 3 active advertisements</p>
                         </div>
                         
                         {/* Add New Advertisement Form */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
                             <h3 className="text-lg font-semibold mb-4">Add New Advertisement</h3>
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Title</label>
                                     <input
                                         type="text"
                                         value={newAdvertisement.title}
                                         onChange={(e) => setNewAdvertisement(prev => ({ ...prev, title: e.target.value }))}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                         placeholder="Enter advertisement title"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Content</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Content</label>
                                     <textarea
                                         value={newAdvertisement.content}
                                         onChange={(e) => setNewAdvertisement(prev => ({ ...prev, content: e.target.value }))}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                         rows="4"
                                         placeholder="Enter advertisement content"
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Image</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Image</label>
                                     <input
                                         type="file"
                                         accept="image/*"
                                         onChange={handleAdvertisementImageUpload}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                     />
                                     {newAdvertisement.imageUrl && (
                                         <img
@@ -1876,12 +1876,12 @@ const AdminDashboard = () => {
                                     )}
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Link URL</label>
+                                    <label className="block text-sm font-medium text-fg-muted mb-1">Link URL</label>
                                     <input
                                         type="url"
                                         value={newAdvertisement.link}
                                         onChange={(e) => setNewAdvertisement(prev => ({ ...prev, link: e.target.value }))}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
                                         placeholder="Enter advertisement link URL"
                                     />
                                 </div>
@@ -1890,14 +1890,14 @@ const AdminDashboard = () => {
                                         type="checkbox"
                                         checked={newAdvertisement.isActive}
                                         onChange={(e) => setNewAdvertisement(prev => ({ ...prev, isActive: e.target.checked }))}
-                                        className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                                        className="rounded border-line text-brand-400 focus:ring-brand-500"
                                     />
-                                    <label className="ml-2 text-sm text-gray-700">Active</label>
+                                    <label className="ml-2 text-sm text-fg-muted">Active</label>
                                 </div>
                                 <button
                                     onClick={handleAddAdvertisement}
                                     disabled={advertisements.length >= 10}
-                                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+                                    className="w-full px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:bg-ink-600 disabled:cursor-not-allowed"
                                 >
                                     Add Advertisement
                                 </button>
@@ -1905,7 +1905,7 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Existing Advertisements */}
-                        <div className="bg-white rounded-xl shadow-sm p-6">
+                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
                             <h3 className="text-lg font-semibold mb-4">Current Advertisements</h3>
                             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                 {advertisements.map((ad) => (
@@ -1916,16 +1916,16 @@ const AdminDashboard = () => {
                                             className="w-full h-40 object-cover rounded-lg mb-4"
                                         />
                                         <h4 className="font-semibold mb-2">{ad.title}</h4>
-                                        <p className="text-sm text-gray-600 mb-4">{ad.content}</p>
+                                        <p className="text-sm text-fg-muted mb-4">{ad.content}</p>
                                         <div className="flex justify-between items-center">
                                             <span className={`px-2 py-1 rounded-full text-xs ${
-                                                ad.isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                                                ad.isActive ? 'bg-up/10 text-up' : 'bg-down/10 text-down'
                                             }`}>
                                                 {ad.isActive ? 'Active' : 'Inactive'}
                                             </span>
                                             <button
                                                 onClick={() => handleDeleteAdvertisement(ad._id)}
-                                                className="text-red-600 hover:text-red-800"
+                                                className="text-down hover:text-down"
                                             >
                                                 <FiTrash2 className="w-5 h-5" />
                                             </button>
@@ -1942,76 +1942,76 @@ const AdminDashboard = () => {
                         <h2 className="text-xl font-bold">Withdrawal Requests</h2>
                         
                         {withdrawalSuccess && (
-                            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                            <div className="bg-up/10 border border-up/30 text-up px-4 py-3 rounded">
                                 {withdrawalSuccess}
                             </div>
                         )}
                         
                         {withdrawalError && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                            <div className="bg-down/10 border border-down/30 text-down px-4 py-3 rounded">
                                 {withdrawalError}
                             </div>
                         )}
 
-                        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+                        <div className="bg-ink-850 rounded-xl shadow-sm overflow-hidden">
                             <div className="overflow-x-auto">
                                 {withdrawalRequests.length > 0 ? (
-                                    <table className="min-w-full divide-y divide-gray-200">
-                                        <thead className="bg-gray-50">
+                                    <table className="min-w-full divide-y divide-line">
+                                        <thead className="bg-ink-900">
                                             <tr>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     User
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     Amount
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     MoMo Number
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     Network
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     Status
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     Date
                                                 </th>
-                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
                                                     Actions
                                                 </th>
                                             </tr>
                                         </thead>
-                                        <tbody className="bg-white divide-y divide-gray-200">
+                                        <tbody className="bg-ink-850 divide-y divide-line">
                                             {withdrawalRequests.map((request) => (
                                                 <tr key={request._id}>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">{request.user?.fullName || 'N/A'}</div>
-                                                        <div className="text-sm text-gray-500">{request.user?.email || 'N/A'}</div>
+                                                        <div className="text-sm font-medium text-fg">{request.user?.fullName || 'N/A'}</div>
+                                                        <div className="text-sm text-fg-subtle">{request.user?.email || 'N/A'}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm font-medium text-gray-900">GH₵{request.amount}</div>
+                                                        <div className="text-sm font-medium text-fg">GH₵{request.amount}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">{request.momoNumber}</div>
+                                                        <div className="text-sm text-fg">{request.momoNumber}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">{request.network}</div>
+                                                        <div className="text-sm text-fg">{request.network}</div>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                                                            request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                            request.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                                            'bg-red-100 text-red-800'
+                                                            request.status === 'pending' ? 'bg-warn/10 text-warn' :
+                                                            request.status === 'completed' ? 'bg-up/10 text-up' :
+                                                            'bg-down/10 text-down'
                                                         }`}>
                                                             {request.status}
                                                         </span>
                                                     </td>
                                                     <td className="px-6 py-4 whitespace-nowrap">
-                                                        <div className="text-sm text-gray-900">
+                                                        <div className="text-sm text-fg">
                                                             {new Date(request.requestedAt).toLocaleDateString()}
                                                         </div>
-                                                        <div className="text-sm text-gray-500">
+                                                        <div className="text-sm text-fg-subtle">
                                                             {new Date(request.requestedAt).toLocaleTimeString()}
                                                         </div>
                                                     </td>
@@ -2020,13 +2020,13 @@ const AdminDashboard = () => {
                                                             <div className="flex space-x-2">
                                                                 <button
                                                                     onClick={() => handleApproveWithdrawal(request._id)}
-                                                                    className="text-green-600 hover:text-green-900 bg-green-50 px-3 py-1 rounded-md"
+                                                                    className="text-up hover:text-up bg-up/10 px-3 py-1 rounded-md"
                                                                 >
                                                                     Approve
                                                                 </button>
                                                                 <button
                                                                     onClick={() => handleRejectWithdrawal(request._id)}
-                                                                    className="text-red-600 hover:text-red-900 bg-red-50 px-3 py-1 rounded-md"
+                                                                    className="text-down hover:text-down bg-down/10 px-3 py-1 rounded-md"
                                                                 >
                                                                     Reject
                                                                 </button>
@@ -2039,7 +2039,7 @@ const AdminDashboard = () => {
                                     </table>
                                 ) : (
                                     <div className="text-center py-8">
-                                        <div className="text-gray-500">No withdrawal requests found</div>
+                                        <div className="text-fg-subtle">No withdrawal requests found</div>
                                     </div>
                                 )}
                             </div>
@@ -2056,14 +2056,14 @@ const AdminDashboard = () => {
 
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="bg-ink-850 rounded-lg p-6 max-w-md w-full mx-4">
                     <div className="flex items-center justify-center mb-4">
-                        <FiAlertTriangle className="text-red-500 text-4xl" />
+                        <FiAlertTriangle className="text-down text-4xl" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                    <h3 className="text-lg font-semibold text-fg text-center mb-2">
                         Delete Course
                     </h3>
-                    <p className="text-gray-600 text-center mb-6">
+                    <p className="text-fg-muted text-center mb-6">
                         Are you sure you want to delete this course? This action cannot be undone and all course content will be permanently removed.
                     </p>
                     <div className="flex justify-end space-x-4">
@@ -2072,13 +2072,13 @@ const AdminDashboard = () => {
                                 setShowDeleteModal(false);
                                 setCourseToDelete(null);
                             }}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                            className="px-4 py-2 text-fg-muted hover:text-fg font-medium"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={confirmDeleteCourse}
-                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium focus:outline-none focus:ring-2 focus:ring-down focus:ring-offset-2"
                         >
                             Delete Course
                         </button>
@@ -2092,14 +2092,14 @@ const AdminDashboard = () => {
         if (!showDeleteBookModal) return null;
         return (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+                <div className="bg-ink-850 rounded-lg p-6 max-w-md w-full mx-4">
                     <div className="flex items-center justify-center mb-4">
-                        <FiAlertTriangle className="text-red-500 text-4xl" />
+                        <FiAlertTriangle className="text-down text-4xl" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 text-center mb-2">
+                    <h3 className="text-lg font-semibold text-fg text-center mb-2">
                         Delete Book
                     </h3>
-                    <p className="text-gray-600 text-center mb-6">
+                    <p className="text-fg-muted text-center mb-6">
                         Are you sure you want to delete this book? This action cannot be undone and all book data will be permanently removed.
                     </p>
                     <div className="flex justify-end space-x-4">
@@ -2108,13 +2108,13 @@ const AdminDashboard = () => {
                                 setShowDeleteBookModal(false);
                                 setBookToDelete(null);
                             }}
-                            className="px-4 py-2 text-gray-600 hover:text-gray-800 font-medium"
+                            className="px-4 py-2 text-fg-muted hover:text-fg font-medium"
                         >
                             Cancel
                         </button>
                         <button
                             onClick={confirmDeleteBook}
-                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                            className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 font-medium focus:outline-none focus:ring-2 focus:ring-down focus:ring-offset-2"
                         >
                             Delete Book
                         </button>
@@ -2127,7 +2127,7 @@ const AdminDashboard = () => {
     if (loading) {
         return (
             <div className="flex items-center justify-center min-h-[50vh]">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-brand-500" />
             </div>
         );
     }
@@ -2135,7 +2135,7 @@ const AdminDashboard = () => {
     return (
         <>
             {error && (
-                <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-600 px-4 py-3 rounded">
+                <div className="mb-4 bg-warn/10 border border-warn/30 text-warn px-4 py-3 rounded">
                     {error}
                 </div>
             )}

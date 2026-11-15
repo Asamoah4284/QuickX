@@ -522,11 +522,11 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
   };
 
   const inputCls =
-    'mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20';
-  const labelCls = 'block text-xs font-medium text-slate-600';
+    'mt-1 w-full rounded-xl border border-line bg-ink-850 px-3 py-2 text-sm text-fg focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20';
+  const labelCls = 'block text-xs font-medium text-fg-muted';
 
   if (loading) {
-    return <p className="text-sm text-slate-500">Loading purchase plans…</p>;
+    return <p className="text-sm text-fg-subtle">Loading purchase plans…</p>;
   }
 
   const isPublished = listingStatus === 'published' || listingStatus === 'approved';
@@ -534,22 +534,22 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
   return (
     <div className="space-y-4">
       {isPublished ? (
-        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="rounded-xl border border-up/30 bg-up/10 px-3 py-2 text-sm text-up">
           This book is approved and live. You can add or change plans here anytime — save the form to update the
           store.
         </p>
       ) : null}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-xs text-slate-500 sm:text-sm">
+        <p className="text-xs text-fg-subtle sm:text-sm">
           Upload each book&apos;s PDF in your plans below. Optional cover image per plan. The store listing cover is set under Book cover.
         </p>
-        <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-slate-700">
+        <label className="inline-flex cursor-pointer items-center gap-2 text-sm font-medium text-fg-muted">
           <input
             type="checkbox"
             checked={enabled}
             onChange={(e) => handleEnabledChange(e.target.checked)}
-            className="h-4 w-4 rounded border-slate-300 text-blue-600"
+            className="h-4 w-4 rounded border-line text-brand-400"
           />
           Show plan picker on store
         </label>
@@ -570,15 +570,15 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
 
           <div className="space-y-4">
             {options.map((opt, index) => (
-              <div key={`opt-${index}`} className="rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
+              <div key={`opt-${index}`} className="rounded-2xl border border-line bg-ink-900/80 p-4">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-slate-800">
+                  <span className="text-sm font-semibold text-fg">
                     {opt.type === 'bundle' ? 'Bundle' : 'Single book'}
                   </span>
                   <button
                     type="button"
                     onClick={() => removeOption(index)}
-                    className="inline-flex items-center gap-1 text-xs font-medium text-rose-600 hover:text-rose-700"
+                    className="inline-flex items-center gap-1 text-xs font-medium text-down hover:text-down"
                   >
                     <FiTrash2 className="h-3.5 w-3.5" />
                     Remove
@@ -614,11 +614,11 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                     </select>
                   </div>
 
-                  <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm font-medium text-slate-800">
+                  <div className="sm:col-span-2 rounded-xl border border-line bg-ink-850 p-4">
+                    <p className="text-sm font-medium text-fg">
                       {opt.type === 'bundle' ? 'Books in this bundle' : 'Book for this plan'}
                     </p>
-                    <p className="mt-1 text-xs text-slate-500">
+                    <p className="mt-1 text-xs text-fg-subtle">
                       Name each book and upload its PDF here. Buyers get exactly these files.
                     </p>
                     <ul className="mt-3 space-y-3">
@@ -628,14 +628,14 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                         return (
                           <li
                             key={pdfKey}
-                            className="flex flex-col gap-2 rounded-lg border border-slate-100 bg-slate-50/80 p-3 sm:flex-row sm:items-center"
+                            className="flex flex-col gap-2 rounded-lg border border-line bg-ink-900/80 p-3 sm:flex-row sm:items-center"
                           >
                             <input
                               value={pb.title}
                               onChange={(e) => updatePlanBook(index, pbIndex, { title: e.target.value })}
                               onBlur={(e) => handlePlanTitleBlur(index, pbIndex, e.target.value)}
                               placeholder={opt.type === 'bundle' ? `Book ${pbIndex + 1} title` : 'Book title'}
-                              className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                              className="min-w-0 flex-1 rounded-lg border border-line px-2 py-1.5 text-sm"
                             />
                             <div className="flex shrink-0 items-center gap-2">
                               <input
@@ -654,7 +654,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                                 type="button"
                                 disabled={uploadingPdfKey === pdfKey}
                                 onClick={() => planPdfRefs.current[pdfKey]?.click()}
-                                className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                                className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-ink-900 disabled:opacity-60"
                               >
                                 <FiFileText className="h-3.5 w-3.5" />
                                 {uploadingPdfKey === pdfKey
@@ -667,7 +667,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                                 <button
                                   type="button"
                                   onClick={() => removeBookFromPlan(index, pbIndex)}
-                                  className="rounded-xl border border-rose-100 px-2 py-2 text-xs text-rose-600 hover:bg-rose-50"
+                                  className="rounded-xl border border-down/30 px-2 py-2 text-xs text-down hover:bg-down/10"
                                   aria-label="Remove book"
                                 >
                                   <FiTrash2 className="h-3.5 w-3.5" />
@@ -675,9 +675,9 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                               ) : null}
                             </div>
                             {hasPdf ? (
-                              <p className="text-xs text-emerald-600 sm:basis-full">PDF ready</p>
+                              <p className="text-xs text-up sm:basis-full">PDF ready</p>
                             ) : (
-                              <p className="text-xs text-rose-600 sm:basis-full">PDF required</p>
+                              <p className="text-xs text-down sm:basis-full">PDF required</p>
                             )}
                           </li>
                         );
@@ -687,7 +687,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                       <button
                         type="button"
                         onClick={() => addBookToPlan(index)}
-                        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-blue-700 hover:text-blue-800"
+                        className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-brand-300 hover:text-brand-300"
                       >
                         <FiPlus className="h-4 w-4" />
                         Add another book to bundle
@@ -695,18 +695,18 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                     ) : null}
                   </div>
 
-                  <div className="sm:col-span-2 rounded-xl border border-slate-200 bg-white p-4">
-                    <p className="text-sm font-medium text-slate-800">Cover image for this plan (optional)</p>
+                  <div className="sm:col-span-2 rounded-xl border border-line bg-ink-850 p-4">
+                    <p className="text-sm font-medium text-fg">Cover image for this plan (optional)</p>
                     <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start">
                       <div className="shrink-0">
                         {opt.thumbnail ? (
                           <img
                             src={opt.thumbnail}
                             alt=""
-                            className="h-24 w-20 rounded-lg object-contain bg-slate-50 ring-1 ring-slate-200"
+                            className="h-24 w-20 rounded-lg object-contain bg-ink-900 ring-1 ring-line"
                           />
                         ) : (
-                          <div className="flex h-24 w-20 items-center justify-center rounded-lg bg-slate-100 text-slate-400 ring-1 ring-slate-200">
+                          <div className="flex h-24 w-20 items-center justify-center rounded-lg bg-ink-800 text-fg-subtle ring-1 ring-line">
                             <FiImage className="h-6 w-6" aria-hidden />
                           </div>
                         )}
@@ -728,7 +728,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                           type="button"
                           disabled={uploadingOptionIndex === index}
                           onClick={() => optionFileRefs.current[index]?.click()}
-                          className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                          className="rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-ink-900 disabled:opacity-60"
                         >
                           {uploadingOptionIndex === index ? 'Uploading…' : 'Upload cover'}
                         </button>
@@ -736,7 +736,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                           <button
                             type="button"
                             onClick={() => updateOption(index, { thumbnail: '' })}
-                            className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600"
+                            className="rounded-xl border border-line px-3 py-2 text-xs font-semibold text-fg-muted"
                           >
                             Remove
                           </button>
@@ -811,12 +811,12 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                     />
                   </div>
                   <div className="sm:col-span-2">
-                    <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                    <label className="inline-flex items-center gap-2 text-sm text-fg-muted">
                       <input
                         type="checkbox"
                         checked={Boolean(opt.highlighted)}
                         onChange={(e) => updateOption(index, { highlighted: e.target.checked })}
-                        className="h-4 w-4 rounded border-slate-300"
+                        className="h-4 w-4 rounded border-line"
                       />
                       Highlight as best value
                     </label>
@@ -830,7 +830,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
             <button
               type="button"
               onClick={addSingleOption}
-              className="inline-flex items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+              className="inline-flex items-center gap-1 rounded-xl border border-line bg-ink-850 px-3 py-2 text-xs font-semibold text-fg-muted hover:bg-ink-900"
             >
               <FiPlus className="h-4 w-4" />
               Add single book plan
@@ -838,7 +838,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
             <button
               type="button"
               onClick={addBundleOption}
-              className="inline-flex items-center gap-1 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-semibold text-amber-900 hover:bg-amber-100"
+              className="inline-flex items-center gap-1 rounded-xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs font-semibold text-warn hover:bg-warn/10"
             >
               <FiPlus className="h-4 w-4" />
               Add bundle plan
@@ -846,7 +846,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
             <button
               type="button"
               onClick={seedThreeTierTemplate}
-              className="inline-flex items-center gap-1 rounded-xl border border-[#0c2340]/20 bg-[#0c2340] px-3 py-2 text-xs font-semibold text-white hover:bg-[#0a1c33]"
+              className="inline-flex items-center gap-1 rounded-xl border border-line-strong bg-ink-800 px-3 py-2 text-xs font-semibold text-white hover:bg-ink-800"
             >
               Use 3-tier layout
             </button>
@@ -854,7 +854,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
         </>
       ) : null}
 
-      {error ? <p className="text-sm text-rose-600">{error}</p> : null}
+      {error ? <p className="text-sm text-down">{error}</p> : null}
     </div>
   );
 });

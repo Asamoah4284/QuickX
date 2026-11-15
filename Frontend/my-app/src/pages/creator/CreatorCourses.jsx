@@ -44,7 +44,7 @@ function CourseThumb({ url }) {
   const [failed, setFailed] = useState(false);
   if (!url || failed) {
     return (
-      <div className="flex h-full w-full items-center justify-center bg-slate-100 text-[10px] font-medium text-slate-400">
+      <div className="flex h-full w-full items-center justify-center bg-ink-800 text-[10px] font-medium text-fg-subtle">
         No image
       </div>
     );
@@ -90,7 +90,7 @@ function CourseRowActions({ course, navigate, runAction }) {
       <button
         type="button"
         onClick={() => navigate(`/creator/dashboard/courses/${course._id}/edit`)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-xs font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-ink-850 px-2.5 py-1.5 text-xs font-semibold text-fg transition hover:border-line hover:bg-ink-900"
       >
         <FiEdit3 className="h-3.5 w-3.5 shrink-0" aria-hidden />
         Edit
@@ -98,7 +98,7 @@ function CourseRowActions({ course, navigate, runAction }) {
       <button
         type="button"
         onClick={() => navigate(`/courses/${course._id}`)}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
+        className="inline-flex items-center gap-1.5 rounded-lg border border-transparent px-2.5 py-1.5 text-xs font-semibold text-fg-muted transition hover:bg-ink-800"
       >
         <FiEye className="h-3.5 w-3.5 shrink-0" aria-hidden />
         Preview
@@ -110,7 +110,7 @@ function CourseRowActions({ course, navigate, runAction }) {
           aria-expanded={menuOpen}
           aria-haspopup="menu"
           onClick={() => setMenuOpen((open) => !open)}
-          className="flex items-center justify-center rounded-lg border border-slate-200 bg-white p-1.5 text-slate-600 transition hover:bg-slate-50"
+          className="flex items-center justify-center rounded-lg border border-line bg-ink-850 p-1.5 text-fg-muted transition hover:bg-ink-900"
         >
           <FiMoreHorizontal className="h-4 w-4" aria-hidden />
           <span className="sr-only">More actions</span>
@@ -119,22 +119,22 @@ function CourseRowActions({ course, navigate, runAction }) {
         {menuOpen ? (
           <div
             role="menu"
-            className="absolute bottom-full right-0 z-50 mb-1.5 w-52 overflow-hidden rounded-xl border border-slate-200 bg-white py-1 shadow-lg ring-1 ring-slate-900/5 md:bottom-auto md:top-full md:mb-0 md:mt-1"
+            className="absolute bottom-full right-0 z-50 mb-1.5 w-52 overflow-hidden rounded-xl border border-line bg-ink-850 py-1 shadow-lg ring-1 ring-line md:bottom-auto md:top-full md:mb-0 md:mt-1"
           >
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-fg-muted hover:bg-ink-900"
               onClick={() => closeAndRun('duplicate')}
             >
-              <FiCopy className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+              <FiCopy className="h-4 w-4 shrink-0 text-fg-subtle" aria-hidden />
               Duplicate
             </button>
             {['draft', 'rejected', 'published'].includes(course.listingStatus) ? (
               <button
                 type="button"
                 role="menuitem"
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-emerald-700 hover:bg-emerald-50"
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-up hover:bg-up/10"
                 onClick={() => closeAndRun('submit')}
               >
                 <FiSend className="h-4 w-4 shrink-0" aria-hidden />
@@ -145,7 +145,7 @@ function CourseRowActions({ course, navigate, runAction }) {
               <button
                 type="button"
                 role="menuitem"
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-amber-800 hover:bg-amber-50"
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-warn hover:bg-warn/10"
                 onClick={() => closeAndRun('unpublish')}
               >
                 <FiToggleLeft className="h-4 w-4 shrink-0" aria-hidden />
@@ -155,17 +155,17 @@ function CourseRowActions({ course, navigate, runAction }) {
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-fg-muted hover:bg-ink-900"
               onClick={() => closeAndRun('archive')}
             >
-              <FiArchive className="h-4 w-4 shrink-0 text-slate-400" aria-hidden />
+              <FiArchive className="h-4 w-4 shrink-0 text-fg-subtle" aria-hidden />
               Archive
             </button>
-            <div className="my-1 border-t border-slate-100" />
+            <div className="my-1 border-t border-line" />
             <button
               type="button"
               role="menuitem"
-              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50"
+              className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-down hover:bg-down/10"
               onClick={() => {
                 setMenuOpen(false);
                 if (window.confirm('Delete this course permanently? This cannot be undone.')) {
@@ -260,17 +260,17 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
 
   return (
     <div className="space-y-4 sm:space-y-6">
-      <div className="rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-3xl sm:p-6">
+      <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
           <div className="min-w-0">
-            <h2 className="text-xl font-semibold tracking-tight text-slate-950 sm:text-2xl">{pageTitle}</h2>
-            <p className="mt-1 text-xs leading-relaxed text-slate-500 sm:text-sm">
+            <h2 className="text-xl font-semibold tracking-tight text-fg sm:text-2xl">{pageTitle}</h2>
+            <p className="mt-1 text-xs leading-relaxed text-fg-subtle sm:text-sm">
               Manage drafts, live courses, moderation states, pricing, and revisions from one place.
             </p>
           </div>
           <Link
             to="/creator/dashboard/courses/new"
-            className="inline-flex w-full shrink-0 items-center justify-center rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 sm:w-auto"
+            className="inline-flex w-full shrink-0 items-center justify-center rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink-800 sm:w-auto"
           >
             Create course
           </Link>
@@ -284,8 +284,8 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
               onClick={() => setActiveFilter(option)}
               className={`shrink-0 snap-start rounded-full px-3 py-1.5 text-xs font-medium capitalize transition sm:px-4 sm:py-2 sm:text-sm ${
                 activeFilter === option
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  ? 'bg-brand-600 text-white'
+                  : 'bg-ink-800 text-fg-muted hover:bg-ink-700'
               }`}
             >
               {option.replace('_', ' ')}
@@ -294,18 +294,18 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
         </div>
 
         {message ? (
-          <div className="mt-4 rounded-2xl bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{message}</div>
+          <div className="mt-4 rounded-2xl bg-up/10 px-4 py-3 text-sm text-up">{message}</div>
         ) : null}
         {error ? (
-          <div className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+          <div className="mt-4 rounded-2xl bg-down/10 px-4 py-3 text-sm text-down">{error}</div>
         ) : null}
       </div>
 
-      <div className="rounded-2xl border border-slate-200/80 bg-white sm:rounded-3xl md:overflow-hidden">
+      <div className="rounded-2xl border border-line bg-ink-850 sm:rounded-3xl md:overflow-hidden">
         {loading ? (
-          <div className="p-6 text-sm text-slate-500 sm:p-8">Loading courses…</div>
+          <div className="p-6 text-sm text-fg-subtle sm:p-8">Loading courses…</div>
         ) : courses.length === 0 ? (
-          <div className="m-4 rounded-2xl border border-dashed border-slate-200 p-8 text-center text-sm text-slate-500 sm:m-6 sm:p-10">
+          <div className="m-4 rounded-2xl border border-dashed border-line p-8 text-center text-sm text-fg-subtle sm:m-6 sm:p-10">
             No courses found for this filter.
           </div>
         ) : (
@@ -328,47 +328,47 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                 return (
                   <article
                     key={course._id}
-                    className="overflow-visible rounded-2xl border border-slate-200/90 bg-slate-50/40 p-3 sm:p-4"
+                    className="overflow-visible rounded-2xl border border-line bg-ink-900/40 p-3 sm:p-4"
                   >
                     <div className="flex gap-3">
-                      <div className="relative h-16 w-[4.75rem] shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100 sm:h-[4.5rem] sm:w-[5.25rem]">
+                      <div className="relative h-16 w-[4.75rem] shrink-0 overflow-hidden rounded-xl border border-line bg-ink-800 sm:h-[4.5rem] sm:w-[5.25rem]">
                         <CourseThumb url={thumb} />
                       </div>
                       <div className="min-w-0 flex-1">
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-2">
                           <div className="min-w-0">
-                            <p className="text-sm font-semibold leading-snug text-slate-900">{course.title}</p>
-                            <p className="mt-0.5 text-xs text-slate-500">{category}</p>
+                            <p className="text-sm font-semibold leading-snug text-fg">{course.title}</p>
+                            <p className="mt-0.5 text-xs text-fg-subtle">{category}</p>
                           </div>
                           <div className="shrink-0 self-start">
                             <StatusBadge status={course.listingStatus} />
                           </div>
                         </div>
 
-                        <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-slate-600 sm:grid-cols-3">
+                        <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs text-fg-muted sm:grid-cols-3">
                           <div>
-                            <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Students</dt>
-                            <dd className="tabular-nums font-medium text-slate-800">{students}</dd>
+                            <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Students</dt>
+                            <dd className="tabular-nums font-medium text-fg">{students}</dd>
                           </div>
                           <div>
-                            <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Price</dt>
-                            <dd className="font-medium text-slate-800">{priceLabel}</dd>
+                            <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Price</dt>
+                            <dd className="font-medium text-fg">{priceLabel}</dd>
                           </div>
                           <div className="col-span-2 sm:col-span-1">
-                            <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Updated</dt>
-                            <dd className="text-slate-700">{updated}</dd>
+                            <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Updated</dt>
+                            <dd className="text-fg-muted">{updated}</dd>
                           </div>
                           <div>
-                            <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Revenue</dt>
+                            <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Revenue</dt>
                             <dd className="tabular-nums">GH₵{revenue}</dd>
                           </div>
                           <div>
-                            <dt className="text-[10px] font-medium uppercase tracking-wide text-slate-400">Rating</dt>
+                            <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Rating</dt>
                             <dd className="tabular-nums">{rating || '—'}</dd>
                           </div>
                         </dl>
 
-                        <div className="mt-3 border-t border-slate-200/80 pt-3">
+                        <div className="mt-3 border-t border-line pt-3">
                           <CourseRowActions course={course} navigate={navigate} runAction={runAction} />
                         </div>
                       </div>
@@ -382,7 +382,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
             <div className="hidden overflow-x-auto md:block">
               <table className="min-w-[920px] w-full text-left text-sm">
                 <thead>
-                  <tr className="border-b border-slate-200 bg-slate-50/90 text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+                  <tr className="border-b border-line bg-ink-900/90 text-[11px] font-semibold uppercase tracking-wider text-fg-subtle">
                     <th className="px-4 py-3 pl-5">Course</th>
                     <th className="px-3 py-3">Status</th>
                     <th className="px-3 py-3 text-right">Students</th>
@@ -393,7 +393,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                     <th className="px-4 py-3 pr-5 text-right">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-line">
                   {courses.map((course) => {
                     const thumb = courseThumbnailUrl(course);
                     const students = course.totalEnrollments ?? course.totalStudents ?? 0;
@@ -402,17 +402,17 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                     const rating = course.averageRating ?? 0;
 
                     return (
-                      <tr key={course._id} className="group transition-colors hover:bg-slate-50/80">
+                      <tr key={course._id} className="group transition-colors hover:bg-ink-900/80">
                         <td className="py-4 pl-5 pr-2">
                           <div className="flex max-w-md items-start gap-3">
-                            <div className="relative h-14 w-[5.5rem] shrink-0 overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
+                            <div className="relative h-14 w-[5.5rem] shrink-0 overflow-hidden rounded-xl border border-line bg-ink-800">
                               <CourseThumb url={thumb} />
                             </div>
                             <div className="min-w-0 pt-0.5">
-                              <p className="line-clamp-2 font-semibold leading-snug text-slate-900">
+                              <p className="line-clamp-2 font-semibold leading-snug text-fg">
                                 {course.title}
                               </p>
-                              <p className="mt-0.5 text-xs text-slate-500">
+                              <p className="mt-0.5 text-xs text-fg-subtle">
                                 {course.category || course.courseType || 'Course'}
                               </p>
                             </div>
@@ -421,17 +421,17 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                         <td className="px-3 py-4 align-middle">
                           <StatusBadge status={course.listingStatus} />
                         </td>
-                        <td className="px-3 py-4 text-right tabular-nums text-slate-700">{students}</td>
-                        <td className="px-3 py-4 text-right font-medium tabular-nums text-slate-800">
+                        <td className="px-3 py-4 text-right tabular-nums text-fg-muted">{students}</td>
+                        <td className="px-3 py-4 text-right font-medium tabular-nums text-fg">
                           {priceLabel}
                         </td>
-                        <td className="hidden lg:table-cell px-3 py-4 text-right tabular-nums text-slate-600">
+                        <td className="hidden lg:table-cell px-3 py-4 text-right tabular-nums text-fg-muted">
                           {rating}
                         </td>
-                        <td className="hidden md:table-cell px-3 py-4 text-right tabular-nums text-slate-600">
+                        <td className="hidden md:table-cell px-3 py-4 text-right tabular-nums text-fg-muted">
                           GH₵{revenue}
                         </td>
-                        <td className="px-3 py-4 whitespace-nowrap text-slate-600">
+                        <td className="px-3 py-4 whitespace-nowrap text-fg-muted">
                           {new Date(course.updatedAt).toLocaleDateString(undefined, {
                             month: 'short',
                             day: 'numeric',

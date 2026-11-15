@@ -89,10 +89,10 @@ function listToText(value) {
 
 function StudioPanel({ title, description, children }) {
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 sm:rounded-[28px] sm:p-6">
+    <section className="rounded-2xl border border-line bg-ink-850 p-5 sm:rounded-[28px] sm:p-6">
       <div>
-        <h3 className="text-lg font-semibold text-slate-950">{title}</h3>
-        {description ? <p className="mt-1 text-sm text-slate-500">{description}</p> : null}
+        <h3 className="text-lg font-semibold text-fg">{title}</h3>
+        {description ? <p className="mt-1 text-sm text-fg-subtle">{description}</p> : null}
       </div>
       <div className="mt-4 sm:mt-5">{children}</div>
     </section>
@@ -101,20 +101,20 @@ function StudioPanel({ title, description, children }) {
 
 function ChecklistRow({ done, label }) {
   return (
-    <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3">
+    <div className="flex items-center gap-3 rounded-2xl border border-line bg-ink-850 px-4 py-3">
       <div
         className={`flex h-6 w-6 items-center justify-center rounded-full ${
-          done ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400'
+          done ? 'bg-up/10 text-up' : 'bg-ink-800 text-fg-subtle'
         }`}
       >
         <FiCheckCircle className="h-4 w-4" />
       </div>
-      <p className={`text-sm font-medium ${done ? 'text-slate-950' : 'text-slate-700'}`}>{label}</p>
+      <p className={`text-sm font-medium ${done ? 'text-fg' : 'text-fg-muted'}`}>{label}</p>
     </div>
   );
 }
 
-const inputCls = 'w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm';
+const inputCls = 'w-full rounded-2xl border border-line px-4 py-3 text-sm';
 
 export default function CreatorCourseWizard() {
   const { courseId } = useParams();
@@ -401,9 +401,9 @@ export default function CreatorCourseWizard() {
       <div className="space-y-6">
         <StudioPanel title="Course details" description="Only a title is required to save. Everything else helps students find and trust your course.">
           <div className="grid gap-4 md:grid-cols-2">
-            <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
+            <label className="space-y-2 text-sm text-fg-muted md:col-span-2">
               <span>
-                Title <span className="text-rose-500">*</span>
+                Title <span className="text-down">*</span>
               </span>
               <input
                 value={form.title}
@@ -413,7 +413,7 @@ export default function CreatorCourseWizard() {
               />
             </label>
 
-            <label className="space-y-2 text-sm text-slate-600">
+            <label className="space-y-2 text-sm text-fg-muted">
               <span>Track</span>
               <select
                 value={form.courseType}
@@ -432,7 +432,7 @@ export default function CreatorCourseWizard() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-slate-600">
+            <label className="space-y-2 text-sm text-fg-muted">
               <span>Level</span>
               <select
                 value={form.level}
@@ -445,7 +445,7 @@ export default function CreatorCourseWizard() {
               </select>
             </label>
 
-            <label className="space-y-2 text-sm text-slate-600 md:col-span-2">
+            <label className="space-y-2 text-sm text-fg-muted md:col-span-2">
               <span>Description</span>
               <textarea
                 value={form.description}
@@ -461,15 +461,15 @@ export default function CreatorCourseWizard() {
         </StudioPanel>
 
         <StudioPanel title="Cover image" description="Optional, but helps your course stand out.">
-          <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center">
+          <label className="flex cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-line bg-ink-900 px-4 py-10 text-center">
             <input
               type="file"
               className="hidden"
               accept="image/*"
               onChange={(event) => handleUpload(event.target.files?.[0])}
             />
-            <FiUploadCloud className="h-6 w-6 text-slate-400" />
-            <span className="mt-3 font-medium text-slate-700">
+            <FiUploadCloud className="h-6 w-6 text-fg-subtle" />
+            <span className="mt-3 font-medium text-fg-muted">
               {uploadProgress.thumbnail > 0
                 ? `Uploading ${uploadProgress.thumbnail}%`
                 : form.thumbnail
@@ -487,7 +487,7 @@ export default function CreatorCourseWizard() {
                 onError={() => setThumbnailPreviewFailed(true)}
               />
               {thumbnailPreviewFailed ? (
-                <p className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+                <p className="rounded-2xl border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
                   Uploaded, but the preview URL may be private in S3.
                 </p>
               ) : null}
@@ -499,7 +499,7 @@ export default function CreatorCourseWizard() {
           <button
             type="button"
             onClick={() => setShowMoreDetails((open) => !open)}
-            className="text-sm font-semibold text-[#1B5EF5] hover:underline"
+            className="text-sm font-semibold text-brand-400 hover:underline"
           >
             {showMoreDetails ? 'Hide optional details' : 'Add optional details'}
           </button>
@@ -508,7 +508,7 @@ export default function CreatorCourseWizard() {
             <div className="mt-4 space-y-6">
               <StudioPanel title="Optional extras" description="Skip these if you want — you can add them later.">
                 <div className="grid gap-4">
-                  <label className="space-y-2 text-sm text-slate-600">
+                  <label className="space-y-2 text-sm text-fg-muted">
                     <span>Subtitle</span>
                     <input
                       value={form.subtitle}
@@ -519,7 +519,7 @@ export default function CreatorCourseWizard() {
                       className={inputCls}
                     />
                   </label>
-                  <label className="space-y-2 text-sm text-slate-600">
+                  <label className="space-y-2 text-sm text-fg-muted">
                     <span>Short description (cards &amp; search)</span>
                     <textarea
                       value={form.shortDescription}
@@ -532,7 +532,7 @@ export default function CreatorCourseWizard() {
                       className={inputCls}
                     />
                   </label>
-                  <label className="space-y-2 text-sm text-slate-600">
+                  <label className="space-y-2 text-sm text-fg-muted">
                     <span>What students will learn (one per line)</span>
                     <textarea
                       value={form.learningOutcomes}
@@ -550,8 +550,8 @@ export default function CreatorCourseWizard() {
           ) : null}
         </div>
 
-        <p className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          Next you&apos;ll set <span className="font-semibold text-slate-800">Basic / Premium / Diamond</span>{' '}
+        <p className="rounded-2xl border border-line bg-ink-900 px-4 py-3 text-sm text-fg-muted">
+          Next you&apos;ll set <span className="font-semibold text-fg">Basic / Premium / Diamond</span>{' '}
           subscription prices for access to your courses.
         </p>
       </div>
@@ -564,7 +564,7 @@ export default function CreatorCourseWizard() {
           description="Set prices for Basic, Premium, and Diamond. Each plan unlocks different features."
         >
           <div className="grid gap-4 sm:grid-cols-3">
-            <label className="space-y-2 text-sm text-slate-600">
+            <label className="space-y-2 text-sm text-fg-muted">
               <span>Basic — 1 month · videos only (GHS)</span>
               <input
                 type="number"
@@ -576,7 +576,7 @@ export default function CreatorCourseWizard() {
                 className={inputCls}
               />
             </label>
-            <label className="space-y-2 text-sm text-slate-600">
+            <label className="space-y-2 text-sm text-fg-muted">
               <span>Premium — 3 months · community, offline, signals (GHS)</span>
               <input
                 type="number"
@@ -588,7 +588,7 @@ export default function CreatorCourseWizard() {
                 className={inputCls}
               />
             </label>
-            <label className="space-y-2 text-sm text-slate-600">
+            <label className="space-y-2 text-sm text-fg-muted">
               <span>Diamond — 1 year · mentorship (GHS)</span>
               <input
                 type="number"
@@ -602,37 +602,37 @@ export default function CreatorCourseWizard() {
             </label>
           </div>
 
-          <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4">
-            <p className="text-sm font-medium text-slate-700">Student preview</p>
+          <div className="mt-5 rounded-2xl border border-line bg-ink-900 px-4 py-4">
+            <p className="text-sm font-medium text-fg-muted">Student preview</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-3">
               {[
                 { label: 'Basic', value: subscriptionPricing.basic, note: 'Videos only · 1 mo' },
                 { label: 'Premium', value: subscriptionPricing.premium, note: 'Full access · 3 mo' },
                 { label: 'Diamond', value: subscriptionPricing.diamond, note: 'Mentorship · 1 yr' },
               ].map((item) => (
-                <div key={item.label} className="rounded-2xl bg-white px-4 py-3 ring-1 ring-slate-200">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div key={item.label} className="rounded-2xl bg-ink-850 px-4 py-3 ring-1 ring-line">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
                     {item.label}
                   </p>
-                  <p className="mt-2 text-xl font-semibold text-slate-950">
+                  <p className="mt-2 text-xl font-semibold text-fg">
                     GH₵
                     {Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
                   </p>
-                  <p className="mt-1 text-xs text-slate-500">{item.note}</p>
+                  <p className="mt-1 text-xs text-fg-subtle">{item.note}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-fg-subtle">
               Saved to your creator profile and used at checkout and on your public page.
             </p>
             <button
               type="button"
               onClick={() => saveSubscriptionPricing(false)}
               disabled={subscriptionPricingSaving}
-              className="rounded-xl bg-[#1B5EF5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#1552D6] disabled:opacity-60"
+              className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-60"
             >
               {subscriptionPricingSaving ? 'Saving…' : 'Save prices'}
             </button>
@@ -643,7 +643,7 @@ export default function CreatorCourseWizard() {
   } else if (currentStep === 3) {
     stepContent = (
       <div className="space-y-4">
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-fg-subtle">
           Add modules and lessons. You can start with one video and expand later.
         </p>
         <CurriculumBuilder
@@ -668,23 +668,23 @@ export default function CreatorCourseWizard() {
 
             <div className="flex flex-wrap items-center gap-3">
               <StatusBadge status={courseStatus} />
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              <span className="rounded-full bg-ink-800 px-3 py-1 text-xs font-medium text-fg-muted">
                 {lessonCount} lessons
               </span>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              <span className="rounded-full bg-ink-800 px-3 py-1 text-xs font-medium text-fg-muted">
                 {form.level}
               </span>
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+              <span className="rounded-full bg-ink-800 px-3 py-1 text-xs font-medium text-fg-muted">
                 {form.courseType}
               </span>
             </div>
 
             <div>
-              <h3 className="text-2xl font-semibold text-slate-950">{form.title || 'Untitled course'}</h3>
-              {form.subtitle ? <p className="mt-1 text-slate-500">{form.subtitle}</p> : null}
+              <h3 className="text-2xl font-semibold text-fg">{form.title || 'Untitled course'}</h3>
+              {form.subtitle ? <p className="mt-1 text-fg-subtle">{form.subtitle}</p> : null}
             </div>
 
-            <p className="text-sm leading-7 text-slate-600">
+            <p className="text-sm leading-7 text-fg-muted">
               {form.description || 'No description yet.'}
             </p>
 
@@ -694,9 +694,9 @@ export default function CreatorCourseWizard() {
                 { label: 'Premium', value: subscriptionPricing.premium },
                 { label: 'Diamond', value: subscriptionPricing.diamond },
               ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-slate-200 p-4">
-                  <p className="text-sm text-slate-500">{item.label} access</p>
-                  <p className="mt-2 text-xl font-semibold text-slate-950">
+                <div key={item.label} className="rounded-2xl border border-line p-4">
+                  <p className="text-sm text-fg-subtle">{item.label} access</p>
+                  <p className="mt-2 text-xl font-semibold text-fg">
                     GH₵{Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
                   </p>
                 </div>
@@ -710,7 +710,7 @@ export default function CreatorCourseWizard() {
             <button
               type="button"
               onClick={() => saveDraft(false)}
-              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700"
+              className="rounded-2xl border border-line px-4 py-3 text-sm font-medium text-fg-muted"
             >
               Save as draft
             </button>
@@ -718,7 +718,7 @@ export default function CreatorCourseWizard() {
               type="button"
               onClick={() => submitForReview('submit')}
               disabled={submitting || !form.title.trim()}
-              className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
             >
               {submitting ? 'Processing…' : 'Submit for review'}
             </button>
@@ -727,7 +727,7 @@ export default function CreatorCourseWizard() {
                 type="button"
                 onClick={() => submitForReview('publish')}
                 disabled={submitting || !form.title.trim()}
-                className="rounded-2xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1552D6] disabled:opacity-50"
+                className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
               >
                 Publish now
               </button>
@@ -740,7 +740,7 @@ export default function CreatorCourseWizard() {
 
   if (loading) {
     return (
-      <div className="rounded-3xl border border-slate-200/80 bg-white p-8 text-sm text-slate-500">
+      <div className="rounded-3xl border border-line bg-ink-850 p-8 text-sm text-fg-subtle">
         Loading course studio…
       </div>
     );
@@ -748,16 +748,16 @@ export default function CreatorCourseWizard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-[#1B5EF5] p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
+      <div className="rounded-2xl bg-brand-600 p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-blue-100/90">
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand-300">
               Course studio
             </p>
             <h2 className="mt-3 text-2xl font-semibold sm:text-3xl">
               {activeCourseId ? 'Edit course' : 'Create a course'}
             </h2>
-            <p className="mt-2 text-sm text-blue-100/85">
+            <p className="mt-2 text-sm text-brand-300">
               Basics, pricing, curriculum, then publish.
             </p>
           </div>
@@ -775,7 +775,7 @@ export default function CreatorCourseWizard() {
             <button
               type="button"
               onClick={() => saveDraft(false)}
-              className="rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#1B5EF5] hover:bg-blue-50"
+              className="rounded-2xl bg-ink-850 px-4 py-3 text-sm font-semibold text-brand-400 hover:bg-brand-500/10"
             >
               {saving ? 'Saving…' : 'Save draft'}
             </button>
@@ -783,12 +783,12 @@ export default function CreatorCourseWizard() {
         </div>
 
         {message ? (
-          <div className="mt-5 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 px-4 py-3 text-sm text-emerald-200">
+          <div className="mt-5 rounded-2xl border border-up bg-emerald-500/10 px-4 py-3 text-sm text-up">
             {message}
           </div>
         ) : null}
         {error ? (
-          <div className="mt-5 rounded-2xl border border-rose-400/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+          <div className="mt-5 rounded-2xl border border-down bg-rose-500/10 px-4 py-3 text-sm text-down">
             {error}
           </div>
         ) : null}
@@ -797,29 +797,29 @@ export default function CreatorCourseWizard() {
       <WizardStepper steps={steps} currentStep={currentStep} onStepSelect={setCurrentStep} />
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
-        <div className="min-w-0 overflow-hidden rounded-2xl border border-slate-200/80 bg-white p-4 sm:rounded-[32px] sm:p-6 md:p-8">
-          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-5">
+        <div className="min-w-0 overflow-hidden rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-[32px] sm:p-6 md:p-8">
+          <div className="mb-6 flex flex-wrap items-center justify-between gap-3 border-b border-line pb-5">
             <div>
-              <p className="text-sm font-medium text-slate-500">
+              <p className="text-sm font-medium text-fg-subtle">
                 Step {currentStep} of {steps.length}
               </p>
-              <h3 className="mt-1 text-lg font-semibold text-slate-950 sm:text-xl">
+              <h3 className="mt-1 text-lg font-semibold text-fg sm:text-xl">
                 {currentStepMeta.label}
               </h3>
             </div>
-            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
+            <div className="rounded-full bg-ink-800 px-3 py-1 text-xs font-medium text-fg-muted">
               {currentStepMeta.description}
             </div>
           </div>
 
           {stepContent}
 
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-6">
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-6">
             <button
               type="button"
               onClick={() => setCurrentStep((step) => Math.max(step - 1, 1))}
               disabled={currentStep === 1}
-              className="rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 disabled:opacity-40"
+              className="rounded-2xl border border-line px-4 py-3 text-sm font-medium text-fg-muted disabled:opacity-40"
             >
               Back
             </button>
@@ -834,7 +834,7 @@ export default function CreatorCourseWizard() {
                     }
                     setCurrentStep((step) => Math.min(step + 1, steps.length));
                   }}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#1B5EF5] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1552D6]"
+                  className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600"
                 >
                   Continue
                   <FiChevronRight className="h-4 w-4" />
@@ -844,7 +844,7 @@ export default function CreatorCourseWizard() {
                   type="button"
                   onClick={() => submitForReview('submit')}
                   disabled={submitting || !form.title.trim()}
-                  className="rounded-2xl bg-slate-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                  className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
                 >
                   {submitting ? 'Processing…' : 'Submit for review'}
                 </button>

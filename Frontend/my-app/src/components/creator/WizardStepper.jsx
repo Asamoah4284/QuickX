@@ -2,7 +2,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
   const isClickable = typeof onStepSelect === 'function';
 
   return (
-    <nav aria-label="Wizard progress" className="rounded-2xl border border-slate-200/80 bg-white px-3 py-4 sm:px-6 sm:py-5">
+    <nav aria-label="Wizard progress" className="rounded-2xl border border-line bg-ink-850 px-3 py-4 sm:px-6 sm:py-5">
       <ol className="flex w-full items-start">
         {steps.map((step, index) => {
           const stepNumber = index + 1;
@@ -14,10 +14,10 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
             <span
               className={`relative z-[1] flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold transition sm:h-9 sm:w-9 sm:text-sm ${
                 completed
-                  ? 'bg-[#1B5EF5] text-white'
+                  ? 'bg-brand-600 text-white'
                   : active
-                    ? 'bg-[#0B1F44] text-white shadow-sm ring-4 ring-[#1B5EF5]/15'
-                    : 'bg-slate-100 text-slate-400 ring-1 ring-slate-200'
+                    ? 'bg-ink-800 text-white shadow-sm ring-4 ring-brand-500/15'
+                    : 'bg-ink-800 text-fg-subtle ring-1 ring-line'
               }`}
             >
               {completed ? (
@@ -38,7 +38,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
             <span className="mt-2.5 block min-w-0 text-center">
               <span
                 className={`block text-[11px] font-semibold leading-tight sm:text-sm ${
-                  active ? 'text-[#0B1F44]' : completed ? 'text-slate-800' : 'text-slate-400'
+                  active ? 'text-fg' : completed ? 'text-fg' : 'text-fg-subtle'
                 }`}
               >
                 {step.label}
@@ -46,7 +46,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
               {step.description ? (
                 <span
                   className={`mt-0.5 hidden text-[11px] leading-snug sm:block ${
-                    active ? 'text-slate-500' : 'text-slate-400'
+                    active ? 'text-fg-subtle' : 'text-fg-subtle'
                   }`}
                 >
                   {step.description}
@@ -61,7 +61,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
                 <span
                   aria-hidden
                   className={`absolute left-[calc(50%+1.125rem)] right-[calc(-50%+1.125rem)] top-4 h-0.5 sm:top-[1.125rem] ${
-                    completed ? 'bg-[#1B5EF5]' : 'bg-slate-200'
+                    completed ? 'bg-brand-600' : 'bg-ink-700'
                   }`}
                 />
               ) : null}
@@ -71,7 +71,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
                   type="button"
                   onClick={() => onStepSelect(stepNumber)}
                   aria-current={active ? 'step' : undefined}
-                  className="relative z-[1] flex w-full max-w-[9.5rem] flex-col items-center rounded-xl px-1 py-0.5 outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-[#1B5EF5]/40"
+                  className="relative z-[1] flex w-full max-w-[9.5rem] flex-col items-center rounded-xl px-1 py-0.5 outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-brand-500/40"
                 >
                   {circle}
                   {labelBlock}

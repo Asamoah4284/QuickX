@@ -93,12 +93,27 @@ body {
   outline-offset: 2px;
 }
 
-/* Pages not yet moved to the new design render on a light sheet so their
-   existing dark-on-white styles stay readable. */
+/* Screens that kept their original layout. Their colours were converted to the
+   tokens above; they supply their own top spacing, so the shell adds none. */
 .qx-legacy {
-  color-scheme: light;
-  background: #ffffff;
-  color: #0f172a;
+  background: var(--color-ink-950);
+  color: var(--color-fg);
+}
+
+/* Form controls in those screens were written for a white page. */
+.qx-legacy input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+.qx-legacy select,
+.qx-legacy textarea {
+  background-color: var(--color-ink-900);
+  color: var(--color-fg);
+  border-color: var(--color-line-strong);
+}
+.qx-legacy input::placeholder,
+.qx-legacy textarea::placeholder {
+  color: var(--color-fg-subtle);
+}
+.qx-legacy table thead {
+  background-color: var(--color-ink-800);
 }
 
 @layer utilities {

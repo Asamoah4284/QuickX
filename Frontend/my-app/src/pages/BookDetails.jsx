@@ -22,8 +22,8 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
   }
 
   return (
-    <section className="mt-20 border-t border-slate-100 pt-16 sm:mt-24 sm:pt-20 lg:mt-28 lg:pt-24" aria-labelledby="what-youll-learn-heading">
-      <h2 id="what-youll-learn-heading" className="text-center text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
+    <section className="mt-20 border-t border-line pt-16 sm:mt-24 sm:pt-20 lg:mt-28 lg:pt-24" aria-labelledby="what-youll-learn-heading">
+      <h2 id="what-youll-learn-heading" className="text-center text-2xl font-black tracking-tight text-fg sm:text-3xl lg:text-4xl">
         What you&apos;ll learn
       </h2>
 
@@ -31,21 +31,21 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
         {/* Stacked ?pages? preview (decorative) */}
         <div className="relative mx-auto w-full max-w-md justify-self-center lg:justify-self-start">
           <div
-            className="absolute left-3 top-6 hidden h-[min(100%,320px)] w-[88%] rotate-[-3deg] rounded-sm border border-slate-200/90 bg-white shadow-md sm:block"
+            className="absolute left-3 top-6 hidden h-[min(100%,320px)] w-[88%] rotate-[-3deg] rounded-sm border border-line bg-ink-850 shadow-md sm:block"
             aria-hidden
           />
           <div
-            className="absolute left-6 top-3 hidden h-[min(100%,320px)] w-[88%] rotate-[2deg] rounded-sm border border-slate-200/90 bg-white shadow-md sm:block"
+            className="absolute left-6 top-3 hidden h-[min(100%,320px)] w-[88%] rotate-[2deg] rounded-sm border border-line bg-ink-850 shadow-md sm:block"
             aria-hidden
           />
-          <div className="relative rounded-sm border border-slate-200 bg-white p-5 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] sm:p-7 sm:shadow-xl">
-            <p className="text-center text-lg font-bold uppercase tracking-[0.12em] text-[#c4122e] sm:text-xl">
+          <div className="relative rounded-sm border border-line bg-ink-850 p-5 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] sm:p-7 sm:shadow-xl">
+            <p className="text-center text-lg font-bold uppercase tracking-[0.12em] text-down sm:text-xl">
               After reading
             </p>
             {outcomeItems.length > 0 ? (
               <>
                 {outcomeItems.length > 1 ? (
-                  <div className="mt-5 columns-2 gap-x-4 text-xs leading-[1.65] text-slate-600 sm:text-sm sm:leading-[1.7]">
+                  <div className="mt-5 columns-2 gap-x-4 text-xs leading-[1.65] text-fg-muted sm:text-sm sm:leading-[1.7]">
                     {outcomeItems.slice(1).map((item) => (
                       <p key={item} className="break-inside-avoid">
                         {item}
@@ -53,12 +53,12 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
                     ))}
                   </div>
                 ) : null}
-                <div className="mt-5 rounded-lg border border-sky-100 bg-sky-50/90 px-3 py-3.5 text-xs leading-[1.65] text-slate-700 sm:text-sm sm:leading-[1.7]">
+                <div className="mt-5 rounded-lg border border-brand-400/30 bg-brand-500/10 px-3 py-3.5 text-xs leading-[1.65] text-fg-muted sm:text-sm sm:leading-[1.7]">
                   {outcomeItems[0]}
                 </div>
               </>
             ) : (
-              <p className="mt-5 text-center text-sm leading-[1.65] text-slate-500 sm:text-base sm:leading-relaxed">
+              <p className="mt-5 text-center text-sm leading-[1.65] text-fg-subtle sm:text-base sm:leading-relaxed">
                 After-reading outcomes will appear here once the author adds them.
               </p>
             )}
@@ -68,11 +68,11 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
         <div className="min-w-0 space-y-10 lg:space-y-12">
           {learnItems.length > 0 ? (
           <div>
-            <h3 className="text-lg font-black text-slate-950 sm:text-xl">What you&apos;ll learn</h3>
+            <h3 className="text-lg font-black text-fg sm:text-xl">What you&apos;ll learn</h3>
             <ul className="mt-5 space-y-3.5 sm:space-y-4">
               {learnItems.map((item) => (
-                <li key={item} className="flex gap-3 text-sm leading-relaxed text-slate-800 sm:text-base">
-                  <FiCheck className="mt-0.5 h-5 w-5 shrink-0 text-slate-900" strokeWidth={2.5} aria-hidden />
+                <li key={item} className="flex gap-3 text-sm leading-relaxed text-fg sm:text-base">
+                  <FiCheck className="mt-0.5 h-5 w-5 shrink-0 text-fg" strokeWidth={2.5} aria-hidden />
                   <span>{item}</span>
                 </li>
               ))}
@@ -103,7 +103,7 @@ function StarRating() {
   return (
     <div className="flex gap-0.5" aria-label="5 out of 5 stars">
       {Array.from({ length: 5 }, (_, i) => (
-        <FiStar key={i} className="h-4 w-4 fill-amber-400 text-amber-400" aria-hidden />
+        <FiStar key={i} className="h-4 w-4 fill-amber-400 text-warn" aria-hidden />
       ))}
     </div>
   );
@@ -132,7 +132,7 @@ function TestimonialImagePreview({ src, alt, onClose }) {
       aria-modal="true"
       aria-label={alt || 'Testimonial preview'}
       onClick={onClose}
-      className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/85 px-4 py-8 backdrop-blur-sm"
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-ink-950/85 px-4 py-8 backdrop-blur-sm"
     >
       <button
         type="button"
@@ -170,18 +170,18 @@ function BookTestimonialsSection({ testimonials = [] }) {
 
   return (
     <section
-      className="mt-12 rounded-3xl bg-slate-50/80 px-4 py-14 sm:mt-16 sm:px-8 sm:py-16 lg:mt-20 lg:py-20"
+      className="mt-12 rounded-3xl bg-ink-900/80 px-4 py-14 sm:mt-16 sm:px-8 sm:py-16 lg:mt-20 lg:py-20"
       aria-labelledby="book-testimonials-heading"
     >
       <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">Reader reviews</p>
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Reader reviews</p>
         <h2
           id="book-testimonials-heading"
-          className="mt-3 text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl"
+          className="mt-3 text-2xl font-black tracking-tight text-fg sm:text-3xl lg:text-4xl"
         >
           What readers say
         </h2>
-        <p className="mt-4 text-sm leading-relaxed text-slate-600 sm:text-base">
+        <p className="mt-4 text-sm leading-relaxed text-fg-muted sm:text-base">
           Real stories from Ghanaian traders who started where you are now.
         </p>
       </div>
@@ -190,7 +190,7 @@ function BookTestimonialsSection({ testimonials = [] }) {
         {testimonials.map((t, index) => (
           <li
             key={`${t.tagline}-${t.name}-${index}`}
-            className={`flex flex-col rounded-2xl border border-slate-200/60 bg-white p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-slate-900/[0.04] transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-8 ${
+            className={`flex flex-col rounded-2xl border border-line bg-ink-850 p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-line transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-8 ${
               index === testimonials.length - 1 && testimonials.length % 2 === 1
                 ? 'md:col-span-2 md:mx-auto md:max-w-3xl'
                 : ''
@@ -200,24 +200,24 @@ function BookTestimonialsSection({ testimonials = [] }) {
               <StarRating />
             </div>
             {t.tagline ? (
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-[#0c2340]/70">
+              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-fg-muted">
                 {t.tagline}
               </p>
             ) : null}
             <blockquote className="relative mt-4 flex-1">
               <span
-                className="pointer-events-none absolute -left-1 -top-3 font-serif text-5xl leading-none text-slate-200"
+                className="pointer-events-none absolute -left-1 -top-3 font-serif text-5xl leading-none text-fg-muted"
                 aria-hidden
               >
                 &ldquo;
               </span>
-              <p className="relative text-[15px] leading-[1.7] text-slate-700 sm:text-base sm:leading-[1.75]">
+              <p className="relative text-[15px] leading-[1.7] text-fg-muted sm:text-base sm:leading-[1.75]">
                 {t.quote}
               </p>
             </blockquote>
             {t.image ? (
               <div
-                className="mt-5 relative group overflow-hidden rounded-xl border border-slate-200/80 bg-slate-50/50 p-2 cursor-pointer flex items-center justify-center transition-all duration-300 hover:border-[#0c2340]/40 hover:bg-slate-50"
+                className="mt-5 relative group overflow-hidden rounded-xl border border-line bg-ink-900/50 p-2 cursor-pointer flex items-center justify-center transition-all duration-300 hover:border-line-strong hover:bg-ink-900"
                 onClick={() =>
                   openPreview(
                     t.image,
@@ -225,15 +225,15 @@ function BookTestimonialsSection({ testimonials = [] }) {
                   )
                 }
               >
-                <div className="relative w-full max-h-64 overflow-hidden rounded-lg bg-white shadow-sm flex items-center justify-center">
+                <div className="relative w-full max-h-64 overflow-hidden rounded-lg bg-ink-850 shadow-sm flex items-center justify-center">
                   <img
                     src={t.image}
                     alt={t.tagline || 'Reader testimonial'}
                     className="max-h-60 w-auto object-contain transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                   {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-slate-950/0 group-hover:bg-slate-950/20 transition-colors duration-300 flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-white/95 text-slate-900 text-xs font-semibold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
+                  <div className="absolute inset-0 bg-ink-950/0 group-hover:bg-ink-950/20 transition-colors duration-300 flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-ink-850/95 text-fg text-xs font-semibold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
                       <FiZoomIn className="h-3.5 w-3.5" />
                       Zoom proof image
                     </span>
@@ -242,18 +242,18 @@ function BookTestimonialsSection({ testimonials = [] }) {
               </div>
             ) : null}
             {(t.name || t.role) ? (
-            <footer className="mt-6 flex items-center gap-3 border-t border-slate-100 pt-5">
+            <footer className="mt-6 flex items-center gap-3 border-t border-line pt-5">
               {t.name ? (
                 <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-slate-800 to-slate-600 text-sm font-semibold text-white"
+                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ink-800 to-ink-600 text-sm font-semibold text-white"
                   aria-hidden
                 >
                   {readerInitials(t.name)}
                 </span>
               ) : null}
               <div className="min-w-0">
-                {t.name ? <p className="font-semibold text-slate-900">{t.name}</p> : null}
-                {t.role ? <p className="text-sm text-slate-500">{t.role}</p> : null}
+                {t.name ? <p className="font-semibold text-fg">{t.name}</p> : null}
+                {t.role ? <p className="text-sm text-fg-subtle">{t.role}</p> : null}
               </div>
             </footer>
             ) : null}
@@ -295,12 +295,12 @@ function HardcopyCtaButton({ onClick, variant = 'outline', className = '' }) {
         className={`overflow-hidden rounded-2xl border-2 ${
           isPrimary
             ? 'border-[#FF5A5F] bg-[#FF5A5F] shadow-lg shadow-rose-500/20'
-            : 'border-emerald-200 bg-white shadow-sm shadow-emerald-900/5'
+            : 'border-up/30 bg-ink-850 shadow-sm shadow-emerald-900/5'
         }`}
       >
         <div
           className={`flex items-center justify-center gap-2 px-4 py-2 text-center ${
-            isPrimary ? 'bg-white/15 text-white' : 'bg-emerald-50 text-emerald-800'
+            isPrimary ? 'bg-white/15 text-white' : 'bg-up/10 text-up'
           }`}
         >
           <FiTruck className="h-4 w-4 shrink-0" aria-hidden />
@@ -314,24 +314,24 @@ function HardcopyCtaButton({ onClick, variant = 'outline', className = '' }) {
           className={`flex w-full items-center justify-center gap-3 px-6 py-3.5 text-center transition ${
             isPrimary
               ? 'bg-[#FF5A5F] text-white hover:bg-[#E04E52]'
-              : 'bg-white hover:bg-emerald-50/60'
+              : 'bg-ink-850 hover:bg-up/10'
           }`}
         >
           <FiPackage
-            className={`h-5 w-5 shrink-0 ${isPrimary ? 'text-white' : 'text-emerald-700'}`}
+            className={`h-5 w-5 shrink-0 ${isPrimary ? 'text-white' : 'text-up'}`}
             aria-hidden
           />
           <span>
             <span
               className={`block text-sm font-semibold leading-snug ${
-                isPrimary ? 'text-white' : 'text-slate-800'
+                isPrimary ? 'text-white' : 'text-fg'
               }`}
             >
               Prefer Hard Copy?
             </span>
             <span
               className={`block text-sm leading-snug ${
-                isPrimary ? 'font-semibold text-white/95' : 'font-medium text-slate-600'
+                isPrimary ? 'font-semibold text-white/95' : 'font-medium text-fg-muted'
               }`}
             >
               Request Here
@@ -350,11 +350,11 @@ function SameAuthorBooksSection({ author, books = [] }) {
 
   return (
     <section
-      className="relative -mx-4 mt-12 overflow-hidden rounded-none bg-[#0c2340] py-8 sm:-mx-6 sm:mt-20 sm:rounded-[2rem] sm:py-14 lg:mx-0 lg:mt-24 lg:rounded-[2rem] lg:px-10 lg:py-16"
+      className="relative -mx-4 mt-12 overflow-hidden rounded-none bg-ink-800 py-8 sm:-mx-6 sm:mt-20 sm:rounded-[2rem] sm:py-14 lg:mx-0 lg:mt-24 lg:rounded-[2rem] lg:px-10 lg:py-16"
       aria-labelledby="same-author-heading"
     >
       <div
-        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sky-400/10 blur-3xl"
+        className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-brand-600/10 blur-3xl"
         aria-hidden
       />
       <div
@@ -374,7 +374,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
         <div className="px-4 sm:px-0">
           <div className="flex flex-col gap-3 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
             <div className="min-w-0">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-amber-400/90 sm:text-[11px] sm:tracking-[0.28em]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-warn sm:text-[11px] sm:tracking-[0.28em]">
                 Curated collection
               </p>
               <h2
@@ -384,13 +384,13 @@ function SameAuthorBooksSection({ author, books = [] }) {
                 More from {author}
               </h2>
             </div>
-            <p className="hidden max-w-md text-sm leading-relaxed text-slate-400 sm:block lg:text-right">
+            <p className="hidden max-w-md text-sm leading-relaxed text-fg-subtle sm:block lg:text-right">
               Hand-picked titles from the same author — expand your library with their full body of work.
             </p>
           </div>
 
           {hasMultiple ? (
-            <p className="mt-3 flex items-center gap-1.5 text-xs text-slate-500 sm:hidden">
+            <p className="mt-3 flex items-center gap-1.5 text-xs text-fg-subtle sm:hidden">
               Swipe to explore more
               <FiArrowRight className="h-3.5 w-3.5" aria-hidden />
             </p>
@@ -416,7 +416,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
                   to={`/store/${item._id}`}
                   className="group block h-full"
                 >
-                  <article className="relative flex h-full flex-row items-stretch gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm transition-all duration-500 sm:flex-col sm:rounded-2xl sm:p-6 sm:hover:border-amber-400/25 sm:hover:from-white/[0.11] sm:hover:to-white/[0.04] sm:hover:shadow-[0_28px_56px_-16px_rgba(0,0,0,0.55)]">
+                  <article className="relative flex h-full flex-row items-stretch gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm transition-all duration-500 sm:flex-col sm:rounded-2xl sm:p-6 sm:hover:border-warn sm:hover:from-white/[0.11] sm:hover:to-white/[0.04] sm:hover:shadow-[0_28px_56px_-16px_rgba(0,0,0,0.55)]">
                     <span
                       className="pointer-events-none absolute right-3 top-2 hidden select-none font-serif text-5xl font-light leading-none text-white/[0.07] sm:block"
                       aria-hidden
@@ -426,11 +426,11 @@ function SameAuthorBooksSection({ author, books = [] }) {
 
                     <div className="relative w-[5.5rem] shrink-0 self-center sm:mx-auto sm:w-[9.5rem]">
                       <div
-                        className="absolute inset-x-2 top-2 hidden aspect-[2/3] rounded-lg bg-white/[0.04] shadow-lg sm:block"
+                        className="absolute inset-x-2 top-2 hidden aspect-[2/3] rounded-lg bg-ink-850 shadow-lg sm:block"
                         aria-hidden
                       />
                       <div
-                        className="absolute inset-x-1 top-1 hidden aspect-[2/3] rounded-lg bg-white/[0.07] sm:block"
+                        className="absolute inset-x-1 top-1 hidden aspect-[2/3] rounded-lg bg-ink-850 sm:block"
                         aria-hidden
                       />
                       <div className="relative aspect-[2/3] overflow-hidden rounded-lg shadow-[0_12px_28px_-8px_rgba(0,0,0,0.55)] ring-1 ring-white/15 sm:shadow-[0_22px_44px_-10px_rgba(0,0,0,0.65)] sm:transition sm:duration-500 sm:ease-out sm:group-hover:-translate-y-2 sm:group-hover:rotate-[-2deg] sm:group-hover:shadow-[0_28px_50px_-8px_rgba(0,0,0,0.7)]">
@@ -443,13 +443,13 @@ function SameAuthorBooksSection({ author, books = [] }) {
                             e.target.src = DEFAULT_BOOK_COVER;
                           }}
                         />
-                        <div className="absolute inset-0 hidden bg-gradient-to-t from-[#0c2340]/80 via-transparent to-transparent opacity-0 sm:block sm:transition-opacity sm:duration-500 sm:group-hover:opacity-100" />
+                        <div className="absolute inset-0 hidden bg-gradient-to-t from-ink-800/80 via-transparent to-transparent opacity-0 sm:block sm:transition-opacity sm:duration-500 sm:group-hover:opacity-100" />
                       </div>
                       <span
                         className={`absolute -bottom-1.5 left-1/2 max-w-[calc(100%+0.5rem)] -translate-x-1/2 truncate rounded-full px-2 py-px text-[9px] font-bold uppercase tracking-wide shadow-md sm:-bottom-2 sm:px-2.5 sm:py-0.5 sm:text-[10px] sm:tracking-wider sm:shadow-lg ${
                           isEbook
-                            ? 'bg-indigo-500 text-white ring-2 ring-[#0c2340]'
-                            : 'bg-emerald-500 text-white ring-2 ring-[#0c2340]'
+                            ? 'bg-brand-600 text-white ring-2 ring-line-strong'
+                            : 'bg-emerald-500 text-white ring-2 ring-line-strong'
                         }`}
                       >
                         {isEbook ? 'Digital' : 'Print'}
@@ -462,17 +462,17 @@ function SameAuthorBooksSection({ author, books = [] }) {
                       </h3>
 
                       <div className="mt-2 flex flex-col items-start gap-0.5 sm:mt-4 sm:items-center sm:gap-1">
-                        <p className="text-lg font-black tracking-tight text-amber-400 sm:text-2xl">
+                        <p className="text-lg font-black tracking-tight text-warn sm:text-2xl">
                           {formatBookListingPrice(item)}
                         </p>
                         {hardcopyLabel ? (
-                          <p className="text-[10px] font-medium uppercase tracking-wide text-slate-500 sm:text-[11px]">
+                          <p className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle sm:text-[11px]">
                             Hardcopy {hardcopyLabel}
                           </p>
                         ) : null}
                       </div>
 
-                      <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white/75 sm:mt-auto sm:justify-center sm:pt-5 sm:text-sm sm:transition sm:group-hover:text-amber-300">
+                      <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white/75 sm:mt-auto sm:justify-center sm:pt-5 sm:text-sm sm:transition sm:group-hover:text-warn">
                         Explore this title
                         <FiArrowRight
                           className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:transition sm:duration-300 sm:group-hover:translate-x-1"
@@ -634,13 +634,13 @@ function BookDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-slate-900">
+    <div className="min-h-screen bg-ink-850 text-fg">
       <MetaPixelNoscript />
-      <header className="border-b border-slate-100/80">
+      <header className="border-b border-line">
         <div className="mx-auto flex max-w-6xl items-center px-4 py-5 sm:px-6 lg:px-8">
           <Link
             to="/store"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-900"
+            className="inline-flex items-center gap-2 text-sm font-medium text-fg-subtle transition-colors hover:text-fg"
           >
             <FiArrowLeft className="h-4 w-4" aria-hidden />
             Back to marketplace
@@ -650,28 +650,28 @@ function BookDetails() {
 
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10 lg:px-8 lg:pb-28 lg:pt-12">
         {loading ? (
-          <div className="flex min-h-[40vh] items-center justify-center text-slate-500">
+          <div className="flex min-h-[40vh] items-center justify-center text-fg-subtle">
             <div className="flex flex-col items-center gap-4">
-              <div className="h-10 w-10 animate-spin rounded-full border-2 border-slate-200 border-t-rose-500" />
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-line border-t-rose-500" />
               <p className="text-sm font-medium">Loading book?</p>
             </div>
           </div>
         ) : error ? (
-          <div className="mx-auto max-w-lg rounded-2xl border border-rose-100 bg-rose-50 px-6 py-8 text-center text-sm text-rose-800">
+          <div className="mx-auto max-w-lg rounded-2xl border border-down/30 bg-down/10 px-6 py-8 text-center text-sm text-down">
             <p className="font-semibold">We couldn&apos;t load this book</p>
-            <p className="mt-2 text-rose-700/90">{error}</p>
+            <p className="mt-2 text-down">{error}</p>
             <Link
               to="/store"
-              className="mt-6 inline-flex items-center justify-center rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800"
+              className="mt-6 inline-flex items-center justify-center rounded-xl bg-ink-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-800"
             >
               Browse marketplace
             </Link>
           </div>
         ) : !book ? (
-          <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-slate-50 px-6 py-8 text-center text-sm text-slate-600">
+          <div className="mx-auto max-w-lg rounded-2xl border border-line bg-ink-900 px-6 py-8 text-center text-sm text-fg-muted">
             Book not found.
             <div className="mt-4">
-              <Link to="/store" className="font-semibold text-slate-900 underline-offset-4 hover:underline">
+              <Link to="/store" className="font-semibold text-fg underline-offset-4 hover:underline">
                 Return to store
               </Link>
             </div>
@@ -681,33 +681,33 @@ function BookDetails() {
           <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
             <div className="order-1 flex min-w-0 flex-col gap-8 lg:order-1 lg:max-w-xl">
               <div className="space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">
                   About this book
                 </p>
                 <div className="space-y-2">
-                  <h1 className="text-pretty text-3xl font-bold leading-[1.12] tracking-tight text-slate-950 sm:text-4xl lg:text-[2.5rem]">
+                  <h1 className="text-pretty text-3xl font-bold leading-[1.12] tracking-tight text-fg sm:text-4xl lg:text-[2.5rem]">
                     {book.title}
                   </h1>
-                  <p className="text-base font-medium text-slate-500">By {book.author}</p>
+                  <p className="text-base font-medium text-fg-subtle">By {book.author}</p>
                   {book.type === 'ebook' && listingPriceInfo ? (
-                    <p className="text-lg font-black tracking-tight text-[#0c2340]">
+                    <p className="text-lg font-black tracking-tight text-fg">
                       {listingPriceInfo.showFromLabel ? 'From ' : ''}
                       {formatGhs(listingPriceInfo.displayPrice)}
                     </p>
                   ) : null}
                 </div>
-                <p className="text-pretty text-base leading-relaxed text-slate-600 line-clamp-5 sm:text-[1.05rem]">
+                <p className="text-pretty text-base leading-relaxed text-fg-muted line-clamp-5 sm:text-[1.05rem]">
                   {heroDescription(book)}
                 </p>
               </div>
 
               {heroOutcomePoints.length > 0 ? (
-                <div className="rounded-2xl border border-slate-100 bg-slate-50/80 px-5 py-5 sm:px-6">
-                  <p className="text-sm font-bold text-slate-900 sm:text-base">You will be able to</p>
+                <div className="rounded-2xl border border-line bg-ink-900/80 px-5 py-5 sm:px-6">
+                  <p className="text-sm font-bold text-fg sm:text-base">You will be able to</p>
                   <ul className="mt-4 space-y-3">
                     {heroOutcomePoints.map((item) => (
-                      <li key={item} className="flex gap-3 text-sm leading-snug text-slate-700 sm:text-[15px]">
-                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                      <li key={item} className="flex gap-3 text-sm leading-snug text-fg-muted sm:text-[15px]">
+                        <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-up/10 text-up">
                           <FiCheck className="h-3.5 w-3.5" strokeWidth={3} aria-hidden />
                         </span>
                         <span>{item}</span>
@@ -727,29 +727,29 @@ function BookDetails() {
                     <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
                     Buy now — instant download
                   </button>
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-fg-subtle">
                     No account needed · Pay with Mobile Money · Download right after payment
                   </p>
                   <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:max-w-[280px]" />
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
                 <div className="w-full max-w-md space-y-2">
-                  <div className="rounded-2xl bg-[#0c2340] p-2.5 shadow-lg shadow-[#0c2340]/20 sm:p-3">
+                  <div className="rounded-2xl bg-ink-800 p-2.5 shadow-lg shadow-[#0c2340]/20 sm:p-3">
                     <button
                       type="button"
                       onClick={() => selectOfferOption(bundleOfferOption)}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3.5 text-sm font-bold text-[#0c2340] shadow-sm transition hover:bg-sky-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
+                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-ink-850 px-4 py-3.5 text-sm font-bold text-fg shadow-sm transition hover:bg-brand-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-850 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
                     >
                       <FiZap className="h-5 w-5 shrink-0" aria-hidden />
                       Buy Now — Bundle {formatGhs(bundleOfferOption.price)}
                     </button>
                   </div>
                   {listingPriceInfo?.showFromLabel ? (
-                    <p className="text-center text-xs text-slate-500">
+                    <p className="text-center text-xs text-fg-subtle">
                       Single plans from {formatGhs(listingPriceInfo.displayPrice)} · compare all options below
                     </p>
                   ) : (
-                    <p className="text-center text-sm text-slate-500">
+                    <p className="text-center text-sm text-fg-subtle">
                       Secure · MoMo · Instant PDF · Compare all plans below
                     </p>
                   )}
@@ -757,7 +757,7 @@ function BookDetails() {
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
                 <div className="space-y-3">
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-fg-subtle">
                     Choose a plan below. No account needed · MoMo checkout.
                   </p>
                   <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:max-w-[280px]" />
@@ -765,7 +765,7 @@ function BookDetails() {
               ) : book.type !== 'ebook' ? (
                 <div className="space-y-2">
                   <HardcopyCtaButton onClick={openHardcopyModal} variant="primary" className="sm:mx-auto sm:max-w-[280px]" />
-                  <p className="text-sm text-slate-500">
+                  <p className="text-sm text-fg-subtle">
                     Fill in your details — we&apos;ll confirm free delivery on WhatsApp.
                   </p>
                 </div>
@@ -775,7 +775,7 @@ function BookDetails() {
             {/* Right: cover */}
             <div className="order-2 flex justify-center lg:order-2 lg:justify-end lg:pl-4">
               <figure className="relative w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[380px]">
-                <div className="overflow-hidden rounded-2xl bg-white shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] ring-1 ring-slate-200/90">
+                <div className="overflow-hidden rounded-2xl bg-ink-850 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] ring-1 ring-line">
                   <img
                     src={book.thumbnail || DEFAULT_BOOK_COVER}
                     alt={book.title}
