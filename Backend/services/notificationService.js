@@ -21,8 +21,14 @@ configureWebPush();
 
 function notificationDeepLink(doc) {
   if (doc?.type === 'signal') return '/signals';
-  if (doc?.tutorId) return `/instructors/${doc.tutorId}/community`;
-  return '/membership';
+  if (doc?.entityType === 'booking') return '/mentorship';
+  if (doc?.entityType === 'conversation') return '/community?tab=messages';
+  if (['question', 'answer'].includes(doc?.entityType)) return '/community?tab=questions';
+  if (doc?.entityType === 'resource') return '/community?tab=resources';
+  if (doc?.entityType === 'live_session') return '/community?tab=live';
+  if (doc?.entityType === 'report') return '/community?tab=manage';
+  if (doc?.tutorId) return '/community';
+  return '/account';
 }
 
 async function sendPushToUser(userId, payload) {
@@ -114,4 +120,5 @@ module.exports = {
   notifyMany,
   sendPushToUser,
   configureWebPush,
+  notificationDeepLink,
 };

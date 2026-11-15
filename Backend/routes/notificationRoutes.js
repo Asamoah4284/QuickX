@@ -3,6 +3,7 @@ const router = express.Router();
 const auth = require('../middleware/auth');
 const Notification = require('../models/Notification');
 const PushSubscription = require('../models/PushSubscription');
+const { notificationDeepLink } = require('../services/notificationService');
 
 router.get('/vapid-public-key', (req, res) => {
   const publicKey = process.env.VAPID_PUBLIC_KEY || '';
@@ -72,7 +73,11 @@ router.get('/', auth, async (req, res) => {
       readAt: null,
     });
 
-    res.json({ notifications, unreadCount });
+    // Each notification carries the page it should open.
+    res.json({
+      notifications: notifications.map((n) => ({ ...n.toObject(), url: notificationDeepLink(n) })),
+      unreadCount,
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

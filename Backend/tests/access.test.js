@@ -124,3 +124,29 @@ test('a withdrawal returns to the balance it came from, including older requests
     assert.equal(withdrawalSource({ remarks: 'QuickX Wallet withdrawal' }), 'wallet');
     assert.equal(withdrawalSource({}), 'referral');
 });
+
+test('community only stores http(s) links, and members can only attach images', () => {
+    process.env.JWT_SECRET = process.env.JWT_SECRET || 'test';
+    const { safeUrl, cleanMedia } = require('../routes/communityRoutes');
+    assert.equal(safeUrl('https://example.com/a.png'), 'https://example.com/a.png');
+    assert.equal(safeUrl('javascript:alert(1)'), '');
+    assert.equal(safeUrl('data:text/html,<script>'), '');
+    assert.equal(safeUrl('not a url'), '');
+    assert.equal(safeUrl(''), '');
+
+    const member = cleanMedia(
+        [
+            { type: 'image', url: 'https://cdn.example.com/chart.png', name: 'chart' },
+            { type: 'video', url: 'https://cdn.example.com/clip.mp4' },
+            { type: 'image', url: 'javascript:alert(1)' },
+        ],
+        ['image']
+    );
+    assert.equal(member.rejected, true);
+    assert.deepEqual(member.media, [{ url: 'https://cdn.example.com/chart.png', type: 'image', name: 'chart' }]);
+
+    const mentor = cleanMedia([{ type: 'video', url: 'https://cdn.example.com/clip.mp4' }], ['image', 'video', 'document', 'link']);
+    assert.equal(mentor.rejected, false);
+    assert.equal(mentor.media.length, 1);
+    assert.deepEqual(cleanMedia('nope', ['image']), { media: [], rejected: false });
+});

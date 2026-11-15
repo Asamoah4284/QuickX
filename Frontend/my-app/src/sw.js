@@ -54,7 +54,7 @@ self.addEventListener('notificationclick', (event) => {
   const data = event.notification.data || {};
   let url = data.url || '/';
   if (!data.url && data.tutorId) {
-    url = `/instructors/${data.tutorId}/community`;
+    url = '/community';
   }
   const targetUrl = new URL(url, self.location.origin).href;
 

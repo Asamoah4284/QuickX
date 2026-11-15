@@ -13,13 +13,12 @@ const Signals = lazy(() => import('./features/signals/Signals'));
 const Courses = lazy(() => import('./features/courses/Courses'));
 const CourseDetail = lazy(() => import('./features/courses/CourseDetail'));
 const Mentorship = lazy(() => import('./features/mentorship/Mentorship'));
-const CommunityEntry = lazy(() => import('./features/community/CommunityEntry'));
+const Community = lazy(() => import('./features/community/Community'));
 const Account = lazy(() => import('./features/account/Account'));
 
 /* Pages still on the previous design (rendered on a light sheet via handle.legacy) */
 const About = lazy(() => import('./pages/About'));
 const CoursePlayer = lazy(() => import('./pages/School/CourseDetail'));
-const CommunityHub = lazy(() => import('./pages/CommunityHub'));
 const Store = lazy(() => import('./pages/store/store'));
 const BookDetails = lazy(() => import('./pages/BookDetails'));
 const Checkout = lazy(() => import('./pages/Checkout'));
@@ -40,7 +39,6 @@ const CreatorCourses = lazy(() => import('./pages/creator/CreatorCourses'));
 const CreatorCourseWizard = lazy(() => import('./pages/creator/CreatorCourseWizard'));
 const CreatorStudents = lazy(() => import('./pages/creator/CreatorStudents'));
 const CreatorReviews = lazy(() => import('./pages/creator/CreatorReviews'));
-const CreatorCommunity = lazy(() => import('./pages/creator/CreatorCommunity'));
 const CreatorProfileSettings = lazy(() => import('./pages/creator/CreatorProfileSettings'));
 const CreatorBooks = lazy(() => import('./pages/creator/CreatorBooks'));
 const CreatorBookWizard = lazy(() => import('./pages/creator/CreatorBookWizard'));
@@ -73,13 +71,12 @@ const router = createBrowserRouter([
       { path: 'courses', element: <Courses /> },
       { path: 'courses/:courseId', element: <CourseDetail /> },
       { path: 'mentorship', element: <Mentorship /> },
-      { path: 'community', element: <CommunityEntry /> },
+      { path: 'community', element: <Community /> },
       { path: 'account', element: authed(<Account />) },
 
       // Previous design, still in use
       { path: 'about', element: <About />, handle: legacy },
       { path: 'school/course/:courseId', element: <CoursePlayer />, handle: { legacy: true, bare: true } },
-      { path: 'instructors/:tutorId/community', element: authed(<CommunityHub />), handle: { legacy: true, bare: true } },
       { path: 'store', element: <Store />, handle: legacy },
       { path: 'store/:bookId', element: <BookDetails />, handle: legacy },
       { path: 'checkout', element: <Checkout />, handle: legacy },
@@ -108,7 +105,7 @@ const router = createBrowserRouter([
           { path: 'courses/:courseId/edit', element: <CreatorCourseWizard /> },
           { path: 'drafts', element: <CreatorCourses statusFilter="draft" /> },
           { path: 'students', element: <CreatorStudents /> },
-          { path: 'community', element: <CreatorCommunity /> },
+          { path: 'community', element: go('/community?tab=manage') },
           { path: 'reviews', element: <CreatorReviews /> },
           { path: 'settings', element: <CreatorProfileSettings /> },
           { path: 'books', element: <CreatorBooks /> },
@@ -124,6 +121,7 @@ const router = createBrowserRouter([
       { path: 'school/*', element: go('/courses') },
       { path: 'programs', element: go('/pricing') },
       { path: 'instructor', element: go('/account') },
+      { path: 'instructors/:tutorId/community', element: go('/community') },
       { path: 'instructors/:userId', element: go('/pricing') },
       { path: 'creator/*', element: go('/account') },
       { path: 'analysis/*', element: go('/signals') },

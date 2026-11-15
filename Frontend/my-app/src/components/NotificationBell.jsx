@@ -142,8 +142,9 @@ export default function NotificationBell() {
       /* continue navigation */
     }
     setOpen(false);
-    if (n.tutorId) {
-      window.location.href = `/instructors/${n.tutorId}/community`;
+    const target = n.url || (n.tutorId ? '/community' : '');
+    if (target) {
+      window.location.href = target;
     } else {
       load();
     }
