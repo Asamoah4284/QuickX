@@ -68,7 +68,7 @@ async function validatePurchaseIntent(body, userId) {
     const amount = Number(body.amount);
     const items = body.items;
 
-    if (!itemType || !Number.isFinite(amount) || amount < 0.01) {
+    if (!itemType || (itemType !== 'product' && (!Number.isFinite(amount) || amount < 0.01))) {
         throw new Error('Invalid purchase details');
     }
 
@@ -150,6 +150,21 @@ async function validatePurchaseIntent(body, userId) {
         };
     }
 
+    if (itemType === 'product') {
+        // The server sets the price; the amount sent by the client is ignored.
+        const { quoteProduct } = require('./productService');
+        const quote = await quoteProduct(itemId || body.productKey, body.couponCode);
+        if (quote.amount < 0.01) throw new Error('Nothing to pay — redeem this coupon instead');
+        return {
+            itemType,
+            itemId: quote.product._id,
+            amount: quote.amount,
+            purchaseItem: quote.product,
+            productKey: quote.product.key,
+            couponCode: quote.couponCode,
+        };
+    }
+
     if (itemType === 'wallet_topup') {
         if (amount < 1) throw new Error('Minimum top-up is ₵1');
         return { itemType, itemId: userId, amount, purchaseItem: null };
@@ -187,6 +202,9 @@ async function buildPendingPaymentRecord(body, userId) {
             offerOptionId: validated.offerOptionId || null,
             cartItemIds,
             subscriptionPlanId: validated.planId || '',
+            productKey: validated.productKey || '',
+            couponCode: validated.couponCode || '',
+            // Moolre charges originalAmount; for products this is the server-quoted price.
             originalAmount: validated.amount,
             finalAmount: referral.finalAmount,
             commissionAmount: referral.commissionAmount,
@@ -260,6 +278,14 @@ async function fulfillCompletedPayment(payment) {
         });
         await enrollStudentInTutorPublishedCourses(userId, itemId);
         return { courseAccess, subscription };
+    }
+
+    if (itemType === 'product' && itemId) {
+        const { grantFromProductPayment } = require('./entitlementService');
+        const { consumeCouponForPayment } = require('./productService');
+        const entitlements = await grantFromProductPayment(payment);
+        await consumeCouponForPayment(payment);
+        return { courseAccess, entitlements };
     }
 
     if (itemType === 'wallet_topup') {

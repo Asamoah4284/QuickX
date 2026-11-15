@@ -15,6 +15,10 @@ const {
 
 const router = express.Router();
 
+function entitlementsPayload(rows) {
+    return (rows || []).map((r) => ({ feature: r.feature, endsAt: r.endsAt }));
+}
+
 function handleValidationErrors(req, res, next) {
     if (req.body.referralCode === '') delete req.body.referralCode;
     const errors = validationResult(req);
@@ -29,7 +33,7 @@ function handleValidationErrors(req, res, next) {
 
 const validateInitiate = [
     body('itemType')
-        .isIn(['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription', 'wallet_topup'])
+        .isIn(['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription', 'wallet_topup', 'product'])
         .withMessage('Invalid item type'),
     body('planId')
         .if(body('itemType').equals('creator_subscription'))
@@ -107,6 +111,7 @@ router.post('/initiate', auth, validateInitiate, async (req, res) => {
                 message: 'Payment completed',
                 courseAccessGranted: Boolean(result.courseAccess),
                 subscription: result.subscription || null,
+                entitlements: entitlementsPayload(result.entitlements),
                 walletBalance: result.walletBalance ?? null,
             });
         }
@@ -149,6 +154,7 @@ router.post('/verify', auth, [
                 transactionId,
                 courseAccessGranted: Boolean(result.courseAccess),
                 subscription: result.subscription || null,
+                entitlements: entitlementsPayload(result.entitlements),
                 walletBalance: result.walletBalance ?? null,
             });
         }
@@ -192,6 +198,7 @@ router.post('/verify', auth, [
             transactionId,
             courseAccessGranted: Boolean(result.courseAccess),
             subscription: result.subscription || null,
+            entitlements: entitlementsPayload(result.entitlements),
             walletBalance: result.walletBalance ?? null,
         });
     } catch (error) {

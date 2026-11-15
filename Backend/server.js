@@ -160,6 +160,19 @@ db.once('open', async () => {
         console.error('deliverable thumbnail migration:', e.message);
     }
     try {
+        const created = await require('./models/Product').ensureDefaults();
+        if (created > 0) console.log(`Seeded ${created} default product(s) — set real prices in Admin → Pricing`);
+    } catch (e) {
+        console.error('product seed:', e.message);
+    }
+    try {
+        const { migrateLegacySubscriptions } = require('./services/entitlementService');
+        const r = await migrateLegacySubscriptions();
+        if (r.migrated > 0) console.log(`Carried ${r.migrated} active subscription(s) over to entitlements`);
+    } catch (e) {
+        console.error('subscription → entitlement migration:', e.message);
+    }
+    try {
         await seedPrograms();
     } catch (e) {
         console.error('seedPrograms:', e.message);
@@ -183,6 +196,8 @@ app.use('/api/instructor/courses', require('./routes/instructorCourseRoutes'));
 app.use('/api/instructor/books', require('./routes/instructorBookRoutes'));
 app.use('/api/instructor/book-offers', require('./routes/instructorOfferGroupRoutes'));
 app.use('/api', require('./routes/subscriptionRoutes'));
+app.use('/api', require('./routes/productRoutes'));
+app.use('/api/signals', require('./routes/signalRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api', require('./routes/referralRoutes'));

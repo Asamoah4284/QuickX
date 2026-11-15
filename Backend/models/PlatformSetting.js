@@ -11,6 +11,12 @@ const platformSettingSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    /** The single mentor's User id (courses, community and bookings belong to this account). */
+    ownerUserId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        default: null
+    },
     creatorAutoApproval: {
         type: Boolean,
         default: false

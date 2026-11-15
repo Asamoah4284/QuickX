@@ -1,15 +1,16 @@
-const {
-  hasActiveSubscription,
-  hasSubscriptionFeature,
-  getActiveSubscription,
-  getPlanFeatures,
-  FEATURES,
-} = require('../services/tutorSubscriptionService');
+const { FEATURES } = require('../constants/creatorSubscriptionPlans');
+const { toLegacyFeatureNames } = require('../constants/features');
+const { getUserFeatures } = require('../services/entitlementService');
+const { isOwner } = require('../services/ownerService');
+const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
 
 /**
- * Requires auth. Resolves tutorId from req.params.tutorId | req.params.userId | req.body.tutorId.
- * Allows: the tutor themselves, active subscribers (any plan with videos), or platform admins.
- * Attaches req.subscriptionPlanId + req.subscriptionFeatures when subscribed.
+ * Gate for the community routes. Access comes from entitlements; the feature
+ * names placed on `req.subscriptionFeatures` are the old ones (community, ask,
+ * post_trade, …) because the community routes still check those.
+ *
+ * Passes: platform admins, the owner, and members with any active access.
+ * Follow with requireCommunityAccess / requireTutorFeature for a specific feature.
  */
 async function requireTutorSubscriber(req, res, next) {
   try {
@@ -36,25 +37,24 @@ async function requireTutorSubscriber(req, res, next) {
       return next();
     }
 
-    if (String(req.user._id) === String(tutorId)) {
+    if (String(req.user._id) === String(tutorId) || (await isOwner(req.user._id))) {
       req.isCommunityTutor = true;
       req.isCommunityAdmin = false;
       req.subscriptionFeatures = Object.values(FEATURES);
       return next();
     }
 
-    const sub = await getActiveSubscription(req.user._id, tutorId);
-    if (!sub) {
+    const features = await getUserFeatures(req.user._id);
+    if (!features.length) {
       return res.status(403).json({
-        message: 'Active subscription required to access this community',
+        message: 'Community access is required',
         code: 'SUBSCRIPTION_REQUIRED',
       });
     }
 
     req.isCommunityTutor = false;
     req.isCommunityAdmin = false;
-    req.subscriptionPlanId = sub.planId;
-    req.subscriptionFeatures = getPlanFeatures(sub.planId);
+    req.subscriptionFeatures = toLegacyFeatureNames(features);
     return next();
   } catch (err) {
     console.error('requireTutorSubscriber:', err);
@@ -62,39 +62,23 @@ async function requireTutorSubscriber(req, res, next) {
   }
 }
 
-/**
- * After requireTutorSubscriber — require a specific plan feature (e.g. community, ask).
- * Tutors and admins always pass.
- */
+/** After requireTutorSubscriber — require one old-style feature name. Owner and admins always pass. */
 function requireTutorFeature(feature) {
-  return async (req, res, next) => {
-    try {
-      if (req.isCommunityTutor || req.isCommunityAdmin) return next();
-
-      const features = req.subscriptionFeatures;
-      if (Array.isArray(features) && features.includes(feature)) return next();
-
-      const tutorId = req.communityTutorId || req.params.tutorId;
-      const ok = await hasSubscriptionFeature(req.user._id, tutorId, feature);
-      if (!ok) {
-        return res.status(403).json({
-          message: `Your plan does not include this feature. Upgrade to unlock ${feature}.`,
-          code: 'FEATURE_REQUIRED',
-          feature,
-        });
-      }
-      return next();
-    } catch (err) {
-      console.error('requireTutorFeature:', err);
-      return res.status(500).json({ message: 'Server error', error: err.message });
-    }
+  return (req, res, next) => {
+    if (req.isCommunityTutor || req.isCommunityAdmin) return next();
+    const features = req.subscriptionFeatures;
+    if (Array.isArray(features) && features.includes(feature)) return next();
+    return res.status(403).json({
+      message: 'Your access does not include this feature.',
+      code: 'FEATURE_REQUIRED',
+      feature,
+    });
   };
 }
 
-/** Community hub entry — Premium and above (not Basic). */
 const requireCommunityAccess = requireTutorFeature(FEATURES.COMMUNITY);
 
-/** Tutor (owner) or admin only — for moderation / announcements / polls create. */
+/** Owner or admin only — moderation, announcements, creating polls. */
 function requireCommunityModerator(req, res, next) {
   if (req.isCommunityTutor || req.isCommunityAdmin) return next();
   return res.status(403).json({ message: 'Only the tutor can perform this action' });

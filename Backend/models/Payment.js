@@ -14,12 +14,25 @@ const paymentSchema = new mongoose.Schema({
     itemType: {
         type: String,
         required: true,
-        enum: ['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription', 'wallet_topup']
+        enum: ['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription', 'wallet_topup', 'product']
     },
     /** Set when itemType is creator_subscription (plan id: 1m, 2m, 3m, 1y). */
     subscriptionPlanId: {
         type: String,
         default: '',
+    },
+    /** Set when itemType is product. */
+    productKey: {
+        type: String,
+        default: '',
+    },
+    couponCode: {
+        type: String,
+        default: '',
+    },
+    couponApplied: {
+        type: Boolean,
+        default: false,
     },
     itemId: {
         type: mongoose.Schema.Types.ObjectId,

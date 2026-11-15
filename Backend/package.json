@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test \"tests/**/*.test.js\"",
     "start": "node server.js",
     "dev": "nodemon server.js",
     "migrate:add-course-type": "node migrations/add-course-type.js",
@@ -11,7 +11,8 @@
     "migrate:sync-preview-flag": "node migrations/sync-lesson-preview-flag.js",
     "seed:creator-demo": "node scripts/seedCreatorDemoData.js",
     "seed:admin": "node scripts/seedAdmin.js",
-    "test:s3-upload": "node scripts/testS3Upload.js"
+    "test:s3-upload": "node scripts/testS3Upload.js",
+    "migrate:subscriptions-to-entitlements": "node migrations/migrate-subscriptions-to-entitlements.js"
   },
   "keywords": [],
   "author": "",

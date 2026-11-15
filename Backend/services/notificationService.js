@@ -20,6 +20,7 @@ function configureWebPush() {
 configureWebPush();
 
 function notificationDeepLink(doc) {
+  if (doc?.type === 'signal') return '/signals';
   if (doc?.tutorId) return `/instructors/${doc.tutorId}/community`;
   return '/membership';
 }

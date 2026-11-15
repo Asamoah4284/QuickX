@@ -1,9 +1,13 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
+const adminAuth = require('../middleware/adminAuth');
+const requireFeature = require('../middleware/requireFeature');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
-const WalletTransaction = require('../models/WalletTransaction');
+const { FEATURES } = require('../constants/features');
+const { getOwnerId } = require('../services/ownerService');
+const { createNotification } = require('../services/notificationService');
 
 const router = express.Router();
 
@@ -15,105 +19,121 @@ function handleValidation(req, res, next) {
   next();
 }
 
-router.get('/', auth, async (req, res) => {
+function serialize(b) {
+  return {
+    id: String(b._id),
+    serviceName: b.serviceName,
+    topic: b.serviceId,
+    date: b.date,
+    time: b.time,
+    durationMins: b.durationMins,
+    status: b.status,
+    createdAt: b.createdAt,
+  };
+}
+
+// ── Admin: all session requests ─────────────────────────────────────────────
+
+router.get('/admin', adminAuth, async (req, res) => {
   try {
-    const bookings = await Booking.find({ userId: req.user._id })
+    const bookings = await Booking.find({})
       .sort({ createdAt: -1 })
-      .limit(100)
+      .limit(200)
+      .populate('userId', 'fullName email phone')
       .lean();
     res.json({
       bookings: bookings.map((b) => ({
-        id: String(b._id),
-        tutorId: String(b.tutorId),
-        tutorName: b.tutorName,
-        serviceId: b.serviceId,
-        serviceName: b.serviceName,
-        date: b.date,
-        time: b.time,
-        durationMins: b.durationMins,
-        price: b.price,
-        status: b.status,
+        ...serialize(b),
+        member: b.userId
+          ? { id: String(b.userId._id), fullName: b.userId.fullName, email: b.userId.email, phone: b.userId.phone || '' }
+          : null,
       })),
     });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Failed to load bookings' });
+    res.status(500).json({ message: 'Failed to load bookings' });
   }
 });
 
+router.patch('/admin/:id', adminAuth, [body('status').isIn(['upcoming', 'completed', 'cancelled'])], handleValidation, async (req, res) => {
+  try {
+    const booking = await Booking.findByIdAndUpdate(req.params.id, { status: req.body.status }, { new: true });
+    if (!booking) return res.status(404).json({ message: 'Booking not found' });
+    res.json({ booking: serialize(booking) });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update booking' });
+  }
+});
+
+// ── Members with Mentorship access ──────────────────────────────────────────
+
+router.use(auth, requireFeature(FEATURES.MENTORSHIP));
+
+router.get('/', async (req, res) => {
+  try {
+    const bookings = await Booking.find({ userId: req.user._id }).sort({ createdAt: -1 }).limit(100).lean();
+    res.json({ bookings: bookings.map(serialize) });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to load bookings' });
+  }
+});
+
+/** Sessions are included with Mentorship access — nothing is charged here. */
 router.post(
   '/',
-  auth,
   [
-    body('tutorId').isMongoId(),
-    body('tutorName').optional().isString(),
-    body('serviceId').notEmpty(),
-    body('serviceName').notEmpty(),
-    body('date').notEmpty(),
-    body('time').notEmpty(),
-    body('durationMins').optional().isInt({ min: 15 }),
-    body('price').isFloat({ min: 0 }),
+    body('date').matches(/^\d{4}-\d{2}-\d{2}$/).withMessage('Date must be YYYY-MM-DD'),
+    body('time').matches(/^\d{2}:\d{2}$/).withMessage('Time must be HH:MM'),
+    body('topic').optional().isString().isLength({ max: 500 }),
+    body('durationMins').optional().isInt({ min: 15, max: 180 }),
   ],
   handleValidation,
   async (req, res) => {
     try {
-      const price = Number(req.body.price);
-      const user = await User.findById(req.user._id);
-      const balance = Number(user.walletBalance || 0);
-      if (balance < price) {
-        return res.status(400).json({ message: 'Insufficient wallet balance', balance });
+      const ownerId = await getOwnerId();
+      if (!ownerId) return res.status(503).json({ message: 'Mentorship is not set up yet' });
+
+      const when = new Date(`${req.body.date}T${req.body.time}:00`);
+      if (Number.isNaN(when.getTime()) || when.getTime() < Date.now()) {
+        return res.status(400).json({ message: 'Pick a date and time in the future' });
       }
 
-      const nextBalance = Number((balance - price).toFixed(2));
-      user.walletBalance = nextBalance;
-      await user.save();
+      const upcoming = await Booking.countDocuments({ userId: req.user._id, status: 'upcoming' });
+      if (upcoming >= 3) {
+        return res.status(400).json({ message: 'You already have 3 upcoming sessions. Cancel one to book another.' });
+      }
 
-      const ref = `qx_booking_${Date.now()}`;
-      await WalletTransaction.create({
-        userId: req.user._id,
-        type: 'payment',
-        amount: -price,
-        balanceAfter: nextBalance,
-        label: `Session: ${req.body.serviceName}`,
-        reference: ref,
-        status: 'completed',
-      });
-
+      const owner = await User.findById(ownerId).select('fullName').lean();
       const booking = await Booking.create({
         userId: req.user._id,
-        tutorId: req.body.tutorId,
-        tutorName: req.body.tutorName || '',
-        serviceId: req.body.serviceId,
-        serviceName: req.body.serviceName,
+        tutorId: ownerId,
+        tutorName: owner?.fullName || '',
+        serviceId: String(req.body.topic || '').trim(),
+        serviceName: '1-on-1 session',
         date: req.body.date,
         time: req.body.time,
         durationMins: Number(req.body.durationMins || 60),
-        price,
+        price: 0,
         status: 'upcoming',
-        walletTransactionRef: ref,
       });
 
-      res.status(201).json({
-        booking: {
-          id: String(booking._id),
-          tutorId: String(booking.tutorId),
-          tutorName: booking.tutorName,
-          serviceId: booking.serviceId,
-          serviceName: booking.serviceName,
-          date: booking.date,
-          time: booking.time,
-          durationMins: booking.durationMins,
-          price: booking.price,
-          status: booking.status,
-        },
-        walletBalance: nextBalance,
-      });
+      createNotification({
+        userId: ownerId,
+        type: 'direct_message',
+        actorId: req.user._id,
+        entityType: 'booking',
+        entityId: booking._id,
+        title: 'New session request',
+        body: `${req.user.fullName} · ${booking.date} ${booking.time}`,
+      }).catch(() => {});
+
+      res.status(201).json({ booking: serialize(booking) });
     } catch (error) {
-      res.status(500).json({ message: error.message || 'Failed to create booking' });
+      res.status(500).json({ message: 'Failed to create booking' });
     }
   }
 );
 
-router.patch('/:id/cancel', auth, async (req, res) => {
+router.patch('/:id/cancel', async (req, res) => {
   try {
     const booking = await Booking.findOne({ _id: req.params.id, userId: req.user._id });
     if (!booking) return res.status(404).json({ message: 'Booking not found' });
@@ -122,9 +142,9 @@ router.patch('/:id/cancel', auth, async (req, res) => {
     }
     booking.status = 'cancelled';
     await booking.save();
-    res.json({ booking: { id: String(booking._id), status: booking.status } });
+    res.json({ booking: serialize(booking) });
   } catch (error) {
-    res.status(500).json({ message: error.message || 'Failed to cancel booking' });
+    res.status(500).json({ message: 'Failed to cancel booking' });
   }
 });
 

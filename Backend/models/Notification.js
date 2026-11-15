@@ -24,6 +24,7 @@ const notificationSchema = new mongoose.Schema(
         'direct_message',
         'poll_created',
         'moderation',
+        'signal',
       ],
       required: true,
     },

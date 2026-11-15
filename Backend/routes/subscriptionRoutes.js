@@ -6,15 +6,16 @@ const {
   getActiveSubscription,
   listActiveSubscriptionsForStudent,
   listSubscribersForTutor,
-  getPlanFeatures,
 } = require('../services/tutorSubscriptionService');
+const { toLegacyFeatureNames } = require('../constants/features');
+const { isOwner } = require('../services/ownerService');
 const User = require('../models/User');
 
 /** Current user's subscription status for a tutor (auth required). */
 router.get('/instructors/:tutorId/subscription/me', auth, async (req, res) => {
   try {
     const { tutorId } = req.params;
-    const isSelf = String(req.user._id) === String(tutorId);
+    const isSelf = String(req.user._id) === String(tutorId) || (await isOwner(req.user._id));
     if (isSelf) {
       return res.json({
         subscribed: true,
@@ -26,7 +27,7 @@ router.get('/instructors/:tutorId/subscription/me', auth, async (req, res) => {
     }
 
     const sub = await getActiveSubscription(req.user._id, tutorId);
-    const features = sub ? getPlanFeatures(sub.planId) : [];
+    const features = sub ? toLegacyFeatureNames(sub.features) : [];
     res.json({
       subscribed: Boolean(sub),
       isTutor: false,
@@ -78,12 +79,10 @@ router.get('/instructor/subscribers', auth, requireApprovedCreator, async (req, 
 /** Public-ish: member count for a tutor community */
 router.get('/instructors/:tutorId/community/stats', async (req, res) => {
   try {
-    const TutorSubscription = require('../models/TutorSubscription');
-    const now = new Date();
-    const count = await TutorSubscription.countDocuments({
-      tutorId: req.params.tutorId,
-      status: 'active',
-      endsAt: { $gt: now },
+    const Entitlement = require('../models/Entitlement');
+    const count = await Entitlement.countDocuments({
+      feature: 'community',
+      endsAt: { $gt: new Date() },
     });
     const tutor = await User.findById(req.params.tutorId).select('fullName profilePicture');
     res.json({

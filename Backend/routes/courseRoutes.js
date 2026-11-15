@@ -16,6 +16,9 @@ const { check, validationResult } = require('express-validator');
 const { videoUpload, thumbnailUpload } = require('../config/s3Config');
 
 const axios = require('axios');
+const entitlementService = require('../services/entitlementService');
+const ownerService = require('../services/ownerService');
+const { FEATURES } = require('../constants/features');
 const {
     isLessonPreview,
     previewFlags,
@@ -121,39 +124,36 @@ async function userHasCourseAccess(userId, course) {
         }),
     ]);
 
+    if (await ownerService.isOwner(userId)) {
+        return { allowed: true, via: 'owner', purchase, enrollment };
+    }
+
+    // Bought this course outright — access never expires.
     if (purchase) {
         return { allowed: true, via: 'purchase', purchase, enrollment };
     }
-    if (enrollment) {
+    const buyer = await User.findById(userId).select('purchasedCourses').lean();
+    if ((buyer?.purchasedCourses || []).some((id) => String(id) === String(course._id))) {
+        return { allowed: true, via: 'purchase', purchase, enrollment };
+    }
+
+    // Free course: enrolling is enough.
+    if (enrollment && Number(course.price || 0) <= 0) {
         return { allowed: true, via: 'enrollment', purchase, enrollment };
     }
 
-    const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
-    const tutorId = resolveCourseTutorId(course);
-    const subscribed = tutorId ? await hasActiveSubscription(userId, tutorId) : false;
-    if (subscribed) {
+    // Otherwise the member needs current Courses access. An enrollment row alone
+    // only tracks progress — it must not keep a course open after access expires.
+    if (await entitlementService.hasFeature(userId, FEATURES.COURSES)) {
         return { allowed: true, via: 'subscription', purchase, enrollment };
     }
 
     return { allowed: false, via: null, purchase, enrollment };
 }
 
+/** Offline download comes with any kind of course access. */
 async function userCanDownloadOffline(userId, course, access) {
-    if (!access?.allowed) return false;
-    if (access.via === 'owner') return true;
-
-    const purchase = access.purchase || await Purchase.findOne({
-        userId,
-        courseId: course._id,
-        status: 'completed',
-    });
-    if (purchase) return true;
-
-    const { hasSubscriptionFeature } = require('../services/tutorSubscriptionService');
-    const { FEATURES } = require('../constants/creatorSubscriptionPlans');
-    const tutorId = resolveCourseTutorId(course);
-    if (!tutorId) return false;
-    return hasSubscriptionFeature(userId, tutorId, FEATURES.DOWNLOAD);
+    return Boolean(access?.allowed);
 }
 
 async function buildTransactionRecord({ course, userId, amount, paymentReference = '' }) {
@@ -210,10 +210,7 @@ router.get('/user/purchased', auth, async (req, res) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
-        const {
-            listActiveSubscriptionsForStudent,
-            enrollStudentInTutorPublishedCourses,
-        } = require('../services/tutorSubscriptionService');
+        const { enrollStudentInTutorPublishedCourses } = require('../services/tutorSubscriptionService');
 
         const buildCourseList = async () => {
             const [purchases, enrollments] = await Promise.all([
@@ -281,15 +278,9 @@ router.get('/user/purchased', auth, async (req, res) => {
         // Soft sync in the background so future visits stay consistent without blocking this request.
         setImmediate(async () => {
             try {
-                const subs = await listActiveSubscriptionsForStudent(req.user._id);
-                await Promise.all(
-                    subs.map((sub) => {
-                        const tutorId = sub.tutorId?._id || sub.tutorId;
-                        return tutorId
-                            ? enrollStudentInTutorPublishedCourses(req.user._id, tutorId)
-                            : Promise.resolve();
-                    })
-                );
+                if (await entitlementService.hasFeature(req.user._id, FEATURES.COURSES)) {
+                    await enrollStudentInTutorPublishedCourses(req.user._id);
+                }
             } catch (syncErr) {
                 console.error('subscription course sync:', syncErr.message);
             }
@@ -459,11 +450,15 @@ router.get('/:id/full', auth, async (req, res) => {
             return res.status(404).json({ message: 'Course not found' });
         }
 
-        const isOwner =
-            course.source === 'user' &&
-            course.createdBy &&
-            course.createdBy.toString() === user._id.toString();
-        if (isOwner) {
+        const access = await userHasCourseAccess(user._id, course);
+        if (!access.allowed) {
+            return res.status(403).json({
+                message: 'Access denied. Get Courses access or buy this course to watch it.',
+                code: 'FEATURE_REQUIRED',
+                feature: FEATURES.COURSES,
+            });
+        }
+        if (access.via === 'owner') {
             return res.json({
                 ...course.toObject(),
                 canDownloadOffline: true,
@@ -471,27 +466,9 @@ router.get('/:id/full', auth, async (req, res) => {
             });
         }
 
-        const [purchase, enrollment] = await Promise.all([
-            Purchase.findOne({ 
-                userId: user._id, 
-                courseId: course._id,
-                status: 'completed'
-            }),
-            Enrollment.findOne({
-                studentId: user._id,
-                courseId: course._id
-            })
-        ]);
-
-        let accessEnrollment = enrollment;
-        if (!purchase && !enrollment) {
-            const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
-            const tutorId = resolveCourseTutorId(course);
-            const subscribed = tutorId ? await hasActiveSubscription(user._id, tutorId) : false;
-            if (!subscribed) {
-                return res.status(403).json({ message: 'Access denied. Please purchase this course.' });
-            }
-            // Active creator subscription — ensure enrollment so progress tracking works
+        let accessEnrollment = access.enrollment;
+        if (!accessEnrollment) {
+            // Ensure an enrollment row so progress tracking works
             accessEnrollment = await Enrollment.findOneAndUpdate(
                 { studentId: user._id, courseId: course._id },
                 {
@@ -510,12 +487,7 @@ router.get('/:id/full', auth, async (req, res) => {
         res.json({
             ...course.toObject(),
             enrollment: accessEnrollment,
-            canDownloadOffline: await userCanDownloadOffline(user._id, course, {
-                allowed: true,
-                via: isOwner ? 'owner' : (purchase ? 'purchase' : (accessEnrollment ? 'enrollment' : 'subscription')),
-                purchase,
-                enrollment: accessEnrollment,
-            }),
+            canDownloadOffline: await userCanDownloadOffline(user._id, course, access),
             tutorId: resolveCourseTutorId(course) ? String(resolveCourseTutorId(course)) : null,
         });
     } catch (error) {
@@ -538,7 +510,7 @@ async function resolveLessonDownloadEntitlement(user, courseId, lessonId) {
         return {
             status: 403,
             error: {
-                message: 'Access denied. Please purchase this course or subscribe.',
+                message: 'Access denied. Get Courses access or buy this course.',
                 code: 'NO_ACCESS',
             },
         };
