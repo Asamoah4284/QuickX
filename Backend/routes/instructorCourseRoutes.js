@@ -492,8 +492,8 @@ router.post('/:id/submit', auth, requireApprovedCreator, async (req, res) => {
         if (!course.title || course.title === 'Untitled course') {
             return res.status(400).json({ message: 'Give your course a title before publishing' });
         }
-        if (course.listingStatus !== 'draft' && course.listingStatus !== 'rejected' && course.listingStatus !== 'published') {
-            return res.status(400).json({ message: 'Course cannot be submitted from current status' });
+        if (!['draft', 'rejected', 'published', 'archived', 'under_review'].includes(course.listingStatus)) {
+            return res.status(400).json({ message: 'Course cannot be published from its current status' });
         }
 
         // There is no review step any more: the mentor's courses go live straight away.

@@ -603,7 +603,6 @@ export default function CreatorBookWizard() {
                 <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
                   <option value="general">General</option>
                   <option value="forex">Forex</option>
-                  <option value="crypto">Crypto</option>
                 </select>
               </div>
             )}
@@ -613,7 +612,6 @@ export default function CreatorBookWizard() {
                 <select name="category" value={form.category} onChange={handleChange} className={inputCls}>
                   <option value="general">General</option>
                   <option value="forex">Forex</option>
-                  <option value="crypto">Crypto</option>
                 </select>
               </div>
             ) : null}

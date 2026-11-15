@@ -11,33 +11,6 @@ import CourseModal from './CourseModal';
 import BookModal from './BookModal';
 import CourseManagement from './CourseManagement';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
-import {
-    Chart as ChartJS,
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-    ArcElement
-} from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
-
-// Register ChartJS components
-ChartJS.register(
-    CategoryScale,
-    LinearScale,
-    PointElement,
-    LineElement,
-    BarElement,
-    Title,
-    Tooltip,
-    Legend,
-    ArcElement
-);
-
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // Mock data for testing
 const mockCourses = [
@@ -71,20 +44,15 @@ const mockCourses = [
 ];
 
 const TAB_BY_PATH = {
-    '/admin/dashboard': 'dashboard',
     '/admin/courses': 'courses',
-    '/admin/books': 'books',
-    '/admin/upload': 'upload',
     '/admin/settings': 'settings',
     '/admin/coupons': 'coupons',
-    '/admin/mentorship': 'mentorship',
-    '/admin/advertisements': 'advertisements',
     '/admin/withdrawals': 'withdrawals',
 };
 
 const AdminDashboard = () => {
     const location = useLocation();
-    const activeTab = TAB_BY_PATH[location.pathname] || 'dashboard';
+    const activeTab = TAB_BY_PATH[location.pathname] || 'courses';
     const [courses, setCourses] = useState([]);
     const [books, setBooks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -92,16 +60,6 @@ const AdminDashboard = () => {
     const [showModal, setShowModal] = useState(false);
     const [selectedCourse, setSelectedCourse] = useState(null);
     const [showAddCourse, setShowAddCourse] = useState(false);
-    const [analytics, setAnalytics] = useState({
-        totalUsers: 0,
-        totalCourses: 0,
-        totalRevenue: 0,
-        activeUsers: 0,
-        userGrowth: [],
-        revenueData: [],
-        courseEnrollment: [],
-        userActivity: []
-    });
     const [formData, setFormData] = useState({
         title: '',
         subtitle: '',
@@ -141,26 +99,6 @@ const AdminDashboard = () => {
         maxUses: '',
         isActive: true
     });
-    const [mentorships, setMentorships] = useState([]);
-    const [showMentorshipForm, setShowMentorshipForm] = useState(false);
-    const [mentorshipForm, setMentorshipForm] = useState({
-        title: '',
-        summary: '',
-        date: '',
-        time: '',
-        isPremium: false,
-        mentor: '',
-        icon: 'trading',
-        imageUrl: ''
-    });
-    const [advertisements, setAdvertisements] = useState([]);
-    const [newAdvertisement, setNewAdvertisement] = useState({
-        title: '',
-        content: '',
-        imageUrl: '',
-        link: '',
-        isActive: true
-    });
     const [withdrawalRequests, setWithdrawalRequests] = useState([]);
     const [withdrawalError, setWithdrawalError] = useState('');
     const [withdrawalSuccess, setWithdrawalSuccess] = useState('');
@@ -171,120 +109,15 @@ const AdminDashboard = () => {
     const navigate = useNavigate();
 
     // Chart data
-    const userGrowthData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [
-            {
-                label: 'User Growth',
-                data: [150, 280, 450, 620, 850, 1400],
-                borderColor: 'rgb(99, 102, 241)',
-                backgroundColor: 'rgba(99, 102, 241, 0.2)',
-                tension: 0.5,
-                fill: true,
-                borderWidth: 3,
-                pointBackgroundColor: 'white',
-                pointBorderColor: 'rgb(99, 102, 241)',
-                pointBorderWidth: 2,
-                pointRadius: 4,
-                pointHoverRadius: 6,
-                pointHoverBorderWidth: 3,
-                pointHoverBackgroundColor: 'white',
-                pointHoverBorderColor: 'rgb(99, 102, 241)',
-                animation: {
-                    y: {
-                        duration: 2000,
-                        from: 0
-                    },
-                    x: {
-                        duration: 1500
-                    }
-                }
-            }
-        ]
-    };
 
-    const revenueData = {
-        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-        datasets: [
-            {
-                label: 'Revenue',
-                data: [5000, 8000, 12000, 15000, 18000, 22000],
-                backgroundColor: 'rgba(99, 102, 241, 0.5)',
-                borderColor: 'rgb(99, 102, 241)',
-                borderWidth: 1
-            }
-        ]
-    };
 
-    const courseEnrollmentData = {
-        labels: ['Beginner', 'Intermediate', 'Advanced'],
-        datasets: [
-            {
-                data: [300, 200, 100],
-                backgroundColor: [
-                    'rgba(59, 130, 246, 0.8)',
-                    'rgba(99, 102, 241, 0.8)',
-                    'rgba(139, 92, 246, 0.8)'
-                ],
-                borderColor: [
-                    'rgb(59, 130, 246)',
-                    'rgb(99, 102, 241)',
-                    'rgb(139, 92, 246)'
-                ],
-                borderWidth: 1
-            }
-        ]
-    };
 
-    const chartOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'top',
-            },
-        },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        },
-        animation: {
-            duration: 2000,
-            easing: 'easeInOutQuart',
-            delay: (context) => {
-                return context.dataIndex * 100;
-            }
-        }
-    };
 
-    const doughnutOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom',
-            },
-        },
-        animation: {
-            animateScale: true,
-            animateRotate: true,
-            duration: 2000,
-            easing: 'easeInOutQuart',
-            delay: (context) => {
-                return context.dataIndex * 300;
-            }
-        },
-        cutout: '70%',
-        radius: '90%'
-    };
 
     useEffect(() => {
         fetchCourses();
         fetchBooks();
         fetchCoupons();
-        fetchMentorships();
-        fetchAdvertisements();
         fetchWithdrawalRequests();
     }, []);
 
@@ -360,36 +193,6 @@ const AdminDashboard = () => {
         }
     };
 
-    const fetchMentorships = async () => {
-        try {
-            const response = await axios.get(`${API_URL}/api/mentorships`);
-            setMentorships(response.data);
-        } catch (err) {
-            setMentorships([]);
-        }
-    };
-
-    const fetchAdvertisements = async () => {
-        try {
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-
-            const response = await axios.get(`${API_URL}/api/admin/advertisements`, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`
-                }
-            });
-            setAdvertisements(response.data);
-            setError('');
-        } catch (error) {
-            console.error('Error fetching advertisements:', error);
-            setError(error.response?.data?.message || 'Failed to fetch advertisements');
-        }
-    };
-
     const fetchWithdrawalRequests = async () => {
         try {
             const token = localStorage.getItem('adminToken');
@@ -413,20 +216,8 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleAddCourse = () => {
-        setSelectedCourse(null);
-        setShowModal(true);
-    };
 
-    const handleEditCourse = (course) => {
-        setSelectedCourse(course);
-        setShowModal(true);
-    };
 
-    const handleDeleteCourse = (courseId) => {
-        setCourseToDelete(courseId);
-        setShowDeleteModal(true);
-    };
 
     const confirmDeleteCourse = async () => {
         if (!courseToDelete) return;
@@ -751,20 +542,8 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleAddBook = () => {
-        setSelectedBook(null);
-        setShowBookModal(true);
-    };
 
-    const handleEditBook = (book) => {
-        setSelectedBook(book);
-        setShowBookModal(true);
-    };
 
-    const handleDeleteBookRequest = (bookId) => {
-        setBookToDelete(bookId);
-        setShowDeleteBookModal(true);
-    };
 
     const confirmDeleteBook = async () => {
         if (!bookToDelete) return;
@@ -875,177 +654,7 @@ const AdminDashboard = () => {
         }
     };
 
-    const handleMentorshipImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
 
-        try {
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-            
-            // Get the secure URL from our server
-            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!url) {
-                throw new Error('Failed to get upload URL');
-            }
-
-            // Upload the file directly to S3
-            await axios.put(url, file, {
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-
-            // Extract the file URL from the S3 URL
-            const imageUrl = url.split('?')[0];
-            
-            setMentorshipForm(prev => ({
-                ...prev,
-                imageUrl
-            }));
-            setError('');
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            setError(error.response?.data?.message || 'Failed to upload image');
-        }
-    };
-
-    const handleMentorshipInput = (e) => {
-        const { name, value, type, checked } = e.target;
-        setMentorshipForm((prev) => ({
-            ...prev,
-            [name]: type === 'checkbox' ? checked : value
-        }));
-    };
-
-    const handleMentorshipSubmit = async (e) => {
-        e.preventDefault();
-        try {
-            const token = localStorage.getItem('adminToken');
-            
-            // Validate that we have an image
-            if (!mentorshipForm.imageUrl) {
-                setError('Please upload a session image');
-                return;
-            }
-
-            await axios.post(`${API_URL}/api/mentorships`, mentorshipForm, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            
-            // Reset form with all fields including imageUrl
-            setMentorshipForm({
-                title: '',
-                summary: '',
-                date: '',
-                time: '',
-                isPremium: false,
-                mentor: '',
-                icon: 'trading',
-                imageUrl: ''
-            });
-            setShowMentorshipForm(false);
-            fetchMentorships();
-            setError('');
-        } catch (err) {
-            setError('Failed to add mentorship session');
-        }
-    };
-
-    const handleAdvertisementImageUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-            
-            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!url) {
-                throw new Error('Failed to get upload URL');
-            }
-
-            await axios.put(url, file, {
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-
-            const imageUrl = url.split('?')[0];
-            setNewAdvertisement(prev => ({
-                ...prev,
-                imageUrl
-            }));
-            setError('');
-        } catch (error) {
-            console.error('Error uploading image:', error);
-            setError(error.response?.data?.message || 'Failed to upload image');
-        }
-    };
-
-    const handleAddAdvertisement = async () => {
-        try {
-            if (!newAdvertisement.title || !newAdvertisement.content || !newAdvertisement.imageUrl || !newAdvertisement.link) {
-                setError('Please fill in all fields');
-                return;
-            }
-
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-
-            const response = await axios.post(`${API_URL}/api/admin/advertisements`, newAdvertisement, {
-                headers: { 
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-            
-            if (response.data) {
-                setAdvertisements([...advertisements, response.data]);
-                setNewAdvertisement({
-                    title: '',
-                    content: '',
-                    imageUrl: '',
-                    link: '',
-                    isActive: true
-                });
-                setError('');
-            }
-        } catch (error) {
-            console.error('Error adding advertisement:', error);
-            setError(error.response?.data?.message || 'Failed to add advertisement');
-        }
-    };
-
-    const handleDeleteAdvertisement = async (adId) => {
-        if (window.confirm('Are you sure you want to delete this advertisement?')) {
-            try {
-                const token = localStorage.getItem('adminToken');
-                await axios.delete(`${API_URL}/api/admin/advertisements/${adId}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
-                setAdvertisements(advertisements.filter(ad => ad._id !== adId));
-            } catch (error) {
-                console.error('Error deleting advertisement:', error);
-                setError('Failed to delete advertisement');
-            }
-        }
-    };
 
     const handleApproveWithdrawal = async (requestId) => {
         try {
@@ -1079,119 +688,6 @@ const AdminDashboard = () => {
 
     const renderContent = () => {
         switch (activeTab) {
-            case 'dashboard':
-                return (
-                    <div className="space-y-6">
-                        {/* Stats Overview */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-fg-subtle">Total Users</p>
-                                        <p className="text-xl font-bold">{analytics.totalUsers || ''}</p>
-                                    </div>
-                                    <div className="bg-ink-800 p-2 rounded-full">
-                                        <FiUsers className="text-brand-400 text-lg" />
-                                    </div>
-                                </div>
-                                <div className="mt-2 flex items-center text-up text-sm">
-                                    <FiTrendingUp className="mr-1" />
-                                    <span>+12% from last month</span>
-                                </div>
-                            </div>
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-fg-subtle">Total Courses</p>
-                                        <p className="text-xl font-bold">{courses.length || '15'}</p>
-                                    </div>
-                                    <div className="bg-up/10 p-2 rounded-full">
-                                        <FiBook className="text-up text-lg" />
-                                    </div>
-                                </div>
-                                <div className="mt-2 flex items-center text-up text-sm">
-                                    <FiTrendingUp className="mr-1" />
-                                    <span>+3 new courses</span>
-                                </div>
-                            </div>
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-fg-subtle">Total Revenue</p>
-                                        <p className="text-xl font-bold">${analytics.totalRevenue || '0'}</p>
-                                    </div>
-                                    <div className="bg-brand-500/10 p-2 rounded-full">
-                                        <FiDollarSign className="text-brand-300 text-lg" />
-                                    </div>
-                                </div>
-                                <div className="mt-2 flex items-center text-up text-sm">
-                                    <FiTrendingUp className="mr-1" />
-                                    <span>+8% from last month</span>
-                                </div>
-                            </div>
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-sm text-fg-subtle">Active Users</p>
-                                        <p className="text-xl font-bold">{analytics.totalUsers || '4'}</p>
-                                    </div>
-                                    <div className="bg-warn/10 p-2 rounded-full">
-                                        <FiBarChart2 className="text-warn text-lg" />
-                                    </div>
-                                </div>
-                                <div className="mt-2 flex items-center text-up text-sm">
-                                    <FiTrendingUp className="mr-1" />
-                                    <span>+5% from last week</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Charts Section */}
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <h3 className="text-lg font-semibold mb-4">User Growth</h3>
-                                <div className="h-64">
-                                    <Line data={userGrowthData} options={chartOptions} />
-                                </div>
-                            </div>
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <h3 className="text-lg font-semibold mb-4">Revenue Overview</h3>
-                                <div className="h-64">
-                                    <Bar data={revenueData} options={chartOptions} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Course Analytics */}
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4">
-                                <h3 className="text-lg font-semibold mb-4">Course Enrollment</h3>
-                                <div className="h-64">
-                                    <Doughnut data={courseEnrollmentData} options={doughnutOptions} />
-                                </div>
-                            </div>
-                            <div className="bg-ink-850 rounded-xl shadow-sm p-4 lg:col-span-2">
-                                <h3 className="text-lg font-semibold mb-4">Recent Activity</h3>
-                                <div className="space-y-4">
-                                    {[1, 2, 3, 4].map((item) => (
-                                        <div key={item} className="flex items-center justify-between p-3 bg-ink-900 rounded-lg">
-                                            <div className="flex items-center">
-                                                <div className="w-10 h-10 bg-ink-800 rounded-full flex items-center justify-center mr-3">
-                                                    <FiUsers className="text-brand-400" />
-                                                </div>
-                                                <div>
-                                                    <p className="font-medium">New user enrolled</p>
-                                                    <p className="text-sm text-fg-subtle">2 hours ago</p>
-                                                </div>
-                                            </div>
-                                            <span className="text-up text-sm">Completed</span>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
             case 'courses':
                 if (showAddCourse) {
                     return (
@@ -1293,21 +789,6 @@ const AdminDashboard = () => {
                                             <option value="intermediate">Intermediate</option>
                                             <option value="advanced">Advanced</option>
                                         </select>
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm font-medium text-fg-muted mb-1">
-                                            Course Type
-                                        </label>
-                                        <select
-                                            name="courseType"
-                                            value={formData.courseType}
-                                            onChange={handleFormChange}
-                                            className="w-full px-3 lg:px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-line-strong focus:border-line-strong bg-ink-850"
-                                        >
-                                            <option value="forex">Forex</option>
-                                            <option value="crypto">Crypto</option>
-                                        </select>
-                                        <p className="mt-1 text-xs text-fg-subtle">Select whether this is a Forex or Crypto course</p>
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-fg-muted mb-1">
@@ -1535,103 +1016,6 @@ const AdminDashboard = () => {
                         <CourseManagement />
                     </div>
                 );
-            case 'books':
-                return (
-                    <div className="space-y-6">
-                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                            <h2 className="text-xl font-bold">Books Management</h2>
-                            <button
-                                onClick={handleAddBook}
-                                className="flex items-center px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 text-sm w-full sm:w-auto mt-3 sm:mt-0"
-                            >
-                                <FiPlus className="mr-2" />
-                                Add New Book
-                            </button>
-                        </div>
-                        
-                        <div className="bg-ink-850 rounded-xl shadow-sm">
-                            <div className="overflow-x-auto">
-                                <table className="min-w-full divide-y divide-line">
-                                    <thead className="bg-ink-900">
-                                        <tr>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
-                                                Cover
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
-                                                Title
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
-                                                Author
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
-                                                Price
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-fg-subtle uppercase tracking-wider">
-                                                Actions
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-ink-850 divide-y divide-line">
-                                        {books.map((book) => (
-                                            <tr key={book._id} className="hover:bg-ink-900">
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <img 
-                                                        src={book.thumbnail} 
-                                                        alt={book.title} 
-                                                        className="h-16 w-12 object-cover rounded"
-                                                    />
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm font-medium text-fg">{book.title}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-fg-subtle">{book.author}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="text-sm text-fg-subtle">${book.price}</div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                    <button
-                                                        onClick={() => handleEditBook(book)}
-                                                        className="text-brand-400 hover:text-brand-300 mr-4"
-                                                    >
-                                                        <FiEdit2 className="inline mr-1" />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteBookRequest(book._id)}
-                                                        className="text-down hover:text-down"
-                                                    >
-                                                        <FiTrash2 className="inline mr-1" />
-                                                        Delete
-                                                    </button>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 'upload':
-                return (
-                    <div className="space-y-6">
-                        <h2 className="text-xl font-bold">Upload Course Content</h2>
-                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
-                            <div className="border-2 border-dashed border-line rounded-lg p-8 text-center">
-                                <FiUpload className="mx-auto h-12 w-12 text-fg-subtle" />
-                                <h3 className="mt-2 text-sm font-medium text-fg">Upload Course Content</h3>
-                                <p className="mt-1 text-sm text-fg-subtle">
-                                    Drag and drop files here, or click to select files
-                                </p>
-                                <button className="mt-4 bg-brand-600 hover:bg-brand-700 text-white font-medium py-2 px-4 rounded-lg">
-                                    Select Files
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                );
             case 'settings':
                 return (
                     <div className="space-y-6">
@@ -1764,174 +1148,6 @@ const AdminDashboard = () => {
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 'mentorship':
-                return (
-                    <div className="space-y-6">
-                        <h2 className="text-xl font-bold mb-4">Add Mentorship Session</h2>
-                        <form onSubmit={handleMentorshipSubmit} className="bg-ink-850 rounded-xl shadow-sm p-6 space-y-4 max-w-lg">
-                            <div>
-                                <label className="block text-sm font-medium text-fg-muted mb-1">Title</label>
-                                <input type="text" name="title" value={mentorshipForm.title} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-fg-muted mb-1">Summary</label>
-                                <textarea name="summary" value={mentorshipForm.summary} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-fg-muted mb-1">Session Image</label>
-                                <input
-                                    type="file"
-                                    accept="image/*"
-                                    onChange={handleMentorshipImageUpload}
-                                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                />
-                                {mentorshipForm.imageUrl && (
-                                    <div className="mt-2">
-                                        <img
-                                            src={mentorshipForm.imageUrl}
-                                            alt="Session preview"
-                                            className="h-32 object-cover rounded-lg"
-                                        />
-                                    </div>
-                                )}
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Date</label>
-                                    <input type="text" name="date" value={mentorshipForm.date} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. June 15, 2023" required />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Time</label>
-                                    <input type="text" name="time" value={mentorshipForm.time} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" placeholder="e.g. 10:00 AM EST" required />
-                                </div>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-fg-muted mb-1">Mentor</label>
-                                <input type="text" name="mentor" value={mentorshipForm.mentor} onChange={handleMentorshipInput} className="w-full px-3 py-2 border rounded-lg" required />
-                            </div>
-                            <div className="flex items-center gap-4">
-                                <label className="flex items-center">
-                                    <input type="checkbox" name="isPremium" checked={mentorshipForm.isPremium} onChange={handleMentorshipInput} className="rounded border-line text-brand-400" />
-                                    <span className="ml-2 text-sm text-fg-muted">Premium Session</span>
-                                </label>
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Icon</label>
-                                    <input type="text" name="icon" value={mentorshipForm.icon} onChange={handleMentorshipInput} className="w-32 px-3 py-2 border rounded-lg" />
-                                </div>
-                            </div>
-                            <button type="submit" className="bg-brand-600 text-white px-6 py-2 rounded-lg hover:bg-brand-700">Add Session</button>
-                        </form>
-                    </div>
-                );
-            case 'advertisements':
-                return (
-                    <div className="space-y-6">
-                        <div className="flex justify-between items-center">
-                            <h2 className="text-xl font-bold">Advertisement Management</h2>
-                            <p className="text-sm text-fg-subtle">Maximum 3 active advertisements</p>
-                        </div>
-                        
-                        {/* Add New Advertisement Form */}
-                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
-                            <h3 className="text-lg font-semibold mb-4">Add New Advertisement</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Title</label>
-                                    <input
-                                        type="text"
-                                        value={newAdvertisement.title}
-                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, title: e.target.value }))}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                        placeholder="Enter advertisement title"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Content</label>
-                                    <textarea
-                                        value={newAdvertisement.content}
-                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, content: e.target.value }))}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                        rows="4"
-                                        placeholder="Enter advertisement content"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Image</label>
-                                    <input
-                                        type="file"
-                                        accept="image/*"
-                                        onChange={handleAdvertisementImageUpload}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                    />
-                                    {newAdvertisement.imageUrl && (
-                                        <img
-                                            src={newAdvertisement.imageUrl}
-                                            alt="Advertisement preview"
-                                            className="mt-2 h-32 object-cover rounded-lg"
-                                        />
-                                    )}
-                                </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-fg-muted mb-1">Link URL</label>
-                                    <input
-                                        type="url"
-                                        value={newAdvertisement.link}
-                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, link: e.target.value }))}
-                                        className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"
-                                        placeholder="Enter advertisement link URL"
-                                    />
-                                </div>
-                                <div className="flex items-center">
-                                    <input
-                                        type="checkbox"
-                                        checked={newAdvertisement.isActive}
-                                        onChange={(e) => setNewAdvertisement(prev => ({ ...prev, isActive: e.target.checked }))}
-                                        className="rounded border-line text-brand-400 focus:ring-brand-500"
-                                    />
-                                    <label className="ml-2 text-sm text-fg-muted">Active</label>
-                                </div>
-                                <button
-                                    onClick={handleAddAdvertisement}
-                                    disabled={advertisements.length >= 10}
-                                    className="w-full px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 disabled:bg-ink-600 disabled:cursor-not-allowed"
-                                >
-                                    Add Advertisement
-                                </button>
-                            </div>
-                        </div>
-
-                        {/* Existing Advertisements */}
-                        <div className="bg-ink-850 rounded-xl shadow-sm p-6">
-                            <h3 className="text-lg font-semibold mb-4">Current Advertisements</h3>
-                            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                                {advertisements.map((ad) => (
-                                    <div key={ad._id} className="border rounded-lg p-4">
-                                        <img
-                                            src={ad.imageUrl}
-                                            alt={ad.title}
-                                            className="w-full h-40 object-cover rounded-lg mb-4"
-                                        />
-                                        <h4 className="font-semibold mb-2">{ad.title}</h4>
-                                        <p className="text-sm text-fg-muted mb-4">{ad.content}</p>
-                                        <div className="flex justify-between items-center">
-                                            <span className={`px-2 py-1 rounded-full text-xs ${
-                                                ad.isActive ? 'bg-up/10 text-up' : 'bg-down/10 text-down'
-                                            }`}>
-                                                {ad.isActive ? 'Active' : 'Inactive'}
-                                            </span>
-                                            <button
-                                                onClick={() => handleDeleteAdvertisement(ad._id)}
-                                                className="text-down hover:text-down"
-                                            >
-                                                <FiTrash2 className="w-5 h-5" />
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
                             </div>
                         </div>
                     </div>

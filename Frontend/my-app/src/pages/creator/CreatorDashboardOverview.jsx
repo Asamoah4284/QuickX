@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import {
   Chart as ChartJS,
@@ -86,21 +85,15 @@ const doughnutOptions = {
 export default function CreatorDashboardOverview() {
   const token = localStorage.getItem('authToken');
   const [data, setData] = useState(null);
-  const [enrollments, setEnrollments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const headers = { Authorization: `Bearer ${token}` };
-    Promise.all([
-      axios.get(`${API_URL}/api/instructor/courses/dashboard`, { headers }),
-      axios
-        .get(`${API_URL}/api/programs/user/me`, { headers })
-        .catch(() => ({ data: [] })),
-    ])
-      .then(([dashboardRes, enrollmentsRes]) => {
+    axios
+      .get(`${API_URL}/api/instructor/courses/dashboard`, { headers })
+      .then((dashboardRes) => {
         setData(dashboardRes.data);
-        setEnrollments(Array.isArray(enrollmentsRes.data) ? enrollmentsRes.data : []);
       })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || requestError.message);
@@ -181,66 +174,22 @@ export default function CreatorDashboardOverview() {
 
   return (
     <div className="space-y-4">
-      <section className="rounded-2xl border border-line bg-ink-850 p-4 sm:p-5">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-fg">Creator program tracks</h2>
-            <p className="mt-0.5 text-xs text-fg-subtle">
-              Active enrollments unlock publishing in each category.
-            </p>
-          </div>
-          <Link
-            to="/programs"
-            className="text-xs font-semibold text-brand-300 hover:text-brand-300"
-          >
-            Manage programs
-          </Link>
-        </div>
-        {enrollments.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-dashed border-line bg-ink-900 px-4 py-3 text-sm text-fg-muted">
-            No active program enrollments yet.{' '}
-            <Link to="/programs" className="font-medium text-brand-300 hover:underline">
-              Join a creator track
-            </Link>{' '}
-            to publish courses in forex, crypto, or web development.
-          </p>
-        ) : (
-          <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {enrollments.map((entry) => {
-              const program = entry.programId;
-              return (
-                <li
-                  key={entry._id}
-                  className="rounded-xl border border-up/30 bg-up/10 px-4 py-3"
-                >
-                  <p className="font-semibold text-fg">{program?.name || 'Creator program'}</p>
-                  <p className="mt-1 text-xs text-fg-muted">
-                    Active · {program?.courseType || 'creator track'}
-                  </p>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
-
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <OverviewCard label="Total courses" value={stats.totalCourses || 0} hint="All creator-owned courses" />
         <OverviewCard label="Students enrolled" value={stats.totalStudents || 0} hint="Unique learners across your catalog" />
         <OverviewCard
           label="Total revenue"
           value={`GH₵${Number(stats.totalRevenue || 0).toFixed(2)}`}
-          hint="Net tutor earnings tracked so far"
+          hint="Course sales tracked so far"
         />
         <OverviewCard label="Average rating" value={stats.averageRating || 0} hint="Average of all course reviews" />
         <OverviewCard label="Completion rate" value={`${stats.completionRate || 0}%`} hint="Average learner progress" />
-        <OverviewCard label="Pending reviews" value={stats.pendingReviews || 0} hint="Courses waiting for moderation" />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-1 xl:grid-cols-3">
         <section className="rounded-2xl border border-line bg-ink-850 p-4 sm:p-5 xl:col-span-2">
           <h2 className="text-base font-semibold text-fg">Revenue &amp; enrollments</h2>
-          <p className="mt-0.5 text-xs text-fg-subtle">Last 6 months — completed payouts to you and new student enrollments.</p>
+          <p className="mt-0.5 text-xs text-fg-subtle">Last 6 months — course revenue and new student enrollments.</p>
           <div className="mt-3 h-[220px] w-full sm:h-[240px]">
             <Line data={trendChartData} options={trendChartOptions} />
           </div>

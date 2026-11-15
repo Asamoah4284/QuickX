@@ -12,7 +12,7 @@ const API_URL = import.meta.env.VITE_API_URL;
 
 const steps = [
   { label: 'Basics', description: 'Title, cover, and description' },
-  { label: 'Pricing', description: 'Basic, Premium & Diamond' },
+  { label: 'Access', description: 'Who can watch it' },
   { label: 'Curriculum', description: 'Modules and lessons' },
   { label: 'Review', description: 'Check and publish' },
 ];
@@ -129,16 +129,9 @@ export default function CreatorCourseWizard() {
   const [error, setError] = useState('');
   const [activeCourseId, setActiveCourseId] = useState(courseId || '');
   const [courseStatus, setCourseStatus] = useState('draft');
-  const [settings, setSettings] = useState({ courseAutoApproval: false });
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0 });
   const [thumbnailPreviewFailed, setThumbnailPreviewFailed] = useState(false);
   const [showMoreDetails, setShowMoreDetails] = useState(false);
-  const [subscriptionPricing, setSubscriptionPricing] = useState({
-    basic: 49,
-    premium: 99,
-    diamond: 599,
-  });
-  const [subscriptionPricingSaving, setSubscriptionPricingSaving] = useState(false);
   const hydratedRef = useRef(false);
 
   useEffect(() => {
@@ -148,24 +141,11 @@ export default function CreatorCourseWizard() {
   useEffect(() => {
     async function loadCourse() {
       try {
-        const [profileResponse, courseResponse] = await Promise.all([
-          axios.get(`${API_URL}/api/users/creator/profile`, {
-            headers: { Authorization: `Bearer ${token}` },
-          }),
-          courseId
-            ? axios.get(`${API_URL}/api/instructor/courses/${courseId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-              })
-            : Promise.resolve({ data: null }),
-        ]);
-
-        setSettings(profileResponse.data.settings || { courseAutoApproval: false });
-        const sp = profileResponse.data?.tutorProfile?.subscriptionPricing;
-        setSubscriptionPricing({
-          basic: Number(sp?.basic ?? sp?.month1 ?? 49) || 0,
-          premium: Number(sp?.premium ?? sp?.premiumPlus ?? sp?.month3 ?? 99) || 0,
-          diamond: Number(sp?.diamond ?? sp?.year1 ?? 599) || 0,
-        });
+        const courseResponse = courseId
+          ? await axios.get(`${API_URL}/api/instructor/courses/${courseId}`, {
+              headers: { Authorization: `Bearer ${token}` },
+            })
+          : { data: null };
 
         if (courseResponse.data) {
           const course = courseResponse.data;
@@ -275,45 +255,10 @@ export default function CreatorCourseWizard() {
     additionalMaterials: form.additionalMaterials,
   });
 
-  const saveSubscriptionPricing = async (silent = true) => {
-    try {
-      setSubscriptionPricingSaving(true);
-      const basic = Math.max(0, Math.round(Number(subscriptionPricing.basic) || 0));
-      const premium = Math.max(0, Math.round(Number(subscriptionPricing.premium) || 0));
-      const diamond = Math.max(0, Math.round(Number(subscriptionPricing.diamond) || 0));
-      // Keep legacy month1/month3/year1 in sync so listings don't show old amounts
-      const payload = {
-        subscriptionPricing: {
-          basic,
-          premium,
-          diamond,
-          month1: basic,
-          month3: premium,
-          year1: diamond,
-        },
-      };
-      await axios.put(`${API_URL}/api/users/creator/profile`, payload, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (!silent) setMessage('Subscription pricing saved.');
-      return true;
-    } catch (e) {
-      if (!silent) setError(e.response?.data?.message || e.message);
-      return false;
-    } finally {
-      setSubscriptionPricingSaving(false);
-    }
-  };
-
-  const saveDraft = async (silent = false, { includePricing = !silent } = {}) => {
+  const saveDraft = async (silent = false) => {
     try {
       setSaving(true);
       setError('');
-
-      // Persist plan prices on explicit save / submit (not every autosave keystroke)
-      if (includePricing) {
-        await saveSubscriptionPricing(true);
-      }
 
       const payload = buildPayload();
       const response = activeCourseId
@@ -360,11 +305,11 @@ export default function CreatorCourseWizard() {
     }
   };
 
-  const submitForReview = async (action = 'submit') => {
+  const submitForReview = async () => {
     try {
       setSubmitting(true);
       setError('');
-      const savedCourse = await saveDraft(true, { includePricing: true });
+      const savedCourse = await saveDraft(true);
       const courseIdToUse = savedCourse?._id || activeCourseId;
 
       if (!courseIdToUse) {
@@ -372,9 +317,9 @@ export default function CreatorCourseWizard() {
         return;
       }
 
-      const endpoint = action === 'publish' ? 'publish' : 'submit';
+      // `/submit` publishes straight away now that the owner is the only creator.
       const { data } = await axios.post(
-        `${API_URL}/api/instructor/courses/${courseIdToUse}/${endpoint}`,
+        `${API_URL}/api/instructor/courses/${courseIdToUse}/submit`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -382,7 +327,7 @@ export default function CreatorCourseWizard() {
       setCourseStatus(
         data.course?.listingStatus ||
           data.listingStatus ||
-          (action === 'publish' ? 'published' : 'under_review')
+          'published'
       );
       setMessage(data.message || 'Course updated.');
     } catch (submitError) {
@@ -411,25 +356,6 @@ export default function CreatorCourseWizard() {
                 placeholder="e.g. Forex price action for beginners"
                 className={inputCls}
               />
-            </label>
-
-            <label className="space-y-2 text-sm text-fg-muted">
-              <span>Track</span>
-              <select
-                value={form.courseType}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    courseType: event.target.value,
-                    category: current.category || event.target.value,
-                  }))
-                }
-                className={inputCls}
-              >
-                <option value="forex">Forex</option>
-                <option value="crypto">Crypto</option>
-                <option value="webdev">Web development</option>
-              </select>
             </label>
 
             <label className="space-y-2 text-sm text-fg-muted">
@@ -550,92 +476,43 @@ export default function CreatorCourseWizard() {
           ) : null}
         </div>
 
-        <p className="rounded-2xl border border-line bg-ink-900 px-4 py-3 text-sm text-fg-muted">
-          Next you&apos;ll set <span className="font-semibold text-fg">Basic / Premium / Diamond</span>{' '}
-          subscription prices for access to your courses.
-        </p>
       </div>
     );
   } else if (currentStep === 2) {
     stepContent = (
       <div className="space-y-6">
         <StudioPanel
-          title="Subscription plan pricing"
-          description="Set prices for Basic, Premium, and Diamond. Each plan unlocks different features."
+          title="Who can watch this course?"
+          description="Courses aren't sold one by one. Members get every course through the Courses plan (or All-Access). Set that price in Admin → Pricing."
         >
-          <div className="grid gap-4 sm:grid-cols-3">
-            <label className="space-y-2 text-sm text-fg-muted">
-              <span>Basic — 1 month · videos only (GHS)</span>
-              <input
-                type="number"
-                min="0"
-                value={subscriptionPricing.basic}
-                onChange={(e) =>
-                  setSubscriptionPricing((cur) => ({ ...cur, basic: e.target.value }))
-                }
-                className={inputCls}
-              />
-            </label>
-            <label className="space-y-2 text-sm text-fg-muted">
-              <span>Premium — 3 months · community, offline, signals (GHS)</span>
-              <input
-                type="number"
-                min="0"
-                value={subscriptionPricing.premium}
-                onChange={(e) =>
-                  setSubscriptionPricing((cur) => ({ ...cur, premium: e.target.value }))
-                }
-                className={inputCls}
-              />
-            </label>
-            <label className="space-y-2 text-sm text-fg-muted">
-              <span>Diamond — 1 year · mentorship (GHS)</span>
-              <input
-                type="number"
-                min="0"
-                value={subscriptionPricing.diamond}
-                onChange={(e) =>
-                  setSubscriptionPricing((cur) => ({ ...cur, diamond: e.target.value }))
-                }
-                className={inputCls}
-              />
-            </label>
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-line bg-ink-900 px-4 py-4">
-            <p className="text-sm font-medium text-fg-muted">Student preview</p>
-            <div className="mt-3 grid gap-3 sm:grid-cols-3">
-              {[
-                { label: 'Basic', value: subscriptionPricing.basic, note: 'Videos only · 1 mo' },
-                { label: 'Premium', value: subscriptionPricing.premium, note: 'Full access · 3 mo' },
-                { label: 'Diamond', value: subscriptionPricing.diamond, note: 'Mentorship · 1 yr' },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl bg-ink-850 px-4 py-3 ring-1 ring-line">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-fg-subtle">
-                    {item.label}
-                  </p>
-                  <p className="mt-2 text-xl font-semibold text-fg">
-                    GH₵
-                    {Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
-                  </p>
-                  <p className="mt-1 text-xs text-fg-subtle">{item.note}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-xs text-fg-subtle">
-              Saved to your creator profile and used at checkout and on your public page.
-            </p>
-            <button
-              type="button"
-              onClick={() => saveSubscriptionPricing(false)}
-              disabled={subscriptionPricingSaving}
-              className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-brand-600 disabled:opacity-60"
-            >
-              {subscriptionPricingSaving ? 'Saving…' : 'Save prices'}
-            </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            {[
+              {
+                value: 'paid',
+                title: 'Courses members',
+                body: 'Anyone with Courses or All-Access. Lessons you tick as preview stay open to everyone.',
+              },
+              {
+                value: 'free',
+                title: 'Free for everyone',
+                body: 'Any signed-in user can watch every lesson. Good for an intro course.',
+              },
+            ].map((opt) => {
+              const active = form.pricingType === opt.value;
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setForm((current) => ({ ...current, pricingType: opt.value, price: 0 }))}
+                  className={`rounded-2xl border p-4 text-left transition ${
+                    active ? 'border-brand-500 bg-brand-500/10' : 'border-line bg-ink-900 hover:border-fg-subtle'
+                  }`}
+                >
+                  <p className="text-sm font-semibold text-fg">{opt.title}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-fg-muted">{opt.body}</p>
+                </button>
+              );
+            })}
           </div>
         </StudioPanel>
       </div>
@@ -688,24 +565,16 @@ export default function CreatorCourseWizard() {
               {form.description || 'No description yet.'}
             </p>
 
-            <div className="grid gap-3 sm:grid-cols-3">
-              {[
-                { label: 'Basic', value: subscriptionPricing.basic },
-                { label: 'Premium', value: subscriptionPricing.premium },
-                { label: 'Diamond', value: subscriptionPricing.diamond },
-              ].map((item) => (
-                <div key={item.label} className="rounded-2xl border border-line p-4">
-                  <p className="text-sm text-fg-subtle">{item.label} access</p>
-                  <p className="mt-2 text-xl font-semibold text-fg">
-                    GH₵{Number(item.value || 0).toLocaleString('en-GH', { maximumFractionDigits: 0 })}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <p className="rounded-2xl border border-line p-4 text-sm text-fg-muted">
+              Access:{' '}
+              <span className="font-semibold text-fg">
+                {form.pricingType === 'free' ? 'Free for everyone' : 'Courses members'}
+              </span>
+            </p>
           </div>
         </StudioPanel>
 
-        <StudioPanel title="Publish" description="Save anytime. Submit when ready.">
+        <StudioPanel title="Publish" description="Save anytime. Publishing makes it live straight away.">
           <div className="flex flex-wrap gap-3">
             <button
               type="button"
@@ -716,22 +585,12 @@ export default function CreatorCourseWizard() {
             </button>
             <button
               type="button"
-              onClick={() => submitForReview('submit')}
+              onClick={() => submitForReview()}
               disabled={submitting || !form.title.trim()}
               className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {submitting ? 'Processing…' : 'Submit for review'}
+              {submitting ? 'Publishing…' : 'Publish'}
             </button>
-            {settings.courseAutoApproval ? (
-              <button
-                type="button"
-                onClick={() => submitForReview('publish')}
-                disabled={submitting || !form.title.trim()}
-                className="rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600 disabled:opacity-50"
-              >
-                Publish now
-              </button>
-            ) : null}
           </div>
         </StudioPanel>
       </div>
@@ -758,7 +617,7 @@ export default function CreatorCourseWizard() {
               {activeCourseId ? 'Edit course' : 'Create a course'}
             </h2>
             <p className="mt-2 text-sm text-brand-300">
-              Basics, pricing, curriculum, then publish.
+              Basics, access, curriculum, then publish.
             </p>
           </div>
 
@@ -828,12 +687,7 @@ export default function CreatorCourseWizard() {
               {currentStep < steps.length ? (
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (currentStep === 2) {
-                      await saveSubscriptionPricing(true);
-                    }
-                    setCurrentStep((step) => Math.min(step + 1, steps.length));
-                  }}
+                  onClick={() => setCurrentStep((step) => Math.min(step + 1, steps.length))}
                   className="inline-flex items-center gap-2 rounded-2xl bg-brand-600 px-5 py-3 text-sm font-semibold text-white hover:bg-brand-600"
                 >
                   Continue
@@ -842,11 +696,11 @@ export default function CreatorCourseWizard() {
               ) : (
                 <button
                   type="button"
-                  onClick={() => submitForReview('submit')}
+                  onClick={() => submitForReview()}
                   disabled={submitting || !form.title.trim()}
                   className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
                 >
-                  {submitting ? 'Processing…' : 'Submit for review'}
+                  {submitting ? 'Publishing…' : 'Publish'}
                 </button>
               )}
             </div>
@@ -854,7 +708,7 @@ export default function CreatorCourseWizard() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <StudioPanel title="Quick checklist" description="Nice to have — only title is required to submit.">
+          <StudioPanel title="Quick checklist" description="Nice to have — only the title is required to publish.">
             <div className="space-y-3">
               {checklist.map((item) => (
                 <ChecklistRow key={item.label} done={item.done} label={item.label} />

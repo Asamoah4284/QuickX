@@ -36,7 +36,7 @@ export default function CreatorProtectedRoute({ children }) {
           setAccess(hasCreatorAccess ? 'approved' : 'not-approved');
           setIsChecking(false);
         }
-      } catch (error) {
+      } catch {
         localStorage.removeItem('authToken');
         localStorage.removeItem('user');
         if (mounted) {
@@ -54,7 +54,7 @@ export default function CreatorProtectedRoute({ children }) {
   }, []);
 
   if (isChecking) {
-    return <Loader label="Checking creator access…" sublabel="Making sure your creator tools are ready." />;
+    return <Loader label="Opening Studio…" sublabel="Checking your access." />;
   }
 
   if (access === 'unauthenticated') {
@@ -62,7 +62,8 @@ export default function CreatorProtectedRoute({ children }) {
   }
 
   if (access !== 'approved') {
-    return <Navigate to="/creator/onboarding" replace />;
+    // Only the owner (Maxwell) uses the Studio; everyone else goes to their account.
+    return <Navigate to="/account" replace />;
   }
 
   return children;

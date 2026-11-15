@@ -17,7 +17,7 @@ const Community = lazy(() => import('./features/community/Community'));
 const Account = lazy(() => import('./features/account/Account'));
 
 /* Pages still on the previous design (rendered on a light sheet via handle.legacy) */
-const About = lazy(() => import('./pages/About'));
+const About = lazy(() => import('./features/marketing/About'));
 const CoursePlayer = lazy(() => import('./pages/School/CourseDetail'));
 const Store = lazy(() => import('./pages/store/store'));
 const BookDetails = lazy(() => import('./pages/BookDetails'));
@@ -53,6 +53,7 @@ const AdminSignals = lazy(() => import('./features/admin/AdminSignals'));
 const AdminPricing = lazy(() => import('./features/admin/AdminPricing'));
 const AdminMembers = lazy(() => import('./features/admin/AdminMembers'));
 const AdminSessions = lazy(() => import('./features/admin/AdminSessions'));
+const AdminOverview = lazy(() => import('./features/admin/AdminOverview'));
 
 const legacy = { legacy: true };
 const authed = (element) => <RequireAuth>{element}</RequireAuth>;
@@ -74,7 +75,7 @@ const router = createBrowserRouter([
       { path: 'account', element: authed(<Account />) },
 
       // Previous design, still in use
-      { path: 'about', element: <About />, handle: legacy },
+      { path: 'about', element: <About /> },
       { path: 'school/course/:courseId', element: <CoursePlayer />, handle: { legacy: true, bare: true } },
       { path: 'store', element: <Store />, handle: legacy },
       { path: 'store/:bookId', element: <BookDetails />, handle: legacy },
@@ -140,7 +141,7 @@ const router = createBrowserRouter([
         ),
         children: [
           { index: true, element: go('/admin/dashboard') },
-          { path: 'dashboard', element: <AdminDashboard />, handle: legacy },
+          { path: 'dashboard', element: <AdminOverview /> },
           { path: 'signals', element: <AdminSignals /> },
           { path: 'pricing', element: <AdminPricing /> },
           { path: 'members', element: <AdminMembers /> },

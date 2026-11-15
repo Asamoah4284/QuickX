@@ -21,12 +21,12 @@ export default defineConfig({
       manifest: {
         name: 'Quick-X',
         short_name: 'Quick-X',
-        description: 'Learn Forex, Crypto & Web Development',
+        description: 'Forex courses, live signals and mentorship',
         start_url: '/',
         scope: '/',
         display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#1B5EF5',
+        background_color: '#05080f',
+        theme_color: '#05080f',
         icons: [
           {
             src: '/pwa-192.png',

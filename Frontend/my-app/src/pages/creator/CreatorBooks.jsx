@@ -82,7 +82,7 @@ function BookRowActions({ book, navigate, runAction }) {
               onClick={() => runAction(book._id, 'submit')}
             >
               <FiSend className="h-4 w-4 shrink-0" aria-hidden />
-              Submit for review
+              Publish
             </button>
           )}
           <div className="my-1 border-t border-line" />
@@ -155,7 +155,7 @@ export default function CreatorBooks() {
           {},
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        setMessage('Book submitted for review.');
+        setMessage('Book published.');
       }
       loadBooks();
     } catch (e) {

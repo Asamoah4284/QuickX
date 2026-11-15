@@ -16,18 +16,11 @@ import { publicAssetUrl } from '../../utils/publicAssetUrl';
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-const filterOptions = ['all', 'published', 'draft', 'under_review', 'rejected', 'archived'];
+const filterOptions = ['all', 'published', 'draft', 'archived'];
 
-/** Creator catalog is subscription-based; course.price is usually 0. */
-function formatCreatorCoursePrice(course, subscriptionPricing) {
-  const month1 = Number(subscriptionPricing?.month1);
-  if (Number.isFinite(month1) && month1 > 0) {
-    return `From GH₵${month1.toLocaleString()}/mo`;
-  }
-  if (course.pricingType === 'free' || Number(course.price) === 0) {
-    return 'Free';
-  }
-  return `GH₵${Number(course.price).toLocaleString()}`;
+/** Courses are unlocked by the Courses plan, not sold one by one. */
+function formatCreatorCoursePrice(course) {
+  return course.pricingType === 'free' ? 'Free' : 'Courses plan';
 }
 
 function courseThumbnailUrl(course) {
@@ -130,7 +123,7 @@ function CourseRowActions({ course, navigate, runAction }) {
               <FiCopy className="h-4 w-4 shrink-0 text-fg-subtle" aria-hidden />
               Duplicate
             </button>
-            {['draft', 'rejected', 'published'].includes(course.listingStatus) ? (
+            {['draft', 'rejected', 'archived'].includes(course.listingStatus) ? (
               <button
                 type="button"
                 role="menuitem"
@@ -138,7 +131,7 @@ function CourseRowActions({ course, navigate, runAction }) {
                 onClick={() => closeAndRun('submit')}
               >
                 <FiSend className="h-4 w-4 shrink-0" aria-hidden />
-                Submit for review
+                Publish
               </button>
             ) : null}
             {course.listingStatus === 'published' ? (
@@ -188,7 +181,6 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
   const navigate = useNavigate();
   const token = localStorage.getItem('authToken');
   const [courses, setCourses] = useState([]);
-  const [subscriptionPricing, setSubscriptionPricing] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeFilter, setActiveFilter] = useState(statusFilter);
@@ -207,21 +199,13 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
     }
     setLoading(true);
     setError('');
-    Promise.all([
-      axios.get(`${API_URL}/api/instructor/courses`, {
+    axios
+      .get(`${API_URL}/api/instructor/courses`, {
         headers: { Authorization: `Bearer ${token}` },
         params: { status: activeFilter },
-      }),
-      axios
-        .get(`${API_URL}/api/users/creator/profile`, {
-          headers: { Authorization: `Bearer ${token}` },
-        })
-        .catch(() => null),
-    ])
-      .then(([coursesResponse, profileResponse]) => {
+      })
+      .then((coursesResponse) => {
         setCourses(Array.isArray(coursesResponse.data) ? coursesResponse.data : []);
-        const sp = profileResponse?.data?.tutorProfile?.subscriptionPricing;
-        setSubscriptionPricing(sp || null);
       })
       .catch((requestError) => {
         setError(requestError.response?.data?.message || requestError.message);
@@ -315,7 +299,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
               {courses.map((course) => {
                 const thumb = courseThumbnailUrl(course);
                 const students = course.totalEnrollments ?? course.totalStudents ?? 0;
-                const priceLabel = formatCreatorCoursePrice(course, subscriptionPricing);
+                const priceLabel = formatCreatorCoursePrice(course);
                 const revenue = Number(course.totalRevenue || 0).toFixed(2);
                 const rating = course.averageRating ?? 0;
                 const updated = new Date(course.updatedAt).toLocaleDateString(undefined, {
@@ -397,7 +381,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                   {courses.map((course) => {
                     const thumb = courseThumbnailUrl(course);
                     const students = course.totalEnrollments ?? course.totalStudents ?? 0;
-                    const priceLabel = formatCreatorCoursePrice(course, subscriptionPricing);
+                    const priceLabel = formatCreatorCoursePrice(course);
                     const revenue = Number(course.totalRevenue || 0).toFixed(2);
                     const rating = course.averageRating ?? 0;
 

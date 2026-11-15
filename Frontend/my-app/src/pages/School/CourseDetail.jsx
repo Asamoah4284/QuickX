@@ -944,12 +944,7 @@ const CourseDetail = () => {
         : '/images/logo-1.jpg'
   );
 
-  const schoolBack =
-    courseData.courseType === 'crypto'
-      ? '/school/crypto'
-      : courseData.courseType === 'webdev'
-        ? '/school/webdev'
-        : '/school';
+  const schoolBack = '/courses';
 
   const lessonOrdinal = (() => {
     try {
