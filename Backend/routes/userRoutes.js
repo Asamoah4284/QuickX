@@ -16,6 +16,8 @@ const sgMail = require('@sendgrid/mail');
 const { serializeUser } = require('../utils/serializeUser');
 const { sendOTP } = require('../services/sms');
 
+const { isLessonPreview } = require('../utils/lessonAccess');
+
 // Initialize SendGrid
 sgMail.setApiKey(process.env.SENDGRID_API_KEY);
 
@@ -45,7 +47,7 @@ function collectPublicProfileLessons(courseDocs) {
         modules.forEach((mod, mi) => {
             (mod.sections || []).forEach((sec, si) => {
                 (sec.lessons || []).forEach((les, li) => {
-                    const isPreview = les.isPreview === true || les.free === true;
+                    const isPreview = isLessonPreview(les);
                     const lessonType = String(les.lessonType || les.type || 'video').toLowerCase();
                     if (lessonType !== 'video' && !isPreview) return;
 
@@ -84,8 +86,8 @@ function collectInstructorVideoContent(courseDocs) {
                     const lessonType = les.lessonType || les.type || 'video';
                     if (lessonType !== 'video') return;
                     const lessonKey = les._id != null ? String(les._id) : `m${mi}-s${si}-l${li}`;
-                    const isPreview = les.isPreview === true || les.free === true;
-                    const isLocked = les.isLocked === undefined ? !isPreview : Boolean(les.isLocked);
+                    const isPreview = isLessonPreview(les);
+                    const isLocked = !isPreview;
                     out.push({
                         key: `${String(c._id)}-${lessonKey}`,
                         courseId: String(c._id),

@@ -12,6 +12,7 @@ const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { serializeUser } = require('../utils/serializeUser');
 const { enrichAdminBookThumbnails, syncStorefrontBookPriceToOfferGroup } = require('../utils/bookOfferHelpers');
+const { normalizeModulesPreviewFlags } = require('../utils/lessonAccess');
 
 // Admin Login
 exports.login = async (req, res) => {
@@ -111,7 +112,7 @@ exports.createCourse = async (req, res) => {
             tags: tags || [],
             instructor,
             instructorModel,
-            modules: modules || [],
+            modules: normalizeModulesPreviewFlags(modules || []),
             thumbnail: thumbnail || null,
             courseType,
             source: 'admin',
@@ -142,6 +143,18 @@ exports.updateCourse = async (req, res) => {
             courseData.thumbnail = `/uploads/course-thumbnails/${req.file.filename}`;
         }
         
+        // Keep lesson preview flags consistent (isPreview is the only source of truth)
+        if (typeof courseData.modules === 'string') {
+            try {
+                courseData.modules = JSON.parse(courseData.modules);
+            } catch {
+                return res.status(400).json({ message: 'Invalid modules payload' });
+            }
+        }
+        if (Array.isArray(courseData.modules)) {
+            normalizeModulesPreviewFlags(courseData.modules);
+        }
+
         // Update the course
         const course = await Course.findByIdAndUpdate(
             id,

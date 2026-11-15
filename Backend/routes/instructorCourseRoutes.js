@@ -9,6 +9,7 @@ const PlatformSetting = require('../models/PlatformSetting');
 const TutorProfile = require('../models/TutorProfile');
 const auth = require('../middleware/auth');
 const requireApprovedCreator = require('../middleware/requireApprovedCreator');
+const { previewFlags } = require('../utils/lessonAccess');
 
 const COURSE_TYPE_LABEL = { forex: 'Forex', crypto: 'Crypto', webdev: 'Web dev' };
 
@@ -108,9 +109,8 @@ function normalizeModules(modules = []) {
                             resourceUrl: String(lesson?.resourceUrl || '').trim(),
                             resources: normalizeResources(lesson?.resources),
                             description: String(lesson?.description || '').trim(),
-                            free: Boolean(lesson?.free || lesson?.isPreview),
-                            isPreview: Boolean(lesson?.isPreview),
-                            isLocked: lesson?.isLocked === undefined ? !Boolean(lesson?.isPreview) : Boolean(lesson?.isLocked),
+                            // isPreview is the only source of truth; free/isLocked are derived.
+                            ...previewFlags(lesson?.isPreview === true),
                             order: lessonIndex + 1
                         };
                     })

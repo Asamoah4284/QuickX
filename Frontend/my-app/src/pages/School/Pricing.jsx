@@ -87,7 +87,7 @@ function Pricing() {
                           title: lesson.title || `Lesson ${lessonIndex + 1}`,
                           duration: lesson.duration || '30 min',
                           type: lesson.type || 'video',
-                          free: lesson.isFree || (lessonIndex === 0 && sectionIndex === 0) // Make first lesson free
+                          free: lesson.isPreview === true
                         })) || []
                       ) || []
                     })) || [

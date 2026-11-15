@@ -612,7 +612,7 @@ const AdminDashboard = () => {
                                 type: lesson.type || 'video',
                                 duration: lesson.duration || '0min',
                                 videoUrl: lesson.videoUrl || '', // Ensure videoUrl is included
-                                free: lesson.free || false,
+                                isPreview: Boolean(lesson.free),
                                 order: lessonIndex + 1
                             };
                         })

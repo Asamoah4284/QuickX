@@ -8,6 +8,7 @@
     "dev": "nodemon server.js",
     "migrate:add-course-type": "node migrations/add-course-type.js",
     "migrate:fix-course-types": "node migrations/fix-course-types.js",
+    "migrate:sync-preview-flag": "node migrations/sync-lesson-preview-flag.js",
     "seed:creator-demo": "node scripts/seedCreatorDemoData.js",
     "seed:admin": "node scripts/seedAdmin.js",
     "test:s3-upload": "node scripts/testS3Upload.js"

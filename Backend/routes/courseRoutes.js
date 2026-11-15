@@ -16,6 +16,12 @@ const { check, validationResult } = require('express-validator');
 const { videoUpload, thumbnailUpload } = require('../config/s3Config');
 
 const axios = require('axios');
+const {
+    isLessonPreview,
+    previewFlags,
+    readPreviewFlagFromPayload,
+    normalizeModulesPreviewFlags,
+} = require('../utils/lessonAccess');
 
 /** Ensure tutor ref is a plain ObjectId (handles populated instructor/createdBy). */
 function resolveCourseTutorId(course) {
@@ -178,8 +184,7 @@ function sanitizeCourseModulesForPublicPreview(courseObj) {
         sections: (mod.sections || []).map((sec) => ({
             ...sec,
             lessons: (sec.lessons || []).map((lesson) => {
-                const previewAllowed = lesson.isPreview === true || lesson.free === true;
-                if (previewAllowed) return lesson;
+                if (isLessonPreview(lesson)) return lesson;
                 return {
                     ...lesson,
                     videoUrl: '',
@@ -999,7 +1004,7 @@ router.post('/admin/courses', adminAuth, async (req, res) => {
             tags,
             instructor,
             instructorModel,
-            modules,
+            modules: normalizeModulesPreviewFlags(modules),
             thumbnail,
             courseType,
             source: 'admin',
@@ -1063,7 +1068,7 @@ router.post('/admin/courses/:courseId/modules/:moduleId/sections/:sectionId/less
                     videoUrl: videoUrl,
                     videoKey: videoKey,
                     duration: req.body.duration || '0min',
-                    free: req.body.free === 'true',
+                    ...previewFlags(readPreviewFlagFromPayload(req.body)),
                     order: parseInt(req.body.order) || section.lessons.length + 1
                 };
 
