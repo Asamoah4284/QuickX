@@ -21,6 +21,8 @@ const PieDetail = lazy(() => import('./features/pie/PieDetail'));
 
 /* Pages still on the previous design (rendered on a light sheet via handle.legacy) */
 const About = lazy(() => import('./features/marketing/About'));
+const Privacy = lazy(() => import('./features/legal/Privacy'));
+const DeleteAccount = lazy(() => import('./features/legal/DeleteAccount'));
 const CoursePlayer = lazy(() => import('./pages/School/CourseDetail'));
 const Store = lazy(() => import('./pages/store/store'));
 const BookDetails = lazy(() => import('./pages/BookDetails'));
@@ -88,6 +90,8 @@ const router = createBrowserRouter([
       { path: 'account', element: authed(<Account />) },
       { path: 'pie', element: <PieList /> },
       { path: 'pie/:id', element: <PieDetail /> },
+      { path: 'privacy', element: <Privacy /> },
+      { path: 'delete-account', element: <DeleteAccount /> },
       { path: 'ptrading', element: go('/pie') },
       { path: 'ptrading/:id', element: <PieRedirect /> },
 

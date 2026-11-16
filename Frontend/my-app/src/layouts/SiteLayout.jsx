@@ -392,6 +392,16 @@ function Footer() {
                 About
               </Link>
             </li>
+            <li>
+              <Link to="/privacy" className="text-fg-muted transition hover:text-fg">
+                Privacy policy
+              </Link>
+            </li>
+            <li>
+              <Link to="/delete-account" className="text-fg-muted transition hover:text-fg">
+                Delete account
+              </Link>
+            </li>
           </ul>
         </div>
       </Container>
