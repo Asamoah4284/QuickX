@@ -10,6 +10,11 @@ const Admin = require('../models/Admin');
 const auth = require('../middleware/auth');
 const paystack = require('../services/paystackService');
 
+const escapeRegex = (text) => String(text).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/** An event is over once its end time (or start time, if it has no end) has passed. */
+const hasEnded = (event) => new Date(event.endDate || event.startDate) < new Date();
+
 /**
  * Middleware: Allow either web Admin (Admin collection) or mobile Admin (User with role==='admin')
  */
@@ -123,7 +128,7 @@ router.get('/', optionalUserAuth, async (req, res) => {
         }
 
         if (category && category !== 'all') {
-            query.category = new RegExp(`^${category}$`, 'i');
+            query.category = new RegExp(`^${escapeRegex(category)}$`, 'i');
         }
 
         if (eventType && eventType !== 'all') {
@@ -131,11 +136,12 @@ router.get('/', optionalUserAuth, async (req, res) => {
         }
 
         if (search) {
+            const pattern = new RegExp(escapeRegex(String(search).slice(0, 80)), 'i');
             query.$or = [
-                { title: { $regex: search, $options: 'i' } },
-                { description: { $regex: search, $options: 'i' } },
-                { venue: { $regex: search, $options: 'i' } },
-                { tags: { $in: [new RegExp(search, 'i')] } }
+                { title: pattern },
+                { description: pattern },
+                { venue: pattern },
+                { tags: pattern }
             ];
         }
 
@@ -147,7 +153,8 @@ router.get('/', optionalUserAuth, async (req, res) => {
         }
 
         const events = await Event.find(query)
-            .sort({ startDate: 1 })
+            // Past events: most recent first. Otherwise: soonest first.
+            .sort({ startDate: timeFilter === 'past' ? -1 : 1 })
             .limit(Number(limit))
             .lean();
 
@@ -252,6 +259,9 @@ router.post('/:id/register', auth, async (req, res) => {
         if (event.status !== 'published') {
             return res.status(400).json({ message: 'This event is not open for registration' });
         }
+        if (hasEnded(event)) {
+            return res.status(400).json({ message: 'This event has already ended.' });
+        }
 
         if (!event.isFree && event.price > 0) {
             return res.status(400).json({ message: 'This is a paid event. Please purchase a ticket to register.' });
@@ -333,6 +343,9 @@ router.post('/:id/buy-ticket', auth, async (req, res) => {
 
         if (event.status !== 'published') {
             return res.status(400).json({ message: 'This event is not open for ticket sales' });
+        }
+        if (hasEnded(event)) {
+            return res.status(400).json({ message: 'This event has already ended.' });
         }
 
         // Capacity check

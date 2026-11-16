@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar, FiTrash2, FiPlus, FiImage } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '@/config/api';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
-import { getCurrencySymbol } from '../../utils/currencyStore';
 
 const BookModal = ({ book, onClose, onSave }) => {
     const [formData, setFormData] = useState({
@@ -491,23 +491,16 @@ const BookModal = ({ book, onClose, onSave }) => {
                                         <div>
                                             <label className="block text-sm font-medium text-fg-muted mb-1 flex items-center">
                                                 <FiDollarSign className="mr-1" />
-                                                Price
+                                                Price (<MoneyUnit />)
                                             </label>
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span className="text-fg-subtle">{getCurrencySymbol()}</span>
-                                                </div>
-                                                <input
-                                                    type="number"
-                                                    name="price"
-                                                    value={formData.price}
-                                                    onChange={handleChange}
-                                                    min="0"
-                                                    step="0.01"
-                                                    className="w-full pl-8 pr-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                                                    required
-                                                />
-                                            </div>
+                                            <MoneyInput
+                                                plain
+                                                name="price"
+                                                value={formData.price}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                                                required
+                                            />
                                         </div>
 
                                         <div>
@@ -581,23 +574,16 @@ const BookModal = ({ book, onClose, onSave }) => {
                                         <div>
                                             <label className="block text-sm font-medium text-fg-muted mb-1 flex items-center">
                                                 <FiTruck className="mr-1" />
-                                                Delivery Fee (for hardcopy)
+                                                Delivery fee for hardcopy (<MoneyUnit />)
                                             </label>
-                                            <div className="relative">
-                                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span className="text-fg-subtle">{getCurrencySymbol()}</span>
-                                                </div>
-                                                <input
-                                                    type="number"
-                                                    name="deliveryFee"
-                                                    value={formData.deliveryFee}
-                                                    onChange={handleChange}
-                                                    min="0"
-                                                    step="0.01"
-                                                    className="w-full pl-8 pr-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
-                                                    disabled={formData.type !== 'hardcopy'}
-                                                />
-                                            </div>
+                                            <MoneyInput
+                                                plain
+                                                name="deliveryFee"
+                                                value={formData.deliveryFee}
+                                                onChange={handleChange}
+                                                className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                                                disabled={formData.type !== 'hardcopy'}
+                                            />
                                         </div>
 
                                         <div className="md:col-span-2">
@@ -691,12 +677,10 @@ const BookModal = ({ book, onClose, onSave }) => {
                                             <div>
                                                 <label className="block text-sm font-medium text-fg-muted mb-1 flex items-center">
                                                     <FiDollarSign className="mr-1 text-fg-subtle" />
-                                                    Standard Delivery Fee ({getCurrencySymbol()})
+                                                    Standard delivery fee (<MoneyUnit />)
                                                 </label>
-                                                <input
-                                                    type="number"
-                                                    min="0"
-                                                    step="0.01"
+                                                <MoneyInput
+                                                    plain
                                                     value={formData.deliveryOptions?.deliveryFee ?? ''}
                                                     onChange={(e) => handleDeliveryOptionChange('deliveryFee', parseFloat(e.target.value) || 0)}
                                                     placeholder="0 for free delivery"

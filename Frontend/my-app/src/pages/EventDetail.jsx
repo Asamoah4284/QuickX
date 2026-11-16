@@ -230,6 +230,7 @@ export default function EventDetail() {
     event.capacity > 0 ? Math.max(0, event.capacity - (event.ticketsSold || 0)) : 999;
   const isSoldOut = event.capacity > 0 && (event.ticketsSold || 0) >= event.capacity;
   const hasTicket = Boolean(event.hasTicket || confirmedTicket);
+  const hasEnded = new Date(event.endDate || event.startDate) < new Date();
 
   return (
     <div className="min-h-screen bg-ink-900 text-fg pb-24 pt-20">
@@ -524,6 +525,13 @@ export default function EventDetail() {
                     <FiAward className="h-4 w-4" />
                     <span>View Digital Ticket Pass</span>
                   </button>
+                </div>
+              ) : hasEnded ? (
+                <div className="mt-6 rounded-2xl bg-ink-800 p-4 text-center">
+                  <p className="text-sm font-bold text-fg-muted">This event has ended</p>
+                  <p className="mt-1 text-xs text-fg-subtle">
+                    Thanks to everyone who joined. Check the events page for the next one.
+                  </p>
                 </div>
               ) : isSoldOut ? (
                 <div className="mt-6 rounded-2xl bg-ink-800 p-4 text-center">

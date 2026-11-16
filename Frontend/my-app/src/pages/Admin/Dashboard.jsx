@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import { useNavigate, useLocation } from 'react-router-dom';
 import axios from 'axios';
 import { 
@@ -694,9 +695,15 @@ const AdminDashboard = () => {
 
 
     const handleApproveWithdrawal = async (requestId) => {
+        // Only mark as paid after the money has actually been sent on mobile money.
+        const note = window.prompt(
+            'Only continue if you have already sent the money on mobile money.\n\nOptional: paste the MoMo transaction ID so the member can see it.',
+            ''
+        );
+        if (note === null) return;
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.post(`${API_URL}/api/admin/withdrawals/${requestId}/approve`, {}, {
+            await axios.post(`${API_URL}/api/admin/withdrawals/${requestId}/approve`, { remarks: note.trim() ? `MoMo transaction ID: ${note.trim()}` : '' }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setWithdrawalSuccess('Withdrawal approved successfully');
@@ -709,9 +716,11 @@ const AdminDashboard = () => {
     };
 
     const handleRejectWithdrawal = async (requestId) => {
+        const reason = window.prompt('Why are you rejecting this? The member will see this, and the money goes back to their balance.', '');
+        if (reason === null) return;
         try {
             const token = localStorage.getItem('adminToken');
-            await axios.post(`${API_URL}/api/admin/withdrawals/${requestId}/reject`, {}, {
+            await axios.post(`${API_URL}/api/admin/withdrawals/${requestId}/reject`, { remarks: reason.trim() }, {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setWithdrawalSuccess('Withdrawal rejected successfully');
@@ -1037,10 +1046,10 @@ const AdminDashboard = () => {
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-fg-muted mb-1">
-                                            Price
+                                            Price (<MoneyUnit />)
                                         </label>
-                                        <input
-                                            type="number"
+                                        <MoneyInput
+                                            plain
                                             name="price"
                                             value={formData.price}
                                             onChange={handleFormChange}
@@ -1092,10 +1101,10 @@ const AdminDashboard = () => {
                                                 </div>
                                                 <div>
                                                     <label className="block text-sm font-medium text-fg-muted mb-1">
-                                                        Module Price
+                                                        Module price (<MoneyUnit />)
                                                     </label>
-                                                    <input
-                                                        type="number"
+                                                    <MoneyInput
+                                                        plain
                                                         value={module.price}
                                                         onChange={(e) => handleModuleChange(moduleIndex, 'price', e.target.value)}
                                                         className="w-full px-3 lg:px-4 py-2 border rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500"

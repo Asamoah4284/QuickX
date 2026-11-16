@@ -21,6 +21,7 @@ configureWebPush();
 
 function notificationDeepLink(doc) {
   if (doc?.type === 'signal') return '/signals';
+  if (doc?.type === 'withdrawal') return '/account#wallet';
   if (doc?.entityType === 'booking') return '/mentorship';
   if (doc?.entityType === 'conversation') return '/community?tab=messages';
   if (['question', 'answer'].includes(doc?.entityType)) return '/community?tab=questions';

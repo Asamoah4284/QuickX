@@ -30,6 +30,11 @@ const platformSettingSchema = new mongoose.Schema({
         type: Number,
         default: 15.5,
         min: 0.1
+    },
+    /** The two sample events have been added once. They are never added again after this. */
+    sampleEventsSeeded: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

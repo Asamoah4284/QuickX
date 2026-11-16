@@ -36,6 +36,8 @@ const tradingPieDepositSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
+    /** 'wallet' or 'paystack': how the latest money for this slice came in. */
+    lastPaymentMethod: { type: String, default: 'wallet' },
     acceptedRiskAt: {
         type: Date,
         default: null,

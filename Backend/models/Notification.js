@@ -25,6 +25,7 @@ const notificationSchema = new mongoose.Schema(
         'poll_created',
         'moderation',
         'signal',
+        'withdrawal',
       ],
       required: true,
     },

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import { formatCurrency, getCurrencySymbol } from '../../utils/currencyStore';
+import { formatCurrency } from '../../utils/currencyStore';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import {
   FiCalendar,
   FiPlus,
@@ -629,12 +630,10 @@ export default function AdminEvents() {
                   {!formData.isFree && (
                     <div>
                       <label className="block text-xs font-bold text-fg-muted mb-1">
-                        Price ({getCurrencySymbol()})
+                        Price (<MoneyUnit />)
                       </label>
-                      <input
-                        type="number"
-                        min="0"
-                        step="1"
+                      <MoneyInput
+                        plain
                         value={formData.price}
                         onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                         className="w-full rounded-xl border border-line px-3.5 py-2 text-xs text-fg focus:border-brand-500 focus:outline-none"

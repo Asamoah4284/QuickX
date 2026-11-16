@@ -184,6 +184,12 @@ db.once('open', async () => {
         console.error('product seed:', e.message);
     }
     try {
+        const added = await require('./scripts/seedEvents').seedSampleEventsOnce();
+        if (added > 0) console.log(`Added ${added} sample past events. Edit or delete them in Admin > Events.`);
+    } catch (e) {
+        console.error('event seed:', e.message);
+    }
+    try {
         const { migrateLegacySubscriptions } = require('./services/entitlementService');
         const r = await migrateLegacySubscriptions();
         if (r.migrated > 0) console.log(`Carried ${r.migrated} active subscription(s) over to entitlements`);

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
 import { FiArrowLeft, FiImage, FiPlus, FiSave, FiSend, FiTrash2, FiX } from 'react-icons/fi';
@@ -639,19 +640,17 @@ export default function CreatorBookWizard() {
             </div>
             <div>
               <label className={labelCls}>
-                {form.type === 'ebook' ? 'E-book price (GHS)' : 'Hardcopy price (GHS)'}{' '}
+                {form.type === 'ebook' ? 'E-book price' : 'Hardcopy price'} (<MoneyUnit />){' '}
                 <span className="text-down">*</span>
               </label>
-              <input type="number" name="price" min={0} step={0.01} value={form.price} onChange={handleChange} className={inputCls} />
+              <MoneyInput plain name="price" value={form.price} onChange={handleChange} className={inputCls} />
             </div>
             {form.type === 'ebook' ? (
               <div>
-                <label className={labelCls}>Hardcopy price (GHS)</label>
-                <input
-                  type="number"
+                <label className={labelCls}>Hardcopy price (<MoneyUnit />)</label>
+                <MoneyInput
+                  plain
                   name="hardcopyPrice"
-                  min={0}
-                  step={0.01}
                   value={form.hardcopyPrice}
                   onChange={handleChange}
                   className={inputCls}
@@ -752,12 +751,10 @@ export default function CreatorBookWizard() {
                 </div>
 
                 <div>
-                  <label className={labelCls}>Standard Delivery Fee (GHS)</label>
-                  <input
-                    type="number"
+                  <label className={labelCls}>Standard delivery fee (<MoneyUnit />)</label>
+                  <MoneyInput
+                    plain
                     name="deliveryFee"
-                    min={0}
-                    step={0.01}
                     value={form.deliveryFee}
                     onChange={handleChange}
                     placeholder="0 for Free Delivery"

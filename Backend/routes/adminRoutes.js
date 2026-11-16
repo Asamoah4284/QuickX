@@ -1,5 +1,6 @@
 const express = require('express');
 const walletService = require('../services/walletService');
+const { createNotification } = require('../services/notificationService');
 const router = express.Router();
 const adminController = require('../controllers/adminController');
 const { check } = require('express-validator');
@@ -130,10 +131,27 @@ router.get('/withdrawals', adminAuth, async (req, res) => {
     }
 });
 
+/** Tell the member what happened to their withdrawal (in-app and push). Never blocks the response. */
+function notifyWithdrawal(result, remarks) {
+    if (!result?.userId) return;
+    const amount = `GH₵${Number(result.amount).toLocaleString()}`;
+    const paid = result.decision === 'completed';
+    const note = String(remarks || '').trim().slice(0, 200);
+    createNotification({
+        userId: result.userId,
+        type: 'withdrawal',
+        title: paid ? `Withdrawal of ${amount} sent` : `Withdrawal of ${amount} not sent`,
+        body: paid
+            ? `We have sent ${amount} to your mobile money number.${note ? ` ${note}` : ''}`
+            : `The ${amount} is back in your ${result.source === 'referral' ? 'referral earnings' : 'wallet'}.${note ? ` Reason: ${note}` : ''}`,
+    }).catch(() => {});
+}
+
 /** Mark as paid: the money was already taken from the member's balance when they asked. */
 router.post('/withdrawals/:requestId/approve', adminAuth, async (req, res) => {
     try {
-        await walletService.resolveWithdrawal(req.params.requestId, 'completed', req.body?.remarks);
+        const result = await walletService.resolveWithdrawal(req.params.requestId, 'completed', req.body?.remarks);
+        notifyWithdrawal(result, req.body?.remarks);
         res.json({ message: 'Withdrawal marked as paid' });
     } catch (error) {
         if (!error.status) console.error('Error approving withdrawal:', error);
@@ -144,7 +162,8 @@ router.post('/withdrawals/:requestId/approve', adminAuth, async (req, res) => {
 /** Reject: the amount goes back to the balance it came from. */
 router.post('/withdrawals/:requestId/reject', adminAuth, async (req, res) => {
     try {
-        await walletService.resolveWithdrawal(req.params.requestId, 'rejected', req.body?.remarks);
+        const result = await walletService.resolveWithdrawal(req.params.requestId, 'rejected', req.body?.remarks);
+        notifyWithdrawal(result, req.body?.remarks);
         res.json({ message: 'Withdrawal rejected and the amount returned to the member' });
     } catch (error) {
         if (!error.status) console.error('Error rejecting withdrawal:', error);

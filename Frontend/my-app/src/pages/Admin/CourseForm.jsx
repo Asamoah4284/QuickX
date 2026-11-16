@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import { FiUpload, FiPlus, FiX } from 'react-icons/fi';
 
 const defaultFormData = {
@@ -140,7 +141,7 @@ const CourseForm = ({ initialValues = {}, onSubmit, mode = 'add', loading = fals
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-fg-muted">Price</label>
-                        <input type="number" name="price" value={formData.price} onChange={handleChange} min="0" className="mt-1 block w-full rounded-md border-line shadow-sm focus:border-brand-500 focus:ring-brand-500" required />
+                        <MoneyInput plain name="price" value={formData.price} onChange={handleChange} min="0" className="mt-1 block w-full rounded-md border-line shadow-sm focus:border-brand-500 focus:ring-brand-500" required />
                     </div>
                     <div>
                         <label className="block text-sm font-medium text-fg-muted">Start Date (Optional)</label>

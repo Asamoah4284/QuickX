@@ -1,8 +1,8 @@
 import { forwardRef, useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import axios from 'axios';
 import { FiFileText, FiImage, FiPlus, FiTrash2 } from 'react-icons/fi';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
-import { getCurrencySymbol } from '../../utils/currencyStore';
 
 const API_URL = import.meta.env.VITE_API_URL;
 export const CURRENT_BOOK_SENTINEL = '__CURRENT__';
@@ -779,10 +779,9 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                     />
                   </div>
                   <div>
-                    <label className={labelCls}>Price ({getCurrencySymbol()})</label>
-                    <input
-                      type="number"
-                      min={0}
+                    <label className={labelCls}>Price (<MoneyUnit />)</label>
+                    <MoneyInput
+                      plain
                       value={opt.price}
                       onChange={(e) => updateOption(index, { price: e.target.value })}
                       className={inputCls}
@@ -790,10 +789,9 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
                   </div>
                   {opt.type === 'bundle' ? (
                     <div>
-                      <label className={labelCls}>Compare-at price</label>
-                      <input
-                        type="number"
-                        min={0}
+                      <label className={labelCls}>Compare-at price (<MoneyUnit />)</label>
+                      <MoneyInput
+                        plain
                         value={opt.compareAtPrice}
                         onChange={(e) => updateOption(index, { compareAtPrice: e.target.value })}
                         className={inputCls}

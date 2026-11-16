@@ -5,6 +5,7 @@ import { FEATURES } from '../../lib/features';
 import { durationLabel, money } from '../../lib/format';
 import { Alert, Badge, Button, Card, Field, Input, PageHeader, Select, Skeleton, Textarea } from '../../ui/primitives';
 import { setCurrencySettings } from '../../utils/currencyStore';
+import MoneyInput, { useMoneyUnit } from '../../ui/MoneyInput';
 
 function DisplayCurrency() {
   const { data, reload } = useApi('/api/admin/settings', { client: adminApi });
@@ -37,7 +38,9 @@ function DisplayCurrency() {
         <div>
           <h2 className="font-semibold text-fg">Display currency</h2>
           <p className="mt-1 text-sm text-fg-muted">
-            Prices are always set and charged in cedis (GH₵). Choosing USD only changes how prices are shown, using the rate below.
+            Choose the currency prices are shown in. With US dollars on, you also type prices in dollars everywhere in admin, and
+            each one is saved in cedis at the rate below. Members always pay in cedis. If you change the rate later, saved cedi
+            prices stay the same and the dollar amounts shown will shift a little.
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -75,6 +78,7 @@ function ProductEditor({ product, onSaved }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState(null);
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const unit = useMoneyUnit();
 
   const save = async (e) => {
     e.preventDefault();
@@ -127,8 +131,8 @@ function ProductEditor({ product, onSaved }) {
           <Field label="Badge" htmlFor={`${product.key}-badge`} hint="Optional, e.g. “Best value”.">
             <Input id={`${product.key}-badge`} value={form.badge} onChange={set('badge')} />
           </Field>
-          <Field label="Price (GH₵)" htmlFor={`${product.key}-price`}>
-            <Input id={`${product.key}-price`} type="number" min="0" step="0.01" value={form.price} onChange={set('price')} required />
+          <Field label={`Price (${unit})`} htmlFor={`${product.key}-price`}>
+            <MoneyInput id={`${product.key}-price`} value={form.price} onChange={set('price')} required />
           </Field>
           <Field label="Access length (days)" htmlFor={`${product.key}-days`} hint={durationLabel(form.durationDays)}>
             <Input id={`${product.key}-days`} type="number" min="1" max="3650" step="1" value={form.durationDays} onChange={set('durationDays')} required />

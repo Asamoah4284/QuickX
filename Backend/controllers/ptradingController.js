@@ -13,7 +13,10 @@
 const mongoose = require('mongoose');
 const TradingPie = require('../models/TradingPie');
 const TradingPieDeposit = require('../models/TradingPieDeposit');
+const Payment = require('../models/Payment');
+const UsedPaymentReference = require('../models/UsedPaymentReference');
 const { creditWallet, debitWallet } = require('../services/walletService');
+const paystack = require('../services/paystackService');
 const { getOwnerId } = require('../services/ownerService');
 
 const MAX_PROFIT_PERCENT = Number(process.env.PIE_MAX_PROFIT_PERCENT) || 100;
@@ -273,11 +276,60 @@ exports.addTradeUpdate = async (req, res) => {
 
 // ── Members: take a slice ────────────────────────────────────────────────────
 
+/** Why this member cannot add `amount` to this Pie right now, or null if they can. */
+async function sliceProblem(pie, userId, amount) {
+    if (!pie) return { message: 'Pie not found', status: 404 };
+    if (String(pie.ownerId) === String(userId)) return { message: "You can't take a slice of your own Pie" };
+    if (pie.status !== 'funding') return { message: 'This Pie is no longer taking slices' };
+    if (pie.fundingDeadline && new Date() > new Date(pie.fundingDeadline)) return { message: 'The deadline for this Pie has passed' };
+    if (amount < pie.minDeposit) return { message: `The smallest slice is GH₵${pie.minDeposit}` };
+
+    const existing = await TradingPieDeposit.findOne({ pieId: pie._id, userId }).lean();
+    const already = round2(existing?.amount || 0);
+    if (already + amount > pie.maxDeposit) {
+        return { message: `The most one member can put in is GH₵${pie.maxDeposit}. You can add up to GH₵${round2(pie.maxDeposit - already)} more.` };
+    }
+    const left = round2(pie.targetAmount - pie.raisedAmount);
+    if (amount > left) return { message: left > 0 ? `Only GH₵${left} of room is left in this Pie` : 'This Pie is full' };
+    return null;
+}
+
+/** Reserve room in the Pie so it can never go over the target. Returns the updated Pie or null. */
+function reserveRoom(pie, amount) {
+    return TradingPie.findOneAndUpdate(
+        { _id: pie._id, status: 'funding', raisedAmount: { $lte: round2(pie.targetAmount - amount) } },
+        { $inc: { raisedAmount: amount } },
+        { new: true }
+    );
+}
+
+async function recordSlice(pieId, userId, amount, method) {
+    await TradingPieDeposit.updateOne(
+        { pieId, userId },
+        {
+            $inc: { amount },
+            $setOnInsert: { status: 'active', slicePercentage: 0 },
+            $set: { acceptedRiskAt: new Date(), lastPaymentMethod: method },
+        },
+        { upsert: true }
+    );
+    const participantCount = await TradingPieDeposit.countDocuments({ pieId });
+    await TradingPie.updateOne({ _id: pieId }, { $set: { participantCount } });
+    const mine = await TradingPieDeposit.findOne({ pieId, userId }).select('amount').lean();
+    return round2(mine?.amount || amount);
+}
+
+/**
+ * Take a slice. Two ways to pay:
+ * - `transactionId`: a Paystack payment (MoMo or card) made just before this call.
+ * - no `transactionId`: taken from the QuickX wallet.
+ * Send `check: true` to only check the slice is allowed (used before opening Paystack).
+ */
 exports.depositSlice = async (req, res) => {
     const amount = round2(req.body?.amount);
     const userId = req.user._id;
-    let reserved = false;
     const { id } = req.params;
+    const ref = String(req.body?.transactionId || '').trim();
 
     try {
         if (!isId(id)) return bad(res, 'Pie not found', 404);
@@ -287,33 +339,19 @@ exports.depositSlice = async (req, res) => {
         }
 
         const pie = await TradingPie.findById(id).lean();
-        if (!pie) return bad(res, 'Pie not found', 404);
-        if (String(pie.ownerId) === String(userId)) return bad(res, "You can't take a slice of your own Pie");
-        if (pie.status !== 'funding') return bad(res, 'This Pie is no longer taking deposits');
-        if (pie.fundingDeadline && new Date() > new Date(pie.fundingDeadline)) return bad(res, 'The deadline for this Pie has passed');
-        if (amount < pie.minDeposit) return bad(res, `The smallest slice is GH₵${pie.minDeposit}`);
+        const problem = await sliceProblem(pie, userId, amount);
 
-        const existing = await TradingPieDeposit.findOne({ pieId: id, userId }).lean();
-        const already = round2(existing?.amount || 0);
-        if (already + amount > pie.maxDeposit) {
-            return bad(res, `The most one member can put in is GH₵${pie.maxDeposit}. You can add up to GH₵${round2(pie.maxDeposit - already)} more.`);
+        if (req.body?.check === true) {
+            return problem ? bad(res, problem.message, problem.status) : res.json({ ok: true });
         }
 
-        // 1. Reserve room in the Pie so it can never go over the target.
-        const room = round2(pie.targetAmount - amount);
-        const claimed = await TradingPie.findOneAndUpdate(
-            { _id: id, status: 'funding', raisedAmount: { $lte: room } },
-            { $inc: { raisedAmount: amount } },
-            { new: true }
-        );
-        if (!claimed) {
-            const fresh = await TradingPie.findById(id).select('raisedAmount targetAmount status').lean();
-            const left = round2((fresh?.targetAmount || 0) - (fresh?.raisedAmount || 0));
-            return bad(res, left > 0 ? `Only GH₵${left} of room is left in this Pie` : 'This Pie is full');
-        }
-        reserved = true;
+        if (ref) return await payWithPaystack({ req, res, pie, id, userId, amount, ref, problem });
 
-        // 2. Take the money from the wallet (fails cleanly if the balance is too low).
+        // ── Wallet ──
+        if (problem) return bad(res, problem.message, problem.status);
+        const claimed = await reserveRoom(pie, amount);
+        if (!claimed) return bad(res, 'Someone else just filled this Pie. Try a smaller amount.');
+
         let balance;
         try {
             balance = await debitWallet(userId, amount, {
@@ -324,42 +362,87 @@ exports.depositSlice = async (req, res) => {
             });
         } catch (err) {
             await TradingPie.updateOne({ _id: id }, { $inc: { raisedAmount: -amount } });
-            reserved = false;
             if (err.code === 'INSUFFICIENT_BALANCE' || err.extra?.code === 'INSUFFICIENT_BALANCE' || /Insufficient/i.test(err.message)) {
-                return bad(res, 'Not enough money in your wallet. Top up first.', 400, { code: 'INSUFFICIENT_BALANCE' });
+                return bad(res, 'Not enough money in your wallet. Pay with MoMo or card instead.', 400, { code: 'INSUFFICIENT_BALANCE' });
             }
             throw err;
         }
 
-        // 3. Record the slice.
-        await TradingPieDeposit.updateOne(
-            { pieId: id, userId },
-            {
-                $inc: { amount },
-                $setOnInsert: { status: 'active', slicePercentage: 0 },
-                $set: { acceptedRiskAt: new Date() },
-            },
-            { upsert: true }
-        );
-        const participantCount = await TradingPieDeposit.countDocuments({ pieId: id });
-        await TradingPie.updateOne({ _id: id }, { $set: { participantCount } });
-
-        const total = round2(already + amount);
-        res.json({
-            success: true,
-            message: `You're in with GH₵${total}. That's ${slicePercent(total, claimed.raisedAmount)}% of the Pie so far.`,
-            walletBalance: balance,
-        });
-    } catch (error) {
-        if (reserved) {
-            // Something failed after the money was taken: log loudly so it can be checked by hand.
-            console.error(`[pie] deposit for user ${userId} on pie ${id} (GH₵${amount}) needs a manual check:`, error);
-        } else {
-            console.error('Error depositing into pie:', error);
+        try {
+            const total = await recordSlice(id, userId, amount, 'wallet');
+            return res.json({
+                success: true,
+                message: `You're in with GH₵${total}. That's ${slicePercent(total, claimed.raisedAmount)}% of the Pie so far.`,
+                walletBalance: balance,
+            });
+        } catch (err) {
+            console.error(`[pie] wallet slice for user ${userId} on pie ${id} (GH₵${amount}) was charged but not recorded:`, err);
+            throw err;
         }
-        res.status(500).json({ message: 'The deposit did not go through. Your wallet was not charged unless you see it in your history.' });
+    } catch (error) {
+        console.error('Error taking a pie slice:', error);
+        res.status(500).json({
+            message: ref
+                ? `Something went wrong after your payment. Please contact support with this reference: ${ref}`
+                : 'The slice did not go through. Check your wallet history before trying again.',
+        });
     }
 };
+
+async function payWithPaystack({ res, pie, id, userId, amount, ref, problem }) {
+    if (!pie) return bad(res, 'Pie not found', 404);
+
+    // Claim the reference first. The database refuses a second claim of the same payment.
+    try {
+        await UsedPaymentReference.create({ _id: ref, userId, purpose: 'pie_slice', itemId: id, amount });
+    } catch (err) {
+        if (err.code === 11000) return bad(res, 'This payment has already been used.', 409);
+        throw err;
+    }
+
+    const verified = await paystack.verifyPayment(ref, amount);
+    if (!verified.ok) {
+        // Release the claim so the member can retry once Paystack confirms.
+        await UsedPaymentReference.deleteOne({ _id: ref });
+        const status = verified.code === 'UNAVAILABLE' || verified.code === 'NOT_CONFIGURED' ? 503 : 402;
+        return bad(res, verified.message, status, { code: verified.code });
+    }
+
+    await Payment.create({
+        userId,
+        itemType: 'pie',
+        itemId: id,
+        originalAmount: amount,
+        finalAmount: amount,
+        paymentMethod: 'paystack',
+        status: 'completed',
+        transactionId: ref,
+    });
+
+    // The money has arrived. If the slice can't be added any more, keep the money safe in the wallet.
+    const claimed = problem ? null : await reserveRoom(pie, amount);
+    if (!claimed) {
+        const balance = await creditWallet(userId, amount, {
+            type: 'refund',
+            label: `Pie slice could not be added: ${pie.title}`,
+            reference: ref,
+            metadata: { pieId: id },
+        });
+        return bad(
+            res,
+            `We received your GH₵${amount}, but ${problem ? problem.message.toLowerCase() : 'the Pie filled up before your payment finished'}. ` +
+                'The money is in your QuickX wallet. You can use it for another Pie or withdraw it.',
+            409,
+            { code: 'MOVED_TO_WALLET', walletBalance: balance }
+        );
+    }
+
+    const total = await recordSlice(id, userId, amount, 'paystack');
+    return res.json({
+        success: true,
+        message: `Payment received. You're in with GH₵${total}, which is ${slicePercent(total, claimed.raisedAmount)}% of the Pie so far.`,
+    });
+}
 
 // ── Admin: settle or cancel ──────────────────────────────────────────────────
 

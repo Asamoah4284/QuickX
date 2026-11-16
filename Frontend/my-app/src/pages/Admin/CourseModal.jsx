@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import MoneyInput, { MoneyUnit } from '../../ui/MoneyInput';
 import axios from 'axios';
 import { FiX } from 'react-icons/fi';
 
@@ -112,10 +113,10 @@ const CourseModal = ({ course, onClose, onSave }) => {
 
                     <div className="mb-4">
                         <label className="block text-fg-muted text-sm font-bold mb-2">
-                            Price
+                            Price (<MoneyUnit />)
                         </label>
-                        <input
-                            type="number"
+                        <MoneyInput
+                            plain
                             name="price"
                             value={formData.price}
                             onChange={handleChange}

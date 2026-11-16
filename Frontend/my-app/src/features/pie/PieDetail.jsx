@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { motion } from 'framer-motion';
-import { FiArrowLeft, FiClock, FiExternalLink, FiShield, FiUsers } from 'react-icons/fi';
+import PaystackPop from '@paystack/inline-js';
+import { FiArrowLeft, FiClock, FiCreditCard, FiExternalLink, FiShield, FiUsers } from 'react-icons/fi';
+import { BsWallet2 } from 'react-icons/bs';
 import { api, errorMessage } from '../../lib/api';
 import { useApi } from '../../lib/useApi';
 import { useAuth } from '../../lib/auth';
@@ -44,43 +46,100 @@ function Outcomes({ pie, amount }) {
   );
 }
 
+const PAYSTACK_KEY = import.meta.env.VITE_PAYSTACK_PUBLIC_KEY;
+
+function MethodOption({ active, onClick, icon: Icon, title, detail, disabled }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={disabled}
+      className={cx(
+        'flex w-full items-center gap-3 rounded-xl border p-3 text-left transition disabled:cursor-not-allowed disabled:opacity-50',
+        active ? 'border-brand-400/60 bg-brand-500/10' : 'border-line hover:border-line-strong'
+      )}
+    >
+      <Icon className={cx('h-5 w-5 shrink-0', active ? 'text-brand-300' : 'text-fg-subtle')} />
+      <span className="min-w-0">
+        <span className="block text-sm font-semibold text-fg">{title}</span>
+        <span className="block text-xs text-fg-subtle">{detail}</span>
+      </span>
+    </button>
+  );
+}
+
 function JoinModal({ pie, already, onClose, onDone }) {
+  const { user } = useAuth();
   const wallet = useApi('/api/wallet');
   const balance = Number(wallet.data?.balance || 0);
   const room = Math.max(0, Number(pie.targetAmount) - Number(pie.raisedAmount));
   const personalRoom = Math.max(0, Number(pie.maxDeposit) - already);
   const max = Math.min(room, personalRoom);
   const [amount, setAmount] = useState(String(Math.min(max, Math.max(pie.minDeposit, 0)) || ''));
+  const [method, setMethod] = useState('paystack');
   const [accept, setAccept] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
   const value = Number(amount) || 0;
-  const tooLow = value > 0 && value < pie.minDeposit && already === 0;
+  const tooLow = value > 0 && value < pie.minDeposit;
   const tooHigh = value > max;
-  const short = value > balance;
+  const short = method === 'wallet' && value > balance;
+  const url = `/api/ptrading/${pie._id}/deposit`;
+
+  const confirmPaystack = async (reference) => {
+    setBusy(true);
+    try {
+      const { data } = await api.post(url, { amount: value, acceptRisk: true, transactionId: reference });
+      onDone(data.message);
+    } catch (err) {
+      const moved = err?.response?.data?.code === 'MOVED_TO_WALLET';
+      if (moved) {
+        onDone(errorMessage(err));
+        return;
+      }
+      setError(`${errorMessage(err, 'We could not add your slice yet.')} If you were charged, send this reference to support: ${reference}`);
+    } finally {
+      setBusy(false);
+    }
+  };
 
   const submit = async (e) => {
     e.preventDefault();
     setBusy(true);
     setError('');
     try {
-      const { data } = await api.post(`/api/ptrading/${pie._id}/deposit`, { amount: value, acceptRisk: true });
-      onDone(data.message);
-    } catch (err) {
-      setError(errorMessage(err, 'The deposit did not go through.'));
-    } finally {
+      if (method === 'wallet') {
+        const { data } = await api.post(url, { amount: value, acceptRisk: true });
+        onDone(data.message);
+        return;
+      }
+      if (!PAYSTACK_KEY) throw new Error('Payments are not set up yet. Please contact support.');
+      // Check the slice is still allowed before taking any money.
+      await api.post(url, { amount: value, acceptRisk: true, check: true });
       setBusy(false);
+      new PaystackPop().newTransaction({
+        key: PAYSTACK_KEY,
+        email: user?.email,
+        amount: Math.round(value * 100),
+        currency: 'GHS',
+        reference: `QX-PIE-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        channels: ['mobile_money', 'card'],
+        ...(user?.phone ? { phone: user.phone } : {}),
+        metadata: { item_type: 'pie', pie_id: pie._id },
+        onSuccess: (transaction) => confirmPaystack(transaction.reference),
+        onCancel: () => {},
+      });
+    } catch (err) {
+      setError(errorMessage(err, 'The slice did not go through.'));
+    } finally {
+      if (method === 'wallet') setBusy(false);
     }
   };
 
   return (
     <Modal open onClose={onClose} title={already ? 'Add to your slice' : 'Take a slice'}>
       <form onSubmit={submit} className="space-y-4">
-        <div className="flex items-center justify-between rounded-xl bg-ink-900 px-4 py-3 text-sm">
-          <span className="text-fg-muted">Wallet balance</span>
-          {wallet.loading ? <Skeleton className="h-5 w-16" /> : <span className="tabular font-semibold text-fg">{cedis(balance)}</span>}
-        </div>
         <Field
           label="Amount (GH₵)"
           htmlFor="pie-amount"
@@ -100,14 +159,27 @@ function JoinModal({ pie, already, onClose, onDone }) {
         <Outcomes pie={pie} amount={value} />
         {tooLow ? <Alert tone="warn">The smallest slice is {cedis(pie.minDeposit)}.</Alert> : null}
         {tooHigh ? <Alert tone="warn">The most you can add is {cedis(max)}.</Alert> : null}
-        {short && !wallet.loading ? (
-          <Alert tone="warn">
-            Not enough in your wallet.{' '}
-            <Link to="/account#wallet" className="font-semibold underline">
-              Top up your wallet
-            </Link>
-          </Alert>
-        ) : null}
+
+        <div className="space-y-2">
+          <p className="text-sm font-medium text-fg">How do you want to pay?</p>
+          <MethodOption
+            active={method === 'paystack'}
+            onClick={() => setMethod('paystack')}
+            icon={FiCreditCard}
+            title="Mobile Money or card"
+            detail="Pay securely with Paystack."
+          />
+          <MethodOption
+            active={method === 'wallet'}
+            onClick={() => setMethod('wallet')}
+            icon={BsWallet2}
+            title="QuickX wallet"
+            detail={wallet.loading ? 'Checking your balance...' : `Balance: ${cedis(balance)}`}
+            disabled={!wallet.loading && balance <= 0}
+          />
+        </div>
+        {short && !wallet.loading ? <Alert tone="warn">Not enough in your wallet. Pay with Mobile Money or card instead.</Alert> : null}
+
         <label className="flex cursor-pointer gap-3 rounded-xl border border-line p-4 text-sm text-fg-muted">
           <input
             type="checkbox"
@@ -126,7 +198,7 @@ function JoinModal({ pie, already, onClose, onDone }) {
             Cancel
           </Button>
           <Button type="submit" loading={busy} disabled={!accept || !value || tooLow || tooHigh || short}>
-            Put in {value ? cedis(value) : ''}
+            Pay {value ? cedis(value) : ''}
           </Button>
         </div>
       </form>
