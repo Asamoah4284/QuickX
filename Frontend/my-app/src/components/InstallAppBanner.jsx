@@ -63,8 +63,8 @@ export default function InstallAppBanner() {
   if (!visible) return null;
 
   const tipCopy = isIosDevice()
-    ? 'Tap the Share icon, then Add to Home Screen (or Add Bookmark) to keep Quick-X on your phone.'
-    : 'Use Share / the browser menu to Add to Home Screen or bookmark Quick-X for quick access.';
+    ? 'Tap the Share icon, then Add to Home Screen (or Add Bookmark) to keep QuickX on your phone.'
+    : 'Use Share / the browser menu to Add to Home Screen or bookmark QuickX for quick access.';
 
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[60] flex justify-center p-3 sm:p-4">
@@ -73,11 +73,11 @@ export default function InstallAppBanner() {
           <FiShare className="h-5 w-5" aria-hidden />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-bold text-fg">Add Quick-X to your phone</p>
+          <p className="text-sm font-bold text-fg">Add QuickX to your phone</p>
           <p className="mt-0.5 text-xs leading-relaxed text-fg-subtle">
             {shareTip || !deferredPrompt
               ? tipCopy
-              : 'Install Quick-X, or use Share to add it to your Home Screen / bookmarks.'}
+              : 'Install QuickX, or use Share to add it to your Home Screen / bookmarks.'}
           </p>
           <div className="mt-2.5 flex flex-wrap items-center gap-2">
             {deferredPrompt && !shareTip ? (

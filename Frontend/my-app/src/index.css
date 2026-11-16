@@ -34,6 +34,9 @@
   --color-brand-500: #2f6bff;
   --color-brand-600: #1b5ef5;
   --color-brand-700: #1246c4;
+  /* Logo colours: navy ring and the green of "Learn" */
+  --color-logo-navy: #0e3f7e;
+  --color-logo-green: #1fb07f;
 
   /* Market semantics, only for buy/sell, profit/loss, success/error */
   --color-up: #2fd08c;
@@ -146,6 +149,7 @@ body {
   }
 
   /* Soft grid used behind hero sections */
+  /* Background layer only: its mask fades everything inside it. Use on an empty absolute div. */
   .bg-grid {
     background-image:
       linear-gradient(to right, rgb(255 255 255 / 0.045) 1px, transparent 1px),

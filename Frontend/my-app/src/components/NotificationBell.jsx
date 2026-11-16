@@ -202,15 +202,15 @@ export default function NotificationBell() {
             <div className="border-b border-line bg-ink-900 px-4 py-3">
               <p className="text-xs font-semibold text-fg">Enable lock-screen notifications</p>
               <p className="mt-0.5 text-[11px] leading-relaxed text-fg-subtle">
-                The bell only shows inside the app. Turn this on to get phone alerts when Quick-X is closed.
+                The bell only shows inside the app. Turn this on to get phone alerts when QuickX is closed.
               </p>
               {isIosDevice() && !isStandaloneDisplay() ? (
                 <p className="mt-2 text-[11px] leading-relaxed text-warn">
-                  On iPhone: open Quick-X from your <strong>Home Screen</strong> icon (not Safari), then tap Turn on.
+                  On iPhone: open QuickX from your <strong>Home Screen</strong> icon (not Safari), then tap Turn on.
                 </p>
               ) : permission === 'denied' ? (
                 <p className="mt-2 text-[11px] leading-relaxed text-down">
-                  Notifications are blocked. Enable them in your phone Settings for Quick-X / this browser.
+                  Notifications are blocked. Enable them in your phone Settings for QuickX / this browser.
                 </p>
               ) : (
                 <button

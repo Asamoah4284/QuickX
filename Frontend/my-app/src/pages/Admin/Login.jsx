@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { FiLock, FiMail, FiShield } from 'react-icons/fi';
+import BrandLogo from '../../ui/Logo';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
 const inputClass =
   'block w-full rounded-xl border border-line bg-ink-850 py-3 pl-11 pr-4 text-sm text-fg placeholder:text-fg-subtle shadow-sm transition ' +
   'focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 ' +
-  '[color-scheme:light] autofill:shadow-[inset_0_0_0_1000px_rgb(255,255,255)] autofill:[-webkit-text-fill-color:#0f172a]';
+  '[color-scheme:dark] autofill:shadow-[inset_0_0_0_1000px_var(--color-ink-850)] autofill:[-webkit-text-fill-color:var(--color-fg)]';
 
 const AdminLogin = () => {
   const [formData, setFormData] = useState({
@@ -47,13 +48,12 @@ const AdminLogin = () => {
         className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(37,99,235,0.12),transparent)]"
         aria-hidden
       />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(241,245,249,0.9))]" aria-hidden />
 
       <div className="relative flex min-h-screen flex-col items-center justify-center px-4 py-12 sm:px-6">
         <div className="w-full max-w-[420px]">
           <div className="mb-8 text-center">
-            <div className="mx-auto mb-5 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-600 text-white shadow-lg shadow-blue-600/25">
-              <FiShield className="h-7 w-7" aria-hidden />
+            <div className="mb-6 flex justify-center">
+              <BrandLogo size={44} />
             </div>
             <h1 className="text-2xl font-bold tracking-tight text-fg sm:text-[1.75rem]">
               Admin sign in

@@ -96,7 +96,7 @@ async function createNotification({
 
     // Fire-and-forget so API latency is not blocked by push delivery
     sendPushToUser(userId, {
-      title: title || 'Quick-X',
+      title: title || 'QuickX',
       body: body || '',
       url: notificationDeepLink(doc),
       notificationId: String(doc._id),

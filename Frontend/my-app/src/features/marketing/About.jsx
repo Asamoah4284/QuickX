@@ -33,8 +33,11 @@ export default function About() {
         />
       </Helmet>
 
-      <section className="relative overflow-hidden border-b border-line bg-grid">
-        <Container className="py-20 sm:py-28">
+      <section className="relative overflow-hidden border-b border-line">
+        {/* The grid fades out with a mask, so it must sit behind the text, not on the section itself. */}
+        <div className="bg-grid absolute inset-0" aria-hidden />
+        <div className="absolute left-1/2 top-0 h-80 w-[44rem] -translate-x-1/2 rounded-full bg-brand-600/15 blur-[120px]" aria-hidden />
+        <Container className="relative py-20 sm:py-28">
           <Reveal className="max-w-3xl">
             <Eyebrow>About QuickX</Eyebrow>
             <h1 className="mt-4 text-4xl font-semibold tracking-tight text-fg sm:text-5xl">

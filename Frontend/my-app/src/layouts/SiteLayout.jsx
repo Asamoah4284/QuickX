@@ -22,6 +22,7 @@ import { FEATURE_LIST } from '../lib/features';
 import { cx } from '../lib/format';
 import { Avatar, Button, Container, PageLoader } from '../ui/primitives';
 import { Sheet } from '../ui/overlays';
+import BrandLogo from '../ui/Logo';
 import { PageTransition } from '../ui/motion';
 import NotificationBell from '../components/NotificationBell';
 import InstallAppBanner from '../components/InstallAppBanner';
@@ -121,13 +122,8 @@ function MoreMenu() {
 
 function Logo() {
   return (
-    <Link to="/" className="flex items-center gap-2.5" aria-label="QuickX home">
-      <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-600 text-base font-extrabold text-white shadow-glow">
-        Q
-      </span>
-      <span className="text-lg font-bold tracking-tight text-fg">
-        Quick<span className="text-brand-400">X</span>
-      </span>
+    <Link to="/" className="flex items-center" aria-label="QuickX Learn home">
+      <BrandLogo />
     </Link>
   );
 }

@@ -50,10 +50,10 @@ export default defineConfig({
       srcDir: 'src',
       filename: 'sw.js',
       registerType: 'autoUpdate',
-      includeAssets: ['logo.jpg', 'pwa-192.png', 'pwa-512.png'],
+      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192.png', 'pwa-512.png'],
       manifest: {
-        name: 'Quick-X',
-        short_name: 'Quick-X',
+        name: 'QuickX Learn',
+        short_name: 'QuickX',
         description: 'Forex courses, live signals and mentorship',
         start_url: '/',
         scope: '/',

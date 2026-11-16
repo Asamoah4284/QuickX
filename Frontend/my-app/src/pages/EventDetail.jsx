@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { LogoMark } from '../ui/Logo';
 import PaystackPop from '@paystack/inline-js';
 import { formatCurrency } from '../utils/currencyStore';
 import {
@@ -692,7 +693,7 @@ export default function EventDetail() {
             {/* Modal Header */}
             <div className="flex items-center justify-between bg-[#07152f] px-6 py-4 text-white">
               <div className="flex items-center gap-2">
-                <img src="/logo.jpg" alt="QuickX" className="h-8 w-auto rounded-md object-contain" />
+                <LogoMark size={30} />
                 <span className="text-xs font-bold tracking-wider uppercase text-brand-300">
                   Official Event Pass
                 </span>

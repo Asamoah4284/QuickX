@@ -20,6 +20,7 @@ import {
 } from 'react-icons/fi';
 import { cx } from '../lib/format';
 import { PageLoader } from '../ui/primitives';
+import BrandLogo from '../ui/Logo';
 
 const NAV = [
   { to: '/admin/dashboard', label: 'Overview', icon: FiHome },
@@ -54,8 +55,8 @@ export default function AdminLayout() {
   const sidebar = (
     <div className="flex h-full flex-col">
       <div className="flex h-16 items-center justify-between border-b border-line px-5">
-        <Link to="/admin/dashboard" className="text-lg font-bold text-fg">
-          Quick<span className="text-brand-400">X</span> <span className="text-sm font-medium text-fg-subtle">Admin</span>
+        <Link to="/admin/dashboard" aria-label="Admin home">
+          <BrandLogo size={32} label="Admin" />
         </Link>
         <button type="button" className="rounded-full p-2 text-fg-muted lg:hidden" onClick={() => setOpen(false)} aria-label="Close menu">
           <FiX className="h-5 w-5" />
@@ -96,9 +97,7 @@ export default function AdminLayout() {
       <aside className="hidden w-64 shrink-0 border-r border-line bg-ink-900 lg:sticky lg:top-0 lg:block lg:h-dvh">{sidebar}</aside>
 
       <div className="glass sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line px-4 lg:hidden">
-        <span className="font-bold text-fg">
-          Quick<span className="text-brand-400">X</span> Admin
-        </span>
+        <BrandLogo size={30} label="Admin" />
         <button type="button" onClick={() => setOpen(true)} className="rounded-full p-2 text-fg-muted" aria-label="Open menu">
           <FiMenu className="h-5 w-5" />
         </button>

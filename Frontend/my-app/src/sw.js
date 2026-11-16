@@ -29,10 +29,10 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {};
   } catch {
-    data = { title: 'Quick-X', body: event.data?.text() || 'You have a new notification' };
+    data = { title: 'QuickX', body: event.data?.text() || 'You have a new notification' };
   }
 
-  const title = data.title || 'Quick-X';
+  const title = data.title || 'QuickX';
   const options = {
     body: data.body || '',
     icon: '/pwa-192.png',

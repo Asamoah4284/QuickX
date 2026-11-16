@@ -83,7 +83,7 @@ export async function subscribeUserToPush() {
   // iOS only delivers Web Push from the installed Home Screen app
   if (isIosDevice() && !isStandaloneDisplay()) {
     throw new Error(
-      'On iPhone, open Quick-X from your Home Screen icon, then turn on notifications'
+      'On iPhone, open QuickX from your Home Screen icon, then turn on notifications'
     );
   }
 
