@@ -26,10 +26,10 @@ export default function About() {
   return (
     <>
       <Helmet>
-        <title>About QuickX | Forex education with Maxwell Donkor</title>
+        <title>About QuickX | Forex education with Maxwell Donkoh</title>
         <meta
           name="description"
-          content="QuickX is Maxwell Donkor's forex school: video courses, live signals, a members community and 1-on-1 mentorship."
+          content="QuickX is Maxwell Donkoh's forex school: video courses, live signals, a members community and 1-on-1 mentorship."
         />
       </Helmet>
 
@@ -44,7 +44,7 @@ export default function About() {
               Forex taught the way it is actually traded.
             </h1>
             <p className="mt-5 text-lg leading-relaxed text-fg-muted">
-              QuickX is the forex school of mentor Maxwell Donkor. School rarely teaches how money and markets
+              QuickX is the forex school of mentor Maxwell Donkoh. School rarely teaches how money and markets
               work, so we built one place to learn it properly: structured courses, live trade ideas, a community
               of traders and direct mentorship.
             </p>

@@ -338,7 +338,7 @@ function Footer() {
         <div className="lg:col-span-2">
           <Logo />
           <p className="mt-4 max-w-sm text-sm text-fg-muted">
-            Forex education, live signals and mentorship from Maxwell Donkor. Learn the method, follow the trades,
+            Forex education, live signals and mentorship from Maxwell Donkoh. Learn the method, follow the trades,
             and grow with a community of traders.
           </p>
           <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3">
@@ -441,7 +441,7 @@ export default function SiteLayout() {
         <title>QuickX | Forex courses, live signals and mentorship</title>
         <meta
           name="description"
-          content="Learn forex with Maxwell Donkor: video courses, live trading signals, a members community and 1-on-1 mentorship."
+          content="Learn forex with Maxwell Donkoh: video courses, live trading signals, a members community and 1-on-1 mentorship."
         />
       </Helmet>
       <ScrollRestoration getKey={(location) => location.pathname} />

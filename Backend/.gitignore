@@ -13,3 +13,6 @@ bun.lockb
 # Logs
 logs
 
+
+# Undo files from scripts/moveContentToOwner.js (contain user data)
+scripts/move-backups/
