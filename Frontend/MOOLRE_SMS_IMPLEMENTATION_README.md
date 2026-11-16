@@ -14,4 +14,3 @@ To test, run a script from the backend folder (with `dotenv` loading `backend/.e
 cd backend && node scripts/test-moolre-sms.js
 ```
 
-(Use your own test number in the script.)
