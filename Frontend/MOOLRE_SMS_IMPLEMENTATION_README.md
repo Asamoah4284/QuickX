@@ -8,7 +8,7 @@ SMS is sent **only from the backend**, not the Next.js app.
 
 Triggers: teacher invites, OTP, attendance (absent parent), leave approvals, bulk teacher import, etc.
 
-To test, run a script from the backend folder (with `dotenv` loading `backend/.env`):
+To test, run a script from the backend folder (with `dotenv` loading `backend/.env`).
 
 ```bash
 cd backend && node scripts/test-moolre-sms.js
