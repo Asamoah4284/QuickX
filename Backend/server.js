@@ -216,6 +216,7 @@ app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/payments/moolre', require('./routes/moolrePaymentRoutes'));
+app.use('/api/payments/paystack', require('./routes/appCheckoutRoutes'));
 app.use('/api/wallet', require('./routes/walletRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api', require('./routes/couponRoutes'));

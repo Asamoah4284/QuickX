@@ -9,6 +9,7 @@ import Landing from './features/marketing/Landing';
 /* New design */
 const Pricing = lazy(() => import('./features/billing/Pricing'));
 const ProductCheckout = lazy(() => import('./features/billing/ProductCheckout'));
+const PaymentDone = lazy(() => import('./features/billing/PaymentDone'));
 const Signals = lazy(() => import('./features/signals/Signals'));
 const Courses = lazy(() => import('./features/courses/Courses'));
 const CourseDetail = lazy(() => import('./features/courses/CourseDetail'));
@@ -77,6 +78,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <Landing /> },
       { path: 'pricing', element: <Pricing /> },
+      { path: 'payment/done', element: <PaymentDone /> },
       { path: 'checkout/plan/:productKey', element: authed(<ProductCheckout />) },
       { path: 'signals', element: <Signals /> },
       { path: 'courses', element: <Courses /> },
