@@ -97,7 +97,7 @@ function Hero() {
       <Container className="relative grid items-center gap-14 py-16 sm:py-24 lg:grid-cols-[1.1fr_0.9fr] lg:py-28">
         <div>
           <motion.div {...item(0)}>
-            <Badge tone="brand">Forex education by Maxwell Donkor</Badge>
+            <Badge tone="brand">Forex education by Maxwell Donkoh</Badge>
           </motion.div>
           <motion.h1 {...item(0.08)} className="mt-6 text-4xl font-extrabold leading-[1.05] tracking-tight text-fg sm:text-6xl">
             Learn the method.

@@ -1,6 +1,7 @@
 const webpush = require('web-push');
 const Notification = require('../models/Notification');
 const PushSubscription = require('../models/PushSubscription');
+const expoPush = require('./expoPushService');
 
 let vapidConfigured = false;
 
@@ -103,6 +104,16 @@ async function createNotification({
       tutorId: tutorId ? String(tutorId) : null,
       tag: `qx-${doc._id}`,
     }).catch((err) => console.error('push fan-out:', err?.message || err));
+
+    // The phone app (Expo). Same message, same deep link.
+    expoPush
+      .sendToUsers([userId], {
+        title: title || 'QuickX',
+        body: body || '',
+        url: notificationDeepLink(doc),
+        data: { notificationId: String(doc._id), type },
+      })
+      .catch(() => {});
 
     return doc;
   } catch (err) {

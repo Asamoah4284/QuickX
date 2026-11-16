@@ -12,7 +12,7 @@ function sampleEvents(now = Date.now()) {
         {
             title: 'Live Forex Session: Reading Price Action',
             shortDescription: 'Maxwell walked through live charts: market structure, key levels and clean entries.',
-            description: `A live online session with Maxwell Donkor.
+            description: `A live online session with Maxwell Donkoh.
 
 What we covered:
 - Reading market structure on the higher timeframe
@@ -36,12 +36,12 @@ What we covered:
             ticketsSold: 0,
             status: 'published',
             tags: ['Forex', 'Price Action', 'Live'],
-            speakers: [{ name: 'Maxwell Donkor', title: 'Forex mentor, QuickX', bio: '', avatar: '' }],
+            speakers: [{ name: 'Maxwell Donkoh', title: 'Forex mentor, QuickX', bio: '', avatar: '' }],
         },
         {
             title: 'Risk Management Masterclass',
             shortDescription: 'How to size positions, protect your account and trade with a plan.',
-            description: `A masterclass with Maxwell Donkor on protecting your trading account.
+            description: `A masterclass with Maxwell Donkoh on protecting your trading account.
 
 What we covered:
 - How much to risk on each trade
@@ -65,7 +65,7 @@ What we covered:
             ticketsSold: 0,
             status: 'published',
             tags: ['Forex', 'Risk Management', 'Masterclass'],
-            speakers: [{ name: 'Maxwell Donkor', title: 'Forex mentor, QuickX', bio: '', avatar: '' }],
+            speakers: [{ name: 'Maxwell Donkoh', title: 'Forex mentor, QuickX', bio: '', avatar: '' }],
         },
     ];
 }

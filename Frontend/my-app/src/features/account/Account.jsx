@@ -232,6 +232,19 @@ export default function Account() {
           <h2 className="mb-5 text-xl font-bold text-fg">This device</h2>
           <DevicePanel />
         </section>
+
+        <section className="flex flex-col gap-3 border-t border-line pt-8 text-sm text-fg-subtle sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            Read our{' '}
+            <Link to="/privacy" className="text-fg-muted underline hover:text-fg">
+              privacy policy
+            </Link>
+            .
+          </p>
+          <Link to="/delete-account" className="font-semibold text-down hover:underline">
+            Delete my account
+          </Link>
+        </section>
       </Container>
     </>
   );

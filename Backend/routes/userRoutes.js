@@ -605,6 +605,40 @@ router.get('/me', auth, async (req, res) => {
     }
 });
 
+/** What stops this account being deleted right now, and the money left on it. */
+router.get('/me/deletion-check', auth, async (req, res) => {
+    try {
+        const { deletionCheck } = require('../services/accountDeletionService');
+        const check = await deletionCheck(req.user._id);
+        res.json({ balance: check.balance || 0, blockers: check.blockers });
+    } catch (error) {
+        console.error('deletion check:', error);
+        res.status(500).json({ message: 'Could not check your account. Please try again.' });
+    }
+});
+
+/**
+ * Delete my account. Body: { confirm: 'DELETE', acceptLoss?: true }.
+ * acceptLoss gives up any money left in the wallet and referral earnings.
+ */
+router.delete('/me', auth, async (req, res) => {
+    try {
+        if (String(req.body?.confirm || '').trim().toUpperCase() !== 'DELETE') {
+            return res.status(400).json({ code: 'CONFIRM', message: 'Type DELETE to confirm.' });
+        }
+        const { deleteAccount } = require('../services/accountDeletionService');
+        const result = await deleteAccount(req.user._id, { acceptLoss: req.body?.acceptLoss === true });
+        if (!result.deleted) {
+            const first = result.blockers[0];
+            return res.status(409).json({ code: first.code, message: first.message, blockers: result.blockers });
+        }
+        res.json({ message: 'Your account has been deleted.' });
+    } catch (error) {
+        console.error('delete account:', error);
+        res.status(500).json({ message: 'Could not delete your account. Please try again or contact support.' });
+    }
+});
+
 router.patch('/me/account', auth, async (req, res) => {
     try {
         const allowed = ['fullName', 'phone', 'country', 'avatar', 'profilePicture'];

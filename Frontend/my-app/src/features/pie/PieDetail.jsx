@@ -261,7 +261,7 @@ export default function PieDetail() {
               {pie.description ? <p className="mt-3 whitespace-pre-line leading-relaxed text-fg-muted">{pie.description}</p> : null}
               <div className="mt-4 flex items-center gap-3 text-sm text-fg-muted">
                 <Avatar src={pie.ownerId?.profilePicture} name={pie.ownerId?.fullName} size={28} />
-                Traded by <span className="font-medium text-fg">{pie.ownerId?.fullName || 'Maxwell Donkor'}</span>
+                Traded by <span className="font-medium text-fg">{pie.ownerId?.fullName || 'Maxwell Donkoh'}</span>
               </div>
             </Reveal>
 

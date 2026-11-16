@@ -58,4 +58,37 @@ async function verifyPayment(reference, expectedAmount) {
     return { ok: true, paidAmount: paid / 100, channel: data.channel || 'card', email: data.customer?.email || '' };
 }
 
-module.exports = { verifyPayment, isConfigured };
+/**
+ * Start a Paystack checkout page (used by the phone app). The amount must already be
+ * worked out on the server. Returns { ok, url, reference } or { ok: false, code, message }.
+ */
+async function initializePayment({ email, amount, reference, metadata = {}, callbackUrl }) {
+    const key = secretKey();
+    if (!key) return { ok: false, code: 'NOT_CONFIGURED', message: 'Payments are not available right now.' };
+    const pesewas = Math.round(Number(amount) * 100);
+    if (!(pesewas >= 100)) return { ok: false, code: 'BAD_AMOUNT', message: 'The amount must be at least GH₵1.' };
+
+    try {
+        const { data } = await axios.post(
+            'https://api.paystack.co/transaction/initialize',
+            {
+                email,
+                amount: pesewas,
+                currency: 'GHS',
+                reference,
+                channels: ['mobile_money', 'card'],
+                metadata,
+                ...(callbackUrl ? { callback_url: callbackUrl } : {}),
+            },
+            { headers: { Authorization: `Bearer ${key}` }, timeout: 15000 }
+        );
+        const url = data?.data?.authorization_url;
+        if (!url) return { ok: false, code: 'UNAVAILABLE', message: 'Could not start the payment. Please try again.' };
+        return { ok: true, url, reference: data.data.reference || reference };
+    } catch (err) {
+        console.error('Paystack initialize failed:', err.response?.status || err.message, err.response?.data?.message || '');
+        return { ok: false, code: 'UNAVAILABLE', message: 'Could not start the payment. Please try again.' };
+    }
+}
+
+module.exports = { verifyPayment, initializePayment, isConfigured };

@@ -463,6 +463,7 @@ function settlementAmounts(deposits, pnlPct, feePercent = 0) {
     return { pool, gross, fee, toShare, payouts };
 }
 exports.settlementAmounts = settlementAmounts;
+exports.sliceProblem = sliceProblem;
 
 async function payOut(dep, amount, fields, walletOpts) {
     // Claim the deposit first: if this runs twice, the second run finds nothing to claim.
