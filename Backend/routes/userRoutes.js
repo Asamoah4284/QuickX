@@ -292,14 +292,13 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         await user.save();
         console.log('User saved successfully. Sending OTP...');
 
-        // Send OTP via SMS
+        // Send the code by SMS. If SMS fails the account is still created and the user can tap "resend".
+        let smsSent = false;
         try {
-            await sendOTP(user.phone, otp);
+            const smsRes = await sendOTP(user.phone, otp);
+            smsSent = Boolean(smsRes && smsRes.status === 1);
         } catch (smsError) {
-            console.error('Failed to send registration OTP:', smsError);
-            // We don't fail registration if SMS fails conceptually, 
-            // but the user won't be able to verify without it.
-            // In a production app, you might want to handle this differently.
+            console.error('Failed to send registration OTP:', smsError.message);
         }
 
         if (!process.env.JWT_SECRET) {
@@ -309,9 +308,13 @@ router.post('/register', authLimiter, validateRegistration, async (req, res) => 
         const token = signUserToken(user);
 
         res.status(201).json({
-            message: 'Registration successful. Verification code sent.',
+            message: smsSent
+                ? 'Account created. We sent a code to your phone.'
+                : 'Account created, but we could not send the SMS. Tap "Resend code".',
             token,
-            user: serializeUser(user)
+            user: serializeUser(user),
+            // Local testing only: never send the code back in production, or phone checks mean nothing.
+            ...(process.env.NODE_ENV !== 'production' ? { devCode: otp } : {}),
         });
     } catch (error) {
         console.error('Registration error:', error);
@@ -610,7 +613,7 @@ router.patch('/me/account', auth, async (req, res) => {
         for (const key of allowed) {
             if (req.body[key] !== undefined) {
                 const val = String(req.body[key] ?? '').trim();
-                // fullName is required on User — never persist empty (would fail validators)
+                // fullName is required on User, never persist empty (would fail validators)
                 if (key === 'fullName' && !val) {
                     continue;
                 }

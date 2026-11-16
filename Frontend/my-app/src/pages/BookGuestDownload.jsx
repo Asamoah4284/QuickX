@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiBookOpen, FiDownload, FiAlertCircle, FiCheck, FiExternalLink } from 'react-icons/fi';
+import { FiBookOpen, FiDownload, FiAlertCircle, FiCheck, FiExternalLink, FiArrowLeft } from 'react-icons/fi';
 import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 function resolveAssetUrl(raw, apiUrl) {
@@ -26,7 +26,7 @@ function BookDownloadRow({ book, apiUrl, fallbackThumbnail = '' }) {
               <img
                 src={thumbHref}
                 alt={book.title ? `Cover: ${book.title}` : 'Book cover'}
-                className="h-[7.5rem] w-[5.5rem] rounded-xl object-cover bg-ink-900 ring-1 ring-line"
+                className="h-[7.5rem] w-[5.5rem] rounded-xl object-contain p-1 bg-ink-900 ring-1 ring-line"
                 onError={(e) => {
                   e.currentTarget.style.display = 'none';
                   const fallback = e.currentTarget.nextElementSibling;
@@ -138,8 +138,15 @@ export default function BookGuestDownload() {
       : 'Your ebook is ready to download.';
 
   return (
-    <div className="min-h-[calc(100vh-4rem)] bg-ink-900 px-4 py-12 sm:py-16">
+    <div className="min-h-[calc(100vh-4rem)] bg-ink-900 px-4 py-8 sm:py-16">
       <div className="mx-auto w-full max-w-md">
+        <Link
+          to="/store"
+          className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-fg-muted transition hover:text-brand-400"
+        >
+          <FiArrowLeft className="h-4 w-4" />
+          Back to store
+        </Link>
         <div className="overflow-hidden rounded-3xl bg-ink-850 shadow-[0_8px_40px_-12px_rgba(15,23,42,0.12)] ring-1 ring-line">
           {/* Header */}
           <header className="border-b border-line px-6 pb-8 pt-10 text-center">

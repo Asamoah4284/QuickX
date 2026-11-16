@@ -5,7 +5,7 @@ import { DirectionPill, Pips, STATUS_META } from './SignalCard';
 
 export function SignalStats({ stats, openCount, className }) {
   const items = [
-    { label: 'Win rate', node: stats.winRate == null ? '—' : <CountUp value={stats.winRate} suffix="%" /> },
+    { label: 'Win rate', node: stats.winRate == null ? 'None yet' : <CountUp value={stats.winRate} suffix="%" /> },
     {
       label: 'Net pips',
       node: <CountUp value={stats.totalPips} decimals={stats.totalPips % 1 ? 1 : 0} prefix={stats.totalPips > 0 ? '+' : ''} />,

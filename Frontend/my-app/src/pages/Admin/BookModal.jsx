@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar } from 'react-icons/fi';
+import { FiX, FiUpload, FiBook, FiSave, FiDollarSign, FiBookOpen, FiPackage, FiTruck, FiHash, FiCalendar, FiTrash2, FiPlus, FiImage } from 'react-icons/fi';
 import axios from 'axios';
 import { API_URL } from '@/config/api';
+import { uploadFileToS3 } from '../../utils/uploadToS3';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
+import { getCurrencySymbol } from '../../utils/currencyStore';
 
 const BookModal = ({ book, onClose, onSave }) => {
     const [formData, setFormData] = useState({
@@ -13,10 +16,18 @@ const BookModal = ({ book, onClose, onSave }) => {
         fileUrl: '',
         stock: 0,
         thumbnail: '',
+        galleryImages: [],
         isbn: '',
         deliveryFee: 0,
         watermarkTemplate: '',
-        published: new Date().toISOString().split('T')[0]
+        published: new Date().toISOString().split('T')[0],
+        listingStatus: 'published',
+        deliveryOptions: {
+            availableTypes: ['pickup', 'pay_on_delivery', 'instant_pay'],
+            estimatedDays: '2 - 4 business days',
+            pickupLocations: '',
+            deliveryFee: 0,
+        },
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
@@ -24,6 +35,15 @@ const BookModal = ({ book, onClose, onSave }) => {
 
     useEffect(() => {
         if (book) {
+            const rawDelivery = book.deliveryOptions || {};
+            const availableTypes =
+                Array.isArray(rawDelivery.availableTypes) && rawDelivery.availableTypes.length > 0
+                    ? rawDelivery.availableTypes
+                    : ['pickup', 'pay_on_delivery', 'instant_pay'];
+            const estimatedDays = rawDelivery.estimatedDays || '2 - 4 business days';
+            const pickupLocations = rawDelivery.pickupLocations || '';
+            const deliveryFee = rawDelivery.deliveryFee != null ? rawDelivery.deliveryFee : (book.deliveryFee || 0);
+
             setFormData({
                 title: book.title || '',
                 author: book.author || '',
@@ -32,11 +52,21 @@ const BookModal = ({ book, onClose, onSave }) => {
                 type: book.type || 'ebook',
                 fileUrl: book.fileUrl || '',
                 stock: book.stock || 0,
-                thumbnail: book.thumbnail || '',
+                thumbnail: book.thumbnail ? publicAssetUrl(book.thumbnail) : '',
+                galleryImages: Array.isArray(book.galleryImages)
+                    ? book.galleryImages.map(publicAssetUrl).filter(Boolean)
+                    : [],
                 isbn: book.isbn || '',
                 deliveryFee: book.deliveryFee || 0,
                 watermarkTemplate: book.watermarkTemplate || '',
-                published: book.published || new Date().toISOString().split('T')[0]
+                published: book.published || new Date().toISOString().split('T')[0],
+                listingStatus: book.listingStatus || 'published',
+                deliveryOptions: {
+                    availableTypes,
+                    estimatedDays,
+                    pickupLocations,
+                    deliveryFee,
+                },
             });
             setPreviewImage(book.thumbnail || '');
         }
@@ -50,6 +80,32 @@ const BookModal = ({ book, onClose, onSave }) => {
         }));
     };
 
+    const handleDeliveryTypeToggle = (type) => {
+        setFormData(prev => {
+            const current = prev.deliveryOptions?.availableTypes || [];
+            const next = current.includes(type)
+                ? current.filter(t => t !== type)
+                : [...current, type];
+            return {
+                ...prev,
+                deliveryOptions: {
+                    ...prev.deliveryOptions,
+                    availableTypes: next.length > 0 ? next : [type],
+                }
+            };
+        });
+    };
+
+    const handleDeliveryOptionChange = (field, value) => {
+        setFormData(prev => ({
+            ...prev,
+            deliveryOptions: {
+                ...prev.deliveryOptions,
+                [field]: value,
+            }
+        }));
+    };
+
     const handleImageUpload = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -58,58 +114,56 @@ const BookModal = ({ book, onClose, onSave }) => {
             setLoading(true);
             setError('');
 
-            // Create a preview
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setPreviewImage(reader.result);
-            };
-            reader.readAsDataURL(file);
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+            const fileUrl = await uploadFileToS3({ file, token, type: 'image' });
 
-            // Get token for authentication
-            const token = localStorage.getItem('adminToken');
-            if (!token) {
-                setError('Please login first');
-                return;
-            }
-            
-            // Get pre-signed URL from server
-            const { data: { url } } = await axios.get(`${API_URL}/s3Url`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-
-            if (!url) {
-                throw new Error('Failed to get upload URL');
-            }
-
-            // Upload the file directly to S3 using the secure URL
-            await axios.put(url, file, {
-                headers: {
-                    'Content-Type': file.type
-                }
-            });
-
-            // Extract the file URL from the S3 URL (remove the query parameters)
-            const fileUrl = url.split('?')[0];
-            console.log('S3 thumbnail URL:', fileUrl);
-            
-            // Update form data with the S3 URL
             setFormData(prev => ({
                 ...prev,
                 thumbnail: fileUrl
             }));
-
+            setPreviewImage(fileUrl);
         } catch (err) {
             console.error('Error uploading image:', err);
-            if (err.response) {
-                setError(`Upload failed: ${err.response.data?.message || 'Server error'}`);
-            } else if (err.request) {
-                setError('Could not connect to server. Please check if the server is running.');
-            } else {
-                setError('Failed to upload image. Please try again.');
-            }
+            setError(err.message || 'Failed to upload image. Please try again.');
         } finally {
             setLoading(false);
+            e.target.value = '';
         }
+    };
+
+    const handleGalleryUpload = async (e) => {
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
+
+        try {
+            setLoading(true);
+            setError('');
+
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken');
+            const uploadedUrls = [];
+            for (const file of files) {
+                const fileUrl = await uploadFileToS3({ file, token, type: 'image' });
+                if (fileUrl) uploadedUrls.push(fileUrl);
+            }
+
+            setFormData(prev => ({
+                ...prev,
+                galleryImages: [...(prev.galleryImages || []), ...uploadedUrls]
+            }));
+        } catch (err) {
+            console.error('Error uploading gallery images:', err);
+            setError(err.message || 'Failed to upload gallery images. Please try again.');
+        } finally {
+            setLoading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleRemoveGalleryImage = (indexToRemove) => {
+        setFormData(prev => ({
+            ...prev,
+            galleryImages: (prev.galleryImages || []).filter((_, idx) => idx !== indexToRemove)
+        }));
     };
 
     const handleSubmit = async (e) => {
@@ -126,7 +180,10 @@ const BookModal = ({ book, onClose, onSave }) => {
                 return;
             }
 
-            const token = localStorage.getItem('adminToken');
+            const token =
+                localStorage.getItem('adminToken') ||
+                localStorage.getItem('authToken') ||
+                localStorage.getItem('token');
             if (!token) {
                 setError('Authentication required');
                 setLoading(false);
@@ -142,8 +199,16 @@ const BookModal = ({ book, onClose, onSave }) => {
                 type: formData.type || 'ebook',
                 isbn: formData.isbn || '',
                 thumbnail: formData.thumbnail || '',
+                galleryImages: formData.galleryImages || [],
                 published: formData.published || new Date().toISOString().split('T')[0],
-                watermarkTemplate: formData.watermarkTemplate || ''
+                watermarkTemplate: formData.watermarkTemplate || '',
+                listingStatus: formData.listingStatus || 'published',
+                deliveryOptions: {
+                    availableTypes: formData.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                    estimatedDays: formData.deliveryOptions?.estimatedDays || '2 - 4 business days',
+                    pickupLocations: formData.deliveryOptions?.pickupLocations || '',
+                    deliveryFee: parseFloat(formData.deliveryOptions?.deliveryFee) || 0,
+                },
             };
 
             // Add conditional fields based on book type
@@ -151,7 +216,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                 bookData.fileUrl = formData.fileUrl || '';
             } else if (formData.type === 'hardcopy') {
                 bookData.stock = parseInt(formData.stock) || 0;
-                bookData.deliveryFee = parseFloat(formData.deliveryFee) || 0;
+                bookData.deliveryFee = parseFloat(formData.deliveryOptions?.deliveryFee ?? formData.deliveryFee) || 0;
             }
 
             let response;
@@ -243,6 +308,115 @@ const BookModal = ({ book, onClose, onSave }) => {
                                     <p className="mt-2 text-xs text-fg-subtle">Recommended: 600x800px, JPG or PNG</p>
                                 </div>
                             </div>
+
+                            {/* Book Gallery Photos */}
+                            <div className="mt-6 bg-ink-900 rounded-xl p-6 border border-line">
+                                <div className="flex items-center justify-between mb-3">
+                                    <h3 className="text-sm font-bold uppercase tracking-wider text-fg-muted flex items-center gap-1.5">
+                                        <FiImage className="text-brand-400" />
+                                        Gallery Photos
+                                    </h3>
+                                    <span className="text-xs text-fg-subtle">
+                                        {formData.galleryImages?.length || 0} images
+                                    </span>
+                                </div>
+                                <p className="text-xs text-fg-subtle mb-4 leading-relaxed">
+                                    Upload additional photos showing inside pages, table of contents, or 3D mockups.
+                                </p>
+
+                                {formData.galleryImages && formData.galleryImages.length > 0 ? (
+                                    <div className="grid grid-cols-2 gap-2.5 mb-4">
+                                        {formData.galleryImages.map((imgUrl, idx) => (
+                                            <div key={`${imgUrl}-${idx}`} className="group relative aspect-[3/4] rounded-lg overflow-hidden border border-line bg-ink-850 shadow-sm">
+                                                <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="w-full h-full object-cover" />
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveGalleryImage(idx)}
+                                                    className="absolute top-1.5 right-1.5 p-1 rounded-full bg-red-600 text-white opacity-90 hover:opacity-100 hover:scale-110 transition shadow"
+                                                    title="Remove image"
+                                                >
+                                                    <FiX size={13} />
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
+
+                                <label className="flex items-center justify-center gap-2 px-4 py-2.5 bg-ink-850 border border-brand-500 text-brand-400 rounded-lg cursor-pointer hover:bg-brand-500/10 transition-colors shadow-sm text-xs font-semibold">
+                                    <FiPlus size={15} />
+                                    <span>Add Gallery Photos</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        multiple
+                                        onChange={handleGalleryUpload}
+                                        className="hidden"
+                                    />
+                                </label>
+                            </div>
+
+                            {/* Book Status & Store Visibility */}
+                            <div className="mt-6 bg-ink-900 rounded-xl p-5 border border-line">
+                                <h3 className="text-sm font-bold uppercase tracking-wider text-fg-muted mb-1.5 flex items-center gap-1.5">
+                                    Store Status
+                                </h3>
+                                <p className="text-xs text-fg-subtle mb-3.5 leading-relaxed">
+                                    Control whether this book is live for buyers on the storefront.
+                                </p>
+                                <div className="space-y-2.5">
+                                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                                        (formData.listingStatus || 'published') === 'published'
+                                            ? 'border-up bg-up/10 ring-2 ring-up'
+                                            : 'border-line bg-ink-850 hover:bg-ink-900'
+                                    }`}>
+                                        <input
+                                            type="radio"
+                                            name="listingStatus"
+                                            value="published"
+                                            checked={(formData.listingStatus || 'published') === 'published'}
+                                            onChange={() => setFormData(prev => ({ ...prev, listingStatus: 'published' }))}
+                                            className="mt-1 text-up focus:ring-up"
+                                        />
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-up">Live (Published)</span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-up/10 text-up">
+                                                    Active
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-up mt-0.5">
+                                                Visible to buyers in the store and ready for purchase.
+                                            </p>
+                                        </div>
+                                    </label>
+
+                                    <label className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition ${
+                                        formData.listingStatus === 'draft'
+                                            ? 'border-line-strong bg-ink-800 ring-2 ring-line-strong'
+                                            : 'border-line bg-ink-850 hover:bg-ink-900'
+                                    }`}>
+                                        <input
+                                            type="radio"
+                                            name="listingStatus"
+                                            value="draft"
+                                            checked={formData.listingStatus === 'draft'}
+                                            onChange={() => setFormData(prev => ({ ...prev, listingStatus: 'draft' }))}
+                                            className="mt-1 text-fg-muted focus:ring-line-strong"
+                                        />
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-semibold text-fg">Draft (Hidden)</span>
+                                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-ink-700 text-fg-muted">
+                                                    Hidden
+                                                </span>
+                                            </div>
+                                            <p className="text-xs text-fg-subtle mt-0.5">
+                                                Hidden from buyers. Only visible to admins in the dashboard.
+                                            </p>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
                         </div>
 
                         {/* Right Column - Book Details */}
@@ -321,7 +495,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                                             </label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span className="text-fg-subtle">$</span>
+                                                    <span className="text-fg-subtle">{getCurrencySymbol()}</span>
                                                 </div>
                                                 <input
                                                     type="number"
@@ -411,7 +585,7 @@ const BookModal = ({ book, onClose, onSave }) => {
                                             </label>
                                             <div className="relative">
                                                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                                    <span className="text-fg-subtle">$</span>
+                                                    <span className="text-fg-subtle">{getCurrencySymbol()}</span>
                                                 </div>
                                                 <input
                                                     type="number"
@@ -437,6 +611,110 @@ const BookModal = ({ book, onClose, onSave }) => {
                                                 onChange={handleChange}
                                                 className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                                                 placeholder="Watermark template"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Physical Delivery & Fulfillment Configuration */}
+                                <div className="bg-ink-850 rounded-xl p-6 border border-line">
+                                    <h3 className="text-lg font-semibold text-fg mb-1 flex items-center">
+                                        <FiTruck className="mr-2 text-brand-400" />
+                                        Physical Delivery &amp; Fulfillment
+                                    </h3>
+                                    <p className="text-xs text-fg-subtle mb-4">
+                                        Configure physical order delivery types, days timeframe, and fulfillment details.
+                                    </p>
+
+                                    <div className="space-y-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-fg-muted mb-2 uppercase tracking-wider">
+                                                Available Delivery Types (Customers can choose from selected)
+                                            </label>
+                                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                                                <label className="flex items-start p-3 border border-line rounded-xl hover:bg-ink-900 cursor-pointer transition">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(formData.deliveryOptions?.availableTypes || []).includes('pickup')}
+                                                        onChange={() => handleDeliveryTypeToggle('pickup')}
+                                                        className="mt-0.5 h-4 w-4 rounded border-line text-brand-400 focus:ring-brand-500"
+                                                    />
+                                                    <div className="ml-2.5">
+                                                        <span className="block text-sm font-medium text-fg">Station Pickup</span>
+                                                        <span className="block text-xs text-fg-subtle">Pick up at designated store</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-start p-3 border border-line rounded-xl hover:bg-ink-900 cursor-pointer transition">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(formData.deliveryOptions?.availableTypes || []).includes('pay_on_delivery')}
+                                                        onChange={() => handleDeliveryTypeToggle('pay_on_delivery')}
+                                                        className="mt-0.5 h-4 w-4 rounded border-line text-brand-400 focus:ring-brand-500"
+                                                    />
+                                                    <div className="ml-2.5">
+                                                        <span className="block text-sm font-medium text-fg">Pay on Delivery</span>
+                                                        <span className="block text-xs text-fg-subtle">Pay courier on arrival</span>
+                                                    </div>
+                                                </label>
+
+                                                <label className="flex items-start p-3 border border-line rounded-xl hover:bg-ink-900 cursor-pointer transition">
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={(formData.deliveryOptions?.availableTypes || []).includes('instant_pay')}
+                                                        onChange={() => handleDeliveryTypeToggle('instant_pay')}
+                                                        className="mt-0.5 h-4 w-4 rounded border-line text-brand-400 focus:ring-brand-500"
+                                                    />
+                                                    <div className="ml-2.5">
+                                                        <span className="block text-sm font-medium text-fg">Instant Pay</span>
+                                                        <span className="block text-xs text-fg-subtle">Online checkout (MoMo/Card)</span>
+                                                    </div>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-fg-muted mb-1 flex items-center">
+                                                    <FiCalendar className="mr-1 text-fg-subtle" />
+                                                    Delivery Timeframe (Days)
+                                                </label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.deliveryOptions?.estimatedDays || ''}
+                                                    onChange={(e) => handleDeliveryOptionChange('estimatedDays', e.target.value)}
+                                                    placeholder="e.g. 2 - 4 business days"
+                                                    className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                                                />
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm font-medium text-fg-muted mb-1 flex items-center">
+                                                    <FiDollarSign className="mr-1 text-fg-subtle" />
+                                                    Standard Delivery Fee ({getCurrencySymbol()})
+                                                </label>
+                                                <input
+                                                    type="number"
+                                                    min="0"
+                                                    step="0.01"
+                                                    value={formData.deliveryOptions?.deliveryFee ?? ''}
+                                                    onChange={(e) => handleDeliveryOptionChange('deliveryFee', parseFloat(e.target.value) || 0)}
+                                                    placeholder="0 for free delivery"
+                                                    className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-fg-muted mb-1">
+                                                Pickup Station Address &amp; Instructions
+                                            </label>
+                                            <input
+                                                type="text"
+                                                value={formData.deliveryOptions?.pickupLocations || ''}
+                                                onChange={(e) => handleDeliveryOptionChange('pickupLocations', e.target.value)}
+                                                placeholder="e.g. QuickX Partner Hub, Accra Mall Shop 14"
+                                                className="w-full px-4 py-2 border border-line rounded-lg focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition-colors"
                                             />
                                         </div>
                                     </div>

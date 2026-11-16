@@ -37,7 +37,7 @@ router.get('/my-books', auth, requireApprovedCreator, async (req, res) => {
     }
 });
 
-// Books in the same series (for plan picker — each has its own PDF)
+// Books in the same series (for plan picker, each has its own PDF)
 router.get('/series-for-book/:bookId', auth, requireApprovedCreator, async (req, res) => {
     try {
         const anchor = await Book.findById(req.params.bookId);
@@ -88,7 +88,7 @@ router.post('/series-book', auth, requireApprovedCreator, async (req, res) => {
         }
         const pdfUrl = String(fileUrl || '').trim();
         if (!pdfUrl) {
-            return res.status(400).json({ message: 'fileUrl is required — upload the PDF first' });
+            return res.status(400).json({ message: 'Upload the PDF first. A file link is required.' });
         }
 
         const anchor = await Book.findById(anchorBookId);

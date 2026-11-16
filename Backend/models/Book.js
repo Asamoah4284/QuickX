@@ -69,11 +69,38 @@ const bookSchema = new mongoose.Schema({
         }
     },
     thumbnail: String,
+    galleryImages: [{
+        type: String,
+        trim: true
+    }],
+    salesCount: {
+        type: Number,
+        default: 0
+    },
     isbn: String,
     deliveryFee: {
         type: Number,
         default: function() {
             return this.type === 'hardcopy' ? 0 : null;
+        }
+    },
+    deliveryOptions: {
+        availableTypes: {
+            type: [String],
+            enum: ['pickup', 'pay_on_delivery', 'instant_pay'],
+            default: ['pickup', 'pay_on_delivery', 'instant_pay']
+        },
+        estimatedDays: {
+            type: String,
+            default: '2 - 4 business days'
+        },
+        pickupLocations: {
+            type: String,
+            default: 'QuickX Distribution Center, Accra'
+        },
+        deliveryFee: {
+            type: Number,
+            default: 0
         }
     },
     watermarkTemplate: String,
@@ -107,7 +134,7 @@ const bookSchema = new mongoose.Schema({
         ref: 'BookOfferGroup',
         default: null,
     },
-    /** PDF-only row for a plan (Book 2, etc.) — hidden from marketplace grid. */
+    /** PDF-only row for a plan (Book 2, etc.), hidden from marketplace grid. */
     isPlanDeliverable: {
         type: Boolean,
         default: false,
@@ -116,7 +143,7 @@ const bookSchema = new mongoose.Schema({
     timestamps: true
 });
 
-/** Legacy value stored on some books — normalize before enum validation. */
+/** Legacy value stored on some books, normalize before enum validation. */
 bookSchema.pre('validate', function normalizeListingStatus(next) {
     if (this.listingStatus === 'approved') {
         this.listingStatus = 'published';

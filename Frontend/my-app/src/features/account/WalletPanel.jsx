@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { FiCheck, FiCopy, FiGift } from 'react-icons/fi';
 import { api, errorMessage } from '../../lib/api';
 import { useApi } from '../../lib/useApi';
-import { formatDate, money } from '../../lib/format';
+import { formatDate, cedis } from '../../lib/format';
 import { Alert, Badge, Button, Card, Field, Input, Select, Skeleton } from '../../ui/primitives';
 import { Modal } from '../../ui/overlays';
 
@@ -15,7 +15,7 @@ const NETWORKS = [
 const STATUS = {
   pending: { label: 'Being processed', tone: 'warn' },
   completed: { label: 'Paid', tone: 'up' },
-  rejected: { label: 'Rejected — returned', tone: 'neutral' },
+  rejected: { label: 'Rejected, money returned', tone: 'neutral' },
   failed: { label: 'Failed', tone: 'down' },
 };
 
@@ -52,8 +52,8 @@ function WithdrawModal({ source, wallet, onClose, onDone }) {
       <form onSubmit={submit} className="space-y-4">
         <p className="text-sm text-fg-muted">
           {isReferral
-            ? `Your full referral balance of ${money(available)} will be sent to your mobile money number once approved.`
-            : `You have ${money(available)} available. Minimum withdrawal is ${money(minimum)}.`}
+            ? `Your full referral balance of ${cedis(available)} will be sent to your mobile money number once approved.`
+            : `You have ${cedis(available)} available. Minimum withdrawal is ${cedis(minimum)}.`}
         </p>
         {!isReferral ? (
           <Field label="Amount (GH₵)" htmlFor="wd-amount">
@@ -124,7 +124,7 @@ export default function WalletPanel() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Wallet balance</p>
-          <p className="tabular mt-2 text-3xl font-bold text-fg">{money(wallet.balance)}</p>
+          <p className="tabular mt-2 text-3xl font-bold text-fg">{cedis(wallet.balance)}</p>
           <p className="mt-1 text-sm text-fg-muted">Use it to pay for any plan at checkout.</p>
           <Button size="sm" variant="secondary" className="mt-4" disabled={!canWithdrawWallet} onClick={() => setWithdrawing('wallet')}>
             Withdraw
@@ -133,9 +133,9 @@ export default function WalletPanel() {
 
         <Card className="p-5">
           <p className="text-xs font-semibold uppercase tracking-wider text-fg-subtle">Referral earnings</p>
-          <p className="tabular mt-2 text-3xl font-bold text-up">{money(wallet.referralEarnings)}</p>
+          <p className="tabular mt-2 text-3xl font-bold text-up">{cedis(wallet.referralEarnings)}</p>
           <p className="mt-1 text-sm text-fg-muted">
-            Withdraw once you reach {money(wallet.minReferralWithdrawal)}.
+            Withdraw once you reach {cedis(wallet.minReferralWithdrawal)}.
           </p>
           <Button size="sm" variant="secondary" className="mt-4" disabled={!canWithdrawReferral} onClick={() => setWithdrawing('referral')}>
             Withdraw
@@ -153,7 +153,7 @@ export default function WalletPanel() {
             className="tabular mt-2 flex items-center gap-3 text-3xl font-bold tracking-widest text-fg transition hover:text-brand-300"
             aria-label="Copy referral code"
           >
-            {wallet.referralCode || '——'}
+            {wallet.referralCode || 'Not set yet'}
             {copied ? <FiCheck className="h-5 w-5 text-up" /> : <FiCopy className="h-5 w-5 text-fg-subtle" />}
           </button>
           <p className="mt-1 text-sm text-fg-muted">
@@ -167,7 +167,7 @@ export default function WalletPanel() {
           {wallet.withdrawals.slice(0, 5).map((w) => (
             <div key={w.id} className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 text-sm">
               <span className="text-fg-muted">
-                <span className="tabular font-semibold text-fg">{money(w.amount)}</span> from{' '}
+                <span className="tabular font-semibold text-fg">{cedis(w.amount)}</span> from{' '}
                 {w.source === 'wallet' ? 'wallet' : 'referral earnings'} · {w.network} {w.momoNumber}
               </span>
               <span className="flex items-center gap-3">

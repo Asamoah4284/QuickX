@@ -30,7 +30,7 @@ export default function Courses() {
   return (
     <>
       <Helmet>
-        <title>Courses — QuickX</title>
+        <title>Courses | QuickX</title>
       </Helmet>
       <Container className="py-10 sm:py-14">
         <PageHeader

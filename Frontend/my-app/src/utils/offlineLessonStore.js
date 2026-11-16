@@ -185,7 +185,7 @@ export function revokeBlobUrl(url) {
  * @param {string} [opts.mimeType]
  * @param {string} [opts.offlineLicense]
  * @param {string} [opts.offlineLicenseExpiresAt]
- * @param {(pct: number) => void} [opts.onProgress] — only used by callers during fetch; here marks 100
+ * @param {(pct: number) => void} [opts.onProgress], only used by callers during fetch; here marks 100
  */
 export async function saveLesson({
   courseId,
@@ -297,7 +297,7 @@ export async function fetchVideoBlob(url, onProgress, fetchOptions = {}) {
   const headers = { ...(fetchOptions.headers || {}) };
   const signal = fetchOptions.signal;
 
-  // Prefer axios when available in the app — better progress + auth on large bodies.
+  // Prefer axios when available in the app, better progress + auth on large bodies.
   // Dynamic import keeps this util usable outside React.
   try {
     const axiosMod = await import('axios');

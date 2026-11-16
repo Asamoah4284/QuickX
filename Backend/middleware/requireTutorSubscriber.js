@@ -62,7 +62,7 @@ async function requireTutorSubscriber(req, res, next) {
   }
 }
 
-/** After requireTutorSubscriber — require one old-style feature name. Owner and admins always pass. */
+/** After requireTutorSubscriber, require one old-style feature name. Owner and admins always pass. */
 function requireTutorFeature(feature) {
   return (req, res, next) => {
     if (req.isCommunityTutor || req.isCommunityAdmin) return next();
@@ -78,7 +78,7 @@ function requireTutorFeature(feature) {
 
 const requireCommunityAccess = requireTutorFeature(FEATURES.COMMUNITY);
 
-/** Owner or admin only — moderation, announcements, creating polls. */
+/** Owner or admin only, moderation, announcements, creating polls. */
 function requireCommunityModerator(req, res, next) {
   if (req.isCommunityTutor || req.isCommunityAdmin) return next();
   return res.status(403).json({ message: 'Only the tutor can perform this action' });

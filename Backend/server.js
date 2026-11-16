@@ -13,12 +13,27 @@ const flexibleAuth = require('./middleware/flexibleAuth');
 const { securityHeaders, requestSizeLimiter, preventParamPollution } = require('./middleware/security');
 
 const app = express();
+// Behind Nginx: read the client IP from X-Forwarded-For so rate limits apply per user, not per proxy.
+app.set('trust proxy', 1);
 
 // CORS must run before rate limiting / routes so every response (incl. 429 & OPTIONS preflight) gets CORS headers
 const corsOptions = {
     origin: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+    // Range and cache headers are needed for video and file downloads.
+    allowedHeaders: [
+        'Content-Type',
+        'Authorization',
+        'X-Requested-With',
+        'Accept',
+        'Origin',
+        'Range',
+        'Cache-Control',
+        'Pragma',
+        'If-Modified-Since',
+        'x-auth-token',
+    ],
+    exposedHeaders: ['Content-Range', 'Content-Length', 'ETag', 'Accept-Ranges'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -29,7 +44,9 @@ app.options('*', cors(corsOptions));
 // Security middleware
 app.use(helmet({
     contentSecurityPolicy: false, // We use our custom CSP
-    crossOriginEmbedderPolicy: false
+    crossOriginEmbedderPolicy: false,
+    // Images and files are loaded cross-origin by the frontend.
+    crossOriginResourcePolicy: false,
 }));
 
 // Apply custom security headers
@@ -44,7 +61,7 @@ app.use(preventParamPollution);
 // Rate limiting - general API limit
 const apiLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    max: process.env.API_RATE_LIMIT ? parseInt(process.env.API_RATE_LIMIT, 10) : 1000, // high enough for normal browsing
     message: 'Too many requests from this IP, please try again later.',
     standardHeaders: true,
     legacyHeaders: false,
@@ -66,7 +83,7 @@ const s3UrlLimiter = rateLimit({
 });
 
 // Apply rate limiting to all API routes (OPTIONS preflight skipped so CORS stays reliable)
-// Offline lesson streams can run for several minutes — do not count them against the burst limit.
+// Offline lesson streams can run for several minutes, do not count them against the burst limit.
 app.use('/api/', (req, res, next) => {
     if (req.method === 'OPTIONS') return next();
     const path = String(req.originalUrl || req.url || '');
@@ -91,9 +108,11 @@ mongoose.connect(process.env.MONGODB_URI, {
     connectTimeoutMS: 30000,
     socketTimeoutMS: 45000,
     serverSelectionTimeoutMS: 30000,
-    retryWrites: true,
+    maxIdleTimeMS: 30000,
+    minPoolSize: 1,
     maxPoolSize: 10,
-    minPoolSize: 0,
+    retryWrites: true,
+    retryReads: true,
     heartbeatFrequencyMS: 10000
 })
 .then(() => {
@@ -160,7 +179,7 @@ db.once('open', async () => {
     }
     try {
         const created = await require('./models/Product').ensureDefaults();
-        if (created > 0) console.log(`Seeded ${created} default product(s) — set real prices in Admin → Pricing`);
+        if (created > 0) console.log(`Seeded ${created} default product(s). Set real prices in Admin → Pricing`);
     } catch (e) {
         console.error('product seed:', e.message);
     }
@@ -187,6 +206,7 @@ db.once('open', async () => {
 app.use('/api/users', require('./routes/userRoutes'));
 app.use('/api/courses', require('./routes/courseRoutes'));
 app.use('/api/books', require('./routes/bookRoutes'));
+app.use('/api/events', require('./routes/eventRoutes'));
 app.use('/api/admin', require('./routes/adminRoutes'));
 app.use('/api/payments', require('./routes/paymentRoutes'));
 app.use('/api/payments/moolre', require('./routes/moolrePaymentRoutes'));
@@ -201,6 +221,7 @@ app.use('/api', require('./routes/subscriptionRoutes'));
 app.use('/api', require('./routes/productRoutes'));
 app.use('/api/signals', require('./routes/signalRoutes'));
 app.use('/api/community', require('./routes/communityRoutes'));
+app.use('/api/ptrading', require('./routes/ptradingRoutes'));
 app.use('/api/notifications', require('./routes/notificationRoutes'));
 app.use('/api/withdrawals', require('./routes/withdrawalRoutes'));
 
@@ -241,6 +262,20 @@ app.get('/s3VideoUrl', flexibleAuth, s3UrlLimiter, async (req, res) => {
     } catch (error) {
         console.error('S3 Video URL generation error:', error);
         res.status(500).json({ message: 'Failed to generate upload URL' });
+    }
+});
+
+// Public display settings: which currency prices are shown in, and the USD to GHS rate.
+app.get('/api/platform/settings', async (req, res) => {
+    try {
+        const PlatformSetting = require('./models/PlatformSetting');
+        const settings = await PlatformSetting.findOne().sort({ createdAt: -1 }).lean();
+        res.json({
+            defaultCurrency: settings?.defaultCurrency || 'GHS',
+            exchangeRateUsdToGhs: Number(settings?.exchangeRateUsdToGhs) || 15.5,
+        });
+    } catch {
+        res.json({ defaultCurrency: 'GHS', exchangeRateUsdToGhs: 15.5 });
     }
 });
 

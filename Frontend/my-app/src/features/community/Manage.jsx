@@ -229,7 +229,7 @@ function Settings() {
 export default function Manage() {
   const [section, setSection] = useState('reports');
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="max-w-3xl space-y-5">
       <Tabs
         value={section}
         onChange={setSection}

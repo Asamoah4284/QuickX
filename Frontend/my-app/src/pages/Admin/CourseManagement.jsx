@@ -21,7 +21,7 @@ import {
 
 const API_URL = import.meta.env.VITE_API_URL;
 
-/** Admin API may return relative paths or full S3/CloudFront URLs — never double-prefix API_URL. */
+/** Admin API may return relative paths or full S3/CloudFront URLs, never double-prefix API_URL. */
 function resolveCourseThumbnailUrl(thumbnail) {
   if (!thumbnail) return null;
   const raw = thumbnail.startsWith('http') ? thumbnail : `${API_URL}${thumbnail}`;
@@ -29,42 +29,6 @@ function resolveCourseThumbnailUrl(thumbnail) {
 }
 
 // Mock data for testing
-const mockCourses = [
-    {
-        _id: '1',
-        title: 'Forex Trading for Beginners',
-        level: 'beginner',
-        price: 299,
-        enrolledStudents: 25,
-        isPublished: true,
-        thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-        modules: [
-            {
-                _id: 'm1',
-                title: 'Introduction to Forex',
-                description: 'Learn the basics of forex trading',
-                content: []
-            }
-        ]
-    },
-    {
-        _id: '2',
-        title: 'Technical Analysis Mastery',
-        level: 'intermediate',
-        price: 399,
-        enrolledStudents: 18,
-        isPublished: true,
-        thumbnail: 'https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?ixlib=rb-1.2.1&auto=format&fit=crop&w=1350&q=80',
-        modules: [
-            {
-                _id: 'm2',
-                title: 'Chart Patterns',
-                description: 'Master technical analysis patterns',
-                content: []
-            }
-        ]
-    }
-];
 
 const CourseManagement = () => {
     const [courses, setCourses] = useState([]);
@@ -109,7 +73,7 @@ const CourseManagement = () => {
             
             const studentsResponse = await axios.get(`${API_URL}/api/admin/courses/${courseId}/students`);
             setStudents(studentsResponse.data);
-        } catch (err) {
+        } catch {
             setError('Failed to fetch course details');
         }
     };
@@ -129,7 +93,7 @@ const CourseManagement = () => {
             
             handleCourseSelect(courseId);
             setShowUploadModal(false);
-        } catch (err) {
+        } catch {
             setError('Failed to upload content');
         }
     };
@@ -138,7 +102,7 @@ const CourseManagement = () => {
         try {
             await axios.delete(`${API_URL}/api/admin/courses/${courseId}/content/${contentId}`);
             handleCourseSelect(courseId);
-        } catch (err) {
+        } catch {
             setError('Failed to delete content');
         }
     };
@@ -149,7 +113,7 @@ const CourseManagement = () => {
                 progress
             });
             handleCourseSelect(courseId);
-        } catch (err) {
+        } catch {
             setError('Failed to update progress');
         }
     };

@@ -94,13 +94,13 @@ export default function AdminOverview() {
         />
         <Stat
           label="Win rate (90 days)"
-          value={stats?.winRate == null ? '—' : `${stats.winRate}%`}
+          value={stats?.winRate == null ? 'None yet' : `${stats.winRate}%`}
           hint={stats ? `${stats.wins} wins · ${stats.losses} losses` : null}
           loading={signals.loading}
         />
         <Stat
           label="Pips (90 days)"
-          value={stats ? `${stats.totalPips > 0 ? '+' : ''}${stats.totalPips}` : '—'}
+          value={stats ? `${stats.totalPips > 0 ? '+' : ''}${stats.totalPips}` : '0'}
           hint={`${liveSignals} signal${liveSignals === 1 ? '' : 's'} live now`}
           loading={signals.loading}
         />

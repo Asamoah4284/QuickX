@@ -348,7 +348,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
                           </div>
                           <div>
                             <dt className="text-[10px] font-medium uppercase tracking-wide text-fg-subtle">Rating</dt>
-                            <dd className="tabular-nums">{rating || '—'}</dd>
+                            <dd className="tabular-nums">{rating || 'No ratings'}</dd>
                           </div>
                         </dl>
 

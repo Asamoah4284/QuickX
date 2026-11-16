@@ -1,8 +1,10 @@
-/** @param {object} item */
 export function normalizeCartItem(item) {
+  const rawId = String(item?.id ?? item?._id ?? '').trim();
   const qty = Number(item?.quantity);
   return {
     ...item,
+    id: rawId,
+    _id: rawId,
     quantity: Math.max(1, Math.min(99, Number.isFinite(qty) && qty > 0 ? Math.floor(qty) : 1)),
   };
 }

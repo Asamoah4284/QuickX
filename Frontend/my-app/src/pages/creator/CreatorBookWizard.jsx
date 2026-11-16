@@ -22,9 +22,13 @@ const EMPTY_FORM = {
   category: 'general',
   fileUrl: '',
   thumbnail: '',
+  galleryImages: [],
   isbn: '',
   stock: 0,
   deliveryFee: 0,
+  availableDeliveryTypes: ['pickup', 'pay_on_delivery', 'instant_pay'],
+  estimatedDeliveryDays: '2 - 4 business days',
+  pickupLocations: 'QuickX Distribution Center, Accra',
 };
 
 function textToList(value) {
@@ -61,6 +65,9 @@ function buildBookPayload(form) {
     fileUrl,
     stock,
     deliveryFee,
+    availableDeliveryTypes,
+    estimatedDeliveryDays,
+    pickupLocations,
     ...rest
   } = form;
   const payload = {
@@ -68,6 +75,14 @@ function buildBookPayload(form) {
     whatYoullLearn: textToList(whatYoullLearn),
     afterReadingOutcomes: textToList(afterReadingOutcomes),
     testimonials: normalizeTestimonialsForSave(testimonials),
+    deliveryOptions: {
+      availableTypes: Array.isArray(availableDeliveryTypes) && availableDeliveryTypes.length > 0
+        ? availableDeliveryTypes
+        : ['pickup', 'pay_on_delivery', 'instant_pay'],
+      estimatedDays: String(estimatedDeliveryDays || '2 - 4 business days').trim(),
+      pickupLocations: String(pickupLocations || 'QuickX Distribution Center, Accra').trim(),
+      deliveryFee: Number(deliveryFee) || 0,
+    },
   };
   if (form.type === 'ebook') {
     if (fileUrl) payload.fileUrl = fileUrl;
@@ -96,7 +111,10 @@ const labelCls = 'block text-sm font-medium text-fg-muted dark:text-fg-muted';
 export default function CreatorBookWizard() {
   const { bookId } = useParams();
   const navigate = useNavigate();
-  const token = localStorage.getItem('authToken');
+  const token =
+    localStorage.getItem('authToken') ||
+    localStorage.getItem('token') ||
+    localStorage.getItem('adminToken');
   const isEditing = Boolean(bookId);
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -109,6 +127,8 @@ export default function CreatorBookWizard() {
   const [uploadProgress, setUploadProgress] = useState({ thumbnail: 0 });
   const [testimonialUploads, setTestimonialUploads] = useState({});
   const thumbnailInputRef = useRef(null);
+  const galleryInputRef = useRef(null);
+  const [galleryUploading, setGalleryUploading] = useState(false);
   const testimonialInputRefs = useRef({});
   const offerSectionRef = useRef(null);
 
@@ -142,9 +162,13 @@ export default function CreatorBookWizard() {
           category: data.category || 'general',
           fileUrl: data.fileUrl || '',
           thumbnail: data.thumbnail || '',
+          galleryImages: Array.isArray(data.galleryImages) ? data.galleryImages : [],
           isbn: data.isbn || '',
           stock: data.stock ?? 0,
-          deliveryFee: data.deliveryFee ?? 0,
+          deliveryFee: data.deliveryFee ?? data.deliveryOptions?.deliveryFee ?? 0,
+          availableDeliveryTypes: data.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+          estimatedDeliveryDays: data.deliveryOptions?.estimatedDays || '2 - 4 business days',
+          pickupLocations: data.deliveryOptions?.pickupLocations || 'QuickX Distribution Center, Accra',
         });
       })
       .catch((e) => setError(e.response?.data?.message || e.message))
@@ -309,7 +333,44 @@ export default function CreatorBookWizard() {
       setError(e.response?.data?.message || e.message);
     } finally {
       setUploadProgress((cur) => ({ ...cur, thumbnail: 0 }));
+      if (thumbnailInputRef.current) thumbnailInputRef.current.value = '';
     }
+  };
+
+  const handleGalleryUpload = async (files) => {
+    const fileList = Array.from(files || []);
+    if (!fileList.length) return;
+    setError('');
+    setSuccess('');
+    setGalleryUploading(true);
+    try {
+      const uploadedUrls = [];
+      for (const file of fileList) {
+        const url = await uploadFileToS3({
+          file,
+          token,
+          type: 'image',
+        });
+        if (url) uploadedUrls.push(url);
+      }
+      setForm((prev) => ({
+        ...prev,
+        galleryImages: [...(prev.galleryImages || []), ...uploadedUrls],
+      }));
+      setSuccess(`${uploadedUrls.length} gallery image(s) uploaded successfully.`);
+    } catch (e) {
+      setError(e.response?.data?.message || e.message);
+    } finally {
+      setGalleryUploading(false);
+      if (galleryInputRef.current) galleryInputRef.current.value = '';
+    }
+  };
+
+  const handleRemoveGalleryImage = (idxToRemove) => {
+    setForm((prev) => ({
+      ...prev,
+      galleryImages: (prev.galleryImages || []).filter((_, i) => i !== idxToRemove),
+    }));
   };
 
   const handleSubmitForReview = async () => {
@@ -564,7 +625,7 @@ export default function CreatorBookWizard() {
           {form.type === 'ebook' ? (
             <p className="mb-4 text-xs text-fg-subtle sm:text-sm">
               Set your single e-book price and an optional hardcopy price. If you use purchase plans below,
-              update bundle or extra tier prices there — then click <strong>Save</strong> at the bottom so
+              update bundle or extra tier prices there, then click <strong>Save</strong> at the bottom so
               the store updates.
             </p>
           ) : null}
@@ -594,7 +655,7 @@ export default function CreatorBookWizard() {
                   value={form.hardcopyPrice}
                   onChange={handleChange}
                   className={inputCls}
-                  placeholder="Optional — printed book"
+                  placeholder="Optional, for the printed book"
                 />
               </div>
             ) : (
@@ -617,18 +678,109 @@ export default function CreatorBookWizard() {
             ) : null}
 
             {form.type === 'hardcopy' && (
-              <>
-                <div>
-                  <label className={labelCls}>Stock (units)</label>
-                  <input type="number" name="stock" min={0} value={form.stock} onChange={handleChange} className={inputCls} />
-                </div>
-                <div>
-                  <label className={labelCls}>Delivery Fee (GHS)</label>
-                  <input type="number" name="deliveryFee" min={0} step={0.01} value={form.deliveryFee} onChange={handleChange} className={inputCls} />
-                </div>
-              </>
+              <div>
+                <label className={labelCls}>Stock (units)</label>
+                <input type="number" name="stock" min={0} value={form.stock} onChange={handleChange} className={inputCls} />
+              </div>
             )}
           </div>
+
+          {/* Physical Delivery / Shipping Settings */}
+          {(form.type === 'hardcopy' || Boolean(form.hardcopyPrice)) && (
+            <div className="mt-5 rounded-2xl border border-brand-400/30 bg-brand-500/10 p-4 sm:p-5 space-y-4">
+              <div>
+                <h4 className="text-sm font-bold text-fg">Physical Delivery &amp; Shipping Options</h4>
+                <p className="text-xs text-fg-subtle mt-0.5">
+                  Configure available delivery methods for readers buying physical copies.
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-fg-muted mb-2">
+                  Available Delivery Methods
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                  {[
+                    { id: 'pickup', label: 'Store / Local Pickup', desc: 'Customer picks up at pickup point' },
+                    { id: 'pay_on_delivery', label: 'Pay on Delivery (COD)', desc: 'Cash or MoMo upon arrival' },
+                    { id: 'instant_pay', label: 'Instant Pay Online', desc: 'Customer pays online before dispatch' },
+                  ].map((method) => {
+                    const isChecked = (form.availableDeliveryTypes || []).includes(method.id);
+                    return (
+                      <label
+                        key={method.id}
+                        className={`flex cursor-pointer items-start gap-2.5 rounded-xl border p-3 transition ${
+                          isChecked
+                            ? 'border-brand-500 bg-ink-850 shadow-xs'
+                            : 'border-line bg-ink-900/60 opacity-70'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            const cur = form.availableDeliveryTypes || [];
+                            const next = e.target.checked
+                              ? [...cur, method.id]
+                              : cur.filter((x) => x !== method.id);
+                            setForm((prev) => ({ ...prev, availableDeliveryTypes: next }));
+                          }}
+                          className="mt-0.5 h-4 w-4 rounded text-brand-400"
+                        />
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-fg">{method.label}</p>
+                          <p className="text-[11px] text-fg-subtle mt-0.5">{method.desc}</p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                <div>
+                  <label className={labelCls}>Delivery Timeframe (Days)</label>
+                  <input
+                    type="text"
+                    name="estimatedDeliveryDays"
+                    value={form.estimatedDeliveryDays}
+                    onChange={handleChange}
+                    placeholder="e.g. 2 - 4 business days"
+                    className={inputCls}
+                  />
+                  <span className="text-[10px] text-fg-subtle">Shown to buyers on checkout</span>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Standard Delivery Fee (GHS)</label>
+                  <input
+                    type="number"
+                    name="deliveryFee"
+                    min={0}
+                    step={0.01}
+                    value={form.deliveryFee}
+                    onChange={handleChange}
+                    placeholder="0 for Free Delivery"
+                    className={inputCls}
+                  />
+                  <span className="text-[10px] text-fg-subtle">Set to 0 for Free Delivery</span>
+                </div>
+
+                <div>
+                  <label className={labelCls}>Pickup Location Address</label>
+                  <input
+                    type="text"
+                    name="pickupLocations"
+                    value={form.pickupLocations}
+                    onChange={handleChange}
+                    placeholder="e.g. QuickX Hub, Accra"
+                    className={inputCls}
+                  />
+                  <span className="text-[10px] text-fg-subtle">Used if Pickup is selected</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="rounded-2xl border border-line bg-ink-850 p-4 sm:rounded-3xl sm:p-6">
@@ -710,6 +862,57 @@ export default function CreatorBookWizard() {
                 className="sr-only"
                 readOnly={uploadProgress.thumbnail > 0}
               />
+          </div>
+
+          {/* Book Gallery Photos */}
+          <div className="mt-6 border-t border-line pt-6">
+            <div className="mb-2 flex items-center justify-between">
+              <label className={labelCls}>Book Gallery Photos</label>
+              <span className="text-xs text-fg-subtle">
+                {form.galleryImages?.length || 0} image(s)
+              </span>
+            </div>
+            <p className="mb-3 text-xs text-fg-subtle">
+              Upload multiple images (preview pages, book highlights, table of contents, physical angles) to display in the bookstore gallery.
+            </p>
+
+            <input
+              ref={galleryInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => handleGalleryUpload(e.target.files)}
+              className="sr-only"
+            />
+
+            <button
+              type="button"
+              onClick={() => galleryInputRef.current?.click()}
+              disabled={galleryUploading}
+              className="mb-4 inline-flex items-center gap-1.5 rounded-xl border border-line bg-ink-850 px-3.5 py-2 text-xs font-semibold text-fg-muted hover:bg-ink-900 disabled:opacity-50"
+            >
+              {galleryUploading ? 'Uploading photos…' : '+ Add Gallery Photos'}
+            </button>
+
+            {form.galleryImages && form.galleryImages.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                {form.galleryImages.map((imgUrl, idx) => (
+                  <div key={`${imgUrl}-${idx}`} className="group relative aspect-square overflow-hidden rounded-xl border border-line bg-ink-900">
+                    <img src={imgUrl} alt={`Gallery ${idx + 1}`} className="h-full w-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGalleryImage(idx)}
+                      title="Remove image"
+                      className="absolute right-1.5 top-1.5 rounded-full bg-rose-600 p-1 text-white opacity-90 transition hover:bg-rose-700 hover:opacity-100"
+                    >
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : null}
           </div>
         </div>
 

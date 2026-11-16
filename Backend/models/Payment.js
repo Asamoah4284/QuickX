@@ -14,7 +14,7 @@ const paymentSchema = new mongoose.Schema({
     itemType: {
         type: String,
         required: true,
-        enum: ['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription', 'wallet_topup', 'product']
+        enum: ['course', 'book', 'book_cart', 'book_offer', 'program', 'creator_subscription', 'wallet_topup', 'product', 'event']
     },
     /** Set when itemType is creator_subscription (plan id: 1m, 2m, 3m, 1y). */
     subscriptionPlanId: {
@@ -51,7 +51,7 @@ const paymentSchema = new mongoose.Schema({
         },
         default: null
     },
-    /** For book_offer purchases — subdocument id on BookOfferGroup.options. */
+    /** For book_offer purchases, subdocument id on BookOfferGroup.options. */
     offerOptionId: {
         type: mongoose.Schema.Types.ObjectId,
         default: null,
@@ -94,7 +94,11 @@ const paymentSchema = new mongoose.Schema({
     shippingAddress: {
         fullName: String,
         phone: String,
-        email: String
+        email: String,
+        location: String,
+        deliveryType: String,
+        deliveryFee: Number,
+        estimatedDays: String,
     },
     status: {
         type: String,

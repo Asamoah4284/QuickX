@@ -5,6 +5,7 @@ const User = require('../models/User');
 const Enrollment = require('../models/Enrollment');
 const Transaction = require('../models/Transaction');
 const Review = require('../models/Review');
+const PlatformSetting = require('../models/PlatformSetting');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
 const { serializeUser } = require('../utils/serializeUser');
@@ -240,6 +241,7 @@ exports.createBook = async (req, res) => {
             deliveryFee, 
             watermarkTemplate,
             thumbnail,
+            galleryImages,
             published,
             whatYoullLearn,
             afterReadingOutcomes,
@@ -286,6 +288,7 @@ exports.createBook = async (req, res) => {
             fileUrl: type === 'ebook' ? fileUrl : undefined,
             stock: type === 'hardcopy' ? (parseInt(stock) || 0) : undefined,
             thumbnail,
+            galleryImages: normalizeStringArray(galleryImages),
             isbn,
             deliveryFee: type === 'hardcopy' ? (parseFloat(deliveryFee) || 0) : undefined,
             watermarkTemplate,
@@ -296,6 +299,9 @@ exports.createBook = async (req, res) => {
                 (type || 'ebook') === 'ebook' && hardcopyPrice != null && hardcopyPrice !== ''
                     ? Number(hardcopyPrice)
                     : undefined,
+            deliveryOptions: readDeliveryOptions(req.body.deliveryOptions, null, deliveryFee),
+            listingStatus: req.body.listingStatus || 'published',
+            source: 'admin',
         });
 
         await newBook.save();
@@ -329,6 +335,7 @@ exports.updateBook = async (req, res) => {
             deliveryFee, 
             watermarkTemplate,
             thumbnail, // Get thumbnail directly from request body
+            galleryImages,
             published,
             whatYoullLearn,
             afterReadingOutcomes,
@@ -364,6 +371,7 @@ exports.updateBook = async (req, res) => {
         if (deliveryFee !== undefined) book.deliveryFee = parseFloat(deliveryFee);
         if (watermarkTemplate) book.watermarkTemplate = watermarkTemplate;
         if (thumbnail) book.thumbnail = thumbnail; // Update with new thumbnail URL
+        if (galleryImages !== undefined) book.galleryImages = normalizeStringArray(galleryImages);
         if (published) book.published = published;
         if (whatYoullLearn !== undefined) book.whatYoullLearn = normalizeStringArray(whatYoullLearn);
         if (afterReadingOutcomes !== undefined) {
@@ -372,6 +380,12 @@ exports.updateBook = async (req, res) => {
         if (hardcopyPrice !== undefined) {
             book.hardcopyPrice =
                 hardcopyPrice === '' || hardcopyPrice == null ? null : Number(hardcopyPrice);
+        }
+        if (req.body.deliveryOptions !== undefined) {
+            book.deliveryOptions = readDeliveryOptions(req.body.deliveryOptions, book.deliveryOptions, deliveryFee);
+        }
+        if (['draft', 'published', 'archived'].includes(req.body.listingStatus)) {
+            book.listingStatus = req.body.listingStatus;
         }
         if (book.type === 'hardcopy') {
             book.hardcopyPrice = null;
@@ -397,7 +411,7 @@ exports.deleteBook = async (req, res) => {
         }
         
         // Remove book
-        await book.remove();
+        await Book.findByIdAndDelete(req.params.id);
         
         res.json({ message: 'Book removed' });
     } catch (error) {
@@ -411,10 +425,32 @@ exports.getAllBooks = async (req, res) => {
     try {
         const books = await Book.find().sort({ createdAt: -1 });
         const enriched = await enrichAdminBookThumbnails(books);
-        res.json(enriched);
+        res.json(
+            enriched.map((b) => {
+                const doc = b.toObject ? b.toObject() : { ...b };
+                if (!doc.listingStatus) doc.listingStatus = 'published';
+                return doc;
+            })
+        );
     } catch (error) {
         console.error('Get all books error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+// Publish / unpublish a book in one click
+exports.updateBookStatus = async (req, res) => {
+    try {
+        const { status } = req.body;
+        if (!['draft', 'published', 'archived'].includes(status)) {
+            return res.status(400).json({ message: 'Status must be draft, published or archived' });
+        }
+        const book = await Book.findByIdAndUpdate(req.params.id, { listingStatus: status }, { new: true });
+        if (!book) return res.status(404).json({ message: 'Book not found' });
+        res.json({ message: 'Book status updated', book });
+    } catch (error) {
+        console.error('Update book status error:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 };
 
@@ -430,5 +466,59 @@ exports.getBookById = async (req, res) => {
     } catch (error) {
         console.error('Get book by ID error:', error);
         res.status(500).json({ message: 'Server error', error: error.message });
+    }
+};
+
+function normalizeStringArray(value) {
+    if (!value) return [];
+    if (Array.isArray(value)) return value.map((item) => String(item || '').trim()).filter(Boolean);
+    return String(value)
+        .split(/\r?\n|,/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+}
+
+/** Hardcopy delivery settings; returns undefined when the client sent none. */
+function readDeliveryOptions(input, current, fallbackFee) {
+    if (!input) return current || undefined;
+    const types = Array.isArray(input.availableTypes)
+        ? input.availableTypes.filter((t) => ['pickup', 'pay_on_delivery', 'instant_pay'].includes(t))
+        : null;
+    const fee = parseFloat(input.deliveryFee ?? current?.deliveryFee ?? fallbackFee ?? 0);
+    return {
+        availableTypes: types && types.length ? types : current?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+        estimatedDays: String(input.estimatedDays || current?.estimatedDays || '2 to 4 business days'),
+        pickupLocations: String(input.pickupLocations || current?.pickupLocations || 'QuickX Distribution Center, Accra'),
+        deliveryFee: Number.isFinite(fee) && fee >= 0 ? fee : 0,
+    };
+}
+
+// Display currency (USD or GHS) and the exchange rate used to show prices
+exports.getDisplaySettings = async (req, res) => {
+    try {
+        const settings = await PlatformSetting.findOne().sort({ createdAt: -1 }).lean();
+        res.json({
+            defaultCurrency: settings?.defaultCurrency || 'GHS',
+            exchangeRateUsdToGhs: Number(settings?.exchangeRateUsdToGhs) || 15.5,
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Could not load settings' });
+    }
+};
+
+exports.updateDisplaySettings = async (req, res) => {
+    try {
+        const rate = Number(req.body.exchangeRateUsdToGhs);
+        const update = {
+            defaultCurrency: req.body.defaultCurrency === 'USD' ? 'USD' : 'GHS',
+            exchangeRateUsdToGhs: rate > 0 && rate < 1000 ? rate : 15.5,
+        };
+        const current = await PlatformSetting.findOne().sort({ createdAt: -1 });
+        const saved = current
+            ? await PlatformSetting.findByIdAndUpdate(current._id, update, { new: true })
+            : await PlatformSetting.create(update);
+        res.json({ defaultCurrency: saved.defaultCurrency, exchangeRateUsdToGhs: saved.exchangeRateUsdToGhs });
+    } catch (error) {
+        res.status(500).json({ message: 'Could not save settings' });
     }
 };

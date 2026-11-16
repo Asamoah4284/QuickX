@@ -16,7 +16,7 @@ export default function AuthShell({ title, subtitle, pageTitle, children, footer
   return (
     <>
       <Helmet>
-        <title>{pageTitle || title} — QuickX</title>
+        <title>{`${pageTitle || title} | QuickX`}</title>
       </Helmet>
       <div className="relative overflow-hidden">
         <div className="bg-grid absolute inset-0" aria-hidden />

@@ -62,7 +62,7 @@ const clip = (v, max) => String(v ?? '').trim().slice(0, max);
 const escapeRegex = (s) => String(s).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const isMod = (req) => Boolean(req.isCommunityTutor || req.isCommunityAdmin);
 
-/** Only http(s) links are stored — never javascript:, data: and friends. */
+/** Only http(s) links are stored, never javascript:, data: and friends. */
 function safeUrl(value) {
   const raw = String(value || '').trim();
   if (!raw || raw.length > 2000) return '';
@@ -1076,7 +1076,7 @@ router.post('/:tutorId/live-sessions', requireCommunityModerator, async (req, re
           entityType: 'live_session',
           entityId: session._id,
           title: 'Live session scheduled',
-          body: `${session.title} — ${startsAt.toUTCString()}`,
+          body: `${session.title} starts ${startsAt.toUTCString()}`,
         })
       );
     }

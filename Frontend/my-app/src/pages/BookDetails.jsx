@@ -1,7 +1,25 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
-import { FiArrowLeft, FiArrowRight, FiCheck, FiImage, FiShoppingCart, FiPackage, FiStar, FiTruck, FiX, FiZap, FiZoomIn } from 'react-icons/fi';
+import {
+  FiArrowLeft,
+  FiArrowRight,
+  FiCheck,
+  FiImage,
+  FiShoppingCart,
+  FiPackage,
+  FiStar,
+  FiTruck,
+  FiX,
+  FiZap,
+  FiZoomIn,
+  FiChevronLeft,
+  FiChevronRight,
+  FiUsers,
+  FiShield,
+  FiCheckCircle,
+} from 'react-icons/fi';
+import { FaTelegramPlane } from 'react-icons/fa';
 import { formatGhs } from '../utils/formatGhs';
 import { formatBookListingPrice, getBookListingPrice } from '../utils/bookListingPrice';
 import { useMetaPixelBookPage } from '../hooks/useMetaPixelBookPage';
@@ -9,9 +27,197 @@ import MetaPixelNoscript from '../components/MetaPixelNoscript';
 import BookOfferPicker from '../components/BookOfferPicker';
 import HardcopyRequestModal from '../components/HardcopyRequestModal';
 import { isMetaPixelEnabledForBook, trackMetaInitiateCheckout } from '../utils/metaPixel';
+import { publicAssetUrl } from '../utils/publicAssetUrl';
 
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 const API_FALLBACK = 'http://localhost:5000';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
+
+function BookImageGallery({ images = [], title = 'Book' }) {
+  const allImages = (Array.isArray(images) ? images : [])
+    .filter(Boolean)
+    .map((img) => publicAssetUrl(String(img).trim()));
+  const displayImages = allImages.length > 0 ? allImages : [DEFAULT_BOOK_COVER];
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const [zoomSrc, setZoomSrc] = useState(null);
+  const touchStartX = useRef(null);
+
+  // Auto-swiping when multiple images exist and not paused
+  useEffect(() => {
+    if (displayImages.length <= 1 || isPaused) return;
+    const interval = setInterval(() => {
+      setActiveIndex((prev) => (prev + 1) % displayImages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [displayImages.length, isPaused]);
+
+  const handlePrev = (e) => {
+    e?.stopPropagation();
+    setActiveIndex((prev) => (prev - 1 + displayImages.length) % displayImages.length);
+  };
+
+  const handleNext = (e) => {
+    e?.stopPropagation();
+    setActiveIndex((prev) => (prev + 1) % displayImages.length);
+  };
+
+  const handleTouchStart = (e) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e) => {
+    if (touchStartX.current === null) return;
+    const diff = touchStartX.current - e.changedTouches[0].clientX;
+    if (diff > 40) handleNext();
+    else if (diff < -40) handlePrev();
+    touchStartX.current = null;
+  };
+
+  return (
+    <div
+      className="w-full max-w-[260px] xs:max-w-[290px] sm:max-w-[340px] lg:max-w-[400px] mx-auto"
+      onMouseEnter={() => setIsPaused(true)}
+      onMouseLeave={() => setIsPaused(false)}
+    >
+      {/* Main Image Box */}
+      <div
+        className="group relative overflow-hidden rounded-2xl bg-ink-850 p-2.5 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.18)] ring-1 ring-line transition hover:shadow-[0_25px_60px_-15px_rgba(15,23,42,0.22)]"
+        onTouchStart={handleTouchStart}
+        onTouchEnd={handleTouchEnd}
+      >
+        <div className="relative aspect-[3/4] w-full overflow-hidden rounded-xl bg-ink-900 flex items-center justify-center p-2 sm:p-3">
+          <img
+            key={displayImages[activeIndex]}
+            src={displayImages[activeIndex]}
+            alt={`${title} - view ${activeIndex + 1}`}
+            className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-[1.02]"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.src = DEFAULT_BOOK_COVER;
+            }}
+          />
+
+          {/* Zoom Overlay Button */}
+          <button
+            type="button"
+            onClick={() => setZoomSrc(displayImages[activeIndex])}
+            aria-label="Zoom image"
+            className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink-950/75 text-white shadow-lg backdrop-blur-sm transition hover:bg-ink-950 hover:scale-110"
+          >
+            <FiZoomIn className="h-4 w-4" />
+          </button>
+
+          {/* Multiple images indicator */}
+          {displayImages.length > 1 && (
+            <div className="absolute top-3 left-3 rounded-full bg-ink-950/70 px-2.5 py-1 text-[11px] font-semibold text-white backdrop-blur-sm">
+              {activeIndex + 1} / {displayImages.length}
+            </div>
+          )}
+
+          {/* Prev/Next arrows if multiple */}
+          {displayImages.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                aria-label="Previous photo"
+                className="absolute left-2.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-ink-850/90 text-fg shadow-md backdrop-blur-sm transition hover:bg-ink-850 hover:scale-110 sm:h-9 sm:w-9"
+              >
+                <FiChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                aria-label="Next photo"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full bg-ink-850/90 text-fg shadow-md backdrop-blur-sm transition hover:bg-ink-850 hover:scale-110 sm:h-9 sm:w-9"
+              >
+                <FiChevronRight className="h-4 w-4" />
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Thumbnails strip */}
+      {displayImages.length > 1 && (
+        <div className="mt-3.5 flex items-center justify-center gap-2 overflow-x-auto pb-1 px-1">
+          {displayImages.map((img, idx) => (
+            <button
+              key={`${img}-${idx}`}
+              type="button"
+              onClick={() => setActiveIndex(idx)}
+              className={`relative h-14 w-11 shrink-0 overflow-hidden rounded-lg border-2 transition ${
+                activeIndex === idx
+                  ? 'border-brand-500 ring-2 ring-brand-500/30 scale-105'
+                  : 'border-line opacity-60 hover:opacity-100 hover:border-line'
+              }`}
+            >
+              <img
+                src={img}
+                alt=""
+                className="h-full w-full object-cover"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = DEFAULT_BOOK_COVER;
+                }}
+              />
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Lightbox Preview */}
+      {zoomSrc && (
+        <TestimonialImagePreview src={zoomSrc} alt={title} onClose={() => setZoomSrc(null)} />
+      )}
+    </div>
+  );
+}
+
+function BookReaderCommunityCard() {
+  return (
+    <div className="my-12 overflow-hidden rounded-3xl bg-gradient-to-r from-ink-800 via-[#102d53] to-[#0088cc] p-6 text-white shadow-xl sm:p-8">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+        <div className="max-w-xl space-y-2.5">
+          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-300 backdrop-blur-sm">
+            <FaTelegramPlane className="h-3.5 w-3.5" />
+            QuickX Reader &amp; Trader Community
+          </div>
+          <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
+            Never Trade Alone: Join 5,000+ Readers &amp; Pro Traders
+          </h3>
+          <p className="text-sm leading-relaxed text-brand-300 sm:text-base">
+            Have questions while studying this book? Join our official community to discuss strategies, access daily market breakdowns, and learn alongside profitable peers.
+          </p>
+          <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-brand-300">
+            <span className="flex items-center gap-1.5"><FiCheckCircle className="text-brand-300" /> Free Setup Reviews</span>
+            <span className="flex items-center gap-1.5"><FiCheckCircle className="text-brand-300" /> Author Discussions</span>
+            <span className="flex items-center gap-1.5"><FiCheckCircle className="text-brand-300" /> 100% Free Access</span>
+          </div>
+        </div>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <a
+            href={COMMUNITY_TELEGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-ink-850 px-5 py-3.5 text-sm font-bold text-fg shadow-md transition hover:bg-brand-500/10"
+          >
+            <FaTelegramPlane className="h-4 w-4 text-[#0088cc]" />
+            Join Community on Telegram
+          </a>
+          <Link
+            to="/community"
+            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+          >
+            Community Hub
+            <FiArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
   const learnItems = Array.isArray(whatYoullLearn) ? whatYoullLearn.filter(Boolean) : [];
@@ -22,13 +228,13 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
   }
 
   return (
-    <section className="mt-20 border-t border-line pt-16 sm:mt-24 sm:pt-20 lg:mt-28 lg:pt-24" aria-labelledby="what-youll-learn-heading">
-      <h2 id="what-youll-learn-heading" className="text-center text-2xl font-black tracking-tight text-fg sm:text-3xl lg:text-4xl">
-        What you&apos;ll learn
+    <section className="mt-16 border-t border-line pt-12 sm:mt-20 sm:pt-16" aria-labelledby="what-youll-learn-heading">
+      <h2 id="what-youll-learn-heading" className="text-center text-2xl font-bold tracking-tight text-fg sm:text-3xl">
+        What you&apos;ll master in this book
       </h2>
 
-      <div className="mt-12 grid items-start gap-12 lg:mt-16 lg:grid-cols-2 lg:gap-16 xl:gap-20">
-        {/* Stacked ?pages? preview (decorative) */}
+      <div className="mt-10 grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
+        {/* Stacked pages preview */}
         <div className="relative mx-auto w-full max-w-md justify-self-center lg:justify-self-start">
           <div
             className="absolute left-3 top-6 hidden h-[min(100%,320px)] w-[88%] rotate-[-3deg] rounded-sm border border-line bg-ink-850 shadow-md sm:block"
@@ -39,8 +245,8 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
             aria-hidden
           />
           <div className="relative rounded-sm border border-line bg-ink-850 p-5 shadow-[0_20px_50px_-12px_rgba(15,23,42,0.15)] sm:p-7 sm:shadow-xl">
-            <p className="text-center text-lg font-bold uppercase tracking-[0.12em] text-down sm:text-xl">
-              After reading
+            <p className="text-center text-base font-bold uppercase tracking-[0.12em] text-brand-400 sm:text-lg">
+              After reading outcomes
             </p>
             {outcomeItems.length > 0 ? (
               <>
@@ -65,21 +271,20 @@ function BookLearnSection({ whatYoullLearn = [], afterReadingOutcomes = [] }) {
           </div>
         </div>
 
-        <div className="min-w-0 space-y-10 lg:space-y-12">
+        <div className="min-w-0 space-y-6">
           {learnItems.length > 0 ? (
           <div>
-            <h3 className="text-lg font-black text-fg sm:text-xl">What you&apos;ll learn</h3>
-            <ul className="mt-5 space-y-3.5 sm:space-y-4">
+            <h3 className="text-lg font-bold text-fg sm:text-xl">Core Chapters &amp; Takeaways</h3>
+            <ul className="mt-4 space-y-3 sm:space-y-3.5">
               {learnItems.map((item) => (
                 <li key={item} className="flex gap-3 text-sm leading-relaxed text-fg sm:text-base">
-                  <FiCheck className="mt-0.5 h-5 w-5 shrink-0 text-fg" strokeWidth={2.5} aria-hidden />
+                  <FiCheck className="mt-0.5 h-5 w-5 shrink-0 text-up" strokeWidth={2.5} aria-hidden />
                   <span>{item}</span>
                 </li>
               ))}
             </ul>
           </div>
           ) : null}
-
         </div>
       </div>
     </section>
@@ -103,7 +308,7 @@ function StarRating() {
   return (
     <div className="flex gap-0.5" aria-label="5 out of 5 stars">
       {Array.from({ length: 5 }, (_, i) => (
-        <FiStar key={i} className="h-4 w-4 fill-amber-400 text-warn" aria-hidden />
+        <FiStar key={i} className="h-3.5 w-3.5 fill-amber-400 text-warn" aria-hidden />
       ))}
     </div>
   );
@@ -155,6 +360,7 @@ function TestimonialImagePreview({ src, alt, onClose }) {
 function BookTestimonialsSection({ testimonials = [] }) {
   const [previewSrc, setPreviewSrc] = useState(null);
   const [previewAlt, setPreviewAlt] = useState('');
+  const scrollRef = useRef(null);
 
   if (!testimonials.length) return null;
 
@@ -168,98 +374,132 @@ function BookTestimonialsSection({ testimonials = [] }) {
     setPreviewAlt('');
   };
 
+  const handleScrollLeft = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: -340, behavior: 'smooth' });
+    }
+  };
+
+  const handleScrollRight = () => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollBy({ left: 340, behavior: 'smooth' });
+    }
+  };
+
   return (
     <section
-      className="mt-12 rounded-3xl bg-ink-900/80 px-4 py-14 sm:mt-16 sm:px-8 sm:py-16 lg:mt-20 lg:py-20"
+      className="mt-12 rounded-3xl border border-line bg-gradient-to-b from-ink-900/70 to-ink-850 p-6 sm:p-8"
       aria-labelledby="book-testimonials-heading"
     >
-      <div className="mx-auto max-w-2xl text-center">
-        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">Reader reviews</p>
-        <h2
-          id="book-testimonials-heading"
-          className="mt-3 text-2xl font-black tracking-tight text-fg sm:text-3xl lg:text-4xl"
-        >
-          What readers say
-        </h2>
-        <p className="mt-4 text-sm leading-relaxed text-fg-muted sm:text-base">
-          Real stories from Ghanaian traders who started where you are now.
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-warn/10 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wider text-warn ring-1 ring-warn/30 mb-2">
+            <FiStar className="h-3 w-3 fill-amber-400 text-warn" />
+            Reader Reviews &amp; Results
+          </div>
+          <h2
+            id="book-testimonials-heading"
+            className="text-xl font-bold tracking-tight text-fg sm:text-2xl"
+          >
+            What Readers Say
+          </h2>
+          <p className="mt-1 text-xs sm:text-sm text-fg-subtle">
+            Real feedback from Ghanaian traders who put this book into practice.
+          </p>
+        </div>
+
+        {testimonials.length > 1 && (
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            <button
+              type="button"
+              onClick={handleScrollLeft}
+              aria-label="Previous review"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-ink-850 text-fg-muted shadow-sm transition hover:bg-ink-800 hover:border-line"
+            >
+              <FiChevronLeft className="h-4 w-4" />
+            </button>
+            <button
+              type="button"
+              onClick={handleScrollRight}
+              aria-label="Next review"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-line bg-ink-850 text-fg-muted shadow-sm transition hover:bg-ink-800 hover:border-line"
+            >
+              <FiChevronRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      <ul className="mx-auto mt-10 grid max-w-7xl gap-8 md:grid-cols-2 lg:mt-12">
+      <div
+        ref={scrollRef}
+        className="mt-6 flex gap-4 overflow-x-auto pb-3 pt-1 scroll-smooth snap-x snap-mandatory"
+        style={{ scrollbarWidth: 'thin' }}
+      >
         {testimonials.map((t, index) => (
-          <li
+          <div
             key={`${t.tagline}-${t.name}-${index}`}
-            className={`flex flex-col rounded-2xl border border-line bg-ink-850 p-6 shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)] ring-1 ring-line transition hover:shadow-[0_16px_40px_-14px_rgba(15,23,42,0.18)] sm:p-8 ${
-              index === testimonials.length - 1 && testimonials.length % 2 === 1
-                ? 'md:col-span-2 md:mx-auto md:max-w-3xl'
-                : ''
-            }`}
+            className="w-[280px] sm:w-[330px] shrink-0 snap-start flex flex-col justify-between rounded-2xl border border-line bg-ink-850 p-5 shadow-sm transition hover:shadow-md"
           >
-            <div className="flex items-start justify-between gap-3">
-              <StarRating />
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <StarRating />
+                {t.tagline ? (
+                  <span className="rounded-md bg-ink-800 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-fg-muted truncate max-w-[130px]">
+                    {t.tagline}
+                  </span>
+                ) : null}
+              </div>
+
+              <blockquote className="mt-3">
+                <p className="text-xs sm:text-sm leading-relaxed text-fg-muted line-clamp-4">
+                  &ldquo;{t.quote}&rdquo;
+                </p>
+              </blockquote>
             </div>
-            {t.tagline ? (
-              <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-fg-muted">
-                {t.tagline}
-              </p>
-            ) : null}
-            <blockquote className="relative mt-4 flex-1">
-              <span
-                className="pointer-events-none absolute -left-1 -top-3 font-serif text-5xl leading-none text-fg-muted"
-                aria-hidden
-              >
-                &ldquo;
-              </span>
-              <p className="relative text-[15px] leading-[1.7] text-fg-muted sm:text-base sm:leading-[1.75]">
-                {t.quote}
-              </p>
-            </blockquote>
-            {t.image ? (
-              <div
-                className="mt-5 relative group overflow-hidden rounded-xl border border-line bg-ink-900/50 p-2 cursor-pointer flex items-center justify-center transition-all duration-300 hover:border-line-strong hover:bg-ink-900"
-                onClick={() =>
-                  openPreview(
-                    t.image,
-                    t.tagline || (t.name ? `${t.name} testimonial` : 'Reader testimonial')
-                  )
-                }
-              >
-                <div className="relative w-full max-h-64 overflow-hidden rounded-lg bg-ink-850 shadow-sm flex items-center justify-center">
+
+            <div className="mt-4 pt-3 border-t border-line">
+              {t.image ? (
+                <div
+                  onClick={() =>
+                    openPreview(
+                      t.image,
+                      t.tagline || (t.name ? `${t.name} testimonial` : 'Reader proof')
+                    )
+                  }
+                  className="mb-3 group relative cursor-pointer overflow-hidden rounded-lg border border-line bg-ink-900 p-1 flex items-center justify-center"
+                >
                   <img
                     src={t.image}
-                    alt={t.tagline || 'Reader testimonial'}
-                    className="max-h-60 w-auto object-contain transition-transform duration-500 group-hover:scale-[1.03]"
+                    alt={t.tagline || 'Reader proof'}
+                    className="max-h-24 w-auto object-contain transition-transform group-hover:scale-105"
                   />
-                  {/* Hover Overlay */}
-                  <div className="absolute inset-0 bg-ink-950/0 group-hover:bg-ink-950/20 transition-colors duration-300 flex items-center justify-center">
-                    <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-ink-850/95 text-fg text-xs font-semibold px-3 py-1.5 rounded-full shadow-md flex items-center gap-1.5">
-                      <FiZoomIn className="h-3.5 w-3.5" />
-                      Zoom proof image
+                  <div className="absolute inset-0 bg-ink-950/0 group-hover:bg-ink-950/20 transition-colors flex items-center justify-center">
+                    <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-ink-850/90 text-fg text-[10px] font-semibold px-2 py-1 rounded-full shadow flex items-center gap-1">
+                      <FiZoomIn className="h-3 w-3" /> Zoom proof
                     </span>
                   </div>
                 </div>
-              </div>
-            ) : null}
-            {(t.name || t.role) ? (
-            <footer className="mt-6 flex items-center gap-3 border-t border-line pt-5">
-              {t.name ? (
-                <span
-                  className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-ink-800 to-ink-600 text-sm font-semibold text-white"
-                  aria-hidden
-                >
-                  {readerInitials(t.name)}
-                </span>
               ) : null}
-              <div className="min-w-0">
-                {t.name ? <p className="font-semibold text-fg">{t.name}</p> : null}
-                {t.role ? <p className="text-sm text-fg-subtle">{t.role}</p> : null}
+
+              <div className="flex items-center gap-2.5">
+                {t.name ? (
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold text-white">
+                    {readerInitials(t.name)}
+                  </span>
+                ) : null}
+                <div className="min-w-0">
+                  {t.name ? (
+                    <p className="text-xs font-bold text-fg truncate">{t.name}</p>
+                  ) : null}
+                  {t.role ? (
+                    <p className="text-[11px] text-fg-subtle truncate">{t.role}</p>
+                  ) : null}
+                </div>
               </div>
-            </footer>
-            ) : null}
-          </li>
+            </div>
+          </div>
         ))}
-      </ul>
+      </div>
 
       <TestimonialImagePreview
         src={previewSrc}
@@ -385,7 +625,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
               </h2>
             </div>
             <p className="hidden max-w-md text-sm leading-relaxed text-fg-subtle sm:block lg:text-right">
-              Hand-picked titles from the same author — expand your library with their full body of work.
+              More books from the same author.
             </p>
           </div>
 
@@ -437,7 +677,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
                         <img
                           src={item.thumbnail || DEFAULT_BOOK_COVER}
                           alt=""
-                          className="h-full w-full object-cover sm:transition sm:duration-700 sm:group-hover:scale-[1.04]"
+                          className="h-full w-full object-contain p-1 bg-ink-950/40 sm:transition sm:duration-700 sm:group-hover:scale-[1.03]"
                           onError={(e) => {
                             e.target.onerror = null;
                             e.target.src = DEFAULT_BOOK_COVER;
@@ -633,20 +873,78 @@ function BookDetails() {
     setShowHardcopyModal(true);
   };
 
+  const handleHardcopyInstantPay = (orderInfo) => {
+    if (!book) return;
+    setShowHardcopyModal(false);
+    const bookPrice =
+      book.hardcopyPrice != null && book.hardcopyPrice !== ''
+        ? Number(book.hardcopyPrice)
+        : Number(book.price ?? 0);
+    const fee = Number(orderInfo.deliveryFee || 0);
+    goToCheckout({
+      type: 'book',
+      id: book._id,
+      _id: book._id,
+      title: `${book.title} (Physical Copy)`,
+      format: 'hardcopy',
+      deliveryType: orderInfo.deliveryType || 'instant_pay',
+      deliveryFee: fee,
+      estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+      shippingAddress: {
+        fullName: orderInfo.name,
+        phone: orderInfo.phone,
+        location: orderInfo.location,
+        deliveryType: orderInfo.deliveryType || 'instant_pay',
+        deliveryFee: fee,
+        estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+      },
+      price: bookPrice + fee,
+      thumbnail: book.thumbnail,
+      image: book.thumbnail,
+      author: book.author,
+    });
+  };
+
   return (
     <div className="min-h-screen bg-ink-850 text-fg">
       <MetaPixelNoscript />
-      <header className="border-b border-line">
-        <div className="mx-auto flex max-w-6xl items-center px-4 py-5 sm:px-6 lg:px-8">
+      <header className="sticky top-0 z-30 border-b border-line bg-ink-850/95 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
           <Link
             to="/store"
-            className="inline-flex items-center gap-2 text-sm font-medium text-fg-subtle transition-colors hover:text-fg"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-fg-muted transition-colors hover:text-fg"
           >
             <FiArrowLeft className="h-4 w-4" aria-hidden />
-            Back to marketplace
+            <span>Store Marketplace</span>
           </Link>
+          <a
+            href={COMMUNITY_TELEGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3.5 py-1.5 text-xs font-bold text-[#0088cc] ring-1 ring-brand-400/30 transition hover:bg-brand-500/10"
+          >
+            <FaTelegramPlane className="h-3.5 w-3.5 text-[#0088cc]" />
+            <span>Join Our Community</span>
+          </a>
         </div>
       </header>
+
+      {/* Top Community Notification Banner */}
+      <div className="border-b border-brand-400/30 bg-gradient-to-r from-sky-50 via-blue-50 to-sky-50 px-4 py-2.5 text-center text-xs text-fg-muted sm:px-6">
+        <div className="mx-auto flex max-w-6xl items-center justify-center gap-2 flex-wrap">
+          <span className="flex h-2 w-2 rounded-full bg-[#0088cc] animate-pulse" />
+          <span className="font-semibold text-fg">QuickX Trader Community:</span>
+          <span>5,000+ Ghanaian traders sharing daily setups &amp; book discussion.</span>
+          <a
+            href={COMMUNITY_TELEGRAM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-bold text-[#0088cc] hover:underline inline-flex items-center gap-1"
+          >
+            Join Free &rarr;
+          </a>
+        </div>
+      </div>
 
       <div className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10 lg:px-8 lg:pb-28 lg:pt-12">
         {loading ? (
@@ -679,23 +977,43 @@ function BookDetails() {
         ) : (
           <>
           <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14 xl:gap-20">
-            <div className="order-1 flex min-w-0 flex-col gap-8 lg:order-1 lg:max-w-xl">
+            <div className="order-1 flex min-w-0 flex-col gap-6 lg:order-1 lg:max-w-xl">
               <div className="space-y-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-fg-subtle">
-                  About this book
-                </p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-400 ring-1 ring-brand-400/30">
+                    📱 Digital E-Book Edition
+                  </span>
+                  <a
+                    href={COMMUNITY_TELEGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 rounded-full bg-brand-500/10 px-2.5 py-1 text-xs font-semibold text-[#0088cc] ring-1 ring-brand-400/30 hover:bg-brand-500/10 transition"
+                  >
+                    <FaTelegramPlane className="h-3 w-3" />
+                    <span>Community Recommended</span>
+                  </a>
+                </div>
+
                 <div className="space-y-2">
                   <h1 className="text-pretty text-3xl font-bold leading-[1.12] tracking-tight text-fg sm:text-4xl lg:text-[2.5rem]">
                     {book.title}
                   </h1>
                   <p className="text-base font-medium text-fg-subtle">By {book.author}</p>
                   {book.type === 'ebook' && listingPriceInfo ? (
-                    <p className="text-lg font-black tracking-tight text-fg">
+                    <p className="text-xl font-black tracking-tight text-fg">
                       {listingPriceInfo.showFromLabel ? 'From ' : ''}
                       {formatGhs(listingPriceInfo.displayPrice)}
                     </p>
                   ) : null}
                 </div>
+
+                {/* Instant value guarantees */}
+                <div className="flex flex-wrap items-center gap-3 pt-1 text-xs font-medium text-fg-muted">
+                  <span className="flex items-center gap-1 text-fg font-semibold"><FiZap className="text-warn" /> Instant PDF Access</span>
+                  <span className="flex items-center gap-1 text-fg font-semibold"><FiCheck className="text-up" /> MoMo Checkout</span>
+                  <span className="flex items-center gap-1 text-fg font-semibold"><FiShield className="text-brand-400" /> Lifetime Access</span>
+                </div>
+
                 <p className="text-pretty text-base leading-relaxed text-fg-muted line-clamp-5 sm:text-[1.05rem]">
                   {heroDescription(book)}
                 </p>
@@ -703,7 +1021,7 @@ function BookDetails() {
 
               {heroOutcomePoints.length > 0 ? (
                 <div className="rounded-2xl border border-line bg-ink-900/80 px-5 py-5 sm:px-6">
-                  <p className="text-sm font-bold text-fg sm:text-base">You will be able to</p>
+                  <p className="text-sm font-bold text-fg sm:text-base">What this book helps you achieve:</p>
                   <ul className="mt-4 space-y-3">
                     {heroOutcomePoints.map((item) => (
                       <li key={item} className="flex gap-3 text-sm leading-snug text-fg-muted sm:text-[15px]">
@@ -718,22 +1036,33 @@ function BookDetails() {
               ) : null}
 
               {book.type === 'ebook' && !offerGroup?.options?.length ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <button
                     type="button"
                     onClick={addEbookToCart}
                     className="inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF5A5F] px-8 py-4 text-base font-semibold text-white shadow-lg shadow-rose-500/25 transition hover:bg-[#E04E52] sm:w-auto sm:min-w-[240px]"
                   >
                     <FiShoppingCart className="h-5 w-5 shrink-0" aria-hidden />
-                    Buy now — instant download
+                    Buy now, instant download
                   </button>
-                  <p className="text-sm text-fg-subtle">
+                  <p className="text-xs text-fg-subtle">
                     No account needed · Pay with Mobile Money · Download right after payment
                   </p>
-                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:max-w-[280px]" />
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <a
+                      href={COMMUNITY_TELEGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/30 bg-brand-500/10 px-3.5 py-2 text-xs font-bold text-[#0088cc] transition hover:bg-brand-500/10"
+                    >
+                      <FaTelegramPlane className="h-3.5 w-3.5" />
+                      <span>Join Our Trader Community Free</span>
+                    </a>
+                    <HardcopyCtaButton onClick={openHardcopyModal} className="sm:max-w-[240px]" />
+                  </div>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length && bundleOfferOption ? (
-                <div className="w-full max-w-md space-y-2">
+                <div className="w-full max-w-md space-y-2.5">
                   <div className="rounded-2xl bg-ink-800 p-2.5 shadow-lg shadow-[#0c2340]/20 sm:p-3">
                     <button
                       type="button"
@@ -741,7 +1070,7 @@ function BookDetails() {
                       className="flex w-full items-center justify-center gap-2 rounded-xl bg-ink-850 px-4 py-3.5 text-sm font-bold text-fg shadow-sm transition hover:bg-brand-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-ink-850 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0c2340] sm:py-4 sm:text-base"
                     >
                       <FiZap className="h-5 w-5 shrink-0" aria-hidden />
-                      Buy Now — Bundle {formatGhs(bundleOfferOption.price)}
+                      Buy the bundle for {formatGhs(bundleOfferOption.price)}
                     </button>
                   </div>
                   {listingPriceInfo?.showFromLabel ? (
@@ -749,47 +1078,80 @@ function BookDetails() {
                       Single plans from {formatGhs(listingPriceInfo.displayPrice)} · compare all options below
                     </p>
                   ) : (
-                    <p className="text-center text-sm text-fg-subtle">
+                    <p className="text-center text-xs text-fg-subtle">
                       Secure · MoMo · Instant PDF · Compare all plans below
                     </p>
                   )}
-                  <HardcopyCtaButton onClick={openHardcopyModal} />
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <a
+                      href={COMMUNITY_TELEGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/30 bg-brand-500/10 px-3.5 py-2 text-xs font-bold text-[#0088cc] transition hover:bg-brand-500/10"
+                    >
+                      <FaTelegramPlane className="h-3.5 w-3.5" />
+                      <span>Join Trader Community</span>
+                    </a>
+                    <HardcopyCtaButton onClick={openHardcopyModal} />
+                  </div>
                 </div>
               ) : book.type === 'ebook' && offerGroup?.options?.length ? (
                 <div className="space-y-3">
                   <p className="text-sm text-fg-subtle">
                     Choose a plan below. No account needed · MoMo checkout.
                   </p>
-                  <HardcopyCtaButton onClick={openHardcopyModal} className="sm:mx-auto sm:max-w-[280px]" />
+                  <div className="flex flex-wrap items-center gap-2">
+                    <a
+                      href={COMMUNITY_TELEGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/30 bg-brand-500/10 px-3.5 py-2 text-xs font-bold text-[#0088cc] transition hover:bg-brand-500/10"
+                    >
+                      <FaTelegramPlane className="h-3.5 w-3.5" />
+                      <span>Join Trader Community</span>
+                    </a>
+                    <HardcopyCtaButton onClick={openHardcopyModal} className="sm:max-w-[240px]" />
+                  </div>
                 </div>
               ) : book.type !== 'ebook' ? (
-                <div className="space-y-2">
+                <div className="space-y-3">
                   <HardcopyCtaButton onClick={openHardcopyModal} variant="primary" className="sm:mx-auto sm:max-w-[280px]" />
                   <p className="text-sm text-fg-subtle">
-                    Fill in your details — we&apos;ll confirm free delivery on WhatsApp.
+                    Fill in your details and we&apos;ll confirm free delivery on WhatsApp.
                   </p>
+                  <div>
+                    <a
+                      href={COMMUNITY_TELEGRAM_URL}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/30 bg-brand-500/10 px-3.5 py-2 text-xs font-bold text-[#0088cc] transition hover:bg-brand-500/10"
+                    >
+                      <FaTelegramPlane className="h-3.5 w-3.5" />
+                      <span>Join Community on Telegram</span>
+                    </a>
+                  </div>
                 </div>
               ) : null}
             </div>
 
-            {/* Right: cover */}
+            {/* Right: Scrollable / Swiping Book Image Gallery */}
             <div className="order-2 flex justify-center lg:order-2 lg:justify-end lg:pl-4">
-              <figure className="relative w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[380px]">
-                <div className="overflow-hidden rounded-2xl bg-ink-850 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.18)] ring-1 ring-line">
-                  <img
-                    src={book.thumbnail || DEFAULT_BOOK_COVER}
-                    alt={book.title}
-                    className="aspect-[3/4] w-full object-contain"
-                    onError={(e) => {
-                      e.target.onerror = null;
-                      e.target.src = DEFAULT_BOOK_COVER;
-                    }}
-                  />
-                </div>
-              </figure>
+              <BookImageGallery
+                images={[book.thumbnail, ...(book.galleryImages || [])]}
+                title={book.title}
+              />
             </div>
           </div>
 
+          {/* Testimonials (moved higher up with smooth horizontal UX) */}
+          {activeTestimonials.length > 0 ? (
+            <BookTestimonialsSection testimonials={activeTestimonials} />
+          ) : null}
+
+          {/* Reader & Trader Community Companion Card */}
+          <BookReaderCommunityCard />
+
+          {/* Purchase Plans for E-Book */}
           {offerGroup?.options?.length ? (
             <BookOfferPicker
               offerGroup={offerGroup}
@@ -798,21 +1160,18 @@ function BookDetails() {
             />
           ) : null}
 
-          <SameAuthorBooksSection author={book.author} books={sameAuthorBooks} />
-
-          {activeTestimonials.length > 0 ? (
-            <BookTestimonialsSection testimonials={activeTestimonials} />
-          ) : null}
-
           <BookLearnSection
             whatYoullLearn={book.whatYoullLearn}
             afterReadingOutcomes={book.afterReadingOutcomes}
           />
 
+          <SameAuthorBooksSection author={book.author} books={sameAuthorBooks} />
+
           <HardcopyRequestModal
             book={book}
             open={showHardcopyModal}
             onClose={() => setShowHardcopyModal(false)}
+            onSelectInstantPay={handleHardcopyInstantPay}
           />
           </>
         )}

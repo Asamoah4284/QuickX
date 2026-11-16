@@ -64,7 +64,7 @@ export default function Profile() {
   return (
     <>
       <Helmet>
-        <title>Edit profile — QuickX</title>
+        <title>Edit profile | QuickX</title>
       </Helmet>
       <Container className="max-w-2xl py-10 sm:py-14">
         <Link to="/account" className="inline-flex items-center gap-2 text-sm text-fg-muted transition hover:text-fg">

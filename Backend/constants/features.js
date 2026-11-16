@@ -1,6 +1,6 @@
 /**
  * The four things a member can pay for. Every access check in the app asks
- * "does this user have feature X?" — nothing else decides access.
+ * "does this user have feature X?", nothing else decides access.
  */
 const FEATURES = {
     COURSES: 'courses', // all course videos + offline download

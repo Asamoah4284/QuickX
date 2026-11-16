@@ -281,7 +281,7 @@ export default function Feed() {
   const activeRoom = rooms.find((r) => r._id === roomId);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-5">
+    <div className="max-w-2xl space-y-5">
       <div className="flex items-center gap-2 overflow-x-auto pb-1">
         <button type="button" className={chip(!roomId)} onClick={() => setRoomId('')}>
           Main feed

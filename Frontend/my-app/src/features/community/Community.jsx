@@ -1,10 +1,22 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { FiBookOpen, FiSearch, FiUsers, FiX } from 'react-icons/fi';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import {
+  FiBookOpen,
+  FiFolder,
+  FiHelpCircle,
+  FiMessageCircle,
+  FiMessageSquare,
+  FiSearch,
+  FiSettings,
+  FiUsers,
+  FiVideo,
+  FiX,
+} from 'react-icons/fi';
 import { api, errorMessage } from '../../lib/api';
 import { useApi } from '../../lib/useApi';
-import { timeAgo } from '../../lib/format';
+import { cx, timeAgo } from '../../lib/format';
 import { Alert, Button, Card, Container, Input, PageHeader, PageLoader, Skeleton } from '../../ui/primitives';
 import { Modal, Tabs } from '../../ui/overlays';
 import FeatureGate from '../billing/FeatureGate';
@@ -17,7 +29,53 @@ import Messages from './Messages';
 import Manage from './Manage';
 import { BASE, CommunityContext, RichText } from './shared';
 
-const TAB_KEYS = ['feed', 'questions', 'resources', 'live', 'members', 'messages', 'manage'];
+const SECTIONS = [
+  { value: 'feed', label: 'Feed', icon: FiMessageSquare, help: 'Share trades, charts and wins. Pick a room to see one topic.' },
+  { value: 'questions', label: 'Q&A', icon: FiHelpCircle, help: 'Ask a question. Maxwell or another member will answer it.' },
+  { value: 'resources', label: 'Resources', icon: FiFolder, help: 'Useful files, links and videos shared by Maxwell.' },
+  { value: 'live', label: 'Live', icon: FiVideo, help: 'Upcoming live sessions and recordings of past ones.' },
+  { value: 'members', label: 'Members', icon: FiUsers, help: 'See who is here and start a private chat.' },
+  { value: 'messages', label: 'Messages', icon: FiMessageCircle, help: 'Your private chats with other members.' },
+  { value: 'manage', label: 'Manage', icon: FiSettings, help: 'Reports, members and community settings.', moderator: true },
+];
+const TAB_KEYS = SECTIONS.map((section) => section.value);
+
+/** Desktop side menu. */
+function SectionNav({ sections, value, onChange }) {
+  return (
+    <nav aria-label="Community sections" className="sticky top-24 space-y-1">
+      {sections.map((section) => {
+        const active = section.value === value;
+        const Icon = section.icon;
+        return (
+          <button
+            key={section.value}
+            type="button"
+            onClick={() => onChange(section.value)}
+            aria-current={active ? 'page' : undefined}
+            className={cx(
+              'relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors',
+              active ? 'text-fg' : 'text-fg-muted hover:bg-white/[0.04] hover:text-fg'
+            )}
+          >
+            {active ? (
+              <motion.span
+                layoutId="community-nav"
+                className="absolute inset-0 rounded-xl border border-brand-400/30 bg-brand-500/10"
+                transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+              />
+            ) : null}
+            <Icon className={cx('relative h-4 w-4 shrink-0', active ? 'text-brand-300' : '')} />
+            <span className="relative flex-1">{section.label}</span>
+            {section.count ? (
+              <span className="tabular relative rounded-full bg-brand-600 px-2 py-0.5 text-xs font-semibold text-white">{section.count}</span>
+            ) : null}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
 
 function SearchModal({ onClose, onOpenTab }) {
   const [text, setText] = useState('');
@@ -110,6 +168,7 @@ function CommunityHome() {
   const [searching, setSearching] = useState(false);
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [chatError, setChatError] = useState('');
+  const reduce = useReducedMotion();
 
   // Member names power @mentions; unread count powers the Messages badge.
   useEffect(() => {
@@ -168,15 +227,10 @@ function CommunityHome() {
   }
 
   const { me, memberCount, guidelines } = about.data;
-  const tabs = [
-    { value: 'feed', label: 'Feed' },
-    { value: 'questions', label: 'Q&A' },
-    { value: 'resources', label: 'Resources' },
-    { value: 'live', label: 'Live' },
-    { value: 'members', label: 'Members' },
-    { value: 'messages', label: 'Messages', count: unread || undefined },
-    ...(me.isModerator ? [{ value: 'manage', label: 'Manage' }] : []),
-  ];
+  const sections = SECTIONS.filter((section) => !section.moderator || me.isModerator).map((section) =>
+    section.value === 'messages' ? { ...section, count: unread || undefined } : section
+  );
+  const current = sections.find((section) => section.value === tab) || sections[0];
 
   return (
     <CommunityContext.Provider value={context}>
@@ -206,8 +260,8 @@ function CommunityHome() {
           }
         />
 
-        <div className="mt-6">
-          <Tabs tabs={tabs} value={tab} onChange={setTab} />
+        <div className="mt-6 lg:hidden">
+          <Tabs tabs={sections} value={tab} onChange={setTab} />
         </div>
 
         {chatError ? (
@@ -219,14 +273,30 @@ function CommunityHome() {
           </Alert>
         ) : null}
 
-        <div className="mt-6">
-          {tab === 'feed' ? <Feed /> : null}
-          {tab === 'questions' ? <Questions /> : null}
-          {tab === 'resources' ? <Resources /> : null}
-          {tab === 'live' ? <Live /> : null}
-          {tab === 'members' ? <Members /> : null}
-          {tab === 'messages' ? <Messages openWith={openChat} onUnreadChange={setUnread} /> : null}
-          {tab === 'manage' && me.isModerator ? <Manage /> : null}
+        <div className="mt-6 lg:mt-8 lg:grid lg:grid-cols-[13rem_minmax(0,1fr)] lg:gap-10">
+          <aside className="hidden lg:block">
+            <SectionNav sections={sections} value={tab} onChange={setTab} />
+          </aside>
+          <div className="min-w-0">
+            <p className="mb-5 max-w-3xl text-sm text-fg-muted">{current.help}</p>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={tab}
+                initial={reduce ? false : { opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={reduce ? undefined : { opacity: 0, y: -6 }}
+                transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              >
+                {tab === 'feed' ? <Feed /> : null}
+                {tab === 'questions' ? <Questions /> : null}
+                {tab === 'resources' ? <Resources /> : null}
+                {tab === 'live' ? <Live /> : null}
+                {tab === 'members' ? <Members /> : null}
+                {tab === 'messages' ? <Messages openWith={openChat} onUnreadChange={setUnread} /> : null}
+                {tab === 'manage' && me.isModerator ? <Manage /> : null}
+              </motion.div>
+            </AnimatePresence>
+          </div>
         </div>
       </Container>
 
@@ -253,7 +323,7 @@ export default function Community() {
   return (
     <>
       <Helmet>
-        <title>Community — QuickX</title>
+        <title>Community | QuickX</title>
       </Helmet>
       <FeatureGate feature="community">
         <CommunityHome />

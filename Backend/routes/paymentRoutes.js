@@ -216,7 +216,7 @@ router.post(
     }
 );
 
-/** Guest ebook checkout (no account) — books only */
+/** Guest ebook checkout (no account), books only */
 router.post('/initialize-guest', validatePayment, handleValidationErrors, async (req, res) => {
     try {
         const {
@@ -265,11 +265,12 @@ router.post('/initialize-guest', validatePayment, handleValidationErrors, async 
             if (!purchaseItem) {
                 return res.status(404).json({ message: 'Book not found' });
             }
-            if (purchaseItem.type !== 'ebook') {
-                return res.status(400).json({ message: 'Guest checkout is only for digital ebooks' });
+            const { bookPriceMatches } = require('../utils/bookPricing');
+            const deliveryType = req.body.shippingAddress?.deliveryType;
+            if (purchaseItem.type !== 'ebook' && !deliveryType) {
+                return res.status(400).json({ message: 'Add a delivery address to order a printed copy' });
             }
-            const priceDiff = Math.abs(purchaseItem.price - finalAmount);
-            if (priceDiff > 0.01) {
+            if (!bookPriceMatches(purchaseItem, finalAmount, deliveryType)) {
                 return res.status(400).json({
                     message: 'Invalid amount. Price mismatch detected.',
                     expected: purchaseItem.price,
@@ -337,6 +338,7 @@ router.post('/initialize-guest', validatePayment, handleValidationErrors, async 
         };
 
         const payment = await Payment.create(paymentRecord);
+        await require('../services/purchaseCompletionService').recordBookSale(payment);
 
         res.json({
             success: true,

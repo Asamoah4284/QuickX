@@ -37,11 +37,11 @@ router.get('/', async (req, res) => {
             ...query,
             isPlanDeliverable: { $ne: true },
             $or: [
-                { source: { $ne: 'instructor' } },
                 { listingStatus: 'published' },
+                { listingStatus: { $exists: false }, source: { $ne: 'instructor' } },
             ],
         })
-            .select('title author price hardcopyPrice type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials offerGroupId');
+            .select('title author price hardcopyPrice type stock thumbnail galleryImages salesCount description reviews whatYoullLearn afterReadingOutcomes testimonials offerGroupId');
 
         const payload = await enrichPublicBookListingPrices(books);
         res.json(payload);
@@ -95,7 +95,7 @@ router.get('/:id/offers', async (req, res) => {
 router.get('/:id/preview', async (req, res) => {
     try {
         const book = await Book.findById(req.params.id).select(
-            'title author price hardcopyPrice type stock thumbnail description reviews whatYoullLearn afterReadingOutcomes testimonials isPlanDeliverable offerGroupId'
+            'title author price hardcopyPrice type stock thumbnail galleryImages salesCount description reviews whatYoullLearn afterReadingOutcomes testimonials isPlanDeliverable offerGroupId'
         );
 
         if (!book) {

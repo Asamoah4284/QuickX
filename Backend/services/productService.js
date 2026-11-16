@@ -7,7 +7,7 @@ function round2(n) {
     return Math.round(Number(n) * 100) / 100;
 }
 
-/** Amount to charge after a percentage coupon. (Pure — unit tested.) */
+/** Amount to charge after a percentage coupon. (Pure, unit tested.) */
 function priceAfterDiscount(listPrice, discountPercent) {
     const pct = Math.min(100, Math.max(0, Number(discountPercent) || 0));
     return round2(Number(listPrice) * (1 - pct / 100));

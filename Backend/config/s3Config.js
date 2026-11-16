@@ -3,7 +3,7 @@ const { getSignedUrl } = require('@aws-sdk/s3-request-presigner');
 require('dotenv').config();
 
 // If .env sets AWS_REQUEST_CHECKSUM_CALCULATION=when_supported, presigned PutObject URLs
-// include CRC32 query params and browser uploads get 403 — force safe mode after dotenv.
+// include CRC32 query params and browser uploads get 403, force safe mode after dotenv.
 process.env.AWS_REQUEST_CHECKSUM_CALCULATION = 'WHEN_REQUIRED';
 process.env.AWS_RESPONSE_CHECKSUM_VALIDATION = 'WHEN_REQUIRED';
 
@@ -73,7 +73,7 @@ async function generateVideoUrl(contentType = 'video/mp4') {
             Bucket: process.env.AWS_BUCKET_NAME || 'quickxlearn',
             Key: VideoName,
             ContentType: ct,
-            // Unique keys — long CDN cache helps Ghana/West Africa edge hits
+            // Unique keys, long CDN cache helps Ghana/West Africa edge hits
             CacheControl: 'public, max-age=31536000, immutable',
         });
 

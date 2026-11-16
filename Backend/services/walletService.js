@@ -30,7 +30,7 @@ function fail(message, status = 400, extra = {}) {
     return err;
 }
 
-/** Commission owed on an amount actually paid. (Pure — unit tested.) */
+/** Commission owed on an amount actually paid. (Pure, unit tested.) */
 function commissionFor(amountPaid) {
     const amount = Number(amountPaid);
     if (!Number.isFinite(amount) || amount <= 0) return 0;
@@ -201,8 +201,8 @@ async function requestWithdrawal({ userId, source, amount, momoNumber, network }
 
 /**
  * Admin decision on a pending withdrawal.
- * 'completed' — the money has been sent; nothing else changes.
- * 'rejected'  — the money goes back to the balance it came from.
+ * 'completed': the money has been sent; nothing else changes.
+ * 'rejected': the money goes back to the balance it came from.
  */
 async function resolveWithdrawal(requestId, decision, remarks = '') {
     if (!['completed', 'rejected'].includes(decision)) throw fail('Unknown decision');
@@ -244,7 +244,7 @@ async function resolveWithdrawal(requestId, decision, remarks = '') {
                 type: 'refund',
                 amount: request.amount,
                 balanceAfter: round2(user.walletBalance),
-                label: 'Withdrawal rejected — returned to wallet',
+                label: 'Withdrawal rejected, money returned to wallet',
                 reference: request.walletRef || `qx_wd_refund_${requestId}`,
                 status: 'completed',
             });

@@ -1,9 +1,22 @@
-import { Suspense, useEffect, useLayoutEffect, useState } from 'react';
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, ScrollRestoration, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { Analytics } from '@vercel/analytics/react';
-import { FiMenu, FiX, FiHome, FiLogOut, FiBookOpen, FiTag, FiEdit3 } from 'react-icons/fi';
-import { FaWhatsapp } from 'react-icons/fa';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  FiMenu,
+  FiX,
+  FiHome,
+  FiLogOut,
+  FiBookOpen,
+  FiTag,
+  FiEdit3,
+  FiPieChart,
+  FiCalendar,
+  FiInfo,
+  FiChevronDown,
+} from 'react-icons/fi';
+import { FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 import { useAuth } from '../lib/auth';
 import { FEATURE_LIST } from '../lib/features';
 import { cx } from '../lib/format';
@@ -16,11 +29,95 @@ import { clearServerPushSubscription, ensurePushSubscription } from '../utils/we
 
 const WHATSAPP_URL = 'https://wa.me/233559037872?text=' + encodeURIComponent('Hello! I would like to get in touch with you.');
 
-const PRIMARY_LINKS = [
-  ...FEATURE_LIST.map((f) => ({ to: f.path, label: f.label, icon: f.icon })),
-  { to: '/store', label: 'Books', icon: FiBookOpen },
-  { to: '/pricing', label: 'Pricing', icon: FiTag },
-];
+const TELEGRAM_URL = 'https://t.me/quickxtrading';
+
+const FEATURE_LINKS = FEATURE_LIST.map((f) => ({ to: f.path, label: f.label, icon: f.icon }));
+const byPath = (path) => FEATURE_LINKS.find((l) => l.to === path);
+const PIE_LINK = { to: '/pie', label: 'Pie trading', icon: FiPieChart };
+const BOOKS_LINK = { to: '/store', label: 'Books', icon: FiBookOpen };
+const EVENTS_LINK = { to: '/events', label: 'Events', icon: FiCalendar };
+const PRICING_LINK = { to: '/pricing', label: 'Pricing', icon: FiTag };
+const ABOUT_LINK = { to: '/about', label: 'About', icon: FiInfo };
+
+/** Shown in the top bar on desktop. Kept short so the bar never feels crowded. */
+const TOP_LINKS = [byPath('/courses'), byPath('/signals'), byPath('/community'), PIE_LINK, PRICING_LINK].filter(Boolean);
+
+/** Tucked under "More" on desktop. */
+const MORE_LINKS = [byPath('/mentorship'), BOOKS_LINK, EVENTS_LINK, ABOUT_LINK].filter(Boolean);
+
+/** Everything, for the phone menu and the footer. */
+const PRIMARY_LINKS = [...FEATURE_LINKS, PIE_LINK, BOOKS_LINK, EVENTS_LINK, PRICING_LINK];
+
+function MoreMenu() {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const { pathname } = useLocation();
+  const active = MORE_LINKS.some((l) => pathname.startsWith(l.to));
+
+  useEffect(() => setOpen(false), [pathname]);
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDown = (e) => {
+      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
+    };
+    const onKey = (e) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDown);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className={cx(
+          'flex items-center gap-1 rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+          active || open ? 'text-fg' : 'text-fg-muted hover:text-fg'
+        )}
+      >
+        More
+        <FiChevronDown className={cx('h-4 w-4 transition-transform duration-200', open && 'rotate-180')} />
+      </button>
+      <AnimatePresence>
+        {open ? (
+          <motion.div
+            role="menu"
+            initial={{ opacity: 0, y: -6, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -6, scale: 0.98 }}
+            transition={{ duration: 0.16, ease: 'easeOut' }}
+            className="surface absolute right-0 top-full mt-2 w-56 origin-top-right rounded-2xl p-1.5 shadow-xl"
+          >
+            {MORE_LINKS.map((link) => (
+              <NavLink
+                key={link.to}
+                to={link.to}
+                role="menuitem"
+                className={({ isActive }) =>
+                  cx(
+                    'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors',
+                    isActive ? 'bg-brand-500/15 text-fg' : 'text-fg-muted hover:bg-white/[0.05] hover:text-fg'
+                  )
+                }
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </NavLink>
+            ))}
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
+    </div>
+  );
+}
 
 function Logo() {
   return (
@@ -57,20 +154,33 @@ function TopNav({ onOpenMenu }) {
         <Logo />
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
-          {PRIMARY_LINKS.map((link) => (
+          {TOP_LINKS.map((link) => (
             <NavLink
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
                 cx(
-                  'rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
-                  isActive ? 'bg-white/[0.08] text-fg' : 'text-fg-muted hover:text-fg'
+                  'relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors',
+                  isActive ? 'text-fg' : 'text-fg-muted hover:text-fg'
                 )
               }
             >
-              {link.label}
+              {({ isActive }) => (
+                <>
+                  {isActive ? (
+                    // The highlight glides from one link to the next.
+                    <motion.span
+                      layoutId="nav-pill"
+                      className="absolute inset-0 rounded-full bg-white/[0.08]"
+                      transition={{ type: 'spring', stiffness: 420, damping: 34 }}
+                    />
+                  ) : null}
+                  <span className="relative">{link.label}</span>
+                </>
+              )}
             </NavLink>
           ))}
+          <MoreMenu />
         </nav>
 
         <div className="flex items-center gap-2">
@@ -156,7 +266,7 @@ function MobileMenu({ open, onClose }) {
             <span className="truncate">{user?.fullName || 'My account'}</span>
           </NavLink>
         ) : null}
-        {PRIMARY_LINKS.map((link) => (
+        {[...PRIMARY_LINKS, ABOUT_LINK].map((link) => (
           <NavLink key={link.to} to={link.to} className={itemClass} onClick={onClose}>
             <link.icon className="h-5 w-5" />
             {link.label}
@@ -235,15 +345,26 @@ function Footer() {
             Forex education, live signals and mentorship from Maxwell Donkor. Learn the method, follow the trades,
             and grow with a community of traders.
           </p>
-          <a
-            href={WHATSAPP_URL}
-            target="_blank"
-            rel="noreferrer"
-            className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-up hover:underline"
-          >
-            <FaWhatsapp className="h-4 w-4" />
-            Chat with us on WhatsApp
-          </a>
+          <div className="mt-5 flex flex-wrap gap-x-6 gap-y-3">
+            <a
+              href={TELEGRAM_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-brand-300 hover:underline"
+            >
+              <FaTelegramPlane className="h-4 w-4" />
+              Join us on Telegram
+            </a>
+            <a
+              href={WHATSAPP_URL}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-up hover:underline"
+            >
+              <FaWhatsapp className="h-4 w-4" />
+              Chat on WhatsApp
+            </a>
+          </div>
         </div>
         <div>
           <h3 className="text-sm font-semibold text-fg">Explore</h3>
@@ -291,8 +412,8 @@ function Footer() {
 /**
  * Shell for every member-facing page.
  * Route `handle` options:
- *   legacy: true  — page not yet moved to the new design; rendered on a light sheet
- *   bare: true    — hide the footer and bottom tabs (focused screens such as the lesson player)
+ *   legacy: true: page from the older design; gets extra styles so its forms and tables match
+ *   bare: true: hide the footer and bottom tabs (focused screens such as the lesson player)
  */
 export default function SiteLayout() {
   const { pathname, search, hash } = useLocation();
@@ -321,7 +442,7 @@ export default function SiteLayout() {
   return (
     <>
       <Helmet>
-        <title>QuickX — Forex courses, live signals and mentorship</title>
+        <title>QuickX | Forex courses, live signals and mentorship</title>
         <meta
           name="description"
           content="Learn forex with Maxwell Donkor: video courses, live trading signals, a members community and 1-on-1 mentorship."
@@ -334,13 +455,9 @@ export default function SiteLayout() {
 
         <main className={cx('flex-1', handle.legacy ? 'qx-legacy' : 'pt-16', showTabs && 'pb-20 lg:pb-0')}>
           <Suspense fallback={<PageLoader />}>
-            {handle.legacy ? (
+            <PageTransition key={pathname}>
               <Outlet />
-            ) : (
-              <PageTransition key={pathname}>
-                <Outlet />
-              </PageTransition>
-            )}
+            </PageTransition>
           </Suspense>
         </main>
 

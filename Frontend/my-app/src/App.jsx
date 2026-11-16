@@ -1,5 +1,5 @@
 import { lazy, Suspense } from 'react';
-import { createBrowserRouter, Navigate, RouterProvider } from 'react-router-dom';
+import { createBrowserRouter, Navigate, RouterProvider, useParams } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, RequireAuth } from './lib/auth';
 import { PageLoader } from './ui/primitives';
@@ -15,6 +15,8 @@ const CourseDetail = lazy(() => import('./features/courses/CourseDetail'));
 const Mentorship = lazy(() => import('./features/mentorship/Mentorship'));
 const Community = lazy(() => import('./features/community/Community'));
 const Account = lazy(() => import('./features/account/Account'));
+const PieList = lazy(() => import('./features/pie/PieList'));
+const PieDetail = lazy(() => import('./features/pie/PieDetail'));
 
 /* Pages still on the previous design (rendered on a light sheet via handle.legacy) */
 const About = lazy(() => import('./features/marketing/About'));
@@ -23,6 +25,8 @@ const Store = lazy(() => import('./pages/store/store'));
 const BookDetails = lazy(() => import('./pages/BookDetails'));
 const Checkout = lazy(() => import('./pages/Checkout'));
 const BookGuestDownload = lazy(() => import('./pages/BookGuestDownload'));
+const Events = lazy(() => import('./pages/Events'));
+const EventDetail = lazy(() => import('./pages/EventDetail'));
 const Profile = lazy(() => import('./features/account/Profile'));
 const Login = lazy(() => import('./features/auth/Login'));
 const Register = lazy(() => import('./features/auth/Register'));
@@ -54,10 +58,17 @@ const AdminPricing = lazy(() => import('./features/admin/AdminPricing'));
 const AdminMembers = lazy(() => import('./features/admin/AdminMembers'));
 const AdminSessions = lazy(() => import('./features/admin/AdminSessions'));
 const AdminOverview = lazy(() => import('./features/admin/AdminOverview'));
+const AdminPie = lazy(() => import('./features/admin/AdminPie'));
+const AdminEvents = lazy(() => import('./pages/Admin/AdminEvents'));
 
 const legacy = { legacy: true };
 const authed = (element) => <RequireAuth>{element}</RequireAuth>;
 const go = (to) => <Navigate to={to} replace />;
+
+function PieRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/pie/${id}`} replace />;
+}
 
 const router = createBrowserRouter([
   {
@@ -73,6 +84,10 @@ const router = createBrowserRouter([
       { path: 'mentorship', element: <Mentorship /> },
       { path: 'community', element: <Community /> },
       { path: 'account', element: authed(<Account />) },
+      { path: 'pie', element: <PieList /> },
+      { path: 'pie/:id', element: <PieDetail /> },
+      { path: 'ptrading', element: go('/pie') },
+      { path: 'ptrading/:id', element: <PieRedirect /> },
 
       // Previous design, still in use
       { path: 'about', element: <About /> },
@@ -81,6 +96,8 @@ const router = createBrowserRouter([
       { path: 'store/:bookId', element: <BookDetails />, handle: legacy },
       { path: 'checkout', element: <Checkout />, handle: legacy },
       { path: 'download/book', element: <BookGuestDownload />, handle: legacy },
+      { path: 'events', element: <Events />, handle: legacy },
+      { path: 'events/:id', element: <EventDetail />, handle: legacy },
       { path: 'profile', element: authed(<Profile />) },
       { path: 'login', element: <Login /> },
       { path: 'register', element: <Register /> },
@@ -147,6 +164,9 @@ const router = createBrowserRouter([
           { path: 'members', element: <AdminMembers /> },
           { path: 'sessions', element: <AdminSessions /> },
           { path: 'courses', element: <AdminDashboard />, handle: legacy },
+          { path: 'books', element: <AdminDashboard />, handle: legacy },
+          { path: 'events', element: <AdminEvents />, handle: legacy },
+          { path: 'pie', element: <AdminPie /> },
           { path: 'courses/add', element: <AddCourse />, handle: legacy },
           { path: 'courses/edit/:courseId', element: <EditCourse />, handle: legacy },
           { path: 'settings', element: <AdminDashboard />, handle: legacy },

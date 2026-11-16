@@ -78,6 +78,12 @@ function SignalsFeed() {
         ]}
       />
 
+      {tab === 'live' && list.length ? (
+        <p className="text-sm text-fg-muted">
+          Tap any price to copy it, or tap <span className="font-semibold text-fg">Copy trade</span> to copy the whole signal and paste it into MT4, MT5 or your broker app.
+        </p>
+      ) : null}
+
       {list.length ? (
         <Stagger key={`${tab}-${page}`} className="grid gap-4 lg:grid-cols-2">
           {list.map((signal) => (
@@ -123,7 +129,7 @@ export default function Signals() {
   return (
     <>
       <Helmet>
-        <title>Signals — QuickX</title>
+        <title>Signals | QuickX</title>
       </Helmet>
       <FeatureGate
         feature="signals"

@@ -47,9 +47,13 @@ const sendOTP = async (phone, code) => {
     try {
         const response = await axios.request(options);
         console.log('Moolre SMS response:', response.data);
+        if (!response.data || response.data.status !== 1) {
+            console.warn(`[SMS OTP FALLBACK] Moolre did not send SMS (${response.data?.code}: ${response.data?.message}). Verification code for ${formattedPhone} is: ${code}`);
+        }
         return response.data;
     } catch (error) {
         console.error('Moolre SMS error:', error.response ? error.response.data : error.message);
+        console.warn(`[SMS OTP FALLBACK] Verification code for ${formattedPhone} is: ${code}`);
         throw new Error('Failed to send verification SMS');
     }
 };

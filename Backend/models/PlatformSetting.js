@@ -20,6 +20,16 @@ const platformSettingSchema = new mongoose.Schema({
     creatorAutoApproval: {
         type: Boolean,
         default: false
+    },
+    defaultCurrency: {
+        type: String,
+        enum: ['USD', 'GHS'],
+        default: 'GHS'
+    },
+    exchangeRateUsdToGhs: {
+        type: Number,
+        default: 15.5,
+        min: 0.1
     }
 }, {
     timestamps: true

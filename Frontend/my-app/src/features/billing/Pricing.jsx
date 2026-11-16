@@ -11,7 +11,7 @@ const FAQ = [
   },
   {
     q: 'What happens when my time runs out?',
-    a: 'Access to that feature pauses. Nothing is deleted — your progress and history are there when you come back.',
+    a: 'Access to that feature pauses. Nothing is deleted. Your progress and history are there when you come back.',
   },
   {
     q: 'I already have time left. What if I buy again?',
@@ -63,7 +63,7 @@ export default function Pricing() {
   return (
     <>
       <Helmet>
-        <title>Pricing — QuickX</title>
+        <title>Pricing | QuickX</title>
       </Helmet>
       <Container className="py-14 sm:py-20">
         <Reveal className="mx-auto max-w-2xl text-center">

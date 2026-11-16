@@ -44,7 +44,7 @@ async function initiateCollection({ amount, payer, network, externalref, otpcode
             ok: true,
             simulated: true,
             externalref,
-            message: 'Moolre not configured — payment will complete in verify step',
+            message: 'Moolre is not set up. The payment will be completed in the verify step.',
         };
     }
 

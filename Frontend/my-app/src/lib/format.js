@@ -1,5 +1,15 @@
-/** Amount in Ghana cedis. Shows pesewas only when there are any. */
+import { formatCurrency } from '../utils/currencyStore';
+
+/**
+ * A price for browsing (plans, courses, books). Shown in the admin's display currency:
+ * cedis, or dollars converted at the admin's rate. Amounts are always stored in cedis.
+ */
 export function money(value) {
+  return formatCurrency(value, { decimals: Math.round(Number(value || 0) * 100) % 100 !== 0 ? 2 : undefined });
+}
+
+/** Exact cedis. Use wherever money actually moves: checkout totals, wallet, withdrawals, Pie. */
+export function cedis(value) {
   const n = Number(value || 0);
   const hasFraction = Math.round(n * 100) % 100 !== 0;
   return `GH₵${n.toLocaleString('en-GH', {

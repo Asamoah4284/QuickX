@@ -5,16 +5,42 @@ import { useApi } from '../../lib/useApi';
 import { timeAgo } from '../../lib/format';
 import { Alert, Badge, Button, Card, EmptyState, Field, Input, PageHeader, Select, Skeleton, Textarea } from '../../ui/primitives';
 import { Modal, Tabs } from '../../ui/overlays';
-import { DirectionPill, Pips, STATUS_META } from '../signals/SignalCard';
+import SignalCard, { DirectionPill, Pips, STATUS_META } from '../signals/SignalCard';
 import { SignalStats } from '../signals/TrackRecord';
 
 const EMPTY = { pair: '', direction: 'buy', orderType: 'market', entry: '', stopLoss: '', tp1: '', tp2: '', tp3: '', timeframe: '', note: '', chartImage: '' };
+
+/** Same rule the server applies, shown while typing so mistakes are caught before posting. */
+function levelProblem(form) {
+  const entry = Number(form.entry);
+  const sl = Number(form.stopLoss);
+  if (form.entry === '' || form.stopLoss === '') return '';
+  const buy = form.direction === 'buy';
+  if (buy ? sl >= entry : sl <= entry) {
+    return buy ? 'For a buy, the stop loss must be below the entry.' : 'For a sell, the stop loss must be above the entry.';
+  }
+  const bad = [form.tp1, form.tp2, form.tp3].findIndex((tp) => tp !== '' && (buy ? Number(tp) <= entry : Number(tp) >= entry));
+  if (bad >= 0) return `Target ${bad + 1} must be ${buy ? 'above' : 'below'} the entry for a ${form.direction}.`;
+  return '';
+}
 
 function NewSignalModal({ open, onClose, onSaved }) {
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  const problem = levelProblem(form);
+  const takeProfits = [form.tp1, form.tp2, form.tp3].filter((v) => v !== '').map(Number);
+  const previewReady = form.pair && form.entry !== '' && form.stopLoss !== '' && takeProfits.length > 0;
+  const preview = {
+    ...form,
+    entry: Number(form.entry),
+    stopLoss: Number(form.stopLoss),
+    takeProfits,
+    orderType: form.orderType === 'market' ? 'market' : `${form.direction} ${form.orderType}`,
+    status: 'active',
+    updates: [],
+  };
 
   const submit = async (e) => {
     e.preventDefault();
@@ -48,11 +74,9 @@ function NewSignalModal({ open, onClose, onSaved }) {
           </Field>
           <Field label="Order type" htmlFor="s-type">
             <Select id="s-type" value={form.orderType} onChange={set('orderType')}>
-              <option value="market">Market</option>
-              <option value="buy limit">Buy limit</option>
-              <option value="sell limit">Sell limit</option>
-              <option value="buy stop">Buy stop</option>
-              <option value="sell stop">Sell stop</option>
+              <option value="market">Market (now)</option>
+              <option value="limit">{form.direction === 'buy' ? 'Buy' : 'Sell'} limit</option>
+              <option value="stop">{form.direction === 'buy' ? 'Buy' : 'Sell'} stop</option>
             </Select>
           </Field>
           <Field label="Timeframe" htmlFor="s-tf">
@@ -84,12 +108,19 @@ function NewSignalModal({ open, onClose, onSaved }) {
         <Field label="Chart image link" htmlFor="s-chart" hint="Optional. Paste a link to a chart screenshot.">
           <Input id="s-chart" type="url" value={form.chartImage} onChange={set('chartImage')} placeholder="https://" />
         </Field>
+        {problem ? <Alert tone="warn">{problem}</Alert> : null}
+        {previewReady ? (
+          <div>
+            <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-fg-subtle">What members will see</p>
+            <SignalCard preview signal={preview} />
+          </div>
+        ) : null}
         {error ? <Alert>{error}</Alert> : null}
         <div className="flex justify-end gap-3 pt-2">
           <Button variant="ghost" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" loading={busy}>
+          <Button type="submit" loading={busy} disabled={Boolean(problem)}>
             Post and notify members
           </Button>
         </div>

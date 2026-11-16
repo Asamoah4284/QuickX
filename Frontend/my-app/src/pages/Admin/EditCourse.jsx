@@ -26,7 +26,7 @@ const EditCourse = () => {
             });
             setCourse(response.data);
             setError('');
-        } catch (err) {
+        } catch {
             setError('Failed to fetch course details');
         } finally {
             setLoading(false);

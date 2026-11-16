@@ -16,17 +16,17 @@
     crossorigin="anonymous"></script>
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://quick-x.com/">
+    <meta property="og:url" content="https://quickxlearn.com/">
     <meta property="og:title" content="QuickX | Forex courses, live signals and mentorship with Maxwell Donkor">
     <meta property="og:description" content="Learn to trade forex with Maxwell Donkor: step-by-step video courses, live trade signals with entry, stop loss and targets, a members community and 1-on-1 mentorship.">
-    <meta property="og:image" content="https://quick-x.com/og-image.jpg">
+    <meta property="og:image" content="https://quickxlearn.com/og-image.jpg">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://quick-x.com/">
+    <meta property="twitter:url" content="https://quickxlearn.com/">
     <meta property="twitter:title" content="QuickX | Forex courses, live signals and mentorship with Maxwell Donkor">
     <meta property="twitter:description" content="Learn to trade forex with Maxwell Donkor: step-by-step video courses, live trade signals with entry, stop loss and targets, a members community and 1-on-1 mentorship.">
-    <meta property="twitter:image" content="https://quick-x.com/og-image.jpg">
+    <meta property="twitter:image" content="https://quickxlearn.com/og-image.jpg">
 
     <!-- Favicon / PWA -->
     <link rel="icon" type="image/png" href="/pwa-192.png" />
@@ -46,7 +46,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://quick-x.com/" />
+    <link rel="canonical" href="https://quickxlearn.com/" />
     
     <!-- Robots Meta -->
     <meta name="robots" content="index, follow">
@@ -56,6 +56,17 @@
     <meta name="author" content="Maxwell Donkor">
     <meta name="theme-color" content="#05080f">
 
+
+    <!-- Local dev only: drop any old service worker so you always see fresh code -->
+    <script>
+      if (location.hostname === 'localhost' || location.hostname === '127.0.0.1') {
+        if ('serviceWorker' in navigator) {
+          navigator.serviceWorker.getRegistrations().then(function (regs) {
+            regs.forEach(function (reg) { reg.unregister(); });
+          });
+        }
+      }
+    </script>
 
     <!-- Meta Pixel Code -->
     <script>
@@ -67,15 +78,15 @@
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('init', '%VITE_META_PIXEL_ID%');
+      fbq('init', '2191629668086090');
       fbq('track', 'PageView');
     </script>
-    <!-- End Meta Pixel Code (noscript fallback lives in body — img not allowed inside head/noscript) -->
+    <!-- End Meta Pixel Code (noscript fallback lives in body, img not allowed inside head/noscript) -->
   </head>
   <body>
     <noscript>
       <img height="1" width="1" style="display:none" alt=""
-        src="https://www.facebook.com/tr?id=%VITE_META_PIXEL_ID%&ev=PageView&noscript=1"/>
+        src="https://www.facebook.com/tr?id=2191629668086090&ev=PageView&noscript=1"/>
     </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>

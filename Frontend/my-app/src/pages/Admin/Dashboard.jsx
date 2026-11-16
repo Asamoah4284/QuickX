@@ -5,12 +5,15 @@ import {
     FiUsers, FiBook, FiVideo, FiSettings, 
     FiBarChart2, FiUpload, FiEdit2, 
     FiTrash2, FiPlus, FiTrendingUp, FiDollarSign,
-    FiX, FiBookOpen, FiTag, FiStar, FiImage, FiAlertTriangle
+    FiX, FiBookOpen, FiTag, FiStar, FiImage, FiAlertTriangle,
+    FiEye, FiEyeOff
 } from 'react-icons/fi';
 import CourseModal from './CourseModal';
 import BookModal from './BookModal';
 import CourseManagement from './CourseManagement';
 import { uploadFileToS3 } from '../../utils/uploadToS3';
+import { formatCurrency } from '../../utils/currencyStore';
+import { publicAssetUrl } from '../../utils/publicAssetUrl';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 // Mock data for testing
 const mockCourses = [
@@ -44,6 +47,7 @@ const mockCourses = [
 ];
 
 const TAB_BY_PATH = {
+    '/admin/books': 'books',
     '/admin/courses': 'courses',
     '/admin/settings': 'settings',
     '/admin/coupons': 'coupons',
@@ -91,6 +95,7 @@ const AdminDashboard = () => {
     });
     const [showBookModal, setShowBookModal] = useState(false);
     const [selectedBook, setSelectedBook] = useState(null);
+    const [bookStatusFilter, setBookStatusFilter] = useState('all');
     const [coupons, setCoupons] = useState([]);
     const [newCoupon, setNewCoupon] = useState({
         code: '',
@@ -545,6 +550,38 @@ const AdminDashboard = () => {
 
 
 
+    const handleToggleBookStatus = async (book) => {
+        try {
+            const currentStatus = book.listingStatus || 'published';
+            const nextStatus = currentStatus === 'published' ? 'draft' : 'published';
+            const token = localStorage.getItem('adminToken') || localStorage.getItem('authToken') || localStorage.getItem('token');
+            await axios.patch(
+                `${API_URL}/api/admin/books/${book._id}/status`,
+                { status: nextStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            setBooks(prev => prev.map(b => b._id === book._id ? { ...b, listingStatus: nextStatus } : b));
+        } catch (err) {
+            console.error('Error toggling book status:', err);
+            alert(err.response?.data?.message || 'Failed to update book status');
+        }
+    };
+
+    const handleAddBook = () => {
+        setSelectedBook(null);
+        setShowBookModal(true);
+    };
+
+    const handleEditBook = (book) => {
+        setSelectedBook(book);
+        setShowBookModal(true);
+    };
+
+    const handleDeleteBookRequest = (bookId) => {
+        setBookToDelete(bookId);
+        setShowDeleteBookModal(true);
+    };
+
     const confirmDeleteBook = async () => {
         if (!bookToDelete) return;
         try {
@@ -581,7 +618,7 @@ const AdminDashboard = () => {
             const maxUses = Number(newCoupon.maxUses);
             const validUntilRaw = String(newCoupon.validUntil || '').trim();
 
-            // Validate before formatting — empty date used to throw and show a generic failure
+            // Validate before formatting, empty date used to throw and show a generic failure
             if (!code) {
                 setError('Enter a coupon code');
                 return;
@@ -688,6 +725,214 @@ const AdminDashboard = () => {
 
     const renderContent = () => {
         switch (activeTab) {
+            case 'books':
+                return (
+                    <div className="space-y-6">
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-fg">Books Management</h2>
+                                <p className="text-xs text-fg-subtle mt-1">
+                                    Manage store publications, set live status, and monitor inventory.
+                                </p>
+                            </div>
+                            <button
+                                onClick={handleAddBook}
+                                className="flex items-center px-4 py-2.5 bg-brand-600 text-white rounded-xl hover:bg-brand-700 text-sm font-semibold shadow-sm transition"
+                            >
+                                <FiPlus className="mr-2" />
+                                Add New Book
+                            </button>
+                        </div>
+
+                        {/* Status Filter Tabs */}
+                        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-3">
+                            {[
+                                { key: 'all', label: 'All Books', count: books.length },
+                                {
+                                    key: 'live',
+                                    label: 'Live (Published)',
+                                    count: books.filter(b => (b.listingStatus || 'published') === 'published').length,
+                                    badgeColor: 'bg-up/10 text-up'
+                                },
+                                {
+                                    key: 'draft',
+                                    label: 'Drafts (Hidden)',
+                                    count: books.filter(b => b.listingStatus === 'draft').length,
+                                    badgeColor: 'bg-ink-800 text-fg-muted'
+                                },
+                                {
+                                    key: 'review',
+                                    label: 'In Review',
+                                    count: books.filter(b => b.listingStatus === 'pending_review').length,
+                                    badgeColor: 'bg-warn/10 text-warn'
+                                }
+                            ].map(tab => (
+                                <button
+                                    key={tab.key}
+                                    type="button"
+                                    onClick={() => setBookStatusFilter(tab.key)}
+                                    className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold transition ${
+                                        bookStatusFilter === tab.key
+                                            ? 'bg-brand-600 text-white shadow-sm'
+                                            : 'bg-ink-800 text-fg-muted hover:bg-ink-700'
+                                    }`}
+                                >
+                                    <span>{tab.label}</span>
+                                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+                                        bookStatusFilter === tab.key
+                                            ? 'bg-white/20 text-white'
+                                            : tab.badgeColor || 'bg-ink-700 text-fg-muted'
+                                    }`}>
+                                        {tab.count}
+                                    </span>
+                                </button>
+                            ))}
+                        </div>
+                        
+                        <div className="bg-ink-850 rounded-xl shadow-sm border border-line overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-line">
+                                    <thead className="bg-ink-900">
+                                        <tr>
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-fg-subtle uppercase tracking-wider">
+                                                Cover
+                                            </th>
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-fg-subtle uppercase tracking-wider">
+                                                Title &amp; Type
+                                            </th>
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-fg-subtle uppercase tracking-wider">
+                                                Author
+                                            </th>
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-fg-subtle uppercase tracking-wider">
+                                                Price
+                                            </th>
+                                            <th scope="col" className="px-6 py-3.5 text-left text-xs font-semibold text-fg-subtle uppercase tracking-wider">
+                                                Store Status
+                                            </th>
+                                            <th scope="col" className="px-6 py-3.5 text-right text-xs font-semibold text-fg-subtle uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-ink-850 divide-y divide-line">
+                                        {books
+                                            .filter(book => {
+                                                const st = book.listingStatus || 'published';
+                                                if (bookStatusFilter === 'live') return st === 'published';
+                                                if (bookStatusFilter === 'draft') return st === 'draft';
+                                                if (bookStatusFilter === 'review') return st === 'pending_review';
+                                                return true;
+                                            })
+                                            .map((book) => {
+                                                const status = book.listingStatus || 'published';
+                                                const isLive = status === 'published';
+                                                const cover = book.thumbnail ? publicAssetUrl(book.thumbnail) : '/images/bk-1.jpg';
+
+                                                return (
+                                                    <tr key={book._id} className="hover:bg-ink-900/80 transition-colors">
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            <div className="h-16 w-12 rounded-lg overflow-hidden bg-ink-800 border border-line flex items-center justify-center shadow-xs">
+                                                                <img 
+                                                                    src={cover} 
+                                                                    alt={book.title} 
+                                                                    className="h-full w-full object-cover"
+                                                                    onError={(e) => {
+                                                                        e.target.onerror = null;
+                                                                        e.target.src = '/images/bk-1.jpg';
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5">
+                                                            <div className="text-sm font-semibold text-fg line-clamp-1">{book.title}</div>
+                                                            <div className="flex items-center gap-2 mt-0.5">
+                                                                <span className="text-[11px] font-medium text-fg-subtle capitalize">
+                                                                    {book.type === 'hardcopy' ? 'Physical Copy' : 'Digital E-Book'}
+                                                                </span>
+                                                                {book.galleryImages?.length > 0 ? (
+                                                                    <span className="text-[10px] text-brand-400 bg-brand-500/10 px-1.5 py-0.2 rounded font-semibold">
+                                                                        +{book.galleryImages.length} gallery
+                                                                    </span>
+                                                                ) : null}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            <div className="text-sm text-fg-muted font-medium">{book.author}</div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            <div className="text-sm font-bold text-fg">
+                                                                {formatCurrency(book.price)}
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap">
+                                                            {isLive ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-up/10 text-up ring-1 ring-up">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                                                    Live
+                                                                </span>
+                                                            ) : status === 'draft' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-ink-800 text-fg-muted ring-1 ring-line">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-ink-600" />
+                                                                    Draft (Hidden)
+                                                                </span>
+                                                            ) : status === 'pending_review' ? (
+                                                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-warn/10 text-warn ring-1 ring-warn">
+                                                                    <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                                                                    In Review
+                                                                </span>
+                                                            ) : (
+                                                                <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-down/10 text-down ring-1 ring-down">
+                                                                    Rejected
+                                                                </span>
+                                                            )}
+                                                        </td>
+                                                        <td className="px-6 py-3.5 whitespace-nowrap text-right text-xs font-medium space-x-2">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleToggleBookStatus(book)}
+                                                                title={isLive ? 'Unpublish and hide from store' : 'Publish and make live on store'}
+                                                                className={`inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border font-semibold transition ${
+                                                                    isLive
+                                                                        ? 'border-line text-fg-muted hover:bg-ink-800'
+                                                                        : 'border-up text-up hover:bg-up/10'
+                                                                }`}
+                                                            >
+                                                                {isLive ? (
+                                                                    <>
+                                                                        <FiEyeOff className="text-fg-subtle" />
+                                                                        Hide
+                                                                    </>
+                                                                ) : (
+                                                                    <>
+                                                                        <FiEye className="text-up" />
+                                                                        Make Live
+                                                                    </>
+                                                                )}
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleEditBook(book)}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-brand-400/30 text-brand-300 hover:bg-brand-500/10 font-semibold transition"
+                                                            >
+                                                                <FiEdit2 />
+                                                                Edit
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteBookRequest(book._id)}
+                                                                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-down/30 text-down hover:bg-down/10 font-semibold transition"
+                                                            >
+                                                                <FiTrash2 />
+                                                                Delete
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                );
             case 'courses':
                 if (showAddCourse) {
                     return (

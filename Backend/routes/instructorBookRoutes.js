@@ -69,7 +69,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
     try {
         const {
             title, author, description, type, price,
-            fileUrl, stock, thumbnail, isbn,
+            fileUrl, stock, thumbnail, galleryImages, isbn,
             deliveryFee, watermarkTemplate, category,
             whatYoullLearn, afterReadingOutcomes, testimonials, hardcopyPrice
         } = req.body;
@@ -91,6 +91,7 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
             fileUrl: ebookFileUrl || undefined,
             stock: type === 'hardcopy' ? (parseInt(stock) || 0) : undefined,
             thumbnail: String(thumbnail || '').trim() || undefined,
+            galleryImages: normalizeStringArray(galleryImages),
             isbn: String(isbn || '').trim() || undefined,
             deliveryFee: type === 'hardcopy' ? (parseFloat(deliveryFee) || 0) : undefined,
             watermarkTemplate: String(watermarkTemplate || '').trim() || undefined,
@@ -106,6 +107,12 @@ router.post('/', auth, requireApprovedCreator, async (req, res) => {
                 type === 'ebook' && hardcopyPrice != null && hardcopyPrice !== ''
                     ? Number(hardcopyPrice)
                     : undefined,
+            deliveryOptions: req.body.deliveryOptions ? {
+                availableTypes: req.body.deliveryOptions.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                estimatedDays: req.body.deliveryOptions.estimatedDays || '2 - 4 business days',
+                pickupLocations: req.body.deliveryOptions.pickupLocations || 'QuickX Distribution Center, Accra',
+                deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? deliveryFee) || 0,
+            } : undefined,
         });
 
         await book.save();
@@ -140,12 +147,21 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
 
         const allowed = [
             'title', 'author', 'description', 'type', 'price',
-            'fileUrl', 'stock', 'thumbnail', 'isbn',
+            'fileUrl', 'stock', 'thumbnail', 'galleryImages', 'isbn',
             'deliveryFee', 'watermarkTemplate', 'category',
-            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials', 'hardcopyPrice'
+            'whatYoullLearn', 'afterReadingOutcomes', 'testimonials', 'hardcopyPrice', 'deliveryOptions'
         ];
         allowed.forEach((key) => {
             if (req.body[key] === undefined) return;
+            if (key === 'deliveryOptions') {
+                book.deliveryOptions = {
+                    availableTypes: req.body.deliveryOptions.availableTypes || book.deliveryOptions?.availableTypes || ['pickup', 'pay_on_delivery', 'instant_pay'],
+                    estimatedDays: req.body.deliveryOptions.estimatedDays || book.deliveryOptions?.estimatedDays || '2 - 4 business days',
+                    pickupLocations: req.body.deliveryOptions.pickupLocations || book.deliveryOptions?.pickupLocations || 'QuickX Distribution Center, Accra',
+                    deliveryFee: parseFloat(req.body.deliveryOptions.deliveryFee ?? book.deliveryOptions?.deliveryFee ?? 0),
+                };
+                return;
+            }
             if (key === 'whatYoullLearn' || key === 'afterReadingOutcomes') {
                 book[key] = normalizeStringArray(req.body[key]);
                 return;
@@ -193,7 +209,7 @@ router.patch('/:id', auth, requireApprovedCreator, async (req, res) => {
     }
 });
 
-// ── Delete (owner — any status) ───────────────────────────────────────────────
+// ── Delete (owner, any status) ───────────────────────────────────────────────
 router.delete('/:id', auth, requireApprovedCreator, async (req, res) => {
     try {
         const book = await Book.findById(req.params.id);

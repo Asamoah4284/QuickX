@@ -77,7 +77,7 @@ router.get('/', async (req, res) => {
   }
 });
 
-/** Sessions are included with Mentorship access — nothing is charged here. */
+/** Sessions are included with Mentorship access, nothing is charged here. */
 router.post(
   '/',
   [

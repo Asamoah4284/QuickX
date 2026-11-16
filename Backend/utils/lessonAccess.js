@@ -3,7 +3,7 @@
  *
  * `isPreview` is the only flag that opens a lesson. The older `free` and
  * `isLocked` fields are still stored for compatibility but are always derived
- * from `isPreview` on save — never read them to decide access.
+ * from `isPreview` on save, never read them to decide access.
  */
 function isLessonPreview(lesson) {
     return Boolean(lesson) && lesson.isPreview === true;

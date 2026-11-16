@@ -35,7 +35,7 @@
   --color-brand-600: #1b5ef5;
   --color-brand-700: #1246c4;
 
-  /* Market semantics — only for buy/sell, profit/loss, success/error */
+  /* Market semantics, only for buy/sell, profit/loss, success/error */
   --color-up: #2fd08c;
   --color-down: #ff5d6c;
   --color-warn: #f5b84a;
@@ -160,6 +160,26 @@ body {
     background-size: 400% 100%;
     animation: var(--animate-shimmer);
     border-radius: 0.75rem;
+  }
+
+  /* List items fade up as they appear. Pair with an inline animationDelay for a stagger. */
+  .rise-in {
+    animation: rise-in 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  @keyframes rise-in {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .rise-in {
+      animation: none;
+    }
   }
 
   /* Kept for older pages that still reference them */

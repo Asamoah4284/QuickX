@@ -102,7 +102,7 @@ function QuestionDetail({ questionId, onBack, onChanged }) {
   const canPickBest = mine || me.isModerator;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="max-w-3xl space-y-5">
       <button type="button" onClick={onBack} className="inline-flex items-center gap-2 text-sm text-fg-muted hover:text-fg">
         <FiArrowLeft className="h-4 w-4" />
         All questions
@@ -230,7 +230,7 @@ export default function Questions() {
   const questions = data?.questions || [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="max-w-3xl space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <Tabs
           value={status}
@@ -257,13 +257,13 @@ export default function Questions() {
       {error ? <Alert>{error.message}</Alert> : null}
       {loading && !data ? <Skeleton className="h-56" /> : null}
       {data && !questions.length ? (
-        <EmptyState icon={FiHelpCircle} title="No questions here" description="Ask the first one — no question is too basic." />
+        <EmptyState icon={FiHelpCircle} title="No questions here" description="Ask the first one. No question is too basic." />
       ) : null}
 
       {questions.length ? (
         <Card className="divide-y divide-line overflow-hidden">
-          {questions.map((q) => (
-            <button key={q._id} type="button" onClick={() => setSelected(q._id)} className="block w-full px-5 py-4 text-left transition hover:bg-white/[0.03]">
+          {questions.map((q, i) => (
+            <button key={q._id} type="button" onClick={() => setSelected(q._id)} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} className="rise-in block w-full px-5 py-4 text-left transition hover:bg-white/[0.03]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-semibold text-fg">

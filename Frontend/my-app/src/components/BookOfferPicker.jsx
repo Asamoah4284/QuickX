@@ -1,7 +1,8 @@
 import { useMemo } from 'react';
 import { FiCheck, FiLock, FiStar } from 'react-icons/fi';
+import { formatCurrency, getCurrencySymbol } from '../utils/currencyStore';
 
-/** Starter | Bundle (center) | Advanced — bundle always in the middle when there are 3 tiers. */
+/** Starter | Bundle (center) | Advanced. The bundle is always in the middle when there are 3 tiers. */
 function orderOptionsForDisplay(options) {
   const list = [...(options || [])].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
   if (list.length !== 3) return list;
@@ -33,17 +34,19 @@ function formatCompareLine(option, allOptions) {
   if (option.type === 'bundle') {
     const fromPlans = getBundleCompareFromPlans(option, allOptions);
     if (fromPlans) {
-      const priceParts = fromPlans.parts.map((price) => `GH₵${price}`);
-      return `${priceParts.join(' + ')} = GH₵${fromPlans.total}`;
+      const sym = getCurrencySymbol();
+      const priceParts = fromPlans.parts.map((price) => `${sym}${price}`);
+      return `${priceParts.join(' + ')} = ${sym}${fromPlans.total}`;
     }
   }
 
   if (!option.compareAtPrice || option.compareAtPrice <= option.price) return null;
   if (option.type === 'bundle' && option.books?.length > 1) {
-    const parts = option.books.map((b) => `GH₵${Number(b.price || 0)}`);
-    return `${parts.join(' + ')} = GH₵${Number(option.compareAtPrice)}`;
+    const sym = getCurrencySymbol();
+    const parts = option.books.map((b) => `${sym}${Number(b.price || 0)}`);
+    return `${parts.join(' + ')} = ${sym}${Number(option.compareAtPrice)}`;
   }
-  return `GH₵${Number(option.compareAtPrice)}`;
+  return `${getCurrencySymbol()}${Number(option.compareAtPrice)}`;
 }
 
 function formatSavings(option, allOptions) {
@@ -64,7 +67,7 @@ function getCtaLabel(option) {
     return custom;
   }
   if (option.type === 'bundle') {
-    return `Buy Now — GH₵${Number(option.price || 0)}`;
+    return `Buy now for ${formatCurrency(Number(option.price || 0))}`;
   }
   return 'Buy Now';
 }
@@ -81,11 +84,12 @@ function getDeliveryLine(option, highlighted) {
 
 function getPromoPill(option, savings) {
   if (option.promoBadge) return option.promoBadge;
+  const sym = getCurrencySymbol();
   if (savings > 0 && option.highlighted && option.type === 'bundle') {
-    return `Save GH₵${savings} — Course 1 almost free!`;
+    return `Save ${sym}${savings}. Course 1 is almost free!`;
   }
   if (savings > 0 && option.highlighted) {
-    return `Save GH₵${savings}`;
+    return `Save ${sym}${savings}`;
   }
   return null;
 }
@@ -157,7 +161,7 @@ function PlanCard({ option, allOptions, onSelect }) {
           compareLine ? 'mt-2 text-center' : 'mt-4'
         } ${highlighted ? 'text-4xl text-white sm:text-5xl' : 'text-4xl text-fg sm:text-5xl'}`}
       >
-        GH₵{Number(option.price || 0)}
+        {formatCurrency(Number(option.price || 0))}
       </p>
 
       <p
@@ -233,15 +237,12 @@ function PlanCard({ option, allOptions, onSelect }) {
 }
 
 /**
- * Plan picker — three-tier layout (Starter / Bundle / Advanced) on a light surface.
+ * Plan picker with up to three options (Starter, Bundle, Advanced).
  */
 export default function BookOfferPicker({ offerGroup, onSelectOption }) {
-  if (!offerGroup?.options?.length) return null;
-
-  const displayOptions = useMemo(
-    () => orderOptionsForDisplay(offerGroup.options),
-    [offerGroup.options]
-  );
+  const options = offerGroup?.options;
+  const displayOptions = useMemo(() => (options?.length ? orderOptionsForDisplay(options) : []), [options]);
+  if (!displayOptions.length) return null;
 
   const count = displayOptions.length;
   const gridClass =
@@ -257,17 +258,26 @@ export default function BookOfferPicker({ offerGroup, onSelectOption }) {
       aria-labelledby="book-offer-picker-heading"
     >
       <div className="mx-auto max-w-6xl text-center">
+        <div className="inline-flex items-center gap-2 rounded-full bg-brand-500/10 px-3.5 py-1.5 text-xs font-bold uppercase tracking-wider text-brand-400 ring-1 ring-brand-400/30 mb-3">
+          <span>📱 Digital E-Book Edition</span>
+          <span className="h-1 w-1 rounded-full bg-brand-600" />
+          <span>Instant PDF Access</span>
+        </div>
         <h2
           id="book-offer-picker-heading"
           className="text-xl font-black uppercase tracking-wide text-fg sm:text-2xl lg:text-3xl"
         >
-          {offerGroup.heading || 'PICK YOUR PLAN & START TODAY'}
+          {offerGroup.heading ? `${offerGroup.heading} (Digital E-Book)` : 'DIGITAL E-BOOK EDITION PLANS (INSTANT DOWNLOAD)'}
         </h2>
         {offerGroup.subheading ? (
-          <p className="mx-auto mt-3 max-w-2xl text-sm text-fg-muted sm:text-base">
+          <p className="mx-auto mt-2 max-w-2xl text-xs sm:text-sm text-fg-subtle">
             {offerGroup.subheading}
           </p>
-        ) : null}
+        ) : (
+          <p className="mx-auto mt-2 max-w-2xl text-xs sm:text-sm text-fg-subtle">
+            Choose your preferred digital e-book package. Download immediately to your phone, tablet or PC upon payment.
+          </p>
+        )}
       </div>
 
       <div className={`mt-10 grid gap-6 sm:gap-7 lg:items-center ${gridClass}`}>

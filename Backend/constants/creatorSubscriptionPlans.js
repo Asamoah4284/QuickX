@@ -1,9 +1,9 @@
 /**
- * Creator subscription tiers — keep in sync with Frontend utils/creatorSubscriptionPlans.js
+ * Creator subscription tiers, keep in sync with Frontend utils/creatorSubscriptionPlans.js
  *
- * basic   — videos only, 1 month
- * premium — videos + community + download + ask + trades + signals, 3 months
- * diamond — premium + mentorship, 1 year
+ * basic: videos only, 1 month
+ * premium: videos + community + download + ask + trades + signals, 3 months
+ * diamond: premium + mentorship, 1 year
  *
  * Legacy ids (premium_plus, 1m, 2m, 3m, 1y) still resolve for existing subscriptions.
  */

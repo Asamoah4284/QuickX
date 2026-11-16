@@ -103,7 +103,7 @@ export async function subscribeUserToPush() {
 
   const registration = await getSwRegistration();
   if (!registration?.pushManager) {
-    throw new Error('Service worker is not ready — refresh and try again');
+    throw new Error('The app is still loading. Refresh the page and try again.');
   }
 
   let subscription = await registration.pushManager.getSubscription();
@@ -176,7 +176,7 @@ export async function clearServerPushSubscription() {
   }
 }
 
-/** @deprecated use clearServerPushSubscription — kept for call sites */
+/** @deprecated use clearServerPushSubscription, kept for call sites */
 export async function unsubscribeUserFromPush() {
   return clearServerPushSubscription();
 }

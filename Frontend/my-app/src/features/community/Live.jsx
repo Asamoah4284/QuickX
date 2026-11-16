@@ -150,7 +150,7 @@ export default function Live() {
   const sessions = data?.sessions || [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="max-w-3xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Tabs
           value={tab}
@@ -177,8 +177,10 @@ export default function Live() {
           description={tab === 'upcoming' ? 'You will be notified when the next one is announced.' : undefined}
         />
       ) : null}
-      {sessions.map((session) => (
-        <SessionCard key={session._id} session={session} past={tab === 'past'} onCancel={cancel} />
+      {sessions.map((session, i) => (
+        <div key={session._id} className="rise-in" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
+          <SessionCard session={session} past={tab === 'past'} onCancel={cancel} />
+        </div>
       ))}
       <ScheduleModal open={scheduling} onClose={() => setScheduling(false)} onSaved={reload} />
     </div>

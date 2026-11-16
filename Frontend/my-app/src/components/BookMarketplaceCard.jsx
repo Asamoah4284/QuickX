@@ -5,7 +5,7 @@ import { formatBookListingPrice } from '../utils/bookListingPrice';
 const DEFAULT_COVER = '/images/bk-1.jpg';
 
 /**
- * Marketplace card — enhanced horizontal layout.
+ * Marketplace card, enhanced horizontal layout.
  */
 export default function BookMarketplaceCard({
   book,

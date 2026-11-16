@@ -36,7 +36,7 @@ async function main() {
   const bucket = process.env.AWS_BUCKET_NAME || 'quickxlearn';
   const region = process.env.AWS_REGION || 'eu-north-1';
 
-  // 1) Tiny direct PutObject — if SignatureDoesNotMatch, fix .env keys (not presign/CORS).
+  // 1) Tiny direct PutObject, if SignatureDoesNotMatch, fix .env keys (not presign/CORS).
   const directClient = new S3Client({
     region,
     credentials: {
@@ -60,7 +60,7 @@ async function main() {
   } catch (e) {
     if (e.name === 'SignatureDoesNotMatch' || e.Code === 'SignatureDoesNotMatch') {
       console.error(
-        '\n[AWS] SignatureDoesNotMatch on direct PutObject — your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY\n' +
+        '\n[AWS] SignatureDoesNotMatch on direct PutObject, your AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY\n' +
           'in Backend/.env do not belong together (typo, extra space/quotes, or the secret was rotated).\n' +
           'Create a new access key in IAM → Users → Security credentials, update .env, restart the server.\n'
       );
@@ -99,7 +99,7 @@ async function main() {
   }
 
   const publicUrl = url.split('?')[0];
-  console.log('OK — object URL:', publicUrl);
+  console.log('OK. Object URL:', publicUrl);
 }
 
 main().catch((e) => {

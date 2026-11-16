@@ -141,7 +141,7 @@ router.post('/products/:key/purchase/paystack', auth, async (req, res) => {
 
         const quote = await quoteProduct(req.params.key, req.body.couponCode);
         if (quote.amount < 0.01) {
-            return res.status(400).json({ message: 'Nothing to pay — redeem this coupon instead', code: 'USE_REDEEM' });
+            return res.status(400).json({ message: 'This coupon covers the full price. Use Redeem instead.', code: 'USE_REDEEM' });
         }
 
         const verified = await paystack.verifyPayment(reference, quote.amount);
@@ -171,7 +171,7 @@ router.post('/products/:key/purchase/wallet', auth, async (req, res) => {
     try {
         const quote = await quoteProduct(req.params.key, req.body.couponCode);
         if (quote.amount < 0.01) {
-            return res.status(400).json({ message: 'Nothing to pay — redeem this coupon instead', code: 'USE_REDEEM' });
+            return res.status(400).json({ message: 'This coupon covers the full price. Use Redeem instead.', code: 'USE_REDEEM' });
         }
 
         const transactionId = `qx_wallet_plan_${req.user._id}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -190,10 +190,10 @@ router.post('/products/:key/purchase/wallet', auth, async (req, res) => {
             });
             return res.json({ success: true, balance, entitlements: entitlementsPayload(entitlements) });
         } catch (grantErr) {
-            console.error('Wallet plan purchase failed after debit — refunding:', grantErr);
+            console.error('Wallet plan purchase failed after debit, refunding:', grantErr);
             await walletService.creditWallet(req.user._id, quote.amount, {
                 type: 'refund',
-                label: `${quote.product.name} plan — refunded`,
+                label: `Refund: ${quote.product.name} plan`,
                 reference: transactionId,
             });
             return res.status(500).json({ message: 'Could not activate the plan. Your wallet was not charged.' });
@@ -206,7 +206,7 @@ router.post('/products/:key/purchase/wallet', auth, async (req, res) => {
     }
 });
 
-/** A 100% coupon leaves nothing to charge — grant without a payment provider. */
+/** A 100% coupon leaves nothing to charge, grant without a payment provider. */
 router.post('/products/:key/redeem', auth, async (req, res) => {
     try {
         const quote = await quoteProduct(req.params.key, req.body.couponCode);

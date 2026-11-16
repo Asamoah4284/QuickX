@@ -131,7 +131,7 @@ export default function CourseDetail() {
   return (
     <>
       <Helmet>
-        <title>{course.title} — QuickX</title>
+        <title>{`${course.title} | QuickX`}</title>
       </Helmet>
       <Container className="py-10 sm:py-14">
         <Link to="/courses" className="inline-flex items-center gap-2 text-sm text-fg-muted transition hover:text-fg">

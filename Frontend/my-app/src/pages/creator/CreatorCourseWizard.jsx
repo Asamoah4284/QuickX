@@ -432,7 +432,7 @@ export default function CreatorCourseWizard() {
 
           {showMoreDetails ? (
             <div className="mt-4 space-y-6">
-              <StudioPanel title="Optional extras" description="Skip these if you want — you can add them later.">
+              <StudioPanel title="Optional extras" description="Skip these if you like. You can add them later.">
                 <div className="grid gap-4">
                   <label className="space-y-2 text-sm text-fg-muted">
                     <span>Subtitle</span>
@@ -708,7 +708,7 @@ export default function CreatorCourseWizard() {
         </div>
 
         <aside className="space-y-4 xl:sticky xl:top-24 xl:self-start">
-          <StudioPanel title="Quick checklist" description="Nice to have — only the title is required to publish.">
+          <StudioPanel title="Quick checklist" description="Nice to have. Only the title is required to publish.">
             <div className="space-y-3">
               {checklist.map((item) => (
                 <ChecklistRow key={item.label} done={item.done} label={item.label} />

@@ -7,7 +7,7 @@ const MAX_REFS = 50;
 
 /**
  * New expiry when `days` are bought: time is added on top of whatever is left,
- * or starts now if the entitlement has lapsed. (Pure — unit tested.)
+ * or starts now if the entitlement has lapsed. (Pure, unit tested.)
  */
 function extendedEndsAt(currentEndsAt, days, now = new Date()) {
     const current = currentEndsAt ? new Date(currentEndsAt) : null;
@@ -16,7 +16,7 @@ function extendedEndsAt(currentEndsAt, days, now = new Date()) {
 }
 
 /**
- * Decide what a grant does to an existing entitlement row. (Pure — unit tested.)
+ * Decide what a grant does to an existing entitlement row. (Pure, unit tested.)
  * `until` sets an absolute expiry and never shortens; `days` extends.
  */
 function planGrant(existing, { days, until, ref, now = new Date() }) {
@@ -64,7 +64,7 @@ async function grantOne({ userId, feature, days, until, ref, productKey, source,
                 appliedRefs: ref ? [ref] : [],
             });
         } catch (err) {
-            // Two requests created the row at once — retry as an update.
+            // Two requests created the row at once, retry as an update.
             if (err?.code !== 11000) throw err;
         }
     }

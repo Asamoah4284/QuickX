@@ -189,7 +189,7 @@ export default function CreatorDashboardOverview() {
       <div className="grid gap-4 lg:grid-cols-1 xl:grid-cols-3">
         <section className="rounded-2xl border border-line bg-ink-850 p-4 sm:p-5 xl:col-span-2">
           <h2 className="text-base font-semibold text-fg">Revenue &amp; enrollments</h2>
-          <p className="mt-0.5 text-xs text-fg-subtle">Last 6 months — course revenue and new student enrollments.</p>
+          <p className="mt-0.5 text-xs text-fg-subtle">Course revenue and new students over the last 6 months.</p>
           <div className="mt-3 h-[220px] w-full sm:h-[240px]">
             <Line data={trendChartData} options={trendChartOptions} />
           </div>
@@ -200,7 +200,7 @@ export default function CreatorDashboardOverview() {
           <p className="mt-0.5 text-xs text-fg-subtle">How your catalog is distributed across listing states.</p>
           {totalStatusCount === 0 ? (
             <div className="mt-4 flex h-[180px] items-center justify-center rounded-xl border border-dashed border-line bg-ink-900 text-xs text-fg-subtle">
-              No courses yet — create a course to see this chart.
+              No courses yet. Create one to see this chart.
             </div>
           ) : (
             <div className="mt-3 h-[200px] w-full sm:h-[220px]">

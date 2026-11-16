@@ -7,7 +7,7 @@ import { api, errorMessage } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
 import { FEATURES } from '../../lib/features';
-import { durationLabel, formatDate, money } from '../../lib/format';
+import { durationLabel, formatDate, money, cedis } from '../../lib/format';
 import { Alert, Button, Card, Container, Field, Input, PageLoader } from '../../ui/primitives';
 import { Reveal } from '../../ui/motion';
 
@@ -62,7 +62,7 @@ export default function ProductCheckout() {
 
   const [paying, setPaying] = useState(false);
   const [payError, setPayError] = useState('');
-  /** A reference Paystack accepted but we could not yet confirm — lets the member retry without paying twice. */
+  /** A reference Paystack accepted but we could not yet confirm, lets the member retry without paying twice. */
   const [pendingReference, setPendingReference] = useState('');
   const [done, setDone] = useState(null);
   const wallet = useApi('/api/wallet');
@@ -132,7 +132,7 @@ export default function ProductCheckout() {
     } catch (err) {
       setPendingReference(reference);
       setPayError(
-        `${errorMessage(err, 'We could not confirm your payment yet.')} If you were charged, tap "Check payment again" — you will not be charged twice. Reference: ${reference}`
+        `${errorMessage(err, 'We could not confirm your payment yet.')} If you were charged, tap "Check payment again". You will not be charged twice. Reference: ${reference}`
       );
     } finally {
       setPaying(false);
@@ -223,7 +223,7 @@ export default function ProductCheckout() {
   return (
     <>
       <Helmet>
-        <title>Checkout — {product.name} — QuickX</title>
+        <title>{`Checkout: ${product.name} | QuickX`}</title>
       </Helmet>
       <Container className="py-10 sm:py-14">
         <Link to="/pricing" className="inline-flex items-center gap-2 text-sm text-fg-muted transition hover:text-fg">
@@ -273,7 +273,7 @@ export default function ProductCheckout() {
                 ) : null}
                 <div className="flex items-baseline justify-between border-t border-line pt-4">
                   <dt className="font-semibold text-fg">Total</dt>
-                  <dd className="tabular text-3xl font-bold text-fg">{money(quote.amount)}</dd>
+                  <dd className="tabular text-3xl font-bold text-fg">{cedis(quote.amount)}</dd>
                 </div>
               </dl>
 
@@ -319,11 +319,11 @@ export default function ProductCheckout() {
                 ) : (
                   <>
                     <Button className="w-full" size="lg" loading={paying} onClick={pay}>
-                      Pay {money(quote.amount)}
+                      Pay {cedis(quote.amount)}
                     </Button>
                     {walletBalance >= quote.amount ? (
                       <Button className="w-full" variant="secondary" disabled={paying} onClick={payFromWallet}>
-                        Pay from wallet · <span className="tabular">{money(walletBalance)}</span> available
+                        Pay from wallet · <span className="tabular">{cedis(walletBalance)}</span> available
                       </Button>
                     ) : null}
                   </>

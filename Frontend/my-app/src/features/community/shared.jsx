@@ -9,7 +9,7 @@ import { Avatar, Badge, Spinner } from '../../ui/primitives';
 /** All community endpoints live under this path ("main" is the one community). */
 export const BASE = '/api/community/main';
 
-/** { about, me, members, openProfile, startChat } — provided by <Community>. */
+/** { about, me, members, openProfile, startChat }, provided by <Community>. */
 export const CommunityContext = createContext(null);
 export function useCommunity() {
   return useContext(CommunityContext);

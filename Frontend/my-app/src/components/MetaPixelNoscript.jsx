@@ -1,6 +1,6 @@
 import { getMetaPixelId } from '../utils/metaPixel';
 
-/** Noscript fallback — same URL as Meta’s base snippet. */
+/** Noscript fallback, same URL as Meta’s base snippet. */
 export default function MetaPixelNoscript() {
   const pixelId = getMetaPixelId();
   if (!pixelId) return null;

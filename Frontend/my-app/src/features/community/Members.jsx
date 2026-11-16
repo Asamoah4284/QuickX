@@ -171,12 +171,13 @@ export default function Members() {
         {members.data && !members.data.members.length ? <EmptyState icon={FiUsers} title="No members found" /> : null}
         {members.data?.members.length ? (
           <div className="grid gap-2 sm:grid-cols-2">
-            {members.data.members.map((m) => (
+            {members.data.members.map((m, i) => (
               <button
                 key={m.id}
                 type="button"
                 onClick={() => openProfile(m.id)}
-                className="flex items-center gap-3 rounded-2xl border border-line bg-ink-850 p-3 text-left transition hover:border-line-strong"
+                style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}
+                className="rise-in flex items-center gap-3 rounded-2xl border border-line bg-ink-850 p-3 text-left transition hover:border-line-strong"
               >
                 <Avatar src={publicAssetUrl(m.profilePicture)} name={m.fullName} size={40} />
                 <span className="min-w-0">

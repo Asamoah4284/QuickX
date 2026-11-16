@@ -30,7 +30,10 @@ async function validatePurchaseIntent(body, userId) {
     if (itemType === 'book') {
         const book = await Book.findById(itemId);
         if (!book) throw new Error('Book not found');
-        if (Math.abs(Number(book.price) - amount) > 0.01) {
+        const { bookPriceMatches } = require('../utils/bookPricing');
+        const isMatch = bookPriceMatches(book, amount, body.shippingAddress?.deliveryType);
+
+        if (!isMatch) {
             throw new Error('Invalid amount. Price mismatch detected.');
         }
         return { itemType, itemId, amount, purchaseItem: book };
@@ -91,7 +94,7 @@ async function validatePurchaseIntent(body, userId) {
         // The server sets the price; the amount sent by the client is ignored.
         const { quoteProduct } = require('./productService');
         const quote = await quoteProduct(itemId || body.productKey, body.couponCode);
-        if (quote.amount < 0.01) throw new Error('Nothing to pay — redeem this coupon instead');
+        if (quote.amount < 0.01) throw new Error('This coupon covers the full price. Use Redeem instead.');
         return {
             itemType,
             itemId: quote.product._id,
@@ -158,6 +161,20 @@ async function buildPendingPaymentRecord(body, userId) {
     };
 }
 
+/** Count the sale, and take one printed copy out of stock when it is being delivered. */
+async function recordBookSale(payment) {
+    const ids = payment.itemType === 'book' ? [payment.itemId] : payment.cartItemIds || [];
+    if (!ids.length) return;
+    try {
+        await Book.updateMany({ _id: { $in: ids } }, { $inc: { salesCount: 1 } });
+        if (payment.shippingAddress?.deliveryType) {
+            await Book.updateMany({ _id: { $in: ids }, stock: { $gt: 0 } }, { $inc: { stock: -1 } });
+        }
+    } catch (err) {
+        console.error('book sale counters:', err.message);
+    }
+}
+
 async function grantPurchasedItems(payment) {
     const userId = payment.userId;
     const itemType = payment.itemType;
@@ -180,6 +197,7 @@ async function grantPurchasedItems(payment) {
             }
             await buyer.save();
         }
+        await recordBookSale(payment);
     }
 
     let courseAccess = null;
@@ -266,6 +284,7 @@ async function completePendingPaymentByTransactionId(transactionId, userId) {
 }
 
 module.exports = {
+    recordBookSale,
     validatePurchaseIntent,
     buildPendingPaymentRecord,
     fulfillCompletedPayment,

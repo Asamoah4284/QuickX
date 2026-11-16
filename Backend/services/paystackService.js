@@ -18,7 +18,7 @@ function isConfigured() {
 async function verifyPayment(reference, expectedAmount) {
     const key = secretKey();
     if (!key && allowSimulatedPayments()) {
-        console.warn('ALLOW_SIMULATED_PAYMENTS is on — accepting a payment without checking Paystack.');
+        console.warn('ALLOW_SIMULATED_PAYMENTS is on. A payment was accepted without checking Paystack.');
         return { ok: true, simulated: true, paidAmount: Number(expectedAmount), channel: 'simulated', email: '' };
     }
     if (!key) {

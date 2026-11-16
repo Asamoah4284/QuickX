@@ -7,9 +7,42 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
+function devServiceWorkerUnregisterPlugin() {
+  return {
+    name: 'dev-sw-killer',
+    apply: 'serve',
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        const url = req.url ? req.url.split('?')[0] : '';
+        if (url === '/sw.js') {
+          res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+          res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+          res.end(`
+self.addEventListener('install', () => { self.skipWaiting(); });
+self.addEventListener('activate', (event) => {
+  event.waitUntil(
+    self.registration.unregister().then(() => {
+      return self.clients.matchAll({ type: 'window' });
+    }).then((clients) => {
+      for (const client of clients) {
+        client.navigate(client.url);
+      }
+    })
+  );
+});
+          `);
+          return;
+        }
+        next();
+      });
+    },
+  };
+}
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
+    devServiceWorkerUnregisterPlugin(),
     tailwindcss(),
     react(),
     VitePWA({

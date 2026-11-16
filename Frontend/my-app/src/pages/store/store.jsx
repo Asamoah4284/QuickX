@@ -6,8 +6,15 @@ import {
   FiX,
   FiMinus,
   FiPlus,
+  FiUsers,
+  FiShield,
+  FiZap,
+  FiCheckCircle,
+  FiSearch,
+  FiSliders,
 } from 'react-icons/fi';
-import { useNavigate } from 'react-router-dom';
+import { FaTelegramPlane } from 'react-icons/fa';
+import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import HardcopyRequestModal from '../../components/HardcopyRequestModal';
 import BookMarketplaceCard from '../../components/BookMarketplaceCard';
@@ -15,11 +22,12 @@ import { normalizeCart, getCartSubtotal, getCartItemCount } from '../../utils/bo
 import { formatGhs } from '../../utils/formatGhs';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+const COMMUNITY_TELEGRAM_URL = 'https://t.me/quickxtrading';
 
 // Default book cover if image is not available
 const DEFAULT_BOOK_COVER = '/images/bk-1.jpg';
 
-/** Decorative book photos for the store hero — stacked fan layout. */
+/** Decorative book photos for the store hero, stacked fan layout. */
 const HERO_BOOK_COVERS = [
   {
     src: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=400&q=80',
@@ -58,6 +66,14 @@ const HERO_BOOK_COVERS = [
   },
 ];
 
+const SORT_OPTIONS = [
+  { value: 'newest', label: 'Newest First' },
+  { value: 'oldest', label: 'Oldest First' },
+  { value: 'price_asc', label: 'Price: Low to High' },
+  { value: 'price_desc', label: 'Price: High to Low' },
+  { value: 'title_asc', label: 'Title: A–Z' },
+];
+
 const Store = () => {
   const [showHardcopyModal, setShowHardcopyModal] = useState(false);
   const [selectedBook, setSelectedBook] = useState(null);
@@ -69,6 +85,10 @@ const Store = () => {
   const [error, setError] = useState(null);
   const [justAddedId, setJustAddedId] = useState('');
   const [fanReady, setFanReady] = useState(false);
+  // Search / Sort / Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [typeFilter, setTypeFilter] = useState('all');
   const navigate = useNavigate();
 
   // Fetch books from API
@@ -122,7 +142,10 @@ const Store = () => {
   const cartQuantityById = useMemo(() => {
     const map = new Map();
     for (const item of cartItems) {
-      map.set(String(item.id), item.quantity || 1);
+      const key = String(item.id || item._id || '').trim();
+      if (key) {
+        map.set(key, item.quantity || 1);
+      }
     }
     return map;
   }, [cartItems]);
@@ -139,12 +162,15 @@ const Store = () => {
   // Add e-book to cart (marketplace flow)
   const handleAddBookToCart = (book) => {
     const existing = getCart();
-    const id = String(book._id);
-    const index = existing.findIndex((b) => String(b?.id) === id);
+    const id = String(book._id || book.id || '').trim();
+    if (!id) return;
+    const index = existing.findIndex((b) => String(b?.id || b?._id || '').trim() === id);
     if (index >= 0) {
       const next = [...existing];
       next[index] = {
         ...next[index],
+        id,
+        _id: id,
         quantity: Math.min(99, (next[index].quantity || 1) + 1),
       };
       setCart(next);
@@ -152,14 +178,16 @@ const Store = () => {
       setCart([
         ...existing,
         {
-          id: book._id,
+          id,
+          _id: id,
           type: 'book',
           title: book.title,
           price: Number(book.price || 0),
-          image: book.thumbnail,
-          thumbnail: book.thumbnail,
+          image: book.thumbnail || book.image,
+          thumbnail: book.thumbnail || book.image,
           fileUrl: book.fileUrl,
           author: book.author,
+          format: book.format || 'ebook',
           quantity: 1,
         },
       ]);
@@ -169,26 +197,28 @@ const Store = () => {
   };
 
   const handleUpdateCartQuantity = (bookId, delta) => {
-    const id = String(bookId);
+    const id = String(bookId || '').trim();
+    if (!id) return;
     const existing = getCart();
-    const index = existing.findIndex((item) => String(item?.id) === id);
+    const index = existing.findIndex((item) => String(item?.id || item?._id || '').trim() === id);
     if (index < 0) return;
 
     const current = existing[index].quantity || 1;
     const nextQty = current + delta;
     if (nextQty < 1) {
-      handleRemoveBookFromCart(bookId);
+      handleRemoveBookFromCart(id);
       return;
     }
 
     const next = [...existing];
-    next[index] = { ...next[index], quantity: Math.min(99, nextQty) };
+    next[index] = { ...next[index], id, _id: id, quantity: Math.min(99, nextQty) };
     setCart(next);
   };
 
   const handleRemoveBookFromCart = (bookId) => {
-    const id = String(bookId);
-    setCart(getCart().filter((item) => String(item?.id) !== id));
+    const id = String(bookId || '').trim();
+    if (!id) return;
+    setCart(getCart().filter((item) => String(item?.id || item?._id || '').trim() !== id));
     if (justAddedId === id) setJustAddedId('');
   };
 
@@ -206,10 +236,11 @@ const Store = () => {
       state: {
         item: {
           type: 'book_cart',
-          title: 'Book cart',
+          title: items.length === 1 ? items[0].title : `${items.length} Books in Cart`,
           items,
+          books: items,
           price: total,
-          image: items[0]?.image,
+          image: items[0]?.image || items[0]?.thumbnail,
         },
         returnPath: '/store',
       },
@@ -222,31 +253,87 @@ const Store = () => {
     setShowHardcopyModal(true);
   };
 
+  const handleHardcopyInstantPay = (orderInfo) => {
+    if (!selectedBook) return;
+    setShowHardcopyModal(false);
+    const bookPrice =
+      selectedBook.hardcopyPrice != null && selectedBook.hardcopyPrice !== ''
+        ? Number(selectedBook.hardcopyPrice)
+        : Number(selectedBook.price ?? 0);
+    const fee = Number(orderInfo.deliveryFee || 0);
+    navigate('/checkout', {
+      state: {
+        item: {
+          type: 'book',
+          id: selectedBook._id,
+          _id: selectedBook._id,
+          title: `${selectedBook.title} (Physical Copy)`,
+          format: 'hardcopy',
+          deliveryType: orderInfo.deliveryType || 'instant_pay',
+          deliveryFee: fee,
+          estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+          shippingAddress: {
+            fullName: orderInfo.name,
+            phone: orderInfo.phone,
+            location: orderInfo.location,
+            deliveryType: orderInfo.deliveryType || 'instant_pay',
+            deliveryFee: fee,
+            estimatedDays: orderInfo.estimatedDays || '2 - 4 business days',
+          },
+          price: bookPrice + fee,
+          image: selectedBook.thumbnail || selectedBook.image,
+          thumbnail: selectedBook.thumbnail || selectedBook.image,
+          author: selectedBook.author,
+        },
+        returnPath: '/store',
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen overflow-x-hidden bg-ink-850">
-      {/* Hero — static copy + book image collection */}
+      {/* Hero, static copy + book image collection */}
       <div className="border-b border-line bg-ink-900 pt-20 sm:pt-24">
         <div className="mx-auto w-full max-w-6xl px-4 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8 lg:pb-20 lg:pt-12">
           <div className="grid items-center gap-8 lg:grid-cols-2 lg:gap-14">
             <div className="max-w-xl space-y-4 sm:space-y-5">
-              <div className="inline-flex items-center gap-2 rounded-full bg-ink-850 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-400 ring-1 ring-line sm:text-xs">
-                <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden />
-                Bookstore
+              <div className="flex flex-wrap items-center gap-2.5">
+                <div className="inline-flex items-center gap-2 rounded-full bg-ink-850 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-brand-400 ring-1 ring-line sm:text-xs">
+                  <span className="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden />
+                  Official Bookstore
+                </div>
+                <a
+                  href={COMMUNITY_TELEGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-brand-500/10 px-3 py-1.5 text-[11px] font-bold text-[#0088cc] ring-1 ring-brand-400/30 transition hover:bg-brand-500/10 sm:text-xs"
+                >
+                  <FaTelegramPlane className="h-3.5 w-3.5 text-[#0088cc]" />
+                  <span>Join 5,000+ in Community &rarr;</span>
+                </a>
               </div>
               <h1 className="text-balance text-[1.85rem] font-bold leading-tight tracking-tight text-fg sm:text-4xl md:text-[2.65rem] md:leading-[1.12]">
                 Discover your next digital book
               </h1>
               <p className="max-w-md text-pretty text-sm leading-relaxed text-fg-subtle sm:text-base">
-                Browse the marketplace for more titles and instant checkout—ebooks you can open right
-                away, plus hardcopy requests when you need print.
+                Browse our marketplace for top trading ebooks with instant mobile money download, plus physical delivery when you need print copies.
               </p>
-              <div className="pt-1">
+              <div className="flex flex-col gap-3 pt-1 sm:flex-row sm:items-center">
                 <a
                   href="#store-books"
-                  className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-brand-600 px-5 py-3.5 text-sm font-semibold text-white transition hover:bg-brand-600 sm:w-auto sm:py-3"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand-600 px-6 py-3.5 text-sm font-semibold text-white shadow-md shadow-blue-500/20 transition hover:bg-brand-600 sm:py-3"
                 >
                   Browse collection
                   <FiArrowRight className="h-4 w-4" />
+                </a>
+                <a
+                  href={COMMUNITY_TELEGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-brand-500 bg-ink-850 px-5 py-3.5 text-sm font-bold text-[#0088cc] shadow-sm transition hover:bg-brand-500/10 hover:border-brand-500 sm:py-3"
+                >
+                  <FaTelegramPlane className="h-4 w-4 text-[#0088cc]" />
+                  Join Our Community
                 </a>
               </div>
             </div>
@@ -314,8 +401,53 @@ const Store = () => {
         </div>
       </div>
 
+      {/* Community Spotlight Banner - High converting mid-page feature */}
+      <div className="mx-auto -mt-6 max-w-7xl px-4 sm:-mt-8 sm:px-6 relative z-10">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-ink-800 via-[#0D2866] to-[#0088cc] p-6 text-white shadow-xl ring-1 ring-line sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+          <div className="relative flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
+            <div className="max-w-2xl space-y-2">
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-300 backdrop-blur-sm">
+                <FiUsers className="h-3.5 w-3.5" />
+                Ghana&apos;s #1 Trading Community
+              </div>
+              <h3 className="text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
+                Trade With 5,000+ Active Traders in Our Community
+              </h3>
+              <p className="text-sm leading-relaxed text-brand-300 sm:text-base">
+                Get free daily market setups, discuss book strategies, connect with verified authors, and level up your trading journey together.
+              </p>
+              <div className="flex flex-wrap items-center gap-4 pt-1 text-xs text-brand-300 sm:text-sm">
+                <span className="flex items-center gap-1.5"><FiCheckCircle className="text-brand-300" /> Free Daily Forex/Crypto Setups</span>
+                <span className="flex items-center gap-1.5"><FiCheckCircle className="text-brand-300" /> Author Q&amp;A Sessions</span>
+                <span className="flex items-center gap-1.5"><FiCheckCircle className="text-brand-300" /> 24/7 Peer Support</span>
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-3 shrink-0">
+              <a
+                href={COMMUNITY_TELEGRAM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 rounded-xl bg-ink-850 px-5 py-3.5 text-sm font-bold text-fg shadow-md transition hover:bg-brand-500/10 hover:shadow-lg"
+              >
+                <FaTelegramPlane className="h-4 w-4 text-[#0088cc]" />
+                Join Community Free
+              </a>
+              <Link
+                to="/community"
+                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+              >
+                Community Hub
+                <FiArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Marketplace */}
       <main id="store-books" className="mx-auto max-w-7xl scroll-mt-24 px-4 py-8 sm:px-6 sm:py-12">
+        {/* Header row */}
         <div className="mb-6 flex items-start justify-between gap-3 sm:mb-8 sm:items-end sm:gap-4">
           <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold tracking-tight text-fg sm:text-2xl md:text-3xl">
@@ -326,36 +458,104 @@ const Store = () => {
             </p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
+            <a
+              href={COMMUNITY_TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-brand-400/30 bg-brand-500/10 px-3 py-2 text-xs font-bold text-[#0088cc] shadow-sm transition hover:bg-brand-500/10 sm:px-4 sm:text-sm"
+            >
+              <FaTelegramPlane className="h-3.5 w-3.5 text-[#0088cc]" />
+              <span>Join Community</span>
+            </a>
             <button
               type="button"
               onClick={handleOpenCart}
               className="inline-flex items-center justify-center rounded-xl border border-line bg-ink-850 p-2.5 text-fg transition hover:border-line hover:bg-ink-900 sm:hidden"
               aria-label="View cart"
             >
-                    <span className="relative">
-                      <FiShoppingCart className="h-5 w-5" />
-                      {cartCount > 0 ? (
+              <span className="relative">
+                <FiShoppingCart className="h-5 w-5" />
+                {cartCount > 0 ? (
                   <span className="absolute -right-2 -top-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-brand-600 px-1.5 text-[11px] font-bold leading-none text-white">
-                          {cartCount}
-                        </span>
-                      ) : null}
-                    </span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleOpenCart}
+                    {cartCount}
+                  </span>
+                ) : null}
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={handleOpenCart}
               className="hidden items-center gap-2 rounded-xl border border-line bg-ink-850 px-4 py-2 text-sm font-semibold text-fg transition hover:border-line hover:bg-ink-900 sm:inline-flex"
-                  >
-                    <FiShoppingCart className="h-4 w-4" />
-                    View cart
-                    {cartCount > 0 ? (
+            >
+              <FiShoppingCart className="h-4 w-4" />
+              View cart
+              {cartCount > 0 ? (
                 <span className="ml-1 inline-flex h-6 min-w-6 items-center justify-center rounded-full bg-brand-600 px-2 text-xs font-bold text-white">
-                        {cartCount}
-                      </span>
-                    ) : null}
-                  </button>
-              </div>
-            </div>
+                  {cartCount}
+                </span>
+              ) : null}
+            </button>
+          </div>
+        </div>
+
+        {/* Search / Sort / Filter bar */}
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+          {/* Search */}
+          <div className="relative flex-1">
+            <FiSearch className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
+            <input
+              id="store-search"
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by title or author…"
+              className="w-full rounded-xl border border-line bg-ink-850 py-2.5 pl-10 pr-4 text-sm text-fg shadow-sm placeholder:text-fg-subtle focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            />
+            {searchQuery ? (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-fg-subtle hover:text-fg-muted"
+                aria-label="Clear search"
+              >
+                <FiX className="h-4 w-4" />
+              </button>
+            ) : null}
+          </div>
+
+          {/* Type filter */}
+          <div className="flex shrink-0 items-center gap-1.5 rounded-xl border border-line bg-ink-850 p-1 shadow-sm">
+            {[{ value: 'all', label: 'All' }, { value: 'ebook', label: 'E-Book' }, { value: 'hardcopy', label: 'Print' }].map((f) => (
+              <button
+                key={f.value}
+                type="button"
+                onClick={() => setTypeFilter(f.value)}
+                className={`rounded-lg px-3.5 py-1.5 text-xs font-semibold transition ${
+                  typeFilter === f.value
+                    ? 'bg-brand-600 text-white shadow-sm'
+                    : 'text-fg-muted hover:bg-ink-800'
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort */}
+          <div className="relative shrink-0">
+            <FiSliders className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-fg-subtle" />
+            <select
+              id="store-sort"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="appearance-none rounded-xl border border-line bg-ink-850 py-2.5 pl-9 pr-8 text-sm font-medium text-fg-muted shadow-sm focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+            >
+              {SORT_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
 
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
@@ -377,8 +577,50 @@ const Store = () => {
         ) : null}
 
         {!isLoading && !error && books.length > 0 ? (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5">
-                {books.map((book) => (
+          (() => {
+            // Apply search / type filter / sort
+            const q = searchQuery.toLowerCase().trim();
+            let filtered = books.filter((b) => {
+              if (typeFilter !== 'all' && b.type !== typeFilter) return false;
+              if (q) {
+                const inTitle = (b.title || '').toLowerCase().includes(q);
+                const inAuthor = (b.author || '').toLowerCase().includes(q);
+                return inTitle || inAuthor;
+              }
+              return true;
+            });
+
+            filtered = [...filtered].sort((a, b) => {
+              if (sortBy === 'price_asc') return Number(a.price || 0) - Number(b.price || 0);
+              if (sortBy === 'price_desc') return Number(b.price || 0) - Number(a.price || 0);
+              if (sortBy === 'title_asc') return (a.title || '').localeCompare(b.title || '');
+              if (sortBy === 'oldest') return new Date(a.createdAt || 0) - new Date(b.createdAt || 0);
+              // newest (default)
+              return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+            });
+
+            if (filtered.length === 0) {
+              return (
+                <div className="py-12 text-center">
+                  <FiSearch className="mx-auto h-10 w-10 text-fg-muted" />
+                  <h3 className="mt-3 text-sm font-medium text-fg">No results found</h3>
+                  <p className="mt-1 text-sm text-fg-subtle">
+                    Try a different search term or clear your filters.
+                  </p>
+                  <button
+                    type="button"
+                    onClick={() => { setSearchQuery(''); setTypeFilter('all'); setSortBy('newest'); }}
+                    className="mt-4 text-sm font-semibold text-brand-400 hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-5">
+                {filtered.map((book) => (
                   <BookMarketplaceCard
                     key={book._id}
                     book={book}
@@ -390,6 +632,8 @@ const Store = () => {
                   />
                 ))}
               </div>
+            );
+          })()
         ) : null}
 
         {!isLoading && !error && books.length === 0 ? (
@@ -400,6 +644,39 @@ const Store = () => {
           </div>
         ) : null}
       </main>
+
+      {/* Bottom Community CTA Card */}
+      <section className="border-t border-line bg-gradient-to-b from-ink-850 to-[#F7F9FC] py-16">
+        <div className="mx-auto max-w-4xl px-4 text-center sm:px-6">
+          <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/10 text-[#0088cc] shadow-sm mb-4">
+            <FaTelegramPlane className="h-6 w-6" />
+          </div>
+          <h3 className="text-2xl font-bold tracking-tight text-fg sm:text-3xl">
+            Never Trade Alone: Join Our Trader Community
+          </h3>
+          <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-fg-muted sm:text-base">
+            Over 5,000 Ghanaian traders learn, ask questions about our authors&apos; books, and share daily profitable setups. Connect with peers today.
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            <a
+              href={COMMUNITY_TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0088cc] px-6 py-3.5 text-sm font-bold text-white shadow-lg shadow-sky-500/25 transition hover:bg-[#0077b5]"
+            >
+              <FaTelegramPlane className="h-4 w-4" />
+              Join Our Community on Telegram
+            </a>
+            <Link
+              to="/community"
+              className="inline-flex items-center gap-2 rounded-xl border border-line bg-ink-850 px-5 py-3.5 text-sm font-semibold text-fg-muted shadow-sm transition hover:bg-ink-900"
+            >
+              <FiUsers className="h-4 w-4 text-fg-subtle" />
+              Explore Web Community
+            </Link>
+          </div>
+        </div>
+      </section>
 
       {/* Cart modal */}
       {showCartModal ? (
@@ -439,66 +716,69 @@ const Store = () => {
                   Add e-books from the marketplace, then checkout here.
                 </li>
               ) : (
-                getCart().map((item) => (
-                  <li key={String(item.id)} className="flex gap-3 py-4">
-                    <img
-                      src={item.image || item.thumbnail || DEFAULT_BOOK_COVER}
-                      alt=""
-                      className="h-16 w-14 shrink-0 rounded-lg border border-line bg-ink-900 object-contain p-0.5"
-                      onError={(e) => {
-                        e.target.onerror = null;
-                        e.target.src = DEFAULT_BOOK_COVER;
-                      }}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-semibold text-fg">{item.title}</p>
-                      {item.author ? (
-                        <p className="mt-0.5 line-clamp-1 text-xs text-fg-subtle">{item.author}</p>
-                      ) : null}
-                      <p className="mt-1 text-sm font-bold text-fg">
-                        {formatGhs(item.price)}
-                        {(item.quantity || 1) > 1 ? (
-                          <span className="ml-1 text-xs font-medium text-fg-subtle">
-                            × {item.quantity} = {formatGhs(Number(item.price || 0) * (item.quantity || 1))}
-                          </span>
+                getCart().map((item, index) => {
+                  const itemId = String(item.id || item._id || index);
+                  return (
+                    <li key={itemId} className="flex gap-3 py-4">
+                      <img
+                        src={item.image || item.thumbnail || DEFAULT_BOOK_COVER}
+                        alt=""
+                        className="h-16 w-14 shrink-0 rounded-lg border border-line bg-ink-900 object-contain p-0.5"
+                        onError={(e) => {
+                          e.target.onerror = null;
+                          e.target.src = DEFAULT_BOOK_COVER;
+                        }}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm font-semibold text-fg">{item.title}</p>
+                        {item.author ? (
+                          <p className="mt-0.5 line-clamp-1 text-xs text-fg-subtle">{item.author}</p>
                         ) : null}
-                      </p>
-                      <div
-                        className="mt-2 inline-flex items-center rounded-lg border border-line bg-ink-900"
-                        role="group"
-                        aria-label={`Quantity for ${item.title}`}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateCartQuantity(item.id, -1)}
-                          className="rounded-l-lg p-2 text-fg-muted transition hover:bg-ink-800"
-                          aria-label="Decrease quantity"
+                        <p className="mt-1 text-sm font-bold text-fg">
+                          {formatGhs(item.price)}
+                          {(item.quantity || 1) > 1 ? (
+                            <span className="ml-1 text-xs font-medium text-fg-subtle">
+                              × {item.quantity} = {formatGhs(Number(item.price || 0) * (item.quantity || 1))}
+                            </span>
+                          ) : null}
+                        </p>
+                        <div
+                          className="mt-2 inline-flex items-center rounded-lg border border-line bg-ink-900"
+                          role="group"
+                          aria-label={`Quantity for ${item.title}`}
                         >
-                          <FiMinus className="h-4 w-4" aria-hidden />
-                        </button>
-                        <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-fg">
-                          {item.quantity || 1}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleUpdateCartQuantity(item.id, 1)}
-                          disabled={(item.quantity || 1) >= 99}
-                          className="rounded-r-lg p-2 text-fg-muted transition hover:bg-ink-800 disabled:opacity-40"
-                          aria-label="Increase quantity"
-                        >
-                          <FiPlus className="h-4 w-4" aria-hidden />
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateCartQuantity(item.id || item._id, -1)}
+                            className="rounded-l-lg p-2 text-fg-muted transition hover:bg-ink-800"
+                            aria-label="Decrease quantity"
+                          >
+                            <FiMinus className="h-4 w-4" aria-hidden />
+                          </button>
+                          <span className="min-w-[2rem] px-2 text-center text-sm font-semibold text-fg">
+                            {item.quantity || 1}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateCartQuantity(item.id || item._id, 1)}
+                            disabled={(item.quantity || 1) >= 99}
+                            className="rounded-r-lg p-2 text-fg-muted transition hover:bg-ink-800 disabled:opacity-40"
+                            aria-label="Increase quantity"
+                          >
+                            <FiPlus className="h-4 w-4" aria-hidden />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveBookFromCart(item.id)}
-                      className="shrink-0 self-start rounded-lg border border-down/30 px-2.5 py-1.5 text-xs font-semibold text-down hover:bg-down/10"
-                    >
-                      Remove
-                    </button>
-                  </li>
-                ))
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveBookFromCart(item.id || item._id)}
+                        className="shrink-0 self-start rounded-lg border border-down/30 px-2.5 py-1.5 text-xs font-semibold text-down hover:bg-down/10"
+                      >
+                        Remove
+                      </button>
+                    </li>
+                  );
+                })
               )}
             </ul>
 
@@ -527,6 +807,7 @@ const Store = () => {
         book={selectedBook}
         open={showHardcopyModal && Boolean(selectedBook)}
         onClose={() => setShowHardcopyModal(false)}
+        onSelectInstantPay={handleHardcopyInstantPay}
       />
     </div>
   );

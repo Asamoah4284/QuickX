@@ -24,7 +24,7 @@ const productSchema = new mongoose.Schema(
 );
 
 /**
- * Starting catalogue. Prices and durations are placeholders — set the real ones
+ * Starting catalogue. Prices and durations are placeholders, set the real ones
  * in Admin → Pricing. Existing rows are never overwritten by this list.
  */
 const DEFAULT_PRODUCTS = [

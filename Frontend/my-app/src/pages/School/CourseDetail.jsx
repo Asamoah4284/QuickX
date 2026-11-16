@@ -50,7 +50,7 @@ const applyEnrollmentToCourse = (course) => {
   };
 };
 
-/** Shared modules / lessons list — used in desktop sidebar and mobile slide-over (Udemy-style). */
+/** Shared modules / lessons list, used in desktop sidebar and mobile slide-over (Udemy-style). */
 function CourseCurriculumPanel({
   courseData,
   activeModule,
@@ -224,7 +224,7 @@ const CourseDetail = () => {
       const p = el.play();
       if (p && typeof p.then === 'function') {
         p.then(finish).catch(() => {
-          // Browser autoplay policy — try muted, then restore sound
+          // Browser autoplay policy, try muted, then restore sound
           el.muted = true;
           el.play()
             .then(() => {
@@ -391,7 +391,7 @@ const CourseDetail = () => {
     try {
       const parsed = new URL(url);
       return parsed.protocol === 'http:' || parsed.protocol === 'https:';
-    } catch (e) {
+    } catch {
       if (url.includes('cloudinary.com') || url.includes('res.cloudinary.com')) {
         return true;
       }
@@ -432,7 +432,7 @@ const CourseDetail = () => {
     return 'video/mp4';
   };
 
-  // Resolve playable URL — prefer offline cache, then stream CDN.
+  // Resolve playable URL, prefer offline cache, then stream CDN.
   useEffect(() => {
     if (!currentLessonMediaUrl && !currentStableLessonId) {
       setVideoUrl(null);
@@ -474,7 +474,7 @@ const CourseDetail = () => {
           return;
         }
 
-        // Always resolve the CDN/stream URL when we have media — even if the browser
+        // Always resolve the CDN/stream URL when we have media, even if the browser
         // reports offline incorrectly, <video> can still buffer from cache/CDN.
         const optimizedUrl = await getOptimizedVideoUrl(currentLessonMediaUrl);
         if (!cancelled) {
@@ -610,8 +610,8 @@ const CourseDetail = () => {
       setLessonDownloaded(true);
       setDownloadMessage(
         isLikelyMov(remoteUrl)
-          ? 'Saved offline. On Chrome/Edge, .MOV may not play — use Safari/iPhone, or ask the tutor for MP4.'
-          : 'Saved offline — you can watch without using mobile data.'
+          ? 'Saved offline. .MOV files may not play in Chrome or Edge. Use Safari on iPhone, or ask for an MP4 version.'
+          : 'Saved offline. You can watch without using mobile data.'
       );
       await refreshCourseDownloads();
 
@@ -717,7 +717,7 @@ const CourseDetail = () => {
     acc + module.sections.reduce((sectionAcc, section) => 
       sectionAcc + section.lessons.filter(lesson => lesson.isCompleted).length, 0), 0) || 0;
 
-  // Handle lesson selection — start playback without requiring a second Play click
+  // Handle lesson selection, start playback without requiring a second Play click
   const handleLessonClick = useCallback((moduleIndex, sectionIndex, lessonIndex) => {
     const sameLesson =
       moduleIndex === activeModule &&
@@ -731,7 +731,7 @@ const CourseDetail = () => {
     shouldAutoPlayRef.current = true;
     setAutoPlayLesson(true);
 
-    // Same lesson already loaded — videoUrl won't change, so play immediately
+    // Same lesson already loaded, videoUrl won't change, so play immediately
     if (sameLesson) {
       requestAnimationFrame(() => tryPlayCurrentVideo());
     }
@@ -968,7 +968,7 @@ const CourseDetail = () => {
 
   return (
     <div className="min-h-screen bg-ink-850 pt-16 md:pt-20">
-      {/* Desktop: fixed curriculum — stays put; scrolls inside itself */}
+      {/* Desktop: fixed curriculum, stays put; scrolls inside itself */}
       <aside
         className="fixed bottom-0 left-0 top-16 z-30 hidden w-[360px] flex-col overflow-y-auto overscroll-contain border-r border-line bg-ink-850 [scrollbar-color:rgba(15,23,42,0.12)_transparent] [scrollbar-width:thin] md:top-20 xl:flex [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-ink-600/35 [&::-webkit-scrollbar-thumb]:hover:bg-ink-600/45 [&::-webkit-scrollbar-track]:bg-transparent"
         aria-label="Course curriculum"
@@ -1258,7 +1258,7 @@ const CourseDetail = () => {
                             <p className="text-sm font-semibold text-fg">Download for offline</p>
                             <p className="text-xs text-fg-subtle">
                               {isLikelyMov(currentLessonMediaUrl)
-                                ? '.MOV — best offline on Safari / iPhone'
+                                ? '.MOV file: plays best offline in Safari on iPhone'
                                 : 'Save this lesson to watch without data'}
                             </p>
                           </div>
@@ -1426,7 +1426,7 @@ const CourseDetail = () => {
             <div className="rounded-lg border border-line bg-ink-850 p-3 shadow-sm sm:p-4">
               <h3 className="text-sm font-semibold text-fg">Course timeline</h3>
               <div className="mt-3 rounded-md bg-warn/10 border border-warn/30 px-3 py-2 text-xs text-warn">
-                Stay consistent — small sessions add up.
+                Stay consistent. Small sessions add up.
               </div>
               <ul className="mt-4 space-y-4 text-xs border-l-2 border-line ml-1.5 pl-4">
                 <li className="relative">
@@ -1450,7 +1450,7 @@ const CourseDetail = () => {
             </div>
           </aside>
 
-        {/* Mobile / tablet: curriculum drawer — same pattern as Udemy (slide from right) & Coursera */}
+        {/* Mobile / tablet: curriculum drawer, same pattern as Udemy (slide from right) & Coursera */}
         <div
           className={`fixed inset-0 z-[100] xl:hidden ${mobileCurriculumOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
           aria-hidden={!mobileCurriculumOpen}

@@ -32,7 +32,7 @@ function serialize(s) {
     };
 }
 
-/** Summary of finished signals. (Pure — unit tested.) */
+/** Summary of finished signals. (Pure, unit tested.) */
 function computeStats(closed) {
     const decided = closed.filter((s) => s.status !== 'cancelled');
     const wins = decided.filter((s) => s.status === 'tp_hit' || (s.status === 'closed' && Number(s.resultPips) > 0)).length;
@@ -143,6 +143,24 @@ function readNumber(value, label) {
     return n;
 }
 
+/** A buy needs stop < entry < targets; a sell the opposite. Catches typos before members see them. */
+function checkLevels(direction, entry, stopLoss, takeProfits) {
+    const fail = (message) => {
+        const err = new Error(message);
+        err.status = 400;
+        throw err;
+    };
+    const buy = direction === 'buy';
+    if (buy ? stopLoss >= entry : stopLoss <= entry) {
+        fail(buy ? 'For a buy, the stop loss must be below the entry' : 'For a sell, the stop loss must be above the entry');
+    }
+    takeProfits.forEach((tp, i) => {
+        if (buy ? tp <= entry : tp >= entry) {
+            fail(`Target ${i + 1} must be ${buy ? 'above' : 'below'} the entry for a ${direction}`);
+        }
+    });
+}
+
 function readSignalBody(body) {
     const pair = String(body.pair || '').trim().toUpperCase();
     if (!pair || pair.length > 20) {
@@ -162,12 +180,20 @@ function readSignalBody(body) {
         err.status = 400;
         throw err;
     }
+    const entry = readNumber(body.entry, 'Entry');
+    const stopLoss = readNumber(body.stopLoss, 'Stop loss');
+    checkLevels(body.direction, entry, stopLoss, takeProfits);
+
+    // "market", or "buy limit" / "sell stop": the order type must match the direction.
+    const kind = String(body.orderType || 'market').trim().toLowerCase();
+    const orderType = ['limit', 'stop'].includes(kind.split(' ').pop()) ? `${body.direction} ${kind.split(' ').pop()}` : 'market';
+
     return {
         pair,
         direction: body.direction,
-        orderType: String(body.orderType || 'market').trim().slice(0, 30),
-        entry: readNumber(body.entry, 'Entry'),
-        stopLoss: readNumber(body.stopLoss, 'Stop loss'),
+        orderType,
+        entry,
+        stopLoss,
         takeProfits,
         timeframe: String(body.timeframe || '').trim().slice(0, 10),
         note: String(body.note || '').trim().slice(0, 2000),
@@ -262,3 +288,4 @@ router.delete('/admin/:id', adminAuth, async (req, res) => {
 
 module.exports = router;
 module.exports.computeStats = computeStats;
+module.exports.checkLevels = checkLevels;

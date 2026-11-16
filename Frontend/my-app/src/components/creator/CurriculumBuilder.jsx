@@ -459,7 +459,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
 
                   {(section.lessons || []).length > 1 ? (
                     <p className="mt-3 text-xs text-fg-subtle">
-                      Drag the handle, use ↑↓, or pick a position — then save the course.
+                      Drag the handle, use ↑↓, or pick a position. Then save the course.
                     </p>
                   ) : null}
 

@@ -59,7 +59,7 @@ const AdminLogin = () => {
               Admin sign in
             </h1>
             <p className="mt-2 text-sm leading-relaxed text-fg-subtle">
-              QuickXLearn control center — use your administrator credentials.
+              QuickX control center. Sign in with your admin details.
             </p>
           </div>
 

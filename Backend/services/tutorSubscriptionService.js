@@ -131,6 +131,10 @@ async function enrollStudentInTutorPublishedCourses(studentId) {
       })),
       { ordered: false }
     );
+    await Course.updateMany(
+      { _id: { $in: missing } },
+      { $inc: { totalStudents: 1, totalEnrollments: 1 } }
+    );
   } catch (err) {
     if (err?.code !== 11000 && !err?.writeErrors) throw err;
   }

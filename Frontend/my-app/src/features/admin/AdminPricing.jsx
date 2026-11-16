@@ -3,7 +3,64 @@ import { adminApi, errorMessage } from '../../lib/api';
 import { useApi } from '../../lib/useApi';
 import { FEATURES } from '../../lib/features';
 import { durationLabel, money } from '../../lib/format';
-import { Alert, Badge, Button, Card, Field, Input, PageHeader, Skeleton, Textarea } from '../../ui/primitives';
+import { Alert, Badge, Button, Card, Field, Input, PageHeader, Select, Skeleton, Textarea } from '../../ui/primitives';
+import { setCurrencySettings } from '../../utils/currencyStore';
+
+function DisplayCurrency() {
+  const { data, reload } = useApi('/api/admin/settings', { client: adminApi });
+  const [form, setForm] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState(null);
+  const value = form || (data ? { defaultCurrency: data.defaultCurrency, exchangeRateUsdToGhs: String(data.exchangeRateUsdToGhs) } : null);
+  if (!value) return null;
+
+  const save = async (e) => {
+    e.preventDefault();
+    setBusy(true);
+    setMessage(null);
+    try {
+      const res = await adminApi.put('/api/admin/settings', { ...value, exchangeRateUsdToGhs: Number(value.exchangeRateUsdToGhs) });
+      setCurrencySettings({ currency: res.data.defaultCurrency, exchangeRateUsdToGhs: res.data.exchangeRateUsdToGhs });
+      setMessage({ tone: 'up', text: 'Saved.' });
+      setForm(null);
+      reload();
+    } catch (err) {
+      setMessage({ tone: 'down', text: errorMessage(err) });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-5">
+      <form onSubmit={save} className="space-y-4">
+        <div>
+          <h2 className="font-semibold text-fg">Display currency</h2>
+          <p className="mt-1 text-sm text-fg-muted">
+            Prices are always set and charged in cedis (GH₵). Choosing USD only changes how prices are shown, using the rate below.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Field label="Show prices in" htmlFor="cur-default">
+            <Select id="cur-default" value={value.defaultCurrency} onChange={(e) => setForm({ ...value, defaultCurrency: e.target.value })}>
+              <option value="GHS">Cedis (GH₵)</option>
+              <option value="USD">US dollars ($)</option>
+            </Select>
+          </Field>
+          <Field label="GH₵ per 1 US dollar" htmlFor="cur-rate">
+            <Input id="cur-rate" type="number" min="0.01" max="999" step="0.01" value={value.exchangeRateUsdToGhs} onChange={(e) => setForm({ ...value, exchangeRateUsdToGhs: e.target.value })} required />
+          </Field>
+        </div>
+        {message ? <Alert tone={message.tone}>{message.text}</Alert> : null}
+        <div className="flex justify-end">
+          <Button type="submit" loading={busy} disabled={!form}>
+            Save
+          </Button>
+        </div>
+      </form>
+    </Card>
+  );
+}
 
 function ProductEditor({ product, onSaved }) {
   const [form, setForm] = useState({
@@ -106,6 +163,7 @@ export default function AdminPricing() {
         title="Pricing"
         description="Set the price and access length for each feature and for the All-Access bundle. Changes do not affect time members have already bought."
       />
+      <DisplayCurrency />
       {error ? <Alert>{error.message}</Alert> : null}
       {loading && !data ? <Skeleton className="h-96" /> : null}
       <div className="grid gap-6 xl:grid-cols-2">

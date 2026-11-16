@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-/** Inline copy of each book in this plan — title + PDF URL for easy reads in Compass. */
+/** Inline copy of each book in this plan, title + PDF URL for easy reads in Compass. */
 const planBookSchema = new mongoose.Schema(
     {
         bookId: {
@@ -59,7 +59,7 @@ const bookOfferGroupSchema = new mongoose.Schema(
             default: '',
         },
         options: [offerOptionSchema],
-        /** Main listing book — only this one appears on the marketplace. */
+        /** Main listing book, only this one appears on the marketplace. */
         storefrontBookId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Book',

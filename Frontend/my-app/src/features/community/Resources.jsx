@@ -182,7 +182,7 @@ export default function Resources() {
   const resources = data?.resources || [];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="max-w-3xl space-y-5">
       {me.isModerator ? (
         <div className="flex justify-end">
           <Button onClick={() => setAdding(true)}>
@@ -198,8 +198,8 @@ export default function Resources() {
         <EmptyState icon={FiFileText} title="No resources yet" description="Guides, templates and assignments from the mentor will appear here." />
       ) : null}
 
-      {resources.map((r) => (
-        <Card key={r._id} className="p-5">
+      {resources.map((r, i) => (
+        <Card key={r._id} className="rise-in p-5" style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }}>
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">

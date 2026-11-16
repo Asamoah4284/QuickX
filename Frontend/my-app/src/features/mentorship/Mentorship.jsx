@@ -164,7 +164,7 @@ export default function Mentorship() {
   return (
     <>
       <Helmet>
-        <title>Mentorship — QuickX</title>
+        <title>Mentorship | QuickX</title>
       </Helmet>
       <FeatureGate feature="mentorship">
         <Container className="py-10 sm:py-14">

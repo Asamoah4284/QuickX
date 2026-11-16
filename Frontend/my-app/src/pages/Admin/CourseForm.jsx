@@ -22,7 +22,6 @@ const CourseForm = ({ initialValues = {}, onSubmit, mode = 'add', loading = fals
     const [newLesson, setNewLesson] = useState({ title: '', type: 'video', duration: '', description: '', free: false, videoFile: null });
     const [selectedModuleIndex, setSelectedModuleIndex] = useState(null);
     const [selectedSectionIndex, setSelectedSectionIndex] = useState(null);
-    const [uploadProgress, setUploadProgress] = useState(0);
 
     useEffect(() => {
         setFormData({ ...defaultFormData, ...initialValues });

@@ -107,7 +107,7 @@ export default function Account() {
   return (
     <>
       <Helmet>
-        <title>My account — QuickX</title>
+        <title>My account | QuickX</title>
       </Helmet>
       <Container className="space-y-12 py-10 sm:py-14">
         <Reveal className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
@@ -146,7 +146,7 @@ export default function Account() {
           </Stagger>
         </section>
 
-        <section>
+        <section id="wallet" className="scroll-mt-24">
           <h2 className="mb-5 text-xl font-bold text-fg">Wallet and referrals</h2>
           <WalletPanel />
         </section>

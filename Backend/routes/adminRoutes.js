@@ -66,6 +66,11 @@ router.put('/books/:id',
 router.delete('/books/:id', adminAuth, adminController.deleteBook);
 router.get('/books', adminAuth, adminController.getAllBooks);
 router.get('/books/:id', adminAuth, adminController.getBookById);
+router.patch('/books/:id/status', adminAuth, adminController.updateBookStatus);
+
+// Display currency and exchange rate
+router.get('/settings', adminAuth, adminController.getDisplaySettings);
+router.put('/settings', adminAuth, adminController.updateDisplaySettings);
 
 // Content upload route
 router.post('/upload-content', (req, res) => {

@@ -35,7 +35,7 @@ async function resolveOwnerId() {
             .lean();
         if (named.length === 1) return String(named[0]._id);
         console.warn(
-            `ownerService: ${named.length} approved tutors match "${ownerName}" — set OWNER_USER_ID to pick the owner.`
+            `ownerService: ${named.length} approved tutors match "${ownerName}". Set OWNER_USER_ID to pick the owner.`
         );
     }
     return null;

@@ -5,7 +5,7 @@
  *
  *   ALLOW_SIMULATED_PAYMENTS=true
  *
- * Never set this on a live server — it lets anyone complete a purchase without paying.
+ * Never set this on a live server, it lets anyone complete a purchase without paying.
  */
 function allowSimulatedPayments() {
     return String(process.env.ALLOW_SIMULATED_PAYMENTS || '').toLowerCase() === 'true';

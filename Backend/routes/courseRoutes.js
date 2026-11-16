@@ -128,7 +128,7 @@ async function userHasCourseAccess(userId, course) {
         return { allowed: true, via: 'owner', purchase, enrollment };
     }
 
-    // Bought this course outright — access never expires.
+    // Bought this course outright, access never expires.
     if (purchase) {
         return { allowed: true, via: 'purchase', purchase, enrollment };
     }
@@ -143,7 +143,7 @@ async function userHasCourseAccess(userId, course) {
     }
 
     // Otherwise the member needs current Courses access. An enrollment row alone
-    // only tracks progress — it must not keep a course open after access expires.
+    // only tracks progress, it must not keep a course open after access expires.
     if (await entitlementService.hasFeature(userId, FEATURES.COURSES)) {
         return { allowed: true, via: 'subscription', purchase, enrollment };
     }
@@ -619,7 +619,7 @@ router.get('/:id/lessons/:lessonId/download-stream', auth, async (req, res) => {
         }
 
         const { url } = resolved;
-        // Large lesson files — no short timeout; pipe bytes through (do not buffer).
+        // Large lesson files, no short timeout; pipe bytes through (do not buffer).
         const upstream = await axios.get(url, {
             responseType: 'stream',
             timeout: 0,
@@ -676,6 +676,13 @@ router.post('/:id/enroll', auth, async (req, res) => {
 
         if (Number(course.price || 0) > 0) {
             return res.status(400).json({ message: 'This course requires payment before enrollment' });
+        }
+
+        const existingEnrollment = await Enrollment.findOne({ studentId: req.user._id, courseId: course._id });
+        if (!existingEnrollment) {
+            await Course.findByIdAndUpdate(course._id, {
+                $inc: { totalStudents: 1, totalEnrollments: 1 }
+            });
         }
 
         const enrollment = await Enrollment.findOneAndUpdate(
@@ -1099,7 +1106,7 @@ router.delete('/admin/courses/:courseId/modules/:moduleId/sections/:sectionId/le
                 }).promise();
             }
 
-            lesson.remove();
+            course.lessons.pull(lesson._id);
             await course.save();
             res.json({ message: 'Lesson deleted successfully' });
         } catch (error) {
