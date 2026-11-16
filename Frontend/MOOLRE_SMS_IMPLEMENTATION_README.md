@@ -1,4 +1,4 @@
-# Moolre SMS
+# Moolre SMS Implementation
 
 SMS is sent **only from the backend**, not the Next.js app.
 
@@ -13,4 +13,3 @@ To test, run a script from the backend folder (with `dotenv` loading `backend/.e
 ```bash
 cd backend && node scripts/test-moolre-sms.js
 ```
-
