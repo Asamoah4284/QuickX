@@ -2,16 +2,21 @@
  * Creates the platform admin, or resets its password. Safe to run more than once.
  *
  * Usage (from Backend/):
- *   ADMIN_EMAIL=you@example.com ADMIN_PASSWORD='a long password' npm run seed:admin
+ *   ADMIN_EMAIL=you@example.com ADMIN_NAME='Your Name' npm run seed:admin
  *
+ * Leave ADMIN_PASSWORD out and a strong random password is made and printed once,
+ * or set ADMIN_PASSWORD yourself (at least 12 characters).
  * There is no default password on purpose: a known password on a live site lets anyone in.
+ *
+ * Remove an admin later with: ADMIN_EMAIL=you@example.com npm run remove:admin
  */
 require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 const mongoose = require('mongoose');
 const Admin = require('../models/Admin');
 
 const EMAIL = String(process.env.ADMIN_EMAIL || '').trim();
-const PASSWORD = String(process.env.ADMIN_PASSWORD || '');
+const GENERATED = !process.env.ADMIN_PASSWORD;
+const PASSWORD = GENERATED ? require('crypto').randomBytes(15).toString('base64url') : String(process.env.ADMIN_PASSWORD);
 const FULL_NAME = process.env.ADMIN_NAME || 'Platform Admin';
 
 async function run() {
@@ -59,7 +64,12 @@ async function run() {
         console.log('Created admin:', EMAIL);
     }
 
-    console.log('Done. Sign in on the admin login page with this email and password.');
+    if (GENERATED) {
+        console.log('');
+        console.log('Password (shown once, save it now):', PASSWORD);
+        console.log('');
+    }
+    console.log('Done. Sign in at https://quickxlearn.com/admin/login with this email and password.');
     await mongoose.disconnect();
     process.exit(0);
 }

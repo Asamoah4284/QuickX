@@ -18,7 +18,7 @@ exports.login = async (req, res) => {
         const { email, password } = req.body;
         
         // Find admin
-        const admin = await Admin.findOne({ email });
+        const admin = await Admin.findOne({ email: String(email || "").trim().toLowerCase() });
         if (!admin) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
