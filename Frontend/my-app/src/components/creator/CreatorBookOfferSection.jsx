@@ -852,7 +852,7 @@ const CreatorBookOfferSection = forwardRef(function CreatorBookOfferSection(
             <button
               type="button"
               onClick={seedThreeTierTemplate}
-              className="inline-flex items-center gap-1 rounded-xl border border-line-strong bg-ink-800 px-3 py-2 text-xs font-semibold text-white hover:bg-ink-800"
+              className="inline-flex items-center gap-1 rounded-xl border border-line-strong bg-ink-800 px-3 py-2 text-xs font-semibold text-fg hover:bg-ink-700"
             >
               Use 3-tier layout
             </button>

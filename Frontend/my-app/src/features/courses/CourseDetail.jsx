@@ -41,7 +41,7 @@ function Section({ section, open, onToggle, onPlay, unlocked }) {
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-white/[0.03]"
+        className="flex w-full items-center justify-between gap-4 px-5 py-4 text-left transition hover:bg-fg/[0.03]"
       >
         <span className="font-semibold text-fg">{section.title}</span>
         <span className="flex items-center gap-3 text-sm text-fg-subtle">

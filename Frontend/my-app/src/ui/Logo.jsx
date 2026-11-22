@@ -4,11 +4,11 @@ import { cx } from '../lib/format';
  * The QuickX Learn logo, redrawn as SVG from public/logo.jpg so it stays sharp
  * and works on the dark theme: a ring with a green arc around an open book.
  *
- * `onDark` (default) lifts the navy to the brand blue so it stays visible on dark backgrounds.
+ * `onDark` (default) follows the theme: brand-blue ring, book in the text colour.
  */
 export function LogoMark({ size = 36, onDark = true, className }) {
   const ring = onDark ? 'var(--color-brand-500)' : 'var(--color-logo-navy)';
-  const book = onDark ? '#ffffff' : 'var(--color-logo-navy)';
+  const book = onDark ? 'var(--color-fg)' : 'var(--color-logo-navy)';
   return (
     <svg width={size} height={size} viewBox="0 0 48 48" fill="none" className={className} aria-hidden="true">
       <circle cx="22.5" cy="24" r="19" stroke={ring} strokeWidth="4" />

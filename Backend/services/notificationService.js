@@ -124,7 +124,10 @@ async function createNotification({
 
 async function notifyMany(userIds, payload) {
   const unique = [...new Set((userIds || []).map((id) => String(id)).filter(Boolean))];
-  await Promise.all(unique.map((userId) => createNotification({ ...payload, userId })));
+  // In batches, so a notice to every member doesn't open thousands of connections at once.
+  for (let i = 0; i < unique.length; i += 50) {
+    await Promise.allSettled(unique.slice(i, i + 50).map((userId) => createNotification({ ...payload, userId })));
+  }
 }
 
 module.exports = {

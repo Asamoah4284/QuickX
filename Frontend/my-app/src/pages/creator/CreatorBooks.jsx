@@ -177,7 +177,7 @@ export default function CreatorBooks() {
           </div>
           <Link
             to="/creator/dashboard/books/new"
-            className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink-800 sm:w-auto"
+            className="inline-flex w-full shrink-0 items-center justify-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-fg transition hover:bg-ink-800 sm:w-auto"
           >
             <FiPlus className="h-4 w-4" aria-hidden />
             Add Book

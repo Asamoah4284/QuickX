@@ -112,7 +112,7 @@ export default function BookMarketplaceCard({
                     className={`inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-bold transition ${
                       justAdded
                         ? 'bg-emerald-600 text-white'
-                        : 'bg-ink-800 text-white hover:bg-brand-600'
+                        : 'bg-ink-800 text-fg hover:bg-brand-600 hover:text-white'
                     }`}
                   >
                     {justAdded ? (

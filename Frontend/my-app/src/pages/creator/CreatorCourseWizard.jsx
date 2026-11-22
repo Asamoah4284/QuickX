@@ -587,7 +587,7 @@ export default function CreatorCourseWizard() {
               type="button"
               onClick={() => submitForReview()}
               disabled={submitting || !form.title.trim()}
-              className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+              className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-fg disabled:opacity-50"
             >
               {submitting ? 'Publishing…' : 'Publish'}
             </button>
@@ -607,7 +607,7 @@ export default function CreatorCourseWizard() {
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl bg-brand-600 p-6 text-white ring-1 ring-white/10 sm:rounded-3xl">
+      <div className="rounded-2xl bg-brand-600 p-6 text-white ring-1 ring-fg/10 sm:rounded-3xl">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="max-w-2xl">
             <p className="text-xs font-semibold uppercase tracking-[0.35em] text-brand-300">
@@ -626,7 +626,7 @@ export default function CreatorCourseWizard() {
             <button
               type="button"
               onClick={() => navigate('/creator/dashboard/courses')}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-medium text-white backdrop-blur-sm hover:bg-white/15"
+              className="inline-flex items-center gap-2 rounded-2xl border border-fg/25 bg-fg/10 px-4 py-3 text-sm font-medium text-white backdrop-blur-sm hover:bg-fg/15"
             >
               <FiArrowLeft className="h-4 w-4" />
               Back
@@ -698,7 +698,7 @@ export default function CreatorCourseWizard() {
                   type="button"
                   onClick={() => submitForReview()}
                   disabled={submitting || !form.title.trim()}
-                  className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50"
+                  className="rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-fg disabled:opacity-50"
                 >
                   {submitting ? 'Publishing…' : 'Publish'}
                 </button>

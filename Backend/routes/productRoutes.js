@@ -7,7 +7,7 @@ const Product = require('../models/Product');
 const Payment = require('../models/Payment');
 const Entitlement = require('../models/Entitlement');
 const User = require('../models/User');
-const { ALL_FEATURES, isFeature } = require('../constants/features');
+const { ALL_FEATURES, PAID_FEATURES, FEATURES, isFeature } = require('../constants/features');
 const { quoteProduct, findProduct, serializeProduct } = require('../services/productService');
 const {
     getActiveEntitlements,
@@ -33,7 +33,7 @@ function escapeRegex(s) {
 router.get('/products', async (req, res) => {
     try {
         const products = await Product.find({ isActive: true }).sort({ order: 1, price: 1 });
-        res.json({ products: products.map(serializeProduct), features: ALL_FEATURES });
+        res.json({ products: products.map(serializeProduct), features: PAID_FEATURES });
     } catch (err) {
         fail(res, err);
     }
@@ -229,8 +229,9 @@ router.post('/products/:key/redeem', auth, async (req, res) => {
 
 router.get('/admin/products', adminAuth, async (req, res) => {
     try {
-        const products = await Product.find({}).sort({ order: 1, price: 1 });
-        res.json({ products: products.map(serializeProduct), features: ALL_FEATURES });
+        // The community is free now, so its old plan is left out of the editor.
+        const products = await Product.find({ grants: { $ne: [FEATURES.COMMUNITY] } }).sort({ order: 1, price: 1 });
+        res.json({ products: products.map(serializeProduct), features: PAID_FEATURES });
     } catch (err) {
         fail(res, err);
     }

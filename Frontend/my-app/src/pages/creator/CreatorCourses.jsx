@@ -254,7 +254,7 @@ export default function CreatorCourses({ statusFilter = 'all' }) {
           </div>
           <Link
             to="/creator/dashboard/courses/new"
-            className="inline-flex w-full shrink-0 items-center justify-center rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink-800 sm:w-auto"
+            className="inline-flex w-full shrink-0 items-center justify-center rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-fg transition hover:bg-ink-800 sm:w-auto"
           >
             Create course
           </Link>

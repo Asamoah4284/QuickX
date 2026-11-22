@@ -10,6 +10,7 @@
     "migrate:fix-course-types": "node migrations/fix-course-types.js",
     "migrate:sync-preview-flag": "node migrations/sync-lesson-preview-flag.js",
     "seed:admin": "node scripts/seedAdmin.js",
+    "remove:admin": "node scripts/removeAdmin.js",
     "test:s3-upload": "node scripts/testS3Upload.js",
     "migrate:subscriptions-to-entitlements": "node migrations/migrate-subscriptions-to-entitlements.js"
   },

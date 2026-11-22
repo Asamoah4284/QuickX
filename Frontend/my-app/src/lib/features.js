@@ -1,6 +1,9 @@
 import { FiPlayCircle, FiActivity, FiUsers, FiTarget } from 'react-icons/fi';
 
-/** The four things a member can have. Keys match the backend (constants/features.js). */
+/**
+ * The main parts of QuickX. Keys match the backend (constants/features.js).
+ * Courses, Signals and Mentorship are sold; the Community is free for everyone signed in.
+ */
 export const FEATURES = {
   courses: {
     key: 'courses',
@@ -23,8 +26,9 @@ export const FEATURES = {
     label: 'Community',
     icon: FiUsers,
     path: '/community',
-    productKey: 'community',
-    blurb: 'Ask questions, share your trades and learn alongside other members.',
+    productKey: null,
+    free: true,
+    blurb: 'Free for every member. Ask questions, share your trades and learn alongside other traders.',
   },
   mentorship: {
     key: 'mentorship',
@@ -37,3 +41,6 @@ export const FEATURES = {
 };
 
 export const FEATURE_LIST = Object.values(FEATURES);
+
+/** What can be bought, in the order shown on pricing and in Account. */
+export const PAID_FEATURE_LIST = FEATURE_LIST.filter((f) => !f.free);

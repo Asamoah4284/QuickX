@@ -174,7 +174,12 @@ export default function Landing() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-300 transition group-hover:bg-brand-600 group-hover:text-white">
                     <feature.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-fg">{feature.label}</h3>
+                  <h3 className="mt-5 flex items-center gap-2 text-lg font-semibold text-fg">
+                    {feature.label}
+                    {feature.free ? (
+                      <span className="rounded-full bg-up/15 px-2 py-0.5 text-xs font-semibold text-up">Free</span>
+                    ) : null}
+                  </h3>
                   <p className="mt-2 flex-1 text-sm text-fg-muted">{feature.blurb}</p>
                   <span className="mt-5 flex items-center gap-2 text-sm font-semibold text-brand-400">
                     Explore
@@ -264,7 +269,7 @@ export default function Landing() {
       <section className="border-t border-line py-20">
         <Container>
           <Reveal>
-            <div className="relative overflow-hidden rounded-[2rem] border border-brand-400/30 bg-gradient-to-br from-brand-700 via-brand-600 to-ink-800 px-6 py-14 text-center sm:px-12 sm:py-20">
+            <div className="on-dark relative overflow-hidden rounded-[2rem] border border-brand-400/30 bg-gradient-to-br from-brand-700 via-brand-600 to-logo-navy px-6 py-14 text-center sm:px-12 sm:py-20">
               <div className="bg-grid absolute inset-0 opacity-60" aria-hidden />
               <div className="relative">
                 <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
@@ -277,7 +282,7 @@ export default function Landing() {
                   <Button to="/register" variant="light" size="lg">
                     Create free account
                   </Button>
-                  <Button to="/pricing" size="lg" className="border border-white/30 bg-white/10 shadow-none hover:bg-white/20">
+                  <Button to="/pricing" size="lg" className="border border-fg/30 bg-fg/10 shadow-none hover:bg-fg/20">
                     See pricing
                   </Button>
                 </div>

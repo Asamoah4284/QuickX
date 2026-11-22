@@ -254,7 +254,7 @@ export default function PieDetail() {
             <Reveal>
               <div className="flex flex-wrap items-center gap-2">
                 <Badge tone={outcome ? outcome.tone : status.tone}>{outcome ? outcome.label : status.label}</Badge>
-                <span className="tabular rounded-md bg-white/[0.06] px-2 py-0.5 text-xs text-fg-muted">{pie.pair}</span>
+                <span className="tabular rounded-md bg-fg/[0.06] px-2 py-0.5 text-xs text-fg-muted">{pie.pair}</span>
                 <span className="text-xs capitalize text-fg-subtle">{pie.market}</span>
               </div>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-fg sm:text-4xl">{pie.title}</h1>

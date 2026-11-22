@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { FiSearch, FiUsers } from 'react-icons/fi';
 import { adminApi, errorMessage } from '../../lib/api';
 import { useApi } from '../../lib/useApi';
-import { FEATURES, FEATURE_LIST } from '../../lib/features';
+import { FEATURES, PAID_FEATURE_LIST as FEATURE_LIST } from '../../lib/features';
 import { daysLeft, formatDate } from '../../lib/format';
 import { Alert, Avatar, Badge, Button, Card, EmptyState, Field, Input, PageHeader, Select, Skeleton } from '../../ui/primitives';
 import { Modal } from '../../ui/overlays';

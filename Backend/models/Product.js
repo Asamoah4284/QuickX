@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const { ALL_FEATURES, FEATURES } = require('../constants/features');
+const { ALL_FEATURES, PAID_FEATURES, FEATURES } = require('../constants/features');
 
 /** Something a member can buy: one feature, or a bundle of features, for a period of time. */
 const productSchema = new mongoose.Schema(
@@ -49,20 +49,10 @@ const DEFAULT_PRODUCTS = [
         order: 2,
     },
     {
-        key: 'community',
-        name: 'Community',
-        tagline: 'Trade alongside other members',
-        highlights: ['Members feed and discussion rooms', 'Ask questions and get answers', 'Post your trades for feedback'],
-        price: 49,
-        durationDays: 30,
-        grants: [FEATURES.COMMUNITY],
-        order: 3,
-    },
-    {
         key: 'mentorship',
         name: 'Mentorship',
         tagline: '1-on-1 guidance from Maxwell',
-        highlights: ['Book 1-on-1 sessions', 'Direct messages', 'Personal trade reviews'],
+        highlights: ['Book 1-on-1 sessions', 'Message Maxwell directly', 'Personal trade reviews', 'The Mentorship room in the community'],
         price: 499,
         durationDays: 30,
         grants: [FEATURES.MENTORSHIP],
@@ -72,10 +62,10 @@ const DEFAULT_PRODUCTS = [
         key: 'all-access',
         name: 'All-Access',
         tagline: 'Everything in one plan, for less',
-        highlights: ['Courses', 'Signals', 'Community', 'Mentorship'],
+        highlights: ['Courses', 'Signals', 'Mentorship', 'Every room in the community'],
         price: 599,
         durationDays: 30,
-        grants: [...ALL_FEATURES],
+        grants: [...PAID_FEATURES],
         badge: 'Best value',
         order: 0,
     },

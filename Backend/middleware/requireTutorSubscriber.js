@@ -5,12 +5,11 @@ const { isOwner } = require('../services/ownerService');
 const { hasActiveSubscription } = require('../services/tutorSubscriptionService');
 
 /**
- * Gate for the community routes. Access comes from entitlements; the feature
- * names placed on `req.subscriptionFeatures` are the old ones (community, ask,
- * post_trade, …) because the community routes still check those.
+ * Gate for the community routes. The community is free: every signed-in account
+ * gets in. Rooms and messages that need a plan check that themselves.
  *
- * Passes: platform admins, the owner, and members with any active access.
- * Follow with requireCommunityAccess / requireTutorFeature for a specific feature.
+ * Sets req.isCommunityTutor (the owner), req.isCommunityAdmin (platform admins)
+ * and req.subscriptionFeatures (old-style names, read by requireTutorFeature).
  */
 async function requireTutorSubscriber(req, res, next) {
   try {
@@ -44,17 +43,11 @@ async function requireTutorSubscriber(req, res, next) {
       return next();
     }
 
+    // The community is free, so everyone signed in gets the community names too.
     const features = await getUserFeatures(req.user._id);
-    if (!features.length) {
-      return res.status(403).json({
-        message: 'Community access is required',
-        code: 'SUBSCRIPTION_REQUIRED',
-      });
-    }
-
     req.isCommunityTutor = false;
     req.isCommunityAdmin = false;
-    req.subscriptionFeatures = toLegacyFeatureNames(features);
+    req.subscriptionFeatures = toLegacyFeatureNames([...new Set([...features, 'community'])]);
     return next();
   } catch (err) {
     console.error('requireTutorSubscriber:', err);

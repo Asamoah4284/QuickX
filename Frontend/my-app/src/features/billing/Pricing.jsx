@@ -7,7 +7,11 @@ import PriceCard from './PriceCard';
 const FAQ = [
   {
     q: 'Can I buy just one thing, like signals?',
-    a: 'Yes. Courses, Signals, Community and Mentorship are each sold on their own. Buy only what you need.',
+    a: 'Yes. Courses, Signals and Mentorship are each sold on their own. Buy only what you need.',
+  },
+  {
+    q: 'Is the community free?',
+    a: 'Yes. Every member can join the community for free: the feed, Q&A, resources and live sessions. Each plan also opens its own room there, like the Signals room for Signals members.',
   },
   {
     q: 'What happens when my time runs out?',
@@ -33,7 +37,7 @@ export function PricingGrid({ products }) {
           <PriceCard product={bundle} featured />
         </Reveal>
       ) : null}
-      <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {singles.map((p) => (
           <StaggerItem key={p.key}>
             <PriceCard product={p} />
@@ -48,7 +52,7 @@ export function PricingSkeleton() {
   return (
     <div className="space-y-6">
       <Skeleton className="h-72 w-full" />
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {[0, 1, 2, 3].map((i) => (
           <Skeleton key={i} className="h-80" />
         ))}

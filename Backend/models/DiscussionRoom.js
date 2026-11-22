@@ -20,6 +20,12 @@ const discussionRoomSchema = new mongoose.Schema(
       ref: 'Course',
       default: null,
     },
+    /** Plan a member needs to read and post here. null = open to everyone in the community. */
+    requires: {
+      type: String,
+      enum: ['courses', 'signals', 'mentorship', null],
+      default: null,
+    },
     archived: { type: Boolean, default: false },
   },
   { timestamps: true }

@@ -3,7 +3,8 @@ import { Helmet } from 'react-helmet-async';
 import { FiArrowRight, FiBookOpen, FiDownload, FiLogOut, FiPlayCircle } from 'react-icons/fi';
 import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
-import { FEATURE_LIST } from '../../lib/features';
+import { PAID_FEATURE_LIST } from '../../lib/features';
+import { ThemeChoice } from '../../ui/ThemeToggle';
 import { cx, daysLeft, formatDate } from '../../lib/format';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
 import { clearServerPushSubscription } from '../../utils/webPush';
@@ -26,7 +27,7 @@ function AccessCard({ feature }) {
         <div
           className={cx(
             'flex h-11 w-11 items-center justify-center rounded-xl',
-            active ? 'bg-brand-500/15 text-brand-300' : 'bg-white/[0.05] text-fg-subtle'
+            active ? 'bg-brand-500/15 text-brand-300' : 'bg-fg/[0.05] text-fg-subtle'
           )}
         >
           <Icon className="h-5 w-5" />
@@ -77,7 +78,7 @@ function CourseRow({ course }) {
       <div className="min-w-0 flex-1">
         <p className="truncate font-semibold text-fg">{course.title}</p>
         <div className="mt-2 flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/[0.08]">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-fg/[0.08]">
             <div className="h-full rounded-full bg-brand-500" style={{ width: `${Math.round(course.progress || 0)}%` }} />
           </div>
           <span className="tabular text-xs text-fg-subtle">{Math.round(course.progress || 0)}%</span>
@@ -137,8 +138,8 @@ export default function Account() {
               All plans
             </Link>
           </div>
-          <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURE_LIST.map((feature) => (
+          <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {PAID_FEATURE_LIST.map((feature) => (
               <StaggerItem key={feature.key}>
                 <AccessCard feature={feature} />
               </StaggerItem>
@@ -231,6 +232,12 @@ export default function Account() {
         <section>
           <h2 className="mb-5 text-xl font-bold text-fg">This device</h2>
           <DevicePanel />
+        </section>
+
+        <section>
+          <h2 className="text-xl font-bold text-fg">Appearance</h2>
+          <p className="mb-4 mt-1 text-sm text-fg-muted">Device follows your phone or computer setting.</p>
+          <ThemeChoice className="max-w-md" />
         </section>
 
         <section className="flex flex-col gap-3 border-t border-line pt-8 text-sm text-fg-subtle sm:flex-row sm:items-center sm:justify-between">

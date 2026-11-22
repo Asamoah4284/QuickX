@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import {
   FiActivity,
+  FiArrowLeft,
   FiBook,
   FiBookOpen,
   FiPieChart,
@@ -21,6 +22,7 @@ import {
 import { cx } from '../lib/format';
 import { PageLoader } from '../ui/primitives';
 import BrandLogo from '../ui/Logo';
+import { ThemeChoice, ThemeButton } from '../ui/ThemeToggle';
 
 const NAV = [
   { to: '/admin/dashboard', label: 'Overview', icon: FiHome },
@@ -70,7 +72,7 @@ export default function AdminLayout() {
             className={({ isActive }) =>
               cx(
                 'flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition-colors',
-                isActive ? 'bg-brand-600 text-white' : 'text-fg-muted hover:bg-white/[0.05] hover:text-fg'
+                isActive ? 'bg-brand-600 text-white' : 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
               )
             }
           >
@@ -80,11 +82,12 @@ export default function AdminLayout() {
         ))}
       </nav>
       <div className="space-y-1 border-t border-line p-3">
-        <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-fg-muted hover:bg-white/[0.05] hover:text-fg">
+        <ThemeChoice className="mb-2" />
+        <a href="/" target="_blank" rel="noreferrer" className="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg">
           <FiExternalLink className="h-4 w-4" />
           View site
         </a>
-        <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-fg-muted hover:bg-white/[0.05] hover:text-fg">
+        <button type="button" onClick={logout} className="flex w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium text-fg-muted hover:bg-fg/[0.05] hover:text-fg">
           <FiLogOut className="h-4 w-4" />
           Log out
         </button>
@@ -98,9 +101,12 @@ export default function AdminLayout() {
 
       <div className="glass sticky top-0 z-30 flex h-14 items-center justify-between border-b border-line px-4 lg:hidden">
         <BrandLogo size={30} label="Admin" />
-        <button type="button" onClick={() => setOpen(true)} className="rounded-full p-2 text-fg-muted" aria-label="Open menu">
-          <FiMenu className="h-5 w-5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <ThemeButton />
+          <button type="button" onClick={() => setOpen(true)} className="rounded-full p-2 text-fg-muted" aria-label="Open menu">
+            <FiMenu className="h-5 w-5" />
+          </button>
+        </div>
       </div>
       {open ? (
         <div className="fixed inset-0 z-40 lg:hidden">
@@ -110,6 +116,16 @@ export default function AdminLayout() {
       ) : null}
 
       <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        {pathname.split('/').filter(Boolean).length > 2 ? (
+          <button
+            type="button"
+            onClick={() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate(pathname.split('/').slice(0, 3).join('/')))}
+            className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg"
+          >
+            <FiArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        ) : null}
         <Suspense fallback={<PageLoader />}>
           {isLegacy ? (
             <div className="qx-legacy rounded-2xl p-4 sm:p-6">

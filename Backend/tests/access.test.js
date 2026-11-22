@@ -11,6 +11,7 @@ const { computeStats } = require('../routes/signalRoutes');
 const { DEFAULT_PRODUCTS } = require('../models/Product');
 const {
     ALL_FEATURES,
+    PAID_FEATURES,
     LEGACY_PLAN_FEATURES,
     toLegacyFeatureNames,
     fromLegacyFeatureName,
@@ -59,15 +60,15 @@ test('coupon discounts are percentages, clamped and rounded to pesewas', () => {
     assert.equal(priceAfterDiscount(99, -5), 99);
 });
 
-test('default catalogue: one product per feature plus a bundle granting all four', () => {
-    for (const feature of ALL_FEATURES) {
+test('default catalogue: one product per paid feature plus a bundle granting all of them', () => {
+    for (const feature of PAID_FEATURES) {
         const single = DEFAULT_PRODUCTS.filter((p) => p.grants.length === 1 && p.grants[0] === feature);
         assert.equal(single.length, 1, `exactly one single-feature product for ${feature}`);
     }
     const bundle = DEFAULT_PRODUCTS.find((p) => p.key === 'all-access');
-    assert.deepEqual([...bundle.grants].sort(), [...ALL_FEATURES].sort());
+    assert.deepEqual([...bundle.grants].sort(), [...PAID_FEATURES].sort());
     const separately = DEFAULT_PRODUCTS.filter((p) => p.grants.length === 1).reduce((sum, p) => sum + p.price, 0);
-    assert.ok(bundle.price < separately, 'bundle is cheaper than buying the four features separately');
+    assert.ok(bundle.price < separately, 'bundle is cheaper than buying the features separately');
 });
 
 test('old tiers map onto features, and back to the names the old client reads', () => {

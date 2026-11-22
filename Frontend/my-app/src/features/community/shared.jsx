@@ -58,7 +58,7 @@ export function ImagePicker({ onUploaded, onError, disabled, max = 4, count = 0 
         type="button"
         disabled={disabled || busy || count >= max}
         onClick={() => inputRef.current?.click()}
-        className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fg-muted transition hover:bg-white/[0.06] hover:text-fg disabled:opacity-50"
+        className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg disabled:opacity-50"
       >
         {busy ? <Spinner className="h-4 w-4" /> : <FiImage className="h-4 w-4" />}
         {busy ? 'Uploading' : 'Image'}
@@ -152,7 +152,7 @@ export function ActionMenu({ items, label = 'More actions', icon: Icon }) {
         type="button"
         onClick={() => setOpen((v) => !v)}
         onBlur={() => window.setTimeout(() => setOpen(false), 150)}
-        className="rounded-full p-2 text-fg-subtle transition hover:bg-white/[0.06] hover:text-fg"
+        className="rounded-full p-2 text-fg-subtle transition hover:bg-fg/[0.06] hover:text-fg"
         aria-label={label}
         aria-expanded={open}
       >
@@ -171,7 +171,7 @@ export function ActionMenu({ items, label = 'More actions', icon: Icon }) {
                 item.onClick();
               }}
               className={cx(
-                'block w-full px-4 py-2 text-left text-sm transition hover:bg-white/[0.06]',
+                'block w-full px-4 py-2 text-left text-sm transition hover:bg-fg/[0.06]',
                 item.danger ? 'text-down' : 'text-fg'
               )}
             >

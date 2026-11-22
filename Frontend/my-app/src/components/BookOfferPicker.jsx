@@ -122,7 +122,7 @@ function PlanCard({ option, allOptions, onSelect }) {
     <article
       className={`relative flex flex-col rounded-2xl p-6 sm:p-7 ${
         highlighted
-          ? 'z-10 border border-line-strong bg-ink-800 text-white shadow-xl shadow-[#0c2340]/25 lg:-mt-2 lg:mb-2 lg:scale-[1.03] lg:px-8 lg:py-9'
+          ? 'z-10 border border-line-strong bg-ink-800 text-fg shadow-xl shadow-[#0c2340]/25 lg:-mt-2 lg:mb-2 lg:scale-[1.03] lg:px-8 lg:py-9'
           : 'border border-line bg-ink-850 text-fg shadow-sm'
       }`}
     >
@@ -140,7 +140,7 @@ function PlanCard({ option, allOptions, onSelect }) {
 
       <h3
         className={`mt-2 text-xl font-bold leading-snug sm:text-2xl ${
-          highlighted ? 'text-white' : 'text-fg'
+          'text-fg'
         }`}
       >
         {option.headline || option.cardTitle || 'Plan'}
@@ -159,7 +159,7 @@ function PlanCard({ option, allOptions, onSelect }) {
       <p
         className={`font-black leading-none ${
           compareLine ? 'mt-2 text-center' : 'mt-4'
-        } ${highlighted ? 'text-4xl text-white sm:text-5xl' : 'text-4xl text-fg sm:text-5xl'}`}
+        } ${'text-4xl text-fg sm:text-5xl'}`}
       >
         {formatCurrency(Number(option.price || 0))}
       </p>

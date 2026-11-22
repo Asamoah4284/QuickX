@@ -922,7 +922,7 @@ export default function CreatorBookWizard() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white transition hover:bg-ink-800 disabled:opacity-50"
+            className="inline-flex items-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-fg transition hover:bg-ink-800 disabled:opacity-50"
           >
             <FiSave className="h-4 w-4" aria-hidden />
             {saving ? 'Saving…' : isEditing ? 'Save Changes' : 'Save Draft'}

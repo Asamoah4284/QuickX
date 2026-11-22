@@ -10,8 +10,8 @@ const BUTTON_BASE =
 
 const BUTTON_VARIANTS = {
   primary: 'bg-brand-600 text-white shadow-glow hover:bg-brand-500',
-  secondary: 'bg-white/[0.06] text-fg border border-line hover:bg-white/[0.1] hover:border-line-strong',
-  ghost: 'text-fg-muted hover:text-fg hover:bg-white/[0.06]',
+  secondary: 'bg-fg/[0.06] text-fg border border-line hover:bg-fg/[0.1] hover:border-line-strong',
+  ghost: 'text-fg-muted hover:text-fg hover:bg-fg/[0.06]',
   light: 'bg-white text-ink-950 hover:bg-brand-300',
   danger: 'bg-down/15 text-down border border-down/30 hover:bg-down/25',
 };
@@ -74,7 +74,7 @@ export function Card({ as: Tag = 'div', interactive = false, className, children
 }
 
 const BADGE_TONES = {
-  neutral: 'bg-white/[0.06] text-fg-muted border-line',
+  neutral: 'bg-fg/[0.06] text-fg-muted border-line',
   brand: 'bg-brand-500/15 text-brand-300 border-brand-400/30',
   up: 'bg-up/12 text-up border-up/30',
   down: 'bg-down/12 text-down border-down/30',

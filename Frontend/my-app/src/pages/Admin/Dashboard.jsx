@@ -789,7 +789,7 @@ const AdminDashboard = () => {
                                     <span>{tab.label}</span>
                                     <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${
                                         bookStatusFilter === tab.key
-                                            ? 'bg-white/20 text-white'
+                                            ? 'bg-fg/20 text-white'
                                             : tab.badgeColor || 'bg-ink-700 text-fg-muted'
                                     }`}>
                                         {tab.count}

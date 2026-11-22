@@ -33,7 +33,8 @@ router.get('/instructors/:tutorId/subscription/me', auth, async (req, res) => {
       isTutor: false,
       accessType: sub ? 'subscription' : null,
       features,
-      canAccessCommunity: features.includes('community'),
+      // The community is free for everyone signed in.
+      canAccessCommunity: true,
       subscription: sub
         ? {
             planId: sub.planId,

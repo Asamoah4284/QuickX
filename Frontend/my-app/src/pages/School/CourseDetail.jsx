@@ -896,7 +896,7 @@ const CourseDetail = () => {
                   aria-hidden
                 />
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
-                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20 backdrop-blur-sm">
+                  <div className="relative flex h-14 w-14 items-center justify-center rounded-full bg-fg/10 ring-1 ring-fg/20 backdrop-blur-sm">
                     <span className="absolute inset-0 animate-ping rounded-full bg-brand-600/25" aria-hidden />
                     <svg className="relative h-6 w-6 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                       <path d="M8 5v14l11-7z" />
@@ -1106,7 +1106,7 @@ const CourseDetail = () => {
                     )}
                     {isVideoLoading && (
                       <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-3 bg-ink-950/70">
-                        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
+                        <div className="relative flex h-12 w-12 items-center justify-center rounded-full bg-fg/10 ring-1 ring-fg/20">
                           <span className="absolute inset-0 animate-ping rounded-full bg-brand-600/30" aria-hidden />
                           <svg className="relative h-5 w-5 text-white" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
                             <path d="M8 5v14l11-7z" />
@@ -1283,7 +1283,7 @@ const CourseDetail = () => {
                       {courseData?.tutorId ? (
                         <Link
                           to={`/instructors/${courseData.tutorId}`}
-                          className="shrink-0 rounded-lg bg-ink-800 px-3.5 py-2 text-xs font-semibold text-white hover:bg-brand-600"
+                          className="shrink-0 rounded-lg bg-ink-800 px-3.5 py-2 text-xs font-semibold text-fg hover:bg-brand-600 hover:text-white"
                         >
                           Upgrade
                         </Link>
