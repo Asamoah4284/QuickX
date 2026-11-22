@@ -33,7 +33,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
   const titleId = useId();
   useLockBodyScroll(open);
   useEscape(open, onClose);
-  const widths = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl' };
+  const widths = { sm: 'sm:max-w-md', md: 'sm:max-w-lg', lg: 'sm:max-w-2xl', xl: 'sm:max-w-5xl' };
 
   return createPortal(
     <AnimatePresence>
