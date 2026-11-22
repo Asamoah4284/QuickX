@@ -11,6 +11,12 @@ const FEATURES = {
 
 const ALL_FEATURES = Object.values(FEATURES);
 
+/**
+ * What is sold. The community is free for everyone signed in, so it is not on this
+ * list; it stays a feature only so older entitlements and records remain valid.
+ */
+const PAID_FEATURES = [FEATURES.COURSES, FEATURES.SIGNALS, FEATURES.MENTORSHIP];
+
 function isFeature(value) {
     return ALL_FEATURES.includes(value);
 }
@@ -51,6 +57,7 @@ function legacyPlanIdForFeatures(features) {
 module.exports = {
     FEATURES,
     ALL_FEATURES,
+    PAID_FEATURES,
     isFeature,
     LEGACY_PLAN_FEATURES,
     toLegacyFeatureNames,

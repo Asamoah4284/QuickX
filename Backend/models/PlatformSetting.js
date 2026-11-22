@@ -35,6 +35,11 @@ const platformSettingSchema = new mongoose.Schema({
     sampleEventsSeeded: {
         type: Boolean,
         default: false
+    },
+    /** The community was made free once (Community plan off sale, plan rooms added). Never repeated. */
+    communityFreeV1: {
+        type: Boolean,
+        default: false
     }
 }, {
     timestamps: true

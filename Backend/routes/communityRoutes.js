@@ -4,17 +4,15 @@
  *
  * There is one community, owned by the mentor. URLs are /api/community/:tutorId/…
  * where :tutorId must be the owner's id, or the alias "main".
- * Everything requires sign-in plus the Community feature (owner and admins pass).
+ * The community is free: everything requires sign-in only. Rooms can be limited to
+ * a plan (room.requires), and messaging the mentor needs Mentorship. The owner and
+ * admins always pass.
  */
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router({ mergeParams: true });
 const auth = require('../middleware/auth');
-const {
-  requireTutorSubscriber,
-  requireCommunityModerator,
-  requireCommunityAccess,
-} = require('../middleware/requireTutorSubscriber');
+const { requireTutorSubscriber, requireCommunityModerator } = require('../middleware/requireTutorSubscriber');
 const CommunityPost = require('../models/CommunityPost');
 const CommunityComment = require('../models/CommunityComment');
 const CommunityLike = require('../models/CommunityLike');
@@ -33,10 +31,9 @@ const GamificationEvent = require('../models/GamificationEvent');
 const { UserBadge, BadgeDefinition } = require('../models/Badge');
 const TutorProfile = require('../models/TutorProfile');
 const User = require('../models/User');
-const Entitlement = require('../models/Entitlement');
 const { createNotification, notifyMany } = require('../services/notificationService');
 const { awardXp, getUserXp, getLeaderboard } = require('../services/gamificationService');
-const { listUserIdsWithFeature, hasFeature } = require('../services/entitlementService');
+const { hasFeature, listUserIdsWithFeature } = require('../services/entitlementService');
 const { getOwnerId } = require('../services/ownerService');
 const { FEATURES } = require('../constants/features');
 
@@ -46,6 +43,9 @@ const MEDIA_TYPES = ['image', 'video', 'document', 'link'];
 const MEMBER_MEDIA_TYPES = ['image'];
 const RESOURCE_KINDS = ['pdf', 'slides', 'worksheet', 'template', 'assignment', 'reading', 'other'];
 const ROOM_KINDS = ['course', 'lesson', 'project', 'general', 'accountability'];
+/** Plans a room can be limited to. */
+const ROOM_PLANS = [FEATURES.COURSES, FEATURES.SIGNALS, FEATURES.MENTORSHIP];
+const PLAN_LABEL = { courses: 'Courses', signals: 'Signals', mentorship: 'Mentorship' };
 const REPORTABLE = {
   post: CommunityPost,
   comment: CommunityComment,
@@ -97,7 +97,12 @@ function cleanIds(list, max = 10) {
 }
 
 function fail(res, err, label) {
-  if (err?.status) return res.status(err.status).json({ message: err.message });
+  if (err?.status) {
+    const body = { message: err.message };
+    if (err.code) body.code = err.code;
+    if (err.feature) body.feature = err.feature;
+    return res.status(err.status).json(body);
+  }
   if (err?.name === 'ValidationError' || err?.name === 'CastError') {
     return res.status(400).json({ message: 'Invalid request' });
   }
@@ -118,14 +123,50 @@ function later(label, fn) {
     .catch((err) => console.error(`community notify (${label}):`, err.message));
 }
 
-async function communityMemberIds() {
-  return listUserIdsWithFeature(FEATURES.COMMUNITY);
+/** Everyone with an account is in the community (it is free). Leaves out the owner, who sends most notices. */
+const MEMBER_FILTER = { role: { $ne: 'admin' } };
+async function communityMemberIds(ownerId) {
+  return User.distinct('_id', { ...MEMBER_FILTER, _id: { $ne: ownerId } });
 }
 
-/** True for the owner and anyone who currently holds the Community feature. */
 async function isCommunityMember(userId, tutorId) {
   if (String(userId) === String(tutorId)) return true;
-  return hasFeature(userId, FEATURES.COMMUNITY);
+  return Boolean(await User.exists({ _id: userId }));
+}
+
+function planRequired(feature, what) {
+  const err = httpError(403, `${what} is part of the ${PLAN_LABEL[feature] || feature} plan.`);
+  err.code = 'FEATURE_REQUIRED';
+  err.feature = feature;
+  return err;
+}
+
+/** Owner and admins see every room; everyone else needs the room's plan, if it has one. */
+async function canUseRoom(req, room) {
+  if (!room?.requires || isMod(req)) return true;
+  return hasFeature(req.user._id, room.requires);
+}
+
+/** Throws a 403 (with the plan name) when the room is limited to a plan this member lacks. */
+async function assertRoomAccess(req, roomId) {
+  if (!roomId) return;
+  const room = await DiscussionRoom.findById(roomId).select('requires').lean();
+  if (room && !(await canUseRoom(req, room))) throw planRequired(room.requires, 'This room');
+}
+
+/** Ids of rooms this member cannot open (to keep their posts out of search). */
+async function lockedRoomIds(req) {
+  if (isMod(req)) return [];
+  const rooms = await DiscussionRoom.find({ tutorId: req.params.tutorId, requires: { $ne: null } }).select('requires').lean();
+  const locked = [];
+  for (const room of rooms) if (!(await canUseRoom(req, room))) locked.push(room._id);
+  return locked;
+}
+
+/** Messaging the mentor directly is part of Mentorship. */
+async function assertCanMessageMentor(req) {
+  if (isMod(req) || (await hasFeature(req.user._id, FEATURES.MENTORSHIP))) return;
+  throw planRequired(FEATURES.MENTORSHIP, 'Messaging Maxwell directly');
 }
 
 // ── Scope every request to the one community ────────────────────────────────
@@ -147,7 +188,7 @@ router.use(async (req, res, next) => {
   }
 });
 
-router.use('/:tutorId', auth, requireTutorSubscriber, requireCommunityAccess);
+router.use('/:tutorId', auth, requireTutorSubscriber);
 
 /** Blocked members are shut out; muted members can read but not post. */
 router.use('/:tutorId', async (req, res, next) => {
@@ -175,10 +216,11 @@ function requireCanContribute(req, res, next) {
 router.get('/:tutorId/about', async (req, res) => {
   try {
     const tutorId = req.params.tutorId;
-    const [owner, profile, memberCount] = await Promise.all([
+    const [owner, profile, memberCount, mentorship] = await Promise.all([
       User.findById(tutorId).select('fullName profilePicture creatorHeadline').lean(),
       TutorProfile.findOne({ userId: tutorId }).select('allowPeerMessaging communityGuidelines').lean(),
-      Entitlement.countDocuments({ feature: FEATURES.COMMUNITY, endsAt: { $gt: new Date() } }),
+      User.countDocuments(MEMBER_FILTER),
+      isMod(req) ? true : hasFeature(req.user._id, FEATURES.MENTORSHIP),
     ]);
     res.json({
       owner: owner
@@ -192,6 +234,7 @@ router.get('/:tutorId/about', async (req, res) => {
         isModerator: isMod(req),
         isOwner: Boolean(req.isCommunityTutor),
         muted: req.communityMuted,
+        canMessageMentor: Boolean(mentorship),
       },
     });
   } catch (err) {
@@ -232,6 +275,7 @@ router.get('/:tutorId/posts', async (req, res) => {
     const filter = { tutorId: req.params.tutorId, deletedAt: null };
     if (req.query.roomId) {
       if (!isId(req.query.roomId)) return res.status(400).json({ message: 'Invalid room' });
+      await assertRoomAccess(req, req.query.roomId);
       filter.roomId = req.query.roomId;
     } else {
       filter.roomId = null;
@@ -284,11 +328,14 @@ router.post('/:tutorId/posts', requireCanContribute, async (req, res) => {
     }
 
     let roomId = null;
+    let roomPlan = null;
     if (req.body.roomId) {
       if (!isId(req.body.roomId)) return res.status(400).json({ message: 'Invalid room' });
-      const room = await DiscussionRoom.exists({ _id: req.body.roomId, tutorId, archived: false });
+      const room = await DiscussionRoom.findOne({ _id: req.body.roomId, tutorId, archived: false }).select('requires').lean();
       if (!room) return res.status(404).json({ message: 'Room not found' });
+      if (!(await canUseRoom(req, room))) throw planRequired(room.requires, 'This room');
       roomId = req.body.roomId;
+      roomPlan = room.requires || null;
     }
 
     const mentions = cleanIds(req.body.mentions).filter((id) => id !== String(req.user._id));
@@ -305,8 +352,9 @@ router.post('/:tutorId/posts', requireCanContribute, async (req, res) => {
     later('post', async () => {
       await awardXp({ userId: req.user._id, tutorId, type: 'post_created' });
       const snippet = body.slice(0, 120) || 'New post in the community';
-      if (mod && !roomId) {
-        await notifyMany(await communityMemberIds(), {
+      // The mentor's posts reach everyone, or only the plan's members in a plan room.
+      if (mod && (!roomId || roomPlan)) {
+        await notifyMany(roomPlan ? await listUserIdsWithFeature(roomPlan) : await communityMemberIds(req.params.tutorId), {
           type: isAnnouncement ? 'announcement' : 'new_post',
           actorId: req.user._id,
           tutorId,
@@ -338,6 +386,7 @@ async function findPost(req) {
   if (!isId(req.params.postId)) throw httpError(404, 'Post not found');
   const post = await CommunityPost.findOne({ _id: req.params.postId, tutorId: req.params.tutorId, deletedAt: null });
   if (!post) throw httpError(404, 'Post not found');
+  await assertRoomAccess(req, post.roomId);
   return post;
 }
 
@@ -533,13 +582,13 @@ router.get('/:tutorId/members', async (req, res) => {
   try {
     const tutorId = req.params.tutorId;
     const q = clip(req.query.q, 60);
-    const ids = (await communityMemberIds()).map(String).filter((id) => id !== String(tutorId));
-    const filter = { _id: { $in: ids } };
-    if (q) filter.fullName = new RegExp(escapeRegex(q), 'i');
+    const everyone = { ...MEMBER_FILTER, _id: { $ne: tutorId } };
+    const filter = q ? { ...everyone, fullName: new RegExp(escapeRegex(q), 'i') } : everyone;
 
-    const [owner, users] = await Promise.all([
+    const [owner, users, count] = await Promise.all([
       User.findById(tutorId).select(AUTHOR).lean(),
       User.find(filter).select(AUTHOR).sort({ fullName: 1 }).limit(100).lean(),
+      User.countDocuments(everyone),
     ]);
     const members = [];
     if (owner && (!q || new RegExp(escapeRegex(q), 'i').test(owner.fullName || ''))) {
@@ -548,7 +597,7 @@ router.get('/:tutorId/members', async (req, res) => {
     for (const u of users) {
       members.push({ id: String(u._id), fullName: u.fullName, profilePicture: u.profilePicture || '', role: 'student' });
     }
-    res.json({ members, total: ids.length + (owner ? 1 : 0) });
+    res.json({ members, total: count + (owner ? 1 : 0) });
   } catch (err) {
     fail(res, err, 'members');
   }
@@ -750,9 +799,12 @@ router.get('/:tutorId/rooms', async (req, res) => {
       { $group: { _id: '$roomId', count: { $sum: 1 }, lastPostAt: { $max: '$createdAt' } } },
     ]);
     const byRoom = new Map(counts.map((c) => [String(c._id), c]));
+    const open = await Promise.all(rooms.map((r) => canUseRoom(req, r)));
     res.json({
-      rooms: rooms.map((r) => ({
+      rooms: rooms.map((r, i) => ({
         ...r,
+        requires: r.requires || null,
+        locked: !open[i],
         postCount: byRoom.get(String(r._id))?.count || 0,
         lastPostAt: byRoom.get(String(r._id))?.lastPostAt || null,
       })),
@@ -771,6 +823,7 @@ router.post('/:tutorId/rooms', requireCommunityModerator, async (req, res) => {
       name,
       description: clip(req.body.description, 300),
       kind: ROOM_KINDS.includes(req.body.kind) ? req.body.kind : 'general',
+      requires: ROOM_PLANS.includes(req.body.requires) ? req.body.requires : null,
     });
     res.status(201).json({ room });
   } catch (err) {
@@ -790,6 +843,7 @@ router.patch('/:tutorId/rooms/:roomId', requireCommunityModerator, async (req, r
     }
     if (req.body.description !== undefined) room.description = clip(req.body.description, 300);
     if (req.body.archived !== undefined) room.archived = Boolean(req.body.archived);
+    if (req.body.requires !== undefined) room.requires = ROOM_PLANS.includes(req.body.requires) ? req.body.requires : null;
     await room.save();
     res.json({ room });
   } catch (err) {
@@ -881,7 +935,7 @@ router.post('/:tutorId/resources', requireCanContribute, async (req, res) => {
         });
         return;
       }
-      await notifyMany(await communityMemberIds(), {
+      await notifyMany(await communityMemberIds(req.params.tutorId), {
         type: 'resource_upload',
         actorId: req.user._id,
         tutorId,
@@ -952,7 +1006,7 @@ router.post('/:tutorId/polls', requireCommunityModerator, async (req, res) => {
     await poll.save();
 
     later('poll', async () =>
-      notifyMany(await communityMemberIds(), {
+      notifyMany(await communityMemberIds(req.params.tutorId), {
         type: 'poll_created',
         actorId: req.user._id,
         tutorId,
@@ -1069,7 +1123,7 @@ router.post('/:tutorId/live-sessions', requireCommunityModerator, async (req, re
 
     if (req.body.notify !== false) {
       later('live session', async () =>
-        notifyMany(await communityMemberIds(), {
+        notifyMany(await communityMemberIds(req.params.tutorId), {
           type: 'live_reminder',
           actorId: req.user._id,
           tutorId,
@@ -1112,7 +1166,7 @@ router.patch('/:tutorId/live-sessions/:sessionId', requireCommunityModerator, as
 
     if (session.cancelled && !wasCancelled) {
       later('live cancel', async () =>
-        notifyMany(await communityMemberIds(), {
+        notifyMany(await communityMemberIds(req.params.tutorId), {
           type: 'live_reminder',
           actorId: req.user._id,
           tutorId: req.params.tutorId,
@@ -1357,6 +1411,11 @@ router.post('/:tutorId/conversations', requireCanContribute, async (req, res) =>
 
     const pair = [me, other];
     let conversation = await Conversation.findOne({ tutorId, isGroup: false, participantIds: { $all: pair, $size: 2 } });
+    if (other === String(tutorId)) {
+      // Starting a chat with the mentor is part of Mentorship; reopening one he wrote in is fine.
+      const mentorWrote = conversation && (await Message.exists({ conversationId: conversation._id, senderId: tutorId }));
+      if (!mentorWrote) await assertCanMessageMentor(req);
+    }
     let created = false;
     if (!conversation) {
       conversation = await Conversation.create({ tutorId, participantIds: pair, isGroup: false });
@@ -1408,6 +1467,12 @@ router.post('/:tutorId/conversations/:conversationId/messages', requireCanContri
     const conversation = await findConversation(req);
     const body = clip(req.body.body, LIMITS.message);
     if (!body) return res.status(400).json({ message: 'Write a message first' });
+    // A chat with the mentor needs Mentorship, unless he wrote first (then anyone can reply).
+    const tutorId = String(req.params.tutorId);
+    if (conversation.participantIds.some((id) => String(id) === tutorId)) {
+      const mentorWrote = await Message.exists({ conversationId: conversation._id, senderId: tutorId });
+      if (!mentorWrote) await assertCanMessageMentor(req);
+    }
 
     const message = await Message.create({ conversationId: conversation._id, senderId: req.user._id, body, readBy: [req.user._id] });
     await Conversation.updateOne({ _id: conversation._id }, { $set: { lastMessageAt: message.createdAt } });
@@ -1440,9 +1505,10 @@ router.get('/:tutorId/search', async (req, res) => {
     if (q.length < 2) return res.json({ posts: [], questions: [], resources: [] });
     const tutorId = req.params.tutorId;
     const rx = new RegExp(escapeRegex(q), 'i');
+    const locked = await lockedRoomIds(req);
 
     const [posts, questions, resources] = await Promise.all([
-      CommunityPost.find({ tutorId, deletedAt: null, body: rx }).populate('authorId', AUTHOR).sort({ createdAt: -1 }).limit(20),
+      CommunityPost.find({ tutorId, deletedAt: null, body: rx, ...(locked.length ? { roomId: { $nin: locked } } : {}) }).populate('authorId', AUTHOR).sort({ createdAt: -1 }).limit(20),
       CommunityQuestion.find({ tutorId, deletedAt: null, $or: [{ title: rx }, { body: rx }, { topic: rx }] })
         .populate('authorId', AUTHOR)
         .sort({ createdAt: -1 })

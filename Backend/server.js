@@ -184,6 +184,12 @@ db.once('open', async () => {
         console.error('product seed:', e.message);
     }
     try {
+        const r = await require('./services/communityFreeService').makeCommunityFreeOnce();
+        if (r.ran) console.log(`Community is now free: ${r.offSale} plan(s) off sale, ${r.bundles} bundle(s) updated, ${r.rooms} plan room(s) added`);
+    } catch (e) {
+        console.error('free community step:', e.message);
+    }
+    try {
         const added = await require('./scripts/seedEvents').seedSampleEventsOnce();
         if (added > 0) console.log(`Added ${added} sample past events. Edit or delete them in Admin > Events.`);
     } catch (e) {
