@@ -2,6 +2,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation, useMatches, useNavigate } from 'react-router-dom';
 import {
   FiActivity,
+  FiArrowLeft,
   FiBook,
   FiBookOpen,
   FiPieChart,
@@ -115,6 +116,16 @@ export default function AdminLayout() {
       ) : null}
 
       <main className="min-w-0 flex-1 p-4 sm:p-6 lg:p-8">
+        {pathname.split('/').filter(Boolean).length > 2 ? (
+          <button
+            type="button"
+            onClick={() => ((window.history.state?.idx ?? 0) > 0 ? navigate(-1) : navigate(pathname.split('/').slice(0, 3).join('/')))}
+            className="mb-4 inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-semibold text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg"
+          >
+            <FiArrowLeft className="h-4 w-4" />
+            Back
+          </button>
+        ) : null}
         <Suspense fallback={<PageLoader />}>
           {isLegacy ? (
             <div className="qx-legacy rounded-2xl p-4 sm:p-6">

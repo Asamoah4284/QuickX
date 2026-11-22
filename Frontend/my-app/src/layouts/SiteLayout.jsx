@@ -15,6 +15,7 @@ import {
   FiCalendar,
   FiInfo,
   FiChevronDown,
+  FiArrowLeft,
 } from 'react-icons/fi';
 import { FaTelegramPlane, FaWhatsapp } from 'react-icons/fa';
 import { useAuth } from '../lib/auth';
@@ -22,7 +23,7 @@ import { FEATURE_LIST } from '../lib/features';
 import { cx } from '../lib/format';
 import { Avatar, Button, Container, PageLoader } from '../ui/primitives';
 import { Sheet } from '../ui/overlays';
-import BrandLogo from '../ui/Logo';
+import BrandLogo, { LogoMark } from '../ui/Logo';
 import { PageTransition } from '../ui/motion';
 import NotificationBell from '../components/NotificationBell';
 import { ThemeButton, ThemeChoice } from '../ui/ThemeToggle';
@@ -121,16 +122,62 @@ function MoreMenu() {
   );
 }
 
-function Logo() {
+function Logo({ compact = false }) {
   return (
     <Link to="/" className="flex items-center" aria-label="QuickX Learn home">
-      <BrandLogo />
+      {compact ? (
+        <>
+          <span className="sm:hidden">
+            <LogoMark size={32} />
+          </span>
+          <span className="hidden sm:block">
+            <BrandLogo />
+          </span>
+        </>
+      ) : (
+        <BrandLogo />
+      )}
     </Link>
+  );
+}
+
+/** Pages that are a starting point, so they have no back arrow. */
+const NO_BACK = ['/', '/account'];
+
+/** Where Back goes when the page was opened directly (no history in this tab). */
+function parentOf(pathname) {
+  if (pathname.startsWith('/checkout') || pathname === '/payment/done') return '/pricing';
+  if (pathname.startsWith('/school/course')) return '/courses';
+  if (pathname.startsWith('/reset-password') || pathname === '/forgot-password') return '/login';
+  const parts = pathname.split('/').filter(Boolean);
+  return parts.length > 1 ? `/${parts.slice(0, -1).join('/')}` : '/';
+}
+
+function BackButton() {
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const goBack = () => {
+    // React Router numbers history entries; above 0 means there is a page in this tab to go back to.
+    if ((window.history.state?.idx ?? 0) > 0) navigate(-1);
+    else navigate(parentOf(pathname));
+  };
+  return (
+    <button
+      type="button"
+      onClick={goBack}
+      className="-ml-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-fg transition hover:bg-fg/[0.06]"
+      aria-label="Go back"
+      title="Back"
+    >
+      <FiArrowLeft className="h-5 w-5" />
+    </button>
   );
 }
 
 function TopNav({ onOpenMenu }) {
   const { isSignedIn, user, isOwner } = useAuth();
+  const { pathname } = useLocation();
+  const showBack = !NO_BACK.includes(pathname);
   const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
@@ -147,8 +194,11 @@ function TopNav({ onOpenMenu }) {
         scrolled ? 'glass border-line' : 'border-transparent bg-ink-950/60 backdrop-blur-md'
       )}
     >
-      <Container className="flex h-full items-center justify-between gap-6">
-        <Logo />
+      <Container className="flex h-full items-center justify-between gap-3 lg:gap-6">
+        <div className="flex min-w-0 items-center gap-1">
+          {showBack ? <BackButton /> : null}
+          <Logo compact={showBack} />
+        </div>
 
         <nav className="hidden items-center gap-1 lg:flex" aria-label="Main">
           {TOP_LINKS.map((link) => (
@@ -185,10 +235,12 @@ function TopNav({ onOpenMenu }) {
           {isSignedIn ? (
             <>
               {isOwner ? (
-                <Button to="/creator/dashboard" variant="ghost" size="sm" className="hidden sm:inline-flex">
-                  <FiEdit3 className="h-4 w-4" />
-                  Studio
-                </Button>
+                <span className="hidden sm:block">
+                  <Button to="/creator/dashboard" variant="ghost" size="sm">
+                    <FiEdit3 className="h-4 w-4" />
+                    Studio
+                  </Button>
+                </span>
               ) : null}
               <NotificationBell />
               <Link
@@ -201,9 +253,11 @@ function TopNav({ onOpenMenu }) {
             </>
           ) : (
             <>
-              <Button to="/login" variant="ghost" size="sm" className="hidden sm:inline-flex">
-                Log in
-              </Button>
+              <span className="hidden sm:block">
+                <Button to="/login" variant="ghost" size="sm">
+                  Log in
+                </Button>
+              </span>
               <Button to="/register" size="sm">
                 Get started
               </Button>
