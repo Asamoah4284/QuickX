@@ -103,7 +103,7 @@ function BookImageGallery({ images = [], title = 'Book' }) {
             type="button"
             onClick={() => setZoomSrc(displayImages[activeIndex])}
             aria-label="Zoom image"
-            className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink-950/75 text-white shadow-lg backdrop-blur-sm transition hover:bg-ink-950 hover:scale-110"
+            className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-full bg-ink-950/75 text-fg shadow-lg backdrop-blur-sm transition hover:bg-ink-950 hover:scale-110"
           >
             <FiZoomIn className="h-4 w-4" />
           </button>
@@ -177,10 +177,10 @@ function BookImageGallery({ images = [], title = 'Book' }) {
 
 function BookReaderCommunityCard() {
   return (
-    <div className="my-12 overflow-hidden rounded-3xl bg-gradient-to-r from-ink-800 via-[#102d53] to-[#0088cc] p-6 text-white shadow-xl sm:p-8">
+    <div className="on-dark my-12 overflow-hidden rounded-3xl bg-gradient-to-r from-logo-navy via-[#102d53] to-[#0088cc] p-6 text-white shadow-xl sm:p-8">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="max-w-xl space-y-2.5">
-          <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-300 backdrop-blur-sm">
+          <div className="inline-flex items-center gap-2 rounded-full bg-fg/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-300 backdrop-blur-sm">
             <FaTelegramPlane className="h-3.5 w-3.5" />
             QuickX Reader &amp; Trader Community
           </div>
@@ -208,7 +208,7 @@ function BookReaderCommunityCard() {
           </a>
           <Link
             to="/community"
-            className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+            className="inline-flex items-center gap-2 rounded-xl border border-fg/20 bg-fg/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-fg/20"
           >
             Community Hub
             <FiArrowRight className="h-4 w-4" />
@@ -343,7 +343,7 @@ function TestimonialImagePreview({ src, alt, onClose }) {
         type="button"
         onClick={onClose}
         aria-label="Close preview"
-        className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
+        className="absolute right-4 top-4 inline-flex h-10 w-10 items-center justify-center rounded-full bg-fg/10 text-white transition hover:bg-fg/20"
       >
         <FiX className="h-5 w-5" aria-hidden />
       </button>
@@ -483,7 +483,7 @@ function BookTestimonialsSection({ testimonials = [] }) {
 
               <div className="flex items-center gap-2.5">
                 {t.name ? (
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold text-white">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-ink-800 text-xs font-semibold text-fg">
                     {readerInitials(t.name)}
                   </span>
                 ) : null}
@@ -540,7 +540,7 @@ function HardcopyCtaButton({ onClick, variant = 'outline', className = '' }) {
       >
         <div
           className={`flex items-center justify-center gap-2 px-4 py-2 text-center ${
-            isPrimary ? 'bg-white/15 text-white' : 'bg-up/10 text-up'
+            isPrimary ? 'bg-fg/15 text-white' : 'bg-up/10 text-up'
           }`}
         >
           <FiTruck className="h-4 w-4 shrink-0" aria-hidden />
@@ -619,7 +619,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
               </p>
               <h2
                 id="same-author-heading"
-                className="mt-1.5 text-xl font-black leading-tight tracking-tight text-white sm:mt-2 sm:text-3xl lg:text-[2rem]"
+                className="mt-1.5 text-xl font-black leading-tight tracking-tight text-fg sm:mt-2 sm:text-3xl lg:text-[2rem]"
               >
                 More from {author}
               </h2>
@@ -656,9 +656,9 @@ function SameAuthorBooksSection({ author, books = [] }) {
                   to={`/store/${item._id}`}
                   className="group block h-full"
                 >
-                  <article className="relative flex h-full flex-row items-stretch gap-3 overflow-hidden rounded-xl border border-white/[0.08] bg-gradient-to-b from-white/[0.08] to-white/[0.02] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm transition-all duration-500 sm:flex-col sm:rounded-2xl sm:p-6 sm:hover:border-warn sm:hover:from-white/[0.11] sm:hover:to-white/[0.04] sm:hover:shadow-[0_28px_56px_-16px_rgba(0,0,0,0.55)]">
+                  <article className="relative flex h-full flex-row items-stretch gap-3 overflow-hidden rounded-xl border border-fg/[0.08] bg-gradient-to-b from-fg/[0.08] to-fg/[0.02] p-3.5 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.06)] backdrop-blur-sm transition-all duration-500 sm:flex-col sm:rounded-2xl sm:p-6 sm:hover:border-warn sm:hover:from-fg/[0.11] sm:hover:to-fg/[0.04] sm:hover:shadow-[0_28px_56px_-16px_rgba(0,0,0,0.55)]">
                     <span
-                      className="pointer-events-none absolute right-3 top-2 hidden select-none font-serif text-5xl font-light leading-none text-white/[0.07] sm:block"
+                      className="pointer-events-none absolute right-3 top-2 hidden select-none font-serif text-5xl font-light leading-none text-fg/[0.07] sm:block"
                       aria-hidden
                     >
                       {String(index + 1).padStart(2, '0')}
@@ -673,7 +673,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
                         className="absolute inset-x-1 top-1 hidden aspect-[2/3] rounded-lg bg-ink-850 sm:block"
                         aria-hidden
                       />
-                      <div className="relative aspect-[2/3] overflow-hidden rounded-lg shadow-[0_12px_28px_-8px_rgba(0,0,0,0.55)] ring-1 ring-white/15 sm:shadow-[0_22px_44px_-10px_rgba(0,0,0,0.65)] sm:transition sm:duration-500 sm:ease-out sm:group-hover:-translate-y-2 sm:group-hover:rotate-[-2deg] sm:group-hover:shadow-[0_28px_50px_-8px_rgba(0,0,0,0.7)]">
+                      <div className="relative aspect-[2/3] overflow-hidden rounded-lg shadow-[0_12px_28px_-8px_rgba(0,0,0,0.55)] ring-1 ring-fg/15 sm:shadow-[0_22px_44px_-10px_rgba(0,0,0,0.65)] sm:transition sm:duration-500 sm:ease-out sm:group-hover:-translate-y-2 sm:group-hover:rotate-[-2deg] sm:group-hover:shadow-[0_28px_50px_-8px_rgba(0,0,0,0.7)]">
                         <img
                           src={item.thumbnail || DEFAULT_BOOK_COVER}
                           alt=""
@@ -697,7 +697,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
                     </div>
 
                     <div className="flex min-w-0 flex-1 flex-col justify-center py-1 text-left sm:mt-8 sm:py-0 sm:text-center">
-                      <h3 className="line-clamp-3 text-sm font-bold leading-snug text-white sm:line-clamp-2 sm:min-h-[2.75rem] sm:text-base">
+                      <h3 className="line-clamp-3 text-sm font-bold leading-snug text-fg sm:line-clamp-2 sm:min-h-[2.75rem] sm:text-base">
                         {item.title}
                       </h3>
 
@@ -712,7 +712,7 @@ function SameAuthorBooksSection({ author, books = [] }) {
                         ) : null}
                       </div>
 
-                      <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-white/75 sm:mt-auto sm:justify-center sm:pt-5 sm:text-sm sm:transition sm:group-hover:text-warn">
+                      <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-fg-muted sm:mt-auto sm:justify-center sm:pt-5 sm:text-sm sm:transition sm:group-hover:text-warn">
                         Explore this title
                         <FiArrowRight
                           className="h-3.5 w-3.5 sm:h-4 sm:w-4 sm:transition sm:duration-300 sm:group-hover:translate-x-1"
@@ -960,7 +960,7 @@ function BookDetails() {
             <p className="mt-2 text-down">{error}</p>
             <Link
               to="/store"
-              className="mt-6 inline-flex items-center justify-center rounded-xl bg-ink-950 px-5 py-2.5 text-sm font-semibold text-white hover:bg-ink-800"
+              className="mt-6 inline-flex items-center justify-center rounded-xl bg-ink-950 px-5 py-2.5 text-sm font-semibold text-fg hover:bg-ink-800"
             >
               Browse marketplace
             </Link>

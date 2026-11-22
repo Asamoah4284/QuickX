@@ -9,10 +9,10 @@ export default function Loader({
 }) {
   const sizeClass = size === 'sm' ? 'h-10 w-10' : size === 'lg' ? 'h-14 w-14' : 'h-12 w-12';
 
-  const pageBg = tone === 'dark' ? 'bg-ink-950 text-white' : 'bg-ink-900 text-fg';
-  const cardBg = tone === 'dark' ? 'bg-white/5 ring-white/10' : 'bg-ink-850 ring-line';
-  const labelText = tone === 'dark' ? 'text-white' : 'text-fg';
-  const subText = tone === 'dark' ? 'text-white/70' : 'text-fg-subtle';
+  const pageBg = tone === 'dark' ? 'bg-ink-950 text-fg' : 'bg-ink-900 text-fg';
+  const cardBg = tone === 'dark' ? 'bg-fg/5 ring-fg/10' : 'bg-ink-850 ring-line';
+  const labelText = 'text-fg';
+  const subText = 'text-fg-subtle';
 
   const content = (
     <div className="flex flex-col items-center text-center">

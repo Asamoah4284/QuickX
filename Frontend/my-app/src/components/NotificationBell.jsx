@@ -160,7 +160,7 @@ export default function NotificationBell() {
           setOpen((o) => !o);
           load();
         }}
-        className="relative rounded-xl p-2 text-current opacity-80 transition hover:bg-white/5 hover:opacity-100"
+        className="relative rounded-xl p-2 text-current opacity-80 transition hover:bg-fg/5 hover:opacity-100"
       >
         <FiBell className="h-[18px] w-[18px]" />
         {unreadCount > 0 ? (

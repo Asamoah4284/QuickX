@@ -2,6 +2,7 @@ import { lazy, Suspense } from 'react';
 import { createBrowserRouter, Navigate, RouterProvider, useParams } from 'react-router-dom';
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, RequireAuth } from './lib/auth';
+import { useThemeSync } from './lib/theme';
 import { PageLoader } from './ui/primitives';
 import SiteLayout from './layouts/SiteLayout';
 import Landing from './features/marketing/Landing';
@@ -186,6 +187,7 @@ const router = createBrowserRouter([
 ]);
 
 export default function App() {
+  useThemeSync();
   return (
     <HelmetProvider>
       <AuthProvider>

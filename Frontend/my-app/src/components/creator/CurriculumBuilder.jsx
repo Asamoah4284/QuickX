@@ -292,7 +292,7 @@ export default function CurriculumBuilder({ value, onChange, authToken }) {
           <button
             type="button"
             onClick={addModule}
-            className="inline-flex items-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-white"
+            className="inline-flex items-center gap-2 rounded-2xl bg-ink-950 px-5 py-3 text-sm font-semibold text-fg"
           >
             <FiPlus />
             Add module

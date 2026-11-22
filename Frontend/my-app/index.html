@@ -57,6 +57,16 @@
     <meta name="keywords" content="forex trading, forex course, forex signals, trading mentorship, technical analysis, risk management, trading psychology, Ghana forex, Maxwell Donkoh">
     <meta name="author" content="Maxwell Donkoh">
     <meta name="theme-color" content="#05080f">
+    <script>
+      // Light or dark before the page draws (src/lib/theme.js keeps it up to date).
+      (function () {
+        var c = 'system';
+        try { c = localStorage.getItem('qx-theme') || 'system'; } catch (e) {}
+        var light = c === 'light' || (c !== 'dark' && window.matchMedia && matchMedia('(prefers-color-scheme: light)').matches);
+        document.documentElement.dataset.theme = light ? 'light' : 'dark';
+        if (light) document.querySelector('meta[name="theme-color"]').setAttribute('content', '#f5f7fb');
+      })();
+    </script>
 
 
     <!-- Local dev only: drop any old service worker so you always see fresh code -->

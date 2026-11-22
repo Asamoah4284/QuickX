@@ -147,7 +147,7 @@ export default function Members() {
                 key={String(row.userId)}
                 type="button"
                 onClick={() => openProfile(String(row.userId))}
-                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-white/[0.03]"
+                className="flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-fg/[0.03]"
               >
                 <span className={cx('tabular w-6 text-center text-sm font-bold', MEDALS[i] || 'text-fg-subtle')}>{i + 1}</span>
                 <Avatar src={publicAssetUrl(row.profilePicture)} name={row.fullName} size={36} />

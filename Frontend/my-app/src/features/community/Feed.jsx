@@ -164,7 +164,7 @@ function Composer({ roomId, onPosted }) {
                 <button
                   type="button"
                   onClick={() => setPollOpen(true)}
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fg-muted transition hover:bg-white/[0.06] hover:text-fg"
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg"
                 >
                   <FiBarChart2 className="h-4 w-4" />
                   Poll

@@ -269,7 +269,7 @@ export default function Landing() {
       <section className="border-t border-line py-20">
         <Container>
           <Reveal>
-            <div className="relative overflow-hidden rounded-[2rem] border border-brand-400/30 bg-gradient-to-br from-brand-700 via-brand-600 to-ink-800 px-6 py-14 text-center sm:px-12 sm:py-20">
+            <div className="on-dark relative overflow-hidden rounded-[2rem] border border-brand-400/30 bg-gradient-to-br from-brand-700 via-brand-600 to-logo-navy px-6 py-14 text-center sm:px-12 sm:py-20">
               <div className="bg-grid absolute inset-0 opacity-60" aria-hidden />
               <div className="relative">
                 <h2 className="mx-auto max-w-2xl text-3xl font-extrabold tracking-tight text-white sm:text-5xl">
@@ -282,7 +282,7 @@ export default function Landing() {
                   <Button to="/register" variant="light" size="lg">
                     Create free account
                   </Button>
-                  <Button to="/pricing" size="lg" className="border border-white/30 bg-white/10 shadow-none hover:bg-white/20">
+                  <Button to="/pricing" size="lg" className="border border-fg/30 bg-fg/10 shadow-none hover:bg-fg/20">
                     See pricing
                   </Button>
                 </div>

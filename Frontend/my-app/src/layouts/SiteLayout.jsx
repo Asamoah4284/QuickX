@@ -25,6 +25,7 @@ import { Sheet } from '../ui/overlays';
 import BrandLogo from '../ui/Logo';
 import { PageTransition } from '../ui/motion';
 import NotificationBell from '../components/NotificationBell';
+import { ThemeButton, ThemeChoice } from '../ui/ThemeToggle';
 import InstallAppBanner from '../components/InstallAppBanner';
 import { clearServerPushSubscription, ensurePushSubscription } from '../utils/webPush';
 
@@ -105,7 +106,7 @@ function MoreMenu() {
                 className={({ isActive }) =>
                   cx(
                     'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors',
-                    isActive ? 'bg-brand-500/15 text-fg' : 'text-fg-muted hover:bg-white/[0.05] hover:text-fg'
+                    isActive ? 'bg-brand-500/15 text-fg' : 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
                   )
                 }
               >
@@ -167,7 +168,7 @@ function TopNav({ onOpenMenu }) {
                     // The highlight glides from one link to the next.
                     <motion.span
                       layoutId="nav-pill"
-                      className="absolute inset-0 rounded-full bg-white/[0.08]"
+                      className="absolute inset-0 rounded-full bg-fg/[0.08]"
                       transition={{ type: 'spring', stiffness: 420, damping: 34 }}
                     />
                   ) : null}
@@ -179,7 +180,8 @@ function TopNav({ onOpenMenu }) {
           <MoreMenu />
         </nav>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2">
+          <ThemeButton className="hidden sm:inline-flex" />
           {isSignedIn ? (
             <>
               {isOwner ? (
@@ -210,7 +212,7 @@ function TopNav({ onOpenMenu }) {
           <button
             type="button"
             onClick={onOpenMenu}
-            className="rounded-full p-2.5 text-fg-muted transition hover:bg-white/[0.06] hover:text-fg lg:hidden"
+            className="rounded-full p-2.5 text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg lg:hidden"
             aria-label="Open menu"
           >
             <FiMenu className="h-5 w-5" />
@@ -238,7 +240,7 @@ function MobileMenu({ open, onClose }) {
   const itemClass = ({ isActive }) =>
     cx(
       'flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium transition-colors',
-      isActive ? 'bg-brand-500/15 text-fg' : 'text-fg-muted hover:bg-white/[0.05] hover:text-fg'
+      isActive ? 'bg-brand-500/15 text-fg' : 'text-fg-muted hover:bg-fg/[0.05] hover:text-fg'
     );
 
   return (
@@ -248,7 +250,7 @@ function MobileMenu({ open, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="rounded-full p-2.5 text-fg-muted hover:bg-white/[0.06] hover:text-fg"
+          className="rounded-full p-2.5 text-fg-muted hover:bg-fg/[0.06] hover:text-fg"
           aria-label="Close menu"
         >
           <FiX className="h-5 w-5" />
@@ -277,6 +279,7 @@ function MobileMenu({ open, onClose }) {
       </nav>
 
       <div className="space-y-3 border-t border-line p-4">
+        <ThemeChoice />
         {isSignedIn ? (
           <Button variant="secondary" className="w-full" onClick={handleSignOut}>
             <FiLogOut className="h-4 w-4" />

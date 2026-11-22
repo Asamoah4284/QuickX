@@ -403,11 +403,11 @@ const Store = () => {
 
       {/* Community Spotlight Banner - High converting mid-page feature */}
       <div className="mx-auto -mt-6 max-w-7xl px-4 sm:-mt-8 sm:px-6 relative z-10">
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-ink-800 via-[#0D2866] to-[#0088cc] p-6 text-white shadow-xl ring-1 ring-line sm:p-8">
-          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-white/10 blur-3xl" />
+        <div className="on-dark relative overflow-hidden rounded-2xl bg-gradient-to-r from-logo-navy via-[#0D2866] to-[#0088cc] p-6 text-white shadow-xl ring-1 ring-line sm:p-8">
+          <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-fg/10 blur-3xl" />
           <div className="relative flex flex-col items-start justify-between gap-6 lg:flex-row lg:items-center">
             <div className="max-w-2xl space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-300 backdrop-blur-sm">
+              <div className="inline-flex items-center gap-2 rounded-full bg-fg/15 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-brand-300 backdrop-blur-sm">
                 <FiUsers className="h-3.5 w-3.5" />
                 Ghana&apos;s #1 Trading Community
               </div>
@@ -435,7 +435,7 @@ const Store = () => {
               </a>
               <Link
                 to="/community"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-white/20"
+                className="inline-flex items-center gap-2 rounded-xl border border-fg/20 bg-fg/10 px-4 py-3.5 text-sm font-semibold text-white backdrop-blur-sm transition hover:bg-fg/20"
               >
                 Community Hub
                 <FiArrowRight className="h-4 w-4" />

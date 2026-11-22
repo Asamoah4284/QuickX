@@ -258,7 +258,7 @@ export default function EventDetail() {
       </div>
 
       {/* Hero Banner with Cover Photo */}
-      <div className="relative overflow-hidden bg-[#07152f] text-white">
+      <div className="on-dark relative overflow-hidden bg-[#07152f] text-white">
         <div className="absolute inset-0 opacity-25">
           <img
             src={
@@ -273,7 +273,7 @@ export default function EventDetail() {
 
         <div className="relative mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-16 lg:px-8">
           <div className="flex flex-wrap items-center gap-2.5 mb-4">
-            <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-300 backdrop-blur border border-white/10">
+            <span className="rounded-full bg-fg/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-brand-300 backdrop-blur border border-fg/10">
               {event.eventType === 'online'
                 ? '🌐 Live Online Stream'
                 : event.eventType === 'hybrid'
@@ -299,7 +299,7 @@ export default function EventDetail() {
             {event.shortDescription}
           </p>
 
-          <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-fg-muted border-t border-white/10 pt-6">
+          <div className="mt-8 flex flex-wrap items-center gap-6 text-sm text-fg-muted border-t border-fg/10 pt-6">
             <div className="flex items-center gap-2">
               <FiCalendar className="h-4 w-4 text-brand-300" />
               <span className="font-semibold text-white">{dateObj.full}</span>
@@ -521,7 +521,7 @@ export default function EventDetail() {
                   <button
                     type="button"
                     onClick={() => setShowPassModal(true)}
-                    className="w-full rounded-2xl bg-ink-800 py-3.5 text-xs font-bold text-white shadow-sm hover:bg-brand-600 transition flex items-center justify-center gap-2"
+                    className="w-full rounded-2xl bg-ink-800 py-3.5 text-xs font-bold text-fg shadow-sm hover:bg-brand-600 hover:text-white transition flex items-center justify-center gap-2"
                   >
                     <FiAward className="h-4 w-4" />
                     <span>View Digital Ticket Pass</span>
@@ -691,7 +691,7 @@ export default function EventDetail() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink-950/70 backdrop-blur-md">
           <div className="relative w-full max-w-lg overflow-hidden rounded-3xl bg-ink-850 shadow-2xl border border-line">
             {/* Modal Header */}
-            <div className="flex items-center justify-between bg-[#07152f] px-6 py-4 text-white">
+            <div className="on-dark flex items-center justify-between bg-[#07152f] px-6 py-4 text-white">
               <div className="flex items-center gap-2">
                 <LogoMark size={30} />
                 <span className="text-xs font-bold tracking-wider uppercase text-brand-300">
@@ -701,7 +701,7 @@ export default function EventDetail() {
               <button
                 type="button"
                 onClick={() => setShowPassModal(false)}
-                className="rounded-xl p-1.5 text-white/70 hover:bg-white/10 transition"
+                className="rounded-xl p-1.5 text-white/70 hover:bg-fg/10 transition"
               >
                 <FiX className="h-5 w-5" />
               </button>
@@ -769,7 +769,7 @@ export default function EventDetail() {
                 <button
                   type="button"
                   onClick={() => window.print()}
-                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-ink-950 py-3 text-xs font-bold text-white hover:bg-ink-800 transition shadow-sm"
+                  className="flex-1 inline-flex items-center justify-center gap-2 rounded-xl bg-ink-950 py-3 text-xs font-bold text-fg hover:bg-ink-800 transition shadow-sm"
                 >
                   <FiPrinter className="h-4 w-4" />
                   <span>Print / Save Pass</span>

@@ -67,6 +67,40 @@
   }
 }
 
+/*
+ * Light theme. The @theme block above is the dark theme; these replace its colours
+ * when <html data-theme="light"> is set (see src/lib/theme.js and the script in index.html).
+ * Every utility reads these variables, so the whole site follows.
+ */
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  --color-ink-950: #f5f7fb;
+  --color-ink-900: #fbfcfe;
+  --color-ink-850: #ffffff;
+  --color-ink-800: #f0f3f9;
+  --color-ink-700: #e4e9f2;
+  --color-ink-600: #d3dae8;
+
+  --color-fg: #0b1220;
+  --color-fg-muted: #4a5670;
+  --color-fg-subtle: #76839c;
+
+  --color-line: rgb(11 18 32 / 0.08);
+  --color-line-strong: rgb(11 18 32 / 0.16);
+
+  /* Lighter blues are for text on dark; on white they need to be deeper to read. */
+  --color-brand-300: #1246c4;
+  --color-brand-400: #1b5ef5;
+
+  --color-up: #0e9a5f;
+  --color-down: #e0364a;
+  --color-warn: #b7791f;
+
+  --shadow-glow: 0 0 0 1px rgb(27 94 245 / 0.18), 0 18px 50px -22px rgb(27 94 245 / 0.45);
+  --shadow-card: 0 1px 2px rgb(11 18 32 / 0.04), 0 12px 32px -18px rgb(11 18 32 / 0.18);
+}
+
 * {
   box-sizing: border-box;
 }
@@ -89,6 +123,55 @@ body {
 
 ::selection {
   background: rgb(47 107 255 / 0.4);
+}
+
+/*
+ * Sections that are always dark (photo or deep-blue banners) keep the dark colours
+ * inside them in both themes. Add class="on-dark" to the banner.
+ */
+.on-dark {
+  --color-fg: #e9eef8;
+  --color-fg-muted: #b4bfd4;
+  --color-fg-subtle: #8693ad;
+  --color-line: rgb(255 255 255 / 0.12);
+  --color-line-strong: rgb(255 255 255 / 0.2);
+  --color-brand-300: #8fb4ff;
+  --color-brand-400: #5b8fff;
+  --color-up: #2fd08c;
+  --color-down: #ff5d6c;
+  --color-warn: #f5b84a;
+  color: var(--color-fg);
+}
+
+/* Light theme versions of the effects below that were drawn for a dark page. */
+:root[data-theme="light"] .surface {
+  background: var(--color-ink-850);
+}
+:root[data-theme="light"] .glass {
+  background: rgb(255 255 255 / 0.82);
+}
+:root[data-theme="light"] .text-gradient {
+  background: linear-gradient(100deg, var(--color-fg) 0%, var(--color-brand-400) 55%, var(--color-brand-600) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+:root[data-theme="light"] .bg-grid {
+  background-image:
+    linear-gradient(to right, rgb(11 18 32 / 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgb(11 18 32 / 0.05) 1px, transparent 1px);
+}
+:root[data-theme="light"] .skeleton {
+  background: linear-gradient(90deg, rgb(11 18 32 / 0.05) 25%, rgb(11 18 32 / 0.09) 37%, rgb(11 18 32 / 0.05) 63%);
+  background-size: 400% 100%;
+}
+
+/* Phones zoom into any text box smaller than 16px when it is tapped. Keep them at 16px on small screens. */
+@media (max-width: 639px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
 }
 
 :focus-visible {

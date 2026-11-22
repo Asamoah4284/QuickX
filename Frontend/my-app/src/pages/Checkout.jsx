@@ -1774,7 +1774,7 @@ function Checkout() {
                   ) : (
                     <button
                       type="button"
-                      className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-ink-600 px-5 py-3 font-semibold text-white"
+                      className="flex flex-1 cursor-not-allowed items-center justify-center rounded-xl bg-ink-600 px-5 py-3 font-semibold text-fg"
                       disabled={true}
                     >
                       Complete required fields

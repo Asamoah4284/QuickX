@@ -43,12 +43,12 @@ function Poll({ poll, onChange }) {
             className={cx(
               'relative block w-full overflow-hidden rounded-xl border px-4 py-3 text-left text-sm transition',
               mine ? 'border-brand-400/60' : 'border-line',
-              !showResults && 'hover:border-line-strong hover:bg-white/[0.04]'
+              !showResults && 'hover:border-line-strong hover:bg-fg/[0.04]'
             )}
           >
             {showResults ? (
               <motion.span
-                className={cx('absolute inset-y-0 left-0', mine ? 'bg-brand-500/25' : 'bg-white/[0.06]')}
+                className={cx('absolute inset-y-0 left-0', mine ? 'bg-brand-500/25' : 'bg-fg/[0.06]')}
                 initial={{ width: 0 }}
                 animate={{ width: `${pct}%` }}
                 transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
@@ -345,7 +345,7 @@ export default function PostCard({ post, onChange, onRemove }) {
           onClick={toggleLike}
           aria-pressed={post.likedByMe}
           className={cx(
-            'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition hover:bg-white/[0.06]',
+            'inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition hover:bg-fg/[0.06]',
             post.likedByMe ? 'text-down' : 'text-fg-muted hover:text-fg'
           )}
         >
@@ -358,7 +358,7 @@ export default function PostCard({ post, onChange, onRemove }) {
           type="button"
           onClick={() => setShowComments((v) => !v)}
           aria-expanded={showComments}
-          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fg-muted transition hover:bg-white/[0.06] hover:text-fg"
+          className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm font-medium text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg"
         >
           <FiMessageCircle className="h-4 w-4" />
           <span className="tabular">{post.commentCount || 0}</span>

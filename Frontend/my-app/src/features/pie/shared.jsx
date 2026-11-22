@@ -34,7 +34,7 @@ export function PieRing({ value = 0, size = 120, stroke = 10, className, childre
   return (
     <div className={cx('relative inline-flex items-center justify-center', className)} style={{ width: size, height: size }}>
       <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="-rotate-90" aria-hidden>
-        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-white/[0.07]" />
+        <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-fg/[0.08]" />
         <motion.circle
           cx={size / 2}
           cy={size / 2}
@@ -65,7 +65,7 @@ export function PieRing({ value = 0, size = 120, stroke = 10, className, childre
 export function FundingBar({ pie }) {
   const pct = percentFunded(pie);
   return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-white/[0.07]">
+    <div className="h-2 w-full overflow-hidden rounded-full bg-fg/[0.07]">
       <motion.div
         className="h-full rounded-full bg-gradient-to-r from-brand-400 to-brand-600"
         initial={{ width: 0 }}

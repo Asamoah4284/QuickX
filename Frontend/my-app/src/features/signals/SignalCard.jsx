@@ -124,7 +124,7 @@ export default function SignalCard({ signal, preview = false }) {
             <h3 className="tabular text-xl font-bold text-fg">{signal.pair || 'PAIR'}</h3>
             <DirectionPill direction={signal.direction} />
             {signal.timeframe ? (
-              <span className="tabular rounded-md bg-white/[0.06] px-2 py-0.5 text-xs text-fg-muted">{signal.timeframe}</span>
+              <span className="tabular rounded-md bg-fg/[0.06] px-2 py-0.5 text-xs text-fg-muted">{signal.timeframe}</span>
             ) : null}
           </div>
           <p className="mt-1 text-sm text-fg-muted">{orderLabel(signal)}</p>

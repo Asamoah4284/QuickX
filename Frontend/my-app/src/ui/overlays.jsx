@@ -67,7 +67,7 @@ export function Modal({ open, onClose, title, children, footer, size = 'md' }) {
               <button
                 type="button"
                 onClick={onClose}
-                className="rounded-full p-2 text-fg-muted transition hover:bg-white/[0.06] hover:text-fg"
+                className="rounded-full p-2 text-fg-muted transition hover:bg-fg/[0.06] hover:text-fg"
                 aria-label="Close"
               >
                 <FiX className="h-5 w-5" />

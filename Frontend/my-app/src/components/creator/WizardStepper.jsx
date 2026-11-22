@@ -16,7 +16,7 @@ export default function WizardStepper({ steps, currentStep, onStepSelect }) {
                 completed
                   ? 'bg-brand-600 text-white'
                   : active
-                    ? 'bg-ink-800 text-white shadow-sm ring-4 ring-brand-500/15'
+                    ? 'bg-ink-800 text-fg shadow-sm ring-4 ring-brand-500/15'
                     : 'bg-ink-800 text-fg-subtle ring-1 ring-line'
               }`}
             >

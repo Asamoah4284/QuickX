@@ -104,7 +104,7 @@ function Thread({ conversation, onBack, onActivity }) {
   return (
     <Card className="flex h-[70dvh] min-h-[26rem] flex-col overflow-hidden">
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
-        <button type="button" onClick={onBack} className="rounded-full p-2 text-fg-muted hover:bg-white/[0.06] hover:text-fg lg:hidden" aria-label="Back to conversations">
+        <button type="button" onClick={onBack} className="rounded-full p-2 text-fg-muted hover:bg-fg/[0.06] hover:text-fg lg:hidden" aria-label="Back to conversations">
           <FiArrowLeft className="h-5 w-5" />
         </button>
         <Avatar src={publicAssetUrl(other?.profilePicture)} name={other?.fullName} size={36} />
@@ -228,7 +228,7 @@ export default function Messages({ openWith, onUnreadChange }) {
                   key={c._id}
                   type="button"
                   onClick={() => setActive(c)}
-                  className={cx('flex w-full items-center gap-3 px-4 py-3 text-left transition', isActive ? 'bg-brand-500/15' : 'hover:bg-white/[0.03]')}
+                  className={cx('flex w-full items-center gap-3 px-4 py-3 text-left transition', isActive ? 'bg-brand-500/15' : 'hover:bg-fg/[0.03]')}
                 >
                   <Avatar src={publicAssetUrl(other?.profilePicture)} name={other?.fullName} size={40} />
                   <span className="min-w-0 flex-1">

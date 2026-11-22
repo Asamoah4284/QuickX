@@ -119,7 +119,7 @@ export default function Events() {
   return (
     <div className="min-h-screen bg-ink-900 text-fg pb-20 pt-20">
       {/* Hero Banner */}
-      <div className="relative overflow-hidden bg-[#07152f] text-white">
+      <div className="on-dark relative overflow-hidden bg-[#07152f] text-white">
         <div
           className="pointer-events-none absolute inset-0 opacity-40"
           style={{
@@ -142,8 +142,8 @@ export default function Events() {
           {/* Breadcrumb */}
           <nav className="mb-4 flex items-center gap-2 text-xs font-semibold text-brand-300">
             <Link to="/" className="hover:underline">Home</Link>
-            <span className="text-white/40">/</span>
-            <span className="text-white/90">Events &amp; Masterclasses</span>
+            <span className="text-fg-subtle">/</span>
+            <span className="text-fg">Events &amp; Masterclasses</span>
           </nav>
 
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
@@ -164,7 +164,7 @@ export default function Events() {
               <button
                 type="button"
                 onClick={fetchMyTickets}
-                className="inline-flex items-center gap-2.5 rounded-2xl bg-white/10 px-5 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-white/20 border border-white/20 shadow-lg"
+                className="inline-flex items-center gap-2.5 rounded-2xl bg-fg/10 px-5 py-3 text-sm font-bold text-white backdrop-blur transition hover:bg-fg/20 border border-fg/20 shadow-lg"
               >
                 <FiAward className="h-5 w-5 text-warn" />
                 <span>My Registered Tickets</span>

@@ -151,7 +151,7 @@ function Downloads() {
               <button
                 type="button"
                 onClick={() => remove(row)}
-                className="shrink-0 rounded-full p-2 text-fg-subtle transition hover:bg-white/[0.06] hover:text-down"
+                className="shrink-0 rounded-full p-2 text-fg-subtle transition hover:bg-fg/[0.06] hover:text-down"
                 aria-label="Remove download"
               >
                 <FiTrash2 className="h-4 w-4" />

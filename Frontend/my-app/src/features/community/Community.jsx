@@ -56,7 +56,7 @@ function SectionNav({ sections, value, onChange }) {
             aria-current={active ? 'page' : undefined}
             className={cx(
               'relative flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-medium transition-colors',
-              active ? 'text-fg' : 'text-fg-muted hover:bg-white/[0.04] hover:text-fg'
+              active ? 'text-fg' : 'text-fg-muted hover:bg-fg/[0.04] hover:text-fg'
             )}
           >
             {active ? (

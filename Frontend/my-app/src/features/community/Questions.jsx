@@ -263,7 +263,7 @@ export default function Questions() {
       {questions.length ? (
         <Card className="divide-y divide-line overflow-hidden">
           {questions.map((q, i) => (
-            <button key={q._id} type="button" onClick={() => setSelected(q._id)} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} className="rise-in block w-full px-5 py-4 text-left transition hover:bg-white/[0.03]">
+            <button key={q._id} type="button" onClick={() => setSelected(q._id)} style={{ animationDelay: `${Math.min(i, 8) * 40}ms` }} className="rise-in block w-full px-5 py-4 text-left transition hover:bg-fg/[0.03]">
               <div className="flex items-start justify-between gap-4">
                 <div className="min-w-0">
                   <p className="flex items-center gap-2 font-semibold text-fg">
