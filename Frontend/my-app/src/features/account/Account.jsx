@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { FiArrowRight, FiBookOpen, FiDownload, FiLogOut, FiPlayCircle } from 'react-icons/fi';
 import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
-import { FEATURE_LIST } from '../../lib/features';
+import { PAID_FEATURE_LIST } from '../../lib/features';
 import { cx, daysLeft, formatDate } from '../../lib/format';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
 import { clearServerPushSubscription } from '../../utils/webPush';
@@ -137,8 +137,8 @@ export default function Account() {
               All plans
             </Link>
           </div>
-          <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {FEATURE_LIST.map((feature) => (
+          <Stagger className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {PAID_FEATURE_LIST.map((feature) => (
               <StaggerItem key={feature.key}>
                 <AccessCard feature={feature} />
               </StaggerItem>

@@ -1,3 +1,4 @@
+import PlanLock from '../billing/PlanLock';
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { FiArrowLeft, FiMessageCircle, FiSend } from 'react-icons/fi';
 import { api, errorMessage } from '../../lib/api';
@@ -195,11 +196,19 @@ export default function Messages({ openWith, onUnreadChange }) {
     <div className="grid gap-5 lg:grid-cols-[20rem_1fr]">
       <div className={cx(active && 'hidden lg:block')}>
         {error ? <Alert className="mb-3">{error}</Alert> : null}
-        {!me.isModerator && about.owner && !hasMentorChat && !me.muted ? (
+        {!me.isModerator && about.owner && !hasMentorChat && !me.muted && me.canMessageMentor ? (
           <Button className="mb-3 w-full" onClick={() => startChat(about.owner.id)}>
             <FiMessageCircle className="h-4 w-4" />
             Message {about.owner.fullName.split(/\s+/)[0]}
           </Button>
+        ) : null}
+        {!me.isModerator && about.owner && !hasMentorChat && me.canMessageMentor === false ? (
+          <PlanLock
+            className="mb-3"
+            feature="mentorship"
+            title={`Message ${about.owner.fullName.split(/\s+/)[0]} directly`}
+            text="Private messages with Maxwell come with Mentorship. Questions for everyone are free in Q&A."
+          />
         ) : null}
         {conversations === null && !error ? <Skeleton className="h-48" /> : null}
         {conversations && !list.length ? (

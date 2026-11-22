@@ -174,7 +174,12 @@ export default function Landing() {
                   <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-300 transition group-hover:bg-brand-600 group-hover:text-white">
                     <feature.icon className="h-6 w-6" />
                   </div>
-                  <h3 className="mt-5 text-lg font-semibold text-fg">{feature.label}</h3>
+                  <h3 className="mt-5 flex items-center gap-2 text-lg font-semibold text-fg">
+                    {feature.label}
+                    {feature.free ? (
+                      <span className="rounded-full bg-up/15 px-2 py-0.5 text-xs font-semibold text-up">Free</span>
+                    ) : null}
+                  </h3>
                   <p className="mt-2 flex-1 text-sm text-fg-muted">{feature.blurb}</p>
                   <span className="mt-5 flex items-center gap-2 text-sm font-semibold text-brand-400">
                     Explore

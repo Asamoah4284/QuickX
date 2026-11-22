@@ -1,15 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FiBarChart2, FiMessageSquare, FiPlus, FiX } from 'react-icons/fi';
+import { FiBarChart2, FiLock, FiMessageSquare, FiPlus, FiX } from 'react-icons/fi';
 import { api, errorMessage } from '../../lib/api';
 import { useAuth } from '../../lib/auth';
 import { cx } from '../../lib/format';
 import { publicAssetUrl } from '../../utils/publicAssetUrl';
 import { resolveMentions } from '../../utils/communityMentions';
-import { Alert, Avatar, Button, Card, EmptyState, Field, Input, Skeleton, Textarea } from '../../ui/primitives';
+import { Alert, Avatar, Badge, Button, Card, EmptyState, Field, Input, Select, Skeleton, Textarea } from '../../ui/primitives';
+import { FEATURES } from '../../lib/features';
+import PlanLock from '../billing/PlanLock';
 import { Modal } from '../../ui/overlays';
 import { Stagger, StaggerItem } from '../../ui/motion';
 import PostCard from './PostCard';
 import { BASE, ImagePicker, MediaThumbs, useCommunity } from './shared';
+
+/** Who a room is for. Matches DiscussionRoom.requires on the server. */
+const ROOM_ACCESS = [
+  { value: '', label: 'Everyone in the community' },
+  { value: 'signals', label: 'Signals members only' },
+  { value: 'courses', label: 'Courses members only' },
+  { value: 'mentorship', label: 'Mentorship members only' },
+];
+
+function RoomAccessSelect({ id, value, onChange }) {
+  return (
+    <Select id={id} value={value || ''} onChange={(e) => onChange(e.target.value)}>
+      {ROOM_ACCESS.map((o) => (
+        <option key={o.value} value={o.value}>
+          {o.label}
+        </option>
+      ))}
+    </Select>
+  );
+}
 
 function PollModal({ open, onClose, onCreated }) {
   const [question, setQuestion] = useState('');
@@ -167,6 +189,7 @@ function Composer({ roomId, onPosted }) {
 function RoomModal({ open, onClose, onCreated }) {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
+  const [requires, setRequires] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -175,10 +198,11 @@ function RoomModal({ open, onClose, onCreated }) {
     setBusy(true);
     setError('');
     try {
-      const { data } = await api.post(`${BASE}/rooms`, { name, description });
+      const { data } = await api.post(`${BASE}/rooms`, { name, description, requires: requires || null });
       onCreated(data.room);
       setName('');
       setDescription('');
+      setRequires('');
       onClose();
     } catch (err) {
       setError(errorMessage(err));
@@ -195,6 +219,9 @@ function RoomModal({ open, onClose, onCreated }) {
         </Field>
         <Field label="What is it for?" htmlFor="room-desc">
           <Input id="room-desc" value={description} onChange={(e) => setDescription(e.target.value)} maxLength={300} />
+        </Field>
+        <Field label="Who can see this room?" htmlFor="room-access" hint="Members without that plan see the room locked, with a button to get the plan.">
+          <RoomAccessSelect id="room-access" value={requires} onChange={setRequires} />
         </Field>
         {error ? <Alert>{error}</Alert> : null}
         <Button type="submit" loading={busy} className="w-full">
@@ -232,10 +259,13 @@ export default function Feed() {
     [roomId]
   );
 
+  const locked = Boolean(rooms.find((r) => r._id === roomId)?.locked);
+
   useEffect(() => {
     let cancelled = false;
     setPosts(null);
     setError('');
+    if (locked) return undefined;
     load()
       .then((data) => {
         if (cancelled) return;
@@ -246,7 +276,7 @@ export default function Feed() {
     return () => {
       cancelled = true;
     };
-  }, [load]);
+  }, [load, locked]);
 
   const loadMore = async () => {
     setLoadingMore(true);
@@ -273,6 +303,15 @@ export default function Feed() {
     }
   };
 
+  const changeAccess = async (value) => {
+    try {
+      const { data } = await api.patch(`${BASE}/rooms/${roomId}`, { requires: value || null });
+      setRooms((list) => list.map((r) => (r._id === roomId ? { ...r, requires: data.room.requires || null } : r)));
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
   const chip = (active) =>
     cx(
       'shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition',
@@ -287,7 +326,13 @@ export default function Feed() {
           Main feed
         </button>
         {rooms.map((room) => (
-          <button key={room._id} type="button" className={chip(roomId === room._id)} onClick={() => setRoomId(room._id)}>
+          <button
+            key={room._id}
+            type="button"
+            className={cx(chip(roomId === room._id), 'inline-flex items-center gap-1.5')}
+            onClick={() => setRoomId(room._id)}
+          >
+            {room.locked ? <FiLock className="h-3.5 w-3.5 text-fg-subtle" aria-label="Locked" /> : null}
             {room.name}
             {room.postCount ? <span className="tabular ml-2 text-xs text-fg-subtle">{room.postCount}</span> : null}
           </button>
@@ -301,30 +346,48 @@ export default function Feed() {
       </div>
 
       {activeRoom ? (
-        <div className="flex items-start justify-between gap-4 text-sm text-fg-muted">
-          <p>{activeRoom.description || `Posts in ${activeRoom.name}.`}</p>
+        <div className="space-y-3 text-sm text-fg-muted">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <p className="min-w-0 flex-1">{activeRoom.description || `Posts in ${activeRoom.name}.`}</p>
+            {activeRoom.requires && !me.isModerator ? (
+              <Badge tone="brand">{FEATURES[activeRoom.requires]?.label} members</Badge>
+            ) : null}
+          </div>
           {me.isModerator ? (
-            <button type="button" onClick={archiveRoom} className="shrink-0 font-semibold text-fg-subtle hover:text-down">
-              Archive room
-            </button>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="w-full sm:w-64">
+                <RoomAccessSelect id="room-access-edit" value={activeRoom.requires} onChange={changeAccess} />
+              </div>
+              <button type="button" onClick={archiveRoom} className="font-semibold text-fg-subtle hover:text-down">
+                Archive room
+              </button>
+            </div>
           ) : null}
         </div>
       ) : null}
 
-      <Composer roomId={roomId} onPosted={(post) => setPosts((list) => [post, ...(list || [])])} />
+      {locked ? (
+        <PlanLock
+          feature={activeRoom.requires}
+          title={`The ${activeRoom.name} is for ${FEATURES[activeRoom.requires]?.label} members`}
+          text="Get the plan to read and post here. Everything else in the community stays free."
+        />
+      ) : null}
+
+      {locked ? null : <Composer roomId={roomId} onPosted={(post) => setPosts((list) => [post, ...(list || [])])} />}
 
       {error ? <Alert>{error}</Alert> : null}
-      {posts === null && !error ? (
+      {!locked && posts === null && !error ? (
         <div className="space-y-5">
           <Skeleton className="h-44" />
           <Skeleton className="h-64" />
         </div>
       ) : null}
-      {posts && !posts.length ? (
+      {!locked && posts && !posts.length ? (
         <EmptyState icon={FiMessageSquare} title="Nothing here yet" description="Be the first to post." />
       ) : null}
 
-      {posts?.length ? (
+      {!locked && posts?.length ? (
         <Stagger key={roomId || 'main'} className="space-y-5">
           {posts.map((post) => (
             <StaggerItem key={post._id}>
@@ -338,7 +401,7 @@ export default function Feed() {
         </Stagger>
       ) : null}
 
-      {cursor ? (
+      {!locked && cursor ? (
         <div className="flex justify-center">
           <Button variant="secondary" loading={loadingMore} onClick={loadMore}>
             Load older posts

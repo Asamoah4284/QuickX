@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import {
@@ -19,7 +19,8 @@ import { useApi } from '../../lib/useApi';
 import { cx, timeAgo } from '../../lib/format';
 import { Alert, Button, Card, Container, Input, PageHeader, PageLoader, Skeleton } from '../../ui/primitives';
 import { Modal, Tabs } from '../../ui/overlays';
-import FeatureGate from '../billing/FeatureGate';
+import { useAuth } from '../../lib/auth';
+import { Reveal } from '../../ui/motion';
 import Feed from './Feed';
 import Questions from './Questions';
 import Resources from './Resources';
@@ -319,15 +320,44 @@ function CommunityHome() {
   );
 }
 
+/** The community is free; visitors only need an account. */
+function JoinFree() {
+  const location = useLocation();
+  return (
+    <Container className="py-12 sm:py-16">
+      <Reveal>
+        <Card className="relative mx-auto max-w-2xl overflow-hidden p-8 sm:p-12">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/15 text-brand-300">
+            <FiUsers className="h-7 w-7" />
+          </div>
+          <p className="mt-6 text-sm font-semibold text-up">Free for every member</p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-fg sm:text-4xl">Join the QuickX community</h1>
+          <p className="mt-3 text-base text-fg-muted">
+            Share your trades, ask questions, get answers from Maxwell and other traders, and join live sessions. Signals,
+            Courses and Mentorship members also get their own rooms.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <Button to="/register" state={{ from: location }} size="lg">
+              Create a free account
+            </Button>
+            <Button to="/login" state={{ from: location }} variant="secondary" size="lg">
+              Log in
+            </Button>
+          </div>
+        </Card>
+      </Reveal>
+    </Container>
+  );
+}
+
 export default function Community() {
+  const { isSignedIn } = useAuth();
   return (
     <>
       <Helmet>
         <title>Community | QuickX</title>
       </Helmet>
-      <FeatureGate feature="community">
-        <CommunityHome />
-      </FeatureGate>
+      {isSignedIn ? <CommunityHome /> : <JoinFree />}
     </>
   );
 }
