@@ -2,6 +2,7 @@ import { Helmet } from 'react-helmet-async';
 import { useApi } from '../../lib/useApi';
 import { Alert, Container, Eyebrow, Skeleton } from '../../ui/primitives';
 import { Reveal, Stagger, StaggerItem } from '../../ui/motion';
+import { groupPlans } from '../../lib/plans';
 import PriceCard from './PriceCard';
 
 const FAQ = [
@@ -12,6 +13,10 @@ const FAQ = [
   {
     q: 'Is the community free?',
     a: 'Yes. Every member can join the community for free: the feed, Q&A, resources and live sessions. Each plan also opens its own room there, like the Signals room for Signals members.',
+  },
+  {
+    q: 'Can I pay for longer?',
+    a: 'Yes. Where a plan is sold in more than one length, pick it on the card, for example 1 month or 3 months. Longer lengths usually cost less per month.',
   },
   {
     q: 'What happens when my time runs out?',
@@ -27,20 +32,22 @@ const FAQ = [
   },
 ];
 
+/** One card per plan. A plan sold in several lengths gets a picker on its card. */
 export function PricingGrid({ products }) {
-  const bundle = products.find((p) => p.grants.length > 1);
-  const singles = products.filter((p) => p.grants.length === 1);
+  const plans = groupPlans(products);
+  const bundles = plans.filter((p) => p.bundle);
+  const singles = plans.filter((p) => !p.bundle);
   return (
     <div className="space-y-6">
-      {bundle ? (
-        <Reveal>
-          <PriceCard product={bundle} featured />
+      {bundles.map((plan) => (
+        <Reveal key={plan.group}>
+          <PriceCard lengths={plan.lengths} featured />
         </Reveal>
-      ) : null}
+      ))}
       <Stagger className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {singles.map((p) => (
-          <StaggerItem key={p.key}>
-            <PriceCard product={p} />
+        {singles.map((plan) => (
+          <StaggerItem key={plan.group}>
+            <PriceCard lengths={plan.lengths} />
           </StaggerItem>
         ))}
       </Stagger>

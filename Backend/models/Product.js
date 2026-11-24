@@ -18,6 +18,8 @@ const productSchema = new mongoose.Schema(
         },
         badge: { type: String, trim: true, default: '' },
         isActive: { type: Boolean, default: true },
+        /** Removed by the admin. Kept (not deleted) because old payments point at it. */
+        archived: { type: Boolean, default: false },
         order: { type: Number, default: 0 },
     },
     { timestamps: true }
@@ -71,6 +73,14 @@ const DEFAULT_PRODUCTS = [
     },
 ];
 
+/**
+ * Products that grant exactly the same features are lengths of one plan
+ * (for example Signals for 1 month and Signals for 3 months).
+ */
+function planGroup(grants) {
+    return [...new Set(grants || [])].sort().join('+');
+}
+
 productSchema.statics.ensureDefaults = async function ensureDefaults() {
     let created = 0;
     for (const p of DEFAULT_PRODUCTS) {
@@ -82,3 +92,4 @@ productSchema.statics.ensureDefaults = async function ensureDefaults() {
 
 module.exports = mongoose.model('Product', productSchema);
 module.exports.DEFAULT_PRODUCTS = DEFAULT_PRODUCTS;
+module.exports.planGroup = planGroup;

@@ -17,7 +17,10 @@ async function findProduct(keyOrId, { includeInactive = false } = {}) {
     const raw = String(keyOrId || '').trim();
     if (!raw) return null;
     const query = mongoose.Types.ObjectId.isValid(raw) ? { _id: raw } : { key: raw.toLowerCase() };
-    if (!includeInactive) query.isActive = true;
+    if (!includeInactive) {
+        query.isActive = true;
+        query.archived = { $ne: true };
+    }
     return Product.findOne(query);
 }
 
@@ -92,10 +95,15 @@ function serializeProduct(p) {
         badge: p.badge || '',
         isActive: p.isActive,
         order: p.order,
+        group: Product.planGroup(p.grants),
     };
 }
 
+/** Sort order for plan lists: the admin's order, then shortest length first. */
+const PLAN_SORT = { order: 1, durationDays: 1, price: 1 };
+
 module.exports = {
+    PLAN_SORT,
     round2,
     priceAfterDiscount,
     findProduct,
