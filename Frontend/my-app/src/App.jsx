@@ -3,6 +3,7 @@ import { createBrowserRouter, Navigate, RouterProvider, useParams } from 'react-
 import { HelmetProvider } from 'react-helmet-async';
 import { AuthProvider, RequireAuth } from './lib/auth';
 import { useThemeSync } from './lib/theme';
+import { trackMetaPageView } from './utils/metaPixel';
 import { PageLoader } from './ui/primitives';
 import SiteLayout from './layouts/SiteLayout';
 import Landing from './features/marketing/Landing';
@@ -185,6 +186,16 @@ const router = createBrowserRouter([
     ],
   },
 ]);
+
+// Meta Pixel: index.html counts the first page. This is a single-page site, so count each
+// page people move to after that. Admin pages are left out.
+let lastPath = typeof window !== 'undefined' ? window.location.pathname : '';
+router.subscribe((state) => {
+  const path = state.location.pathname;
+  if (path === lastPath) return;
+  lastPath = path;
+  if (!path.startsWith('/admin')) trackMetaPageView();
+});
 
 export default function App() {
   useThemeSync();
