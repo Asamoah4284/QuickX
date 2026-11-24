@@ -3,6 +3,7 @@ import { useAuth } from '../../lib/auth';
 import { FEATURES } from '../../lib/features';
 import { useApi } from '../../lib/useApi';
 import { durationLabel, money } from '../../lib/format';
+import { bundlePlan, singlePlan } from '../../lib/plans';
 import { Button, Card, Container, PageLoader } from '../../ui/primitives';
 import { Reveal } from '../../ui/motion';
 
@@ -21,8 +22,9 @@ export default function FeatureGate({ feature, preview, children }) {
   if (allowed) return children;
 
   const products = data?.products || [];
-  const single = products.find((p) => p.grants.length === 1 && p.grants[0] === feature);
-  const bundle = products.find((p) => p.grants.length > 1 && p.grants.includes(feature));
+  const plan = singlePlan(products, feature);
+  const single = plan?.first;
+  const bundle = bundlePlan(products, feature)?.first;
   const Icon = meta.icon;
 
   return (
@@ -73,6 +75,14 @@ export default function FeatureGate({ feature, preview, children }) {
                 </Button>
               ) : null}
             </div>
+            {plan?.lengths.length > 1 ? (
+              <p className="mt-4 text-sm text-fg-muted">
+                Also sold for {plan.lengths.slice(1).map((p) => durationLabel(p.durationDays)).join(', ')}.{' '}
+                <Button to="/pricing" variant="ghost" size="sm" className="-mx-2 inline-flex h-auto px-2 py-1 text-brand-400">
+                  Compare lengths
+                </Button>
+              </p>
+            ) : null}
             {!isSignedIn ? (
               <p className="mt-5 text-sm text-fg-subtle">
                 Already a member?{' '}

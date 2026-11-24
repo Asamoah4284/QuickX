@@ -8,7 +8,8 @@ const Payment = require('../models/Payment');
 const Entitlement = require('../models/Entitlement');
 const User = require('../models/User');
 const { ALL_FEATURES, PAID_FEATURES, FEATURES, isFeature } = require('../constants/features');
-const { quoteProduct, findProduct, serializeProduct } = require('../services/productService');
+const { quoteProduct, findProduct, serializeProduct, PLAN_SORT } = require('../services/productService');
+const { planGroup } = require('../models/Product');
 const {
     getActiveEntitlements,
     grantFeatures,
@@ -32,7 +33,7 @@ function escapeRegex(s) {
 
 router.get('/products', async (req, res) => {
     try {
-        const products = await Product.find({ isActive: true }).sort({ order: 1, price: 1 });
+        const products = await Product.find({ isActive: true, archived: { $ne: true } }).sort(PLAN_SORT);
         res.json({ products: products.map(serializeProduct), features: PAID_FEATURES });
     } catch (err) {
         fail(res, err);
@@ -230,45 +231,146 @@ router.post('/products/:key/redeem', auth, async (req, res) => {
 router.get('/admin/products', adminAuth, async (req, res) => {
     try {
         // The community is free now, so its old plan is left out of the editor.
-        const products = await Product.find({ grants: { $ne: [FEATURES.COMMUNITY] } }).sort({ order: 1, price: 1 });
+        const products = await Product.find({ grants: { $ne: [FEATURES.COMMUNITY] }, archived: { $ne: true } }).sort(PLAN_SORT);
         res.json({ products: products.map(serializeProduct), features: PAID_FEATURES });
     } catch (err) {
         fail(res, err);
     }
 });
 
+/** The other lengths of the same plan (same features), not counting removed ones. */
+async function lengthsOf(product) {
+    const all = await Product.find({ archived: { $ne: true } });
+    const group = planGroup(product.grants);
+    return all.filter((p) => planGroup(p.grants) === group);
+}
+
+function readPrice(value) {
+    const price = Number(value);
+    if (!Number.isFinite(price) || price < 0 || price > 1000000) {
+        const err = new Error('Enter a price of 0 or more');
+        err.status = 400;
+        throw err;
+    }
+    return Math.round(price * 100) / 100;
+}
+
+function readDays(value) {
+    const days = Number(value);
+    if (!Number.isInteger(days) || days < 1 || days > 3650) {
+        const err = new Error('Length must be between 1 and 3650 days');
+        err.status = 400;
+        throw err;
+    }
+    return days;
+}
+
+function sameLengthTaken(lengths, days, exceptId) {
+    return lengths.some((p) => p.durationDays === days && String(p._id) !== String(exceptId));
+}
+
+/**
+ * Edit a plan. Price, length, badge and On sale belong to this one length.
+ * Name, tagline, "What's included" and the order are shared by every length of the plan.
+ */
 router.put('/admin/products/:key', adminAuth, async (req, res) => {
     try {
         const product = await findProduct(req.params.key, { includeInactive: true });
-        if (!product) return res.status(404).json({ message: 'Product not found' });
+        if (!product || product.archived) return res.status(404).json({ message: 'Plan not found' });
+        const lengths = await lengthsOf(product);
 
         const b = req.body || {};
-        if (b.name !== undefined) product.name = String(b.name).trim();
-        if (b.tagline !== undefined) product.tagline = String(b.tagline).trim();
-        if (b.badge !== undefined) product.badge = String(b.badge).trim();
+        const shared = {};
+        if (b.name !== undefined) {
+            const name = String(b.name).trim();
+            if (!name) return res.status(400).json({ message: 'The plan needs a name' });
+            shared.name = name;
+        }
+        if (b.tagline !== undefined) shared.tagline = String(b.tagline).trim();
         if (b.highlights !== undefined) {
             if (!Array.isArray(b.highlights)) return res.status(400).json({ message: 'highlights must be a list' });
-            product.highlights = b.highlights.map((h) => String(h).trim()).filter(Boolean).slice(0, 10);
+            shared.highlights = b.highlights.map((h) => String(h).trim()).filter(Boolean).slice(0, 10);
         }
-        if (b.price !== undefined) {
-            const price = Number(b.price);
-            if (!Number.isFinite(price) || price < 0) return res.status(400).json({ message: 'Invalid price' });
-            product.price = price;
-        }
+        if (b.order !== undefined && Number.isFinite(Number(b.order))) shared.order = Number(b.order);
+
+        if (b.badge !== undefined) product.badge = String(b.badge).trim();
+        if (b.price !== undefined) product.price = readPrice(b.price);
         if (b.durationDays !== undefined) {
-            const days = Number(b.durationDays);
-            if (!Number.isInteger(days) || days < 1 || days > 3650) {
-                return res.status(400).json({ message: 'Duration must be between 1 and 3650 days' });
+            const days = readDays(b.durationDays);
+            if (sameLengthTaken(lengths, days, product._id)) {
+                return res.status(400).json({ message: 'This plan already has that length. Change the other one instead.' });
             }
             product.durationDays = days;
         }
         if (b.isActive !== undefined) product.isActive = Boolean(b.isActive);
-        if (b.order !== undefined && Number.isFinite(Number(b.order))) product.order = Number(b.order);
 
+        Object.assign(product, shared);
         await product.save();
+        if (Object.keys(shared).length) {
+            const others = lengths.filter((p) => String(p._id) !== String(product._id)).map((p) => p._id);
+            if (others.length) await Product.updateMany({ _id: { $in: others } }, { $set: shared });
+        }
         res.json({ product: serializeProduct(product) });
     } catch (err) {
         if (err?.name === 'ValidationError') return res.status(400).json({ message: err.message });
+        fail(res, err);
+    }
+});
+
+/** Add another length to a plan, e.g. Signals for 3 months. It copies the plan's wording. */
+router.post('/admin/products/:key/lengths', adminAuth, async (req, res) => {
+    try {
+        const base = await findProduct(req.params.key, { includeInactive: true });
+        if (!base || base.archived) return res.status(404).json({ message: 'Plan not found' });
+        const days = readDays(req.body?.durationDays);
+        const price = readPrice(req.body?.price);
+        const lengths = await lengthsOf(base);
+        if (sameLengthTaken(lengths, days)) {
+            return res.status(400).json({ message: 'This plan already has that length' });
+        }
+        if (lengths.length >= 12) return res.status(400).json({ message: 'A plan can have up to 12 lengths' });
+
+        // A readable, unique key: signals-90d, then signals-90d-2 if that was used before.
+        const stem = `${base.key.replace(/-\d+d(-\d+)?$/, '')}-${days}d`;
+        let key = stem;
+        for (let i = 2; await Product.exists({ key }); i += 1) key = `${stem}-${i}`;
+
+        const product = await Product.create({
+            key,
+            name: base.name,
+            tagline: base.tagline,
+            highlights: base.highlights,
+            grants: base.grants,
+            currency: base.currency,
+            order: base.order,
+            price,
+            durationDays: days,
+            isActive: req.body?.isActive === undefined ? true : Boolean(req.body.isActive),
+        });
+        res.status(201).json({ product: serializeProduct(product) });
+    } catch (err) {
+        if (err?.name === 'ValidationError') return res.status(400).json({ message: err.message });
+        fail(res, err);
+    }
+});
+
+/**
+ * Remove a length. It is hidden, not deleted, so payments already made for it still
+ * work. The last length of a plan cannot be removed; turn off On sale instead.
+ */
+router.delete('/admin/products/:key', adminAuth, async (req, res) => {
+    try {
+        const product = await findProduct(req.params.key, { includeInactive: true });
+        if (!product || product.archived) return res.status(404).json({ message: 'Plan not found' });
+        const lengths = await lengthsOf(product);
+        if (lengths.length <= 1) {
+            return res.status(400).json({ message: 'This is the only length of the plan. Turn off On sale to stop selling it.' });
+        }
+        product.archived = true;
+        product.isActive = false;
+        await product.save();
+        res.json({ ok: true });
+    } catch (err) {
         fail(res, err);
     }
 });

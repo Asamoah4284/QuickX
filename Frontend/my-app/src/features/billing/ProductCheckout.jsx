@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import PaystackPop from '@paystack/inline-js';
 import { FiArrowLeft, FiCheck, FiCheckCircle, FiLock, FiTag } from 'react-icons/fi';
@@ -8,6 +8,8 @@ import { useAuth } from '../../lib/auth';
 import { useApi } from '../../lib/useApi';
 import { FEATURES } from '../../lib/features';
 import { durationLabel, formatDate, money, cedis } from '../../lib/format';
+import { groupPlans, planGroupOf } from '../../lib/plans';
+import { LengthPicker } from './PriceCard';
 import { Alert, Button, Card, Container, Field, Input, PageLoader } from '../../ui/primitives';
 import { Reveal } from '../../ui/motion';
 
@@ -66,6 +68,8 @@ export default function ProductCheckout() {
   const [pendingReference, setPendingReference] = useState('');
   const [done, setDone] = useState(null);
   const wallet = useApi('/api/wallet');
+  const navigate = useNavigate();
+  const catalogue = useApi('/api/products');
   const walletBalance = Number(wallet.data?.balance || 0);
 
   const loadQuote = useCallback(
@@ -219,6 +223,8 @@ export default function ProductCheckout() {
   }
 
   const free = quote.amount < 0.01;
+  // Other lengths of this plan, so people can switch without going back to Pricing.
+  const lengths = groupPlans(catalogue.data?.products || []).find((p) => p.group === planGroupOf(product))?.lengths || [];
 
   return (
     <>
@@ -245,6 +251,16 @@ export default function ProductCheckout() {
                   </li>
                 ))}
               </ul>
+              {lengths.length > 1 && !done ? (
+                <div className="mt-6">
+                  <p className="mb-2 text-sm font-semibold text-fg">How long</p>
+                  <LengthPicker
+                    lengths={lengths}
+                    value={lengths.find((p) => p.key === product.key) || product}
+                    onChange={(p) => navigate(`/checkout/plan/${p.key}`, { replace: true })}
+                  />
+                </div>
+              ) : null}
               <p className="mt-6 rounded-xl border border-line bg-ink-900 px-4 py-3 text-sm text-fg-muted">
                 Access lasts <strong className="text-fg">{durationLabel(product.durationDays)}</strong>. If you already
                 have time left, this is added on top.
